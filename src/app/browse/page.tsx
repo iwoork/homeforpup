@@ -53,31 +53,29 @@ const PuppiesPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
-      <Title level={1} style={{ color: '#08979C', marginBottom: '24px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px 8px' }}>
+      <Title level={1} style={{ color: '#08979C', marginBottom: '16px', fontSize: '24px' }}>
         Available Puppies
       </Title>
 
-      {/* Filters Bar */}
+      {/* Compact Mobile-Friendly Filters */}
       <Card
         style={{
-          marginBottom: '24px',
-          borderRadius: '12px',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          background: '#fff',
+          marginBottom: '16px',
+          borderRadius: '8px',
         }}
+        bodyStyle={{ padding: '12px' }}
       >
-        <Row gutter={[16, 16]} align="middle">
-          {/* Breed */}
-          <Col xs={24} sm={12} md={6}>
+        <Row gutter={[8, 8]} align="middle">
+          {/* Top row - Main filters */}
+          <Col xs={8} sm={6} md={4}>
             <Select
               style={{ width: '100%' }}
               placeholder="Breed"
               value={filters.breed}
               onChange={value => setFilters(prev => ({ ...prev, breed: value }))}
               allowClear
+              size="small"
             >
               {breeds.map(breed => (
                 <Option key={breed} value={breed}>{breed}</Option>
@@ -85,28 +83,28 @@ const PuppiesPage: React.FC = () => {
             </Select>
           </Col>
 
-          {/* Gender */}
-          <Col xs={24} sm={12} md={4}>
+          <Col xs={8} sm={6} md={3}>
             <Select
               style={{ width: '100%' }}
               placeholder="Gender"
               value={filters.gender}
               onChange={value => setFilters(prev => ({ ...prev, gender: value }))}
               allowClear
+              size="small"
             >
               <Option value="Male">Male</Option>
               <Option value="Female">Female</Option>
             </Select>
           </Col>
 
-          {/* Location */}
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={8} sm={6} md={4}>
             <Select
               style={{ width: '100%' }}
               placeholder="Location"
               value={filters.location}
               onChange={value => setFilters(prev => ({ ...prev, location: value }))}
               allowClear
+              size="small"
             >
               {locations.map(loc => (
                 <Option key={loc} value={loc}>{loc}</Option>
@@ -114,44 +112,53 @@ const PuppiesPage: React.FC = () => {
             </Select>
           </Col>
 
-          {/* Price */}
-          <Col xs={24} md={6}>
-            <Paragraph style={{ marginBottom: 4, fontSize: '12px' }}>Price</Paragraph>
-            <Slider
-              range
-              min={500}
-              max={5000}
-              step={100}
-              value={filters.price}
-              onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
-            />
+          {/* Second row - Price, Shipping, Reset */}
+          <Col xs={12} sm={8} md={6}>
+            <div>
+              <Paragraph style={{ marginBottom: 2, fontSize: '11px', color: '#666' }}>
+                Price: ${filters.price[0]} - ${filters.price[1]}
+              </Paragraph>
+              <Slider
+                range
+                min={500}
+                max={5000}
+                step={100}
+                value={filters.price}
+                onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
+              />
+            </div>
           </Col>
 
-          {/* Shipping */}
-          <Col xs={24} sm={12} md={2}>
+          <Col xs={6} sm={4} md={3}>
             <Checkbox
               checked={filters.shipping}
               onChange={e => setFilters(prev => ({ ...prev, shipping: e.target.checked }))}
+              style={{ fontSize: '12px' }}
             >
-              Shipping
+              Ship
             </Checkbox>
           </Col>
 
-          {/* Reset Button */}
-          <Col xs={24} sm={12} md={24} style={{ textAlign: 'right' }}>
+          <Col xs={6} sm={4} md={4}>
             <Button
               type="primary"
-              style={{ background: '#FA8072', borderColor: '#FA8072' }}
+              size="small"
+              style={{ 
+                background: '#FA8072', 
+                borderColor: '#FA8072',
+                fontSize: '11px',
+                width: '100%'
+              }}
               onClick={resetFilters}
             >
-              Reset Filters
+              Reset
             </Button>
           </Col>
         </Row>
       </Card>
 
       {/* Puppy Listings */}  
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
       {filteredPuppies.map((puppy) => (
         <Col xs={24} sm={12} md={6} key={puppy.id}>
           <Card
