@@ -46,43 +46,47 @@ const Header: React.FC = () => {
     onClick: handleMenuClick,
   };
 
-  // Base navigation items (always visible)
-  const baseNavigationItems = [
-    {
-      key: '/browse',
-      icon: <HeartOutlined />,
-      label: <Link href="/browse">Puppies</Link>,
-    },
-    {
-      key: '/b',
-      icon: <TeamOutlined />,
-      label: <Link href="/b">Breeders</Link>,
-    },
-    {
-      key: '/about',
-      icon: <UserOutlined />,
-      label: <Link href="/about">About</Link>,
-    },
-  ];
+  // Navigation items - organized properly for logged in vs logged out users
+  const getNavigationItems = () => {
+    const publicItems = [
+      {
+        key: '/browse',
+        icon: <HeartOutlined />,
+        label: <Link href="/browse">Puppies</Link>,
+      },
+      {
+        key: '/b',
+        icon: <TeamOutlined />,
+        label: <Link href="/b">Breeders</Link>,
+      },
+      {
+        key: '/about',
+        icon: <UserOutlined />,
+        label: <Link href="/about">About</Link>,
+      },
+    ];
 
-  // Authenticated user navigation items (only when logged in)
-  const authNavigationItems = [
-    {
-      key: '/dashboard',
-      icon: <HomeOutlined />,
-      label: <Link href="/dashboard">Dashboard</Link>,
-    },
-    {
-      key: '/dashboard/litters',
-      icon: <PlusOutlined />,
-      label: <Link href="/dashboard/litters">My Litters</Link>,
-    },
-  ];
+    if (user) {
+      // For logged in users, add dashboard items
+      return [
+        ...publicItems,
+        {
+          key: '/dashboard',
+          icon: <HomeOutlined />,
+          label: <Link href="/dashboard">Dashboard</Link>,
+        },
+        {
+          key: '/dashboard/litters',
+          icon: <PlusOutlined />,
+          label: <Link href="/dashboard/litters">My Litters</Link>,
+        },
+      ];
+    }
 
-  // Combine navigation items - always include base items, add auth items when logged in
-  const navigationItems = user 
-    ? [...baseNavigationItems, ...authNavigationItems]
-    : baseNavigationItems;
+    return publicItems;
+  };
+
+  const navigationItems = getNavigationItems();
 
   const handleDrawerClose = () => {
     setDrawerVisible(false);
@@ -142,6 +146,27 @@ const Header: React.FC = () => {
               font-size: 16px !important;
             }
           }
+          
+          /* Fix for Menu component to ensure all items are visible */
+          .ant-menu-horizontal {
+            line-height: 64px;
+          }
+          .ant-menu-horizontal > .ant-menu-item,
+          .ant-menu-horizontal > .ant-menu-submenu {
+            border-bottom: 2px solid transparent;
+            margin: 0 8px;
+          }
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item:hover,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu:hover,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-active,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-active,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-open,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-open,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-selected,
+          .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-selected {
+            color: #08979C;
+            border-bottom-color: #08979C;
+          }
         `}</style>
         <Row justify="space-between" align="middle" style={{ height: '100%', maxWidth: 1200, margin: '0 auto' }}>
           <Col flex="none">
@@ -176,17 +201,20 @@ const Header: React.FC = () => {
           <Col className="desktop-nav" flex="auto" style={{ 
             display: 'flex', 
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            minWidth: 0, // Allow flex item to shrink
           }}>
             <Menu 
               mode="horizontal" 
               style={{ 
                 border: 'none', 
-                background: 'transparent'
+                background: 'transparent',
+                minWidth: 0, // Allow menu to shrink if needed
               }}
               selectedKeys={[pathname]}
               items={navigationItems}
               overflowedIndicator={null}
+              triggerSubMenuAction="click"
             />
           </Col>
 
