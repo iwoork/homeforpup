@@ -138,15 +138,22 @@ const PuppiesPage: React.FC = () => {
 
       {/* Puppy Listings */}  
       <Row gutter={[16, 16]}>
-      {filteredPuppies.map((puppy,id) => (
+      {filteredPuppies.map((puppy, id) => (
         <Col xs={24} sm={12} md={6} key={puppy.id}>
           <Card
             hoverable
             style={{
               borderRadius: '12px',
+              height: '420px', // Fixed height for consistency
               display: 'flex',
               flexDirection: 'column',
-              height: '100%',
+              overflow: 'hidden',
+            }}
+            styles={{
+              actions: {
+                borderTop: '1px solid #f0f0f0',
+                background: '#fafafa',
+              }
             }}
             cover={
               <img
@@ -163,36 +170,42 @@ const PuppiesPage: React.FC = () => {
             actions={[
               <HeartOutlined key="like" style={{ color: '#FA8072' }} />,
             ]}
+           
           >
             <div
               style={{
-                flex: 1,
+                height: '140px', // Fixed content area height
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
+                justifyContent: 'space-between'
               }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Title level={5} style={{ marginBottom: 0 }}>
+              <div>
+                <Title level={5} style={{ marginBottom: '4px', lineHeight: '1.2' }}>
                   {puppy.name}
                 </Title>
-                <Paragraph style={{ margin: 0, fontSize: '13px', color: '#595959' }}>
+                <Paragraph style={{ margin: 0, fontSize: '13px', color: '#595959', lineHeight: '1.3' }}>
                   {puppy.breed} • {puppy.gender}, {puppy.ageWeeks} wks
                 </Paragraph>
-                <Paragraph style={{ margin: 0, fontSize: '13px' }}>
+                <Paragraph style={{ margin: '2px 0', fontSize: '13px', lineHeight: '1.3' }}>
                   📍 {puppy.location}
                 </Paragraph>
-                <Paragraph style={{ margin: '4px 0', fontWeight: 'bold', color: '#08979C' }}>
+              </div>
+              
+              <div>
+                <Paragraph style={{ margin: '4px 0', fontWeight: 'bold', color: '#08979C', lineHeight: '1.3' }}>
                   ${puppy.price.toLocaleString()}
                 </Paragraph>
-                <Paragraph style={{ margin: 0, fontSize: '12px', color: '#595959' }}>
+                <Paragraph style={{ margin: 0, fontSize: '12px', color: '#595959', lineHeight: '1.3' }}>
                   {puppy.breeder} ⭐ {puppy.rating}
                 </Paragraph>
-                {puppy.shipping && (
-                  <Paragraph style={{ margin: 0, fontSize: '12px', color: '#08979C' }}>
-                    🚚 Shipping Available
-                  </Paragraph>
-                )}
+                <div style={{ height: '16px', marginTop: '2px' }}>
+                  {puppy.shipping && (
+                    <Paragraph style={{ margin: 0, fontSize: '12px', color: '#08979C', lineHeight: '1.3' }}>
+                      🚚 Shipping Available
+                    </Paragraph>
+                  )}
+                </div>
               </div>
             </div>
           </Card>
