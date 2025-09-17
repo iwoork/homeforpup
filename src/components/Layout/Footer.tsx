@@ -9,6 +9,8 @@ import {
   InstagramOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
+import Image from 'next/image';
+
 
 const { Footer: AntFooter } = Layout;
 const { Title, Text } = Typography;
@@ -40,6 +42,13 @@ const Footer: React.FC = () => {
           {/* Brand Section */}
           <Col xs={24} sm={12} md={6}>
             <div style={{ marginBottom: '24px' }}>
+              <Image
+                src="/logo.png"
+                alt="HomeForPup Logo"
+                width={80}
+                height={80}
+                style={{ flexShrink: 0 }}
+              />
               <div style={{
                 fontSize: "20px",
                 fontWeight: "bold",
