@@ -253,7 +253,7 @@ const PuppiesPage: React.FC = () => {
             hoverable
             style={{
               borderRadius: '12px',
-              height: '380px', // Fixed height for consistency
+              height: '430px', // Fixed height for consistency
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
@@ -261,7 +261,6 @@ const PuppiesPage: React.FC = () => {
             styles={{
               actions: {
                 borderTop: '1px solid #f0f0f0',
-                background: '#fafafa',
               }
             }}
             cover={
