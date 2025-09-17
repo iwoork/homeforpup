@@ -1,8 +1,17 @@
 'use client';
 
-import React from 'react';
-import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert } from 'antd';
-import { UserOutlined, LogoutOutlined, HomeOutlined, PlusOutlined, HeartOutlined, TeamOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert, Drawer } from 'antd';
+import { 
+  UserOutlined, 
+  LogoutOutlined, 
+  HomeOutlined, 
+  PlusOutlined, 
+  HeartOutlined, 
+  TeamOutlined,
+  MenuOutlined,
+  CloseOutlined 
+} from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +22,7 @@ const { Header: AntHeader } = Layout;
 const Header: React.FC = () => {
   const { user, signIn, signOut, error } = useAuth();
   const pathname = usePathname();
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const handleMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
@@ -36,8 +46,8 @@ const Header: React.FC = () => {
     onClick: handleMenuClick,
   };
 
-  // Public navigation items (always visible)
-  const publicNavigationItems = [
+  // Base navigation items (always visible)
+  const baseNavigationItems = [
     {
       key: '/browse',
       icon: <HeartOutlined />,
@@ -69,10 +79,29 @@ const Header: React.FC = () => {
     },
   ];
 
-  // Combine navigation items based on authentication status
+  // Combine navigation items - always include base items, add auth items when logged in
   const navigationItems = user 
-    ? [...publicNavigationItems, ...authNavigationItems]
-    : publicNavigationItems;
+    ? [...baseNavigationItems, ...authNavigationItems]
+    : baseNavigationItems;
+
+  const handleDrawerClose = () => {
+    setDrawerVisible(false);
+  };
+
+  const handleMenuItemClick = () => {
+    // Close drawer when a menu item is clicked on mobile
+    setDrawerVisible(false);
+  };
+
+  // Mobile menu items for drawer (with click handlers)
+  const mobileNavigationItems = navigationItems.map(item => ({
+    ...item,
+    label: (
+      <div onClick={handleMenuItemClick}>
+        {item.label}
+      </div>
+    )
+  }));
 
   return (
     <>
@@ -82,75 +111,262 @@ const Header: React.FC = () => {
         borderBottom: '1px solid #f0f0f0',
         padding: '0 24px'
       }}>
+        <style jsx global>{`
+          @media (min-width: 992px) {
+            .desktop-auth {
+              display: block !important;
+            }
+            .mobile-menu {
+              display: none !important;
+            }
+            .desktop-nav {
+              display: flex !important;
+            }
+          }
+          @media (max-width: 991px) {
+            .desktop-auth {
+              display: none !important;
+            }
+            .mobile-menu {
+              display: block !important;
+            }
+            .desktop-nav {
+              display: none !important;
+            }
+            .logo-text {
+              font-size: 18px !important;
+            }
+          }
+          @media (max-width: 480px) {
+            .logo-text {
+              font-size: 16px !important;
+            }
+          }
+        `}</style>
         <Row justify="space-between" align="middle" style={{ height: '100%', maxWidth: 1200, margin: '0 auto' }}>
-          <Col>
-            <Row align="middle" gutter={32}>
-              <Col>
-                <Link href="/" style={{ textDecoration: 'none' }}>
-                <div
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: "bold",
-                    color: "#08979C",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <Image
-                    src="/logo.png" // put your transparent vector logo here in /public
-                    alt="HomeForPup Logo"
-                    width={48}
-                    height={48}
-                  />
-                  home for pup
-                </div>
-                </Link>
-              </Col>
-              
-              <Col>
-                <Menu 
-                  mode="horizontal" 
-                  style={{ 
-                    border: 'none', 
-                    background: 'transparent',
-                    minWidth: '300px' // Ensure enough space for all items
-                  }}
-                  selectedKeys={[pathname]}
-                  items={navigationItems}
-                  overflowedIndicator={null} // Disable the collapse behavior
+          <Col flex="none">
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#08979C",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="HomeForPup Logo"
+                  width={48}
+                  height={48}
+                  style={{ flexShrink: 0 }}
                 />
-              </Col>
-            </Row>
+                <span className="logo-text" style={{ 
+                  whiteSpace: "nowrap"
+                }}>
+                  home for pup
+                </span>
+              </div>
+            </Link>
+          </Col>
+              
+          {/* Desktop Navigation */}
+          <Col className="desktop-nav" flex="auto" style={{ 
+            display: 'flex', 
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <Menu 
+              mode="horizontal" 
+              style={{ 
+                border: 'none', 
+                background: 'transparent'
+              }}
+              selectedKeys={[pathname]}
+              items={navigationItems}
+              overflowedIndicator={null}
+            />
           </Col>
 
-          <Col>
-            {user ? (
-              <Dropdown menu={userMenu} placement="bottomRight">
-                <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Avatar icon={<UserOutlined />} />
-                  <span>{user.name}</span>
-                </Button>
-              </Dropdown>
-            ) : (
-              <Row gutter={8}>
-                <Col>
-                  <Button onClick={signIn}>Login</Button>
-                </Col>
-                <Col>
-                  <Button 
-                    type="primary" 
-                    onClick={signIn}
-                    style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
-                  >
-                    Join as Breeder
+          <Col flex="none">
+            {/* Desktop Auth Section */}
+            <div className="desktop-auth" style={{ display: 'block' }}>
+              {user ? (
+                <Dropdown menu={userMenu} placement="bottomRight">
+                  <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Avatar icon={<UserOutlined />} />
+                    <span>{user.name}</span>
                   </Button>
-                </Col>
-              </Row>
-            )}
+                </Dropdown>
+              ) : (
+                <Row gutter={8}>
+                  <Col>
+                    <Button onClick={signIn}>Login</Button>
+                  </Col>
+                  <Col>
+                    <Button 
+                      type="primary" 
+                      onClick={signIn}
+                      style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
+                    >
+                      Join as Breeder
+                    </Button>
+                  </Col>
+                </Row>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="mobile-menu" style={{ display: 'none' }}>
+              <Button
+                type="text"
+                icon={<MenuOutlined />}
+                onClick={() => setDrawerVisible(true)}
+                style={{ fontSize: '18px', padding: '4px 8px' }}
+              />
+            </div>
           </Col>
         </Row>
       </AntHeader>
+      
+      {/* Mobile Drawer */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Link href="/" onClick={handleDrawerClose} style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "#08979C",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="HomeForPup Logo"
+                  width={32}
+                  height={32}
+                />
+                home for pup
+              </div>
+            </Link>
+          </div>
+        }
+        placement="right"
+        onClose={handleDrawerClose}
+        open={drawerVisible}
+        width={280}
+        closeIcon={<CloseOutlined />}
+        styles={{
+          header: {
+            borderBottom: '1px solid #f0f0f0',
+            paddingBottom: '16px',
+          }
+        }}
+      >
+        {/* User Section in Drawer */}
+        {user && (
+          <div style={{ 
+            padding: '16px 0', 
+            borderBottom: '1px solid #f0f0f0', 
+            marginBottom: '16px' 
+          }}>
+            <Row align="middle" gutter={12}>
+              <Col>
+                <Avatar icon={<UserOutlined />} size={40} />
+              </Col>
+              <Col flex={1}>
+                <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{user.name}</div>
+                <Button 
+                  type="link" 
+                  size="small" 
+                  style={{ padding: '0', height: 'auto', color: '#666' }}
+                  onClick={() => {
+                    handleDrawerClose();
+                    // Navigate to profile
+                  }}
+                >
+                  View Profile
+                </Button>
+              </Col>
+            </Row>
+          </div>
+        )}
+
+        {/* Navigation Menu */}
+        <Menu
+          mode="inline"
+          selectedKeys={[pathname]}
+          items={mobileNavigationItems}
+          style={{ border: 'none', background: 'transparent' }}
+        />
+
+        {/* Auth Buttons for Non-authenticated Users */}
+        {!user && (
+          <div style={{ 
+            position: 'absolute', 
+            bottom: '24px', 
+            left: '24px', 
+            right: '24px' 
+          }}>
+            <Row gutter={[0, 12]} style={{ width: '100%' }}>
+              <Col span={24}>
+                <Button 
+                  block 
+                  size="large" 
+                  onClick={() => {
+                    handleDrawerClose();
+                    signIn();
+                  }}
+                >
+                  Login
+                </Button>
+              </Col>
+              <Col span={24}>
+                <Button 
+                  type="primary" 
+                  block 
+                  size="large"
+                  onClick={() => {
+                    handleDrawerClose();
+                    signIn();
+                  }}
+                  style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
+                >
+                  Join as Breeder
+                </Button>
+              </Col>
+            </Row>
+          </div>
+        )}
+
+        {/* Logout Button for Authenticated Users */}
+        {user && (
+          <div style={{ 
+            position: 'absolute', 
+            bottom: '24px', 
+            left: '24px', 
+            right: '24px' 
+          }}>
+            <Button 
+              block 
+              size="large" 
+              icon={<LogoutOutlined />}
+              onClick={() => {
+                handleDrawerClose();
+                signOut();
+              }}
+            >
+              Logout
+            </Button>
+          </div>
+        )}
+      </Drawer>
       
       {error && (
         <Alert

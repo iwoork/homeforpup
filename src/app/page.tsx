@@ -25,6 +25,27 @@ const cardStyle: React.CSSProperties = {
 const HomePage: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh' }}>
+      <style jsx global>{`
+        @media (max-width: 767px) {
+          .hero-buttons .ant-col {
+            width: 100% !important;
+            margin-bottom: 12px;
+          }
+          .hero-buttons .ant-col:last-child {
+            margin-bottom: 0;
+          }
+          .newsletter-form {
+            flex-direction: column !important;
+          }
+          .newsletter-form .ant-form-item {
+            margin-bottom: 16px !important;
+          }
+          .newsletter-form .ant-form-item:last-child {
+            margin-bottom: 0 !important;
+          }
+        }
+      `}</style>
+
       {/* Hero Section */}
       <section style={heroStyle}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -34,17 +55,36 @@ const HomePage: React.FC = () => {
           <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
             Connect with verified ethical breeders committed to raising healthy, well-socialized puppies in loving family environments.
           </Paragraph>
-          <Row justify="center" gutter={16}>
-            <Col>
+          <Row justify="center" gutter={[16, 12]} className="hero-buttons">
+            <Col xs={24} sm={12} md={8}>
               <Link href="/browse">
-                <Button size="large" style={{ height: '48px', padding: '0 32px', fontSize: '18px' }}>
+                <Button 
+                  size="large" 
+                  block
+                  style={{ 
+                    height: '48px', 
+                    fontSize: '18px',
+                    fontWeight: '500'
+                  }}
+                >
                   Browse Available Puppies
                 </Button>
               </Link>
             </Col>
-            <Col>
+            <Col xs={24} sm={12} md={8}>
               <Link href="/auth/register">
-                <Button size="large" style={{ height: '48px', padding: '0 32px', fontSize: '18px', background: 'white', color: '#08979C', borderColor: 'white' }}>
+                <Button 
+                  size="large" 
+                  block
+                  style={{ 
+                    height: '48px', 
+                    fontSize: '18px', 
+                    background: 'white', 
+                    color: '#08979C', 
+                    borderColor: 'white',
+                    fontWeight: '500'
+                  }}
+                >
                   Join as a Breeder
                 </Button>
               </Link>
@@ -149,12 +189,21 @@ const HomePage: React.FC = () => {
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
             Subscribe to get the latest puppy listings, breeder updates, and tips for new dog owners.
           </Paragraph>
-          <Form layout="inline" style={{ justifyContent: 'center' }}>
-            <Form.Item name="email" style={{ flex: 1 }}>
+          <Form className="newsletter-form" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+            <Form.Item name="email" style={{ flex: 1, marginBottom: 0 }}>
               <Input placeholder="Enter your email" size="large" />
             </Form.Item>
-            <Form.Item>
-              <Button type="primary" size="large" style={{ background: '#08979C', borderColor: '#08979C' }}>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Button 
+                type="primary" 
+                size="large" 
+                block
+                style={{ 
+                  background: '#08979C', 
+                  borderColor: '#08979C',
+                  minWidth: '120px'
+                }}
+              >
                 Subscribe
               </Button>
             </Form.Item>
@@ -172,7 +221,18 @@ const HomePage: React.FC = () => {
             Join thousands of happy families who found their beloved companions through HomeForPup.
           </Paragraph>
           <Link href="/browse">
-            <Button type="primary" size="large" style={{ height: '48px', padding: '0 32px', fontSize: '18px', background: '#FA8072', borderColor: '#FA8072' }}>
+            <Button 
+              type="primary" 
+              size="large" 
+              style={{ 
+                height: '48px', 
+                padding: '0 32px', 
+                fontSize: '18px', 
+                background: '#FA8072', 
+                borderColor: '#FA8072',
+                fontWeight: '500'
+              }}
+            >
               Start Your Search
             </Button>
           </Link>
