@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ color: '#8b4513', fontSize: '16px', marginBottom: '8px' }}>
-          © 2024 HomeForPup.com - Connecting Ethical Breeders with Loving Families
+          © 2025 HomeForPup.com - Connecting Ethical Breeders with Loving Families
         </div>
         <div style={{ fontSize: '14px', color: '#666' }}>
           Promoting responsible breeding and puppy welfare

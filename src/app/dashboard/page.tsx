@@ -30,21 +30,11 @@ const DashboardPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Temporarily skip database calls - remove this when DynamoDB is set up
       console.log('Skipping dashboard data fetch - DynamoDB tables not ready');
       setLitters([]);
       setDogs([]);
       setLoading(false);
       return;
-      
-      // Uncomment these lines when your DynamoDB tables are created:
-      // const breederId = user.id;
-      // const [littersResult, dogsResult] = await Promise.all([
-      //   dbOperations.getLittersByBreeder(breederId),
-      //   dbOperations.getDogsByBreeder(breederId),
-      // ]);
-      // setLitters((littersResult.Items as Litter[]) || []);
-      // setDogs((dogsResult.Items as Dog[]) || []);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -84,8 +74,8 @@ const DashboardPage: React.FC = () => {
       padding: '32px 16px' 
     }}>
       <div style={{ marginBottom: '32px' }}>
-        <Title level={1}>Dashboard</Title>
-        <p style={{ color: '#666', fontSize: '16px' }}>
+        <Title level={1} style={{ color: '#08979C' }}>Dashboard</Title>
+        <p style={{ color: '#595959', fontSize: '16px' }}>
           Welcome back! Here's your breeding operation overview.
         </p>
       </div>
@@ -110,7 +100,7 @@ const DashboardPage: React.FC = () => {
             <Statistic
               title="Active Litters"
               value={activeLitters.length}
-              prefix={<StarOutlined style={{ color: '#ff6b35' }} />}
+              prefix={<StarOutlined style={{ color: '#FA8072' }} />}
             />
           </Card>
         </Col>
@@ -119,7 +109,7 @@ const DashboardPage: React.FC = () => {
             <Statistic
               title="Breeding Dogs"
               value={breedingDogs.length}
-              prefix={<HeartOutlined style={{ color: '#ff6b35' }} />}
+              prefix={<HeartOutlined style={{ color: '#08979C' }} />}
             />
           </Card>
         </Col>
@@ -128,7 +118,7 @@ const DashboardPage: React.FC = () => {
             <Statistic
               title="Total Puppies"
               value={totalPuppies}
-              prefix={<EyeOutlined style={{ color: '#ff6b35' }} />}
+              prefix={<EyeOutlined style={{ color: '#FA8072' }} />}
             />
           </Card>
         </Col>
@@ -137,7 +127,7 @@ const DashboardPage: React.FC = () => {
             <Statistic
               title="Available Puppies"
               value={availablePuppies}
-              prefix={<PlusOutlined style={{ color: '#ff6b35' }} />}
+              prefix={<PlusOutlined style={{ color: '#08979C' }} />}
             />
           </Card>
         </Col>
@@ -154,10 +144,7 @@ const DashboardPage: React.FC = () => {
                 <Button 
                   type="primary" 
                   icon={<PlusOutlined />}
-                  style={{ 
-                    background: '#ff6b35',
-                    borderColor: '#ff6b35'
-                  }}
+                  style={{ background: '#FA8072', borderColor: '#FA8072' }}
                 >
                   Add Litter
                 </Button>
@@ -190,10 +177,7 @@ const DashboardPage: React.FC = () => {
                 <Button 
                   type="primary" 
                   icon={<PlusOutlined />}
-                  style={{ 
-                    background: '#ff6b35',
-                    borderColor: '#ff6b35'
-                  }}
+                  style={{ background: '#08979C', borderColor: '#08979C' }}
                 >
                   Add Dog
                 </Button>
@@ -230,6 +214,7 @@ const DashboardPage: React.FC = () => {
                 size="large" 
                 block 
                 icon={<PlusOutlined />}
+                style={{ color: '#FA8072', borderColor: '#FA8072' }}
               >
                 Add New Litter
               </Button>
@@ -242,6 +227,7 @@ const DashboardPage: React.FC = () => {
                 size="large" 
                 block 
                 icon={<PlusOutlined />}
+                style={{ color: '#08979C', borderColor: '#08979C' }}
               >
                 Add Parent Dog
               </Button>
@@ -254,6 +240,7 @@ const DashboardPage: React.FC = () => {
                 size="large" 
                 block 
                 icon={<EyeOutlined />}
+                style={{ color: '#FA8072', borderColor: '#FA8072' }}
               >
                 Update Profile
               </Button>
