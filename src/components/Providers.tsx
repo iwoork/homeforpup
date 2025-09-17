@@ -12,11 +12,11 @@ interface ProvidersProps {
 
 const theme = {
   token: {
-    colorPrimary: '#ff6b35',
-    colorSuccess: '#52c41a',
-    colorWarning: '#faad14',
-    colorError: '#ff4d4f',
-    colorInfo: '#1890ff',
+    colorPrimary: '#08979C',
+    colorSuccess: '#52C41A',
+    colorWarning: '#FAAD14',
+    colorError: '#F5222D',
+    colorInfo: '#1890FF',
     borderRadius: 8,
   },
   components: {

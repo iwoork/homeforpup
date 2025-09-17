@@ -4,6 +4,7 @@ import React from 'react';
 import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert } from 'antd';
 import { UserOutlined, LogoutOutlined, HomeOutlined, PlusOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
 
 const { Header: AntHeader } = Layout;
@@ -59,16 +60,24 @@ const Header: React.FC = () => {
             <Row align="middle" gutter={32}>
               <Col>
                 <Link href="/" style={{ textDecoration: 'none' }}>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 'bold', 
-                    color: '#ff6b35',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    🐕 HomeForPup
-                  </div>
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "bold",
+                    color: "#08979C",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Image
+                    src="/logo.png" // put your transparent vector logo here in /public
+                    alt="HomeForPup Logo"
+                    width={48}
+                    height={48}
+                  />
+                  home for pup
+                </div>
                 </Link>
               </Col>
               
