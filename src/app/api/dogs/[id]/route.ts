@@ -46,8 +46,12 @@ function getUserIdFromToken(request: NextRequest): string | null {
 }
 
 // GET /api/dogs/[id] - Get a specific dog
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     const userId = getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -57,7 +61,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       TableName: DOGS_TABLE_NAME,
       Key: {
         ownerId: userId,
-        id: params.id,
+        id: id,
       },
     };
 
@@ -75,8 +79,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT /api/dogs/[id] - Update a specific dog
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     const userId = getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -87,7 +95,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       TableName: DOGS_TABLE_NAME,
       Key: {
         ownerId: userId,
-        id: params.id,
+        id: id,
       },
     };
 
@@ -196,7 +204,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       TableName: DOGS_TABLE_NAME,
       Key: {
         ownerId: userId,
-        id: params.id,
+        id: id,
       },
       UpdateExpression: `SET ${updateExpression.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
@@ -214,8 +222,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/dogs/[id] - Delete a specific dog
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await context.params;
     const userId = getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -226,7 +238,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       TableName: DOGS_TABLE_NAME,
       Key: {
         ownerId: userId,
-        id: params.id,
+        id: id,
       },
     };
 
@@ -253,7 +265,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       TableName: DOGS_TABLE_NAME,
       Key: {
         ownerId: userId,
-        id: params.id,
+        id: id,
       },
     };
 

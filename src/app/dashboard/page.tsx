@@ -11,7 +11,6 @@ import {
   Statistic, 
   List, 
   Spin, 
-  message, 
   Dropdown, 
   Avatar,
   Tag,
@@ -95,7 +94,7 @@ const DashboardPage: React.FC = () => {
         <div>
           <p>Are you sure you want to delete <strong>{dog.name}</strong>?</p>
           <p style={{ color: '#ff4d4f', fontSize: '12px' }}>
-            This action cannot be undone and will also delete the dog's photo.
+            This action cannot be undone and will also delete the dog&apos;s photo.
           </p>
         </div>
       ),
@@ -168,7 +167,6 @@ const DashboardPage: React.FC = () => {
   }
 
   const activeLitters = litters.filter(l => l.status === 'ready' || l.status === 'expecting');
-  const totalPuppies = litters.reduce((sum, litter) => sum + (litter.puppyCount || 0), 0);
   const availablePuppies = litters.reduce((sum, litter) => sum + (litter.availablePuppies || 0), 0);
   const breedingDogs = dogs.filter(d => d.breedingStatus === 'available');
 

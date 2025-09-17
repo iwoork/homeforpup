@@ -22,7 +22,7 @@ export interface Dog {
   birthDate: string;
   weight: number;
   color: string;
-  photos: string[];
+  photoUrl?: string;  
   healthTests: string[]; // URLs to health test documents
   pedigree?: string; // URL to pedigree document
   description: string;
@@ -32,7 +32,8 @@ export interface Dog {
   damId?: string;  // Mother's ID (reference to another dog)
   
   // Breeding status
-  breedingStatus: 'available' | 'retired' | 'not_for_breeding';
+  breedingStatus: 'available' | 'retired' | 'not_ready';
+  healthStatus: 'excellent' | 'good' | 'fair' | 'poor';
   
   // Litter information (if this dog is a puppy)
   litterId?: string;

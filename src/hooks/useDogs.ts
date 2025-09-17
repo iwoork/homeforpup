@@ -1,5 +1,5 @@
 // hooks/useDogs.ts
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { Dog } from '@/types';
 import { message } from 'antd';
 
