@@ -2,7 +2,7 @@
 
 import { useAuth as useOidcAuth } from 'react-oidc-context';
 import { useEffect, useState, useCallback } from 'react';
-import { User, Dog } from '@/types';
+import { User } from '@/types';
 import { dbOperations } from '@/lib/dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,22 +19,6 @@ export const useAuth = (): UseAuthReturn => {
   const oidcAuth = useOidcAuth();
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Check if oidcAuth is available
-  if (!oidcAuth) {
-    return {
-      user: null,
-      loading: true,
-      signIn: async () => {
-        setError('Authentication not initialized');
-      },
-      signOut: async () => {
-        setError('Authentication not initialized');
-      },
-      error: 'Authentication context not available',
-      isAuthenticated: false,
-    };
-  }
 
   const createOrGetBreederProfile = useCallback(async (userId: string, email: string, name: string) => {
     try {
@@ -66,6 +50,11 @@ export const useAuth = (): UseAuthReturn => {
   // Update user state when OIDC auth state changes
   useEffect(() => {
     const updateUserState = async () => {
+      if (!oidcAuth) {
+        setError('Authentication context not available');
+        return;
+      }
+
       if (oidcAuth.isAuthenticated && oidcAuth.user) {
         const profile = oidcAuth.user.profile;
         const userId = profile.sub || '';
@@ -91,15 +80,20 @@ export const useAuth = (): UseAuthReturn => {
       // Handle auth errors
       if (oidcAuth.error) {
         setError(oidcAuth.error.message);
-      } else {
+      } else if (!error || error === 'Authentication context not available') {
         setError(null);
       }
     };
 
     updateUserState();
-  }, [oidcAuth.isAuthenticated, oidcAuth.user, oidcAuth.error, oidcAuth.isLoading, createOrGetBreederProfile]);
+  }, [oidcAuth, createOrGetBreederProfile, error]);
 
   const signIn = useCallback(async () => {
+    if (!oidcAuth) {
+      setError('Authentication not initialized');
+      return;
+    }
+
     try {
       setError(null);
       await oidcAuth.signinRedirect();
@@ -111,6 +105,11 @@ export const useAuth = (): UseAuthReturn => {
   }, [oidcAuth]);
 
   const signOut = useCallback(async () => {
+    if (!oidcAuth) {
+      setError('Authentication not initialized');
+      return;
+    }
+
     try {
       setError(null);
       
@@ -132,6 +131,18 @@ export const useAuth = (): UseAuthReturn => {
       console.error('Sign out error:', error);
     }
   }, [oidcAuth]);
+
+  // Handle the case where oidcAuth is not available
+  if (!oidcAuth) {
+    return {
+      user: null,
+      loading: true,
+      signIn,
+      signOut,
+      error: error || 'Authentication context not available',
+      isAuthenticated: false,
+    };
+  }
 
   return {
     user,

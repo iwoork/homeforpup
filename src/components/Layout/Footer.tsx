@@ -7,7 +7,6 @@ import {
   FacebookOutlined,
   TwitterOutlined,
   InstagramOutlined,
-  HeartOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 

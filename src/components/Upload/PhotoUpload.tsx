@@ -5,7 +5,7 @@ import { Upload, Button, message, Row, Col, Image } from 'antd';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { s3Operations } from '@/lib/s3';
 import { v4 as uuidv4 } from 'uuid';
-import type { UploadFile, RcFile } from 'antd/es/upload';
+import type { RcFile } from 'antd/es/upload';
 
 interface PhotoUploadProps {
   photos: string[];

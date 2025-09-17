@@ -1,19 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Steps, Timeline, Collapse, Space, Button, Alert, Divider, Checkbox } from 'antd';
+import { Card, Row, Col, Typography, Steps, Collapse, Space, Button, Alert, Divider, Checkbox } from 'antd';
 import { 
   SearchOutlined, 
   HeartOutlined, 
   UserOutlined,
-  CheckCircleOutlined,
   ClockCircleOutlined,
   HomeOutlined,
-  SafetyOutlined,
-  FileTextOutlined,
   PhoneOutlined,
-  CameraOutlined,
-  CarOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 
@@ -201,7 +196,7 @@ const AdoptionGuidePage: React.FC = () => {
           Puppy Adoption Process
         </Title>
         <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '700px', margin: '0 auto' }}>
-          Your complete guide to finding and adopting a puppy through HomeForPup's network of ethical breeders.
+          Your complete guide to finding and adopting a puppy through HomeForPup&apos;s network of ethical breeders.
           Follow these steps for a smooth and successful adoption journey.
         </Paragraph>
       </div>
@@ -216,7 +211,7 @@ const AdoptionGuidePage: React.FC = () => {
           onChange={setCurrentStep}
           direction="horizontal"
           size="small"
-          items={stepData.map((step, index) => ({
+          items={stepData.map((step) => ({
             title: step.title,
             description: step.description,
             icon: step.icon
@@ -317,8 +312,8 @@ const AdoptionGuidePage: React.FC = () => {
           Pre-Adoption Checklist
         </Title>
         <Row gutter={[24, 24]}>
-          {checklist.map((section, index) => (
-            <Col xs={24} md={8} key={index}>
+          {checklist.map((section, sectionIndex) => (
+            <Col xs={24} md={8} key={sectionIndex}>
               <Card style={{ height: '100%', background: '#fafafa' }}>
                 <Title level={4} style={{ marginBottom: '16px', textAlign: 'center' }}>
                   {section.category}
@@ -353,7 +348,7 @@ const AdoptionGuidePage: React.FC = () => {
             <p>Prices vary significantly by breed, location, and breeder reputation, typically ranging from $1,500 to $4,000 or more. Remember that initial cost is just the beginning - budget for ongoing expenses like food, veterinary care, grooming, and training.</p>
           </Panel>
           <Panel header="What if I need to travel to pick up my puppy?" key="4">
-            <p>Many breeders offer delivery services or can coordinate safe transport. If you're traveling, bring a secure carrier, plan for stops every 2-3 hours, and ensure your puppy is comfortable. Some breeders may recommend waiting until the puppy is slightly older for long trips.</p>
+            <p>Many breeders offer delivery services or can coordinate safe transport. If you&apos;re traveling, bring a secure carrier, plan for stops every 2-3 hours, and ensure your puppy is comfortable. Some breeders may recommend waiting until the puppy is slightly older for long trips.</p>
           </Panel>
           <Panel header="What health guarantees should I expect?" key="5">
             <p>Reputable breeders typically offer health guarantees covering genetic conditions for 1-2 years, require a veterinary exam within 72 hours of pickup, and provide vaccination records. The specific terms vary by breeder, so review contracts carefully.</p>

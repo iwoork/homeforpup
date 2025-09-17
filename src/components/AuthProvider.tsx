@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setConfigError(null);
         setConfigReady(true);
       } catch (error) {
-        setConfigError('Failed to initialize authentication configuration.');
+        setConfigError('Failed to initialize authentication configuration. Error: ' + error);
       }
     };
 

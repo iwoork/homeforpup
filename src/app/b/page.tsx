@@ -5,8 +5,6 @@ import { Card, Row, Col, Typography, Select, Input, Button, Rate, Tag, Avatar, S
 import { 
   SearchOutlined, 
   EnvironmentOutlined, 
-  PhoneOutlined, 
-  MailOutlined, 
   CheckCircleOutlined, 
   StarOutlined,
   HeartOutlined,
@@ -19,8 +17,36 @@ import Link from 'next/link';
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
+// Breeder interface for type safety
+interface Breeder {
+  id: number;
+  name: string;
+  businessName: string;
+  location: string;
+  state: string;
+  distance: number;
+  phone: string;
+  email: string;
+  website: string;
+  experience: number;
+  breeds: string[];
+  rating: number;
+  reviewCount: number;
+  verified: boolean;
+  profileImage: string;
+  coverImage: string;
+  about: string;
+  certifications: string[];
+  healthTesting: string[];
+  currentLitters: number;
+  availablePuppies: number;
+  pricing: string;
+  shipping: boolean;
+  specialties: string[];
+}
+
 // Mock breeder data
-const breeders = [
+const breeders: Breeder[] = [
   {
     id: 1,
     name: "Sarah Johnson",
@@ -197,7 +223,7 @@ const BreederDirectoryPage: React.FC = () => {
     overflow: 'hidden'
   };
 
-  const renderBreederCard = (breeder: any) => (
+  const renderBreederCard = (breeder: Breeder) => (
     <Card key={breeder.id} style={cardStyle} hoverable>
       <Row gutter={16}>
         {/* Cover Image */}
@@ -277,7 +303,7 @@ const BreederDirectoryPage: React.FC = () => {
               <div style={{ marginBottom: '8px' }}>
                 <Text strong>Breeds:</Text>
                 <div style={{ marginTop: '4px' }}>
-                  {breeder.breeds.map(breed => (
+                  {breeder.breeds.map((breed: string) => (
                     <Tag key={breed} color="blue" style={{ marginBottom: '2px' }}>
                       {breed}
                     </Tag>
@@ -295,8 +321,8 @@ const BreederDirectoryPage: React.FC = () => {
             <Col span={24}>
               <div style={{ marginBottom: '8px' }}>
                 <Text strong style={{ fontSize: '12px' }}>Health Testing: </Text>
-                {breeder.healthTesting.slice(0, 2).map(test => (
-                  <Tag key={test} size="small" color="green">
+                {breeder.healthTesting.slice(0, 2).map((test: string) => (
+                  <Tag key={test} color="green">
                     {test}
                   </Tag>
                 ))}
@@ -315,7 +341,7 @@ const BreederDirectoryPage: React.FC = () => {
                       {breeder.pricing}
                     </Text>
                     {breeder.shipping && (
-                      <Tag color="orange" size="small">Shipping Available</Tag>
+                      <Tag color="orange">Shipping Available</Tag>
                     )}
                   </Space>
                 </Col>

@@ -5,7 +5,6 @@ import { Card, Row, Col, Typography, Button, Statistic, List, Spin } from 'antd'
 import { PlusOutlined, EyeOutlined, HeartOutlined, StarOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { dbOperations } from '@/lib/dynamodb';
 import { Litter, Dog } from '@/types';
 
 const { Title } = Typography;
@@ -76,7 +75,7 @@ const DashboardPage: React.FC = () => {
       <div style={{ marginBottom: '32px' }}>
         <Title level={1} style={{ color: '#08979C' }}>Dashboard</Title>
         <p style={{ color: '#595959', fontSize: '16px' }}>
-          Welcome back! Here's your breeding operation overview.
+          Welcome back! Here&apos;s your breeding operation overview.
         </p>
       </div>
 

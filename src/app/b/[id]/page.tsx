@@ -1,20 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Avatar, Button, Tabs, Timeline, Image, Tag, Divider, Space, Rate, Badge } from 'antd';
+import { Card, Row, Col, Typography, Avatar, Button, Tabs, Image, Tag, Divider, Space, Rate } from 'antd';
 import { 
   HeartOutlined, 
-  CameraOutlined, 
   CalendarOutlined, 
   EnvironmentOutlined,
   PhoneOutlined,
   MailOutlined,
-  StarOutlined,
   MessageOutlined,
   ShareAltOutlined,
   CheckCircleOutlined,
   TrophyOutlined,
-  HomeOutlined
 } from '@ant-design/icons';
 
 const { Title, Paragraph, Text } = Typography;
@@ -42,8 +39,22 @@ const breederData = {
   currentFamilies: 298
 };
 
+// Post interface for better type safety
+interface Post {
+  id: number;
+  type: string;
+  date: string;
+  title: string;
+  content: string;
+  images?: string[];
+  likes: number;
+  comments: number;
+  isFromFamily?: boolean;
+  familyName?: string;
+}
+
 // Mock posts data
-const posts = [
+const posts: Post[] = [
   {
     id: 1,
     type: "litter_announcement",
@@ -97,7 +108,7 @@ const BreederCommunityPage: React.FC = () => {
     marginBottom: '16px'
   };
 
-  const renderPost = (post: any) => (
+  const renderPost = (post: Post) => (
     <Card key={post.id} style={cardStyle}>
       <div style={{ marginBottom: '12px' }}>
         <Space align="center">
@@ -119,12 +130,13 @@ const BreederCommunityPage: React.FC = () => {
           <Image.PreviewGroup>
             <Row gutter={[8, 8]}>
               {post.images.map((img: string, idx: number) => (
-                <Col key={idx} span={post.images.length === 1 ? 24 : 8}>
+                <Col key={idx} span={post.images!.length === 1 ? 24 : 8}>
                   <Image
                     src={img}
+                    alt={`Post image ${idx + 1}`}
                     style={{ 
                       width: '100%', 
-                      height: post.images.length === 1 ? '300px' : '150px',
+                      height: post.images!.length === 1 ? '300px' : '150px',
                       objectFit: 'cover',
                       borderRadius: '8px'
                     }}
@@ -320,13 +332,13 @@ const BreederCommunityPage: React.FC = () => {
                 <Title level={4}>Meet Our Breeding Dogs</Title>
                 <Row gutter={[16, 16]}>
                   <Col xs={24} sm={12}>
-                    <Card cover={<Image src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300" />}>
+                    <Card cover={<Image src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300" alt="Bella - F1 Cavapoo" />}>
                       <Title level={5}>Bella</Title>
                       <Text>F1 Cavapoo • Health Tested • Champion Bloodline</Text>
                     </Card>
                   </Col>
                   <Col xs={24} sm={12}>
-                    <Card cover={<Image src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&h=300" />}>
+                    <Card cover={<Image src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&h=300" alt="Max - Poodle Stud" />}>
                       <Title level={5}>Max</Title>
                       <Text>Poodle Stud • OFA Certified • Proven Producer</Text>
                     </Card>
@@ -350,7 +362,7 @@ const BreederCommunityPage: React.FC = () => {
                           </div>
                           <Text type="secondary">2 weeks ago</Text>
                           <Paragraph style={{ marginTop: '8px' }}>
-                            "Sarah was amazing throughout the entire process. Our goldendoodle Charlie is healthy, well-socialized, and has the most wonderful temperament. Highly recommend Happy Tails!"
+                            &ldquo;Sarah was amazing throughout the entire process. Our goldendoodle Charlie is healthy, well-socialized, and has the most wonderful temperament. Highly recommend Happy Tails!&rdquo;
                           </Paragraph>
                         </div>
                       </Space>

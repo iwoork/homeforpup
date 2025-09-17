@@ -122,20 +122,20 @@ const HomePage: React.FC = () => {
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>"We found our Cavapoo through HomeForPup and couldn’t be happier. The breeder was amazing and supportive!"</Paragraph>
-                <Title level={4}>— Sarah & Max</Title>
+                <Paragraph>&ldquo;We found our Cavapoo through HomeForPup and couldn&rsquo;t be happier. The breeder was amazing and supportive!&rdquo;</Paragraph>
+                <Title level={4}>&mdash; Sarah & Max</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>"Our golden retriever came home healthy and happy. The process was seamless and stress-free."</Paragraph>
-                <Title level={4}>— Daniel Family</Title>
+                <Paragraph>&ldquo;Our golden retriever came home healthy and happy. The process was seamless and stress-free.&rdquo;</Paragraph>
+                <Title level={4}>&mdash; Daniel Family</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>"We loved the transparency. Seeing health records and breeder info made us confident in our choice."</Paragraph>
-                <Title level={4}>— Priya & Amit</Title>
+                <Paragraph>&ldquo;We loved the transparency. Seeing health records and breeder info made us confident in our choice.&rdquo;</Paragraph>
+                <Title level={4}>&mdash; Priya & Amit</Title>
               </Card>
             </Col>
           </Row>

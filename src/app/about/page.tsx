@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, Row, Col, Typography, Button, Timeline, Statistic, Space, Divider } from 'antd';
+import { Card, Row, Col, Typography, Button, Timeline, Statistic, Space  } from 'antd';
 import { 
   HeartOutlined, 
   SafetyOutlined, 
@@ -71,7 +71,7 @@ const AboutPage: React.FC = () => {
             maxWidth: '600px',
             margin: '0 auto 48px'
           }}>
-            We're building a trusted community where ethical breeders and loving families connect through 
+            We&apos;re building a trusted community where ethical breeders and loving families connect through 
             transparency, shared values, and lifelong relationships that extend far beyond adoption day.
           </Paragraph>
           
@@ -235,7 +235,7 @@ const AboutPage: React.FC = () => {
                   <div>
                     <Text strong>Welcome Home & Beyond</Text>
                     <Paragraph style={{ margin: '4px 0 0 0' }}>
-                      Stay connected with your breeder community, share updates, and receive ongoing support for your puppy's journey.
+                      Stay connected with your breeder community, share updates, and receive ongoing support for your puppy&apos;s journey.
                     </Paragraph>
                   </div>
                 )
@@ -429,7 +429,7 @@ const AboutPage: React.FC = () => {
             Ready to Join Our Community?
           </Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)' }}>
-            Whether you're looking for your perfect puppy companion or you're a breeder committed to ethical practices, 
+            Whether you&apos;re looking for your perfect puppy companion or you&apos;re a breeder committed to ethical practices, 
             HomeForPup is here to connect you with your community.
           </Paragraph>
           <Space size="large">

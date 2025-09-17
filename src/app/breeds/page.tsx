@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button, Divider } from 'antd';
+import { Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button } from 'antd';
 import { 
   SearchOutlined, 
-  HeartOutlined, 
   HomeOutlined,
-  UserOutlined,
   ThunderboltOutlined,
   SafetyOutlined
 } from '@ant-design/icons';
@@ -413,10 +411,10 @@ const BreedsPage: React.FC = () => {
                 <Text strong style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}>Temperament:</Text>
                 <Space wrap size={[4, 4]}>
                   {breed.temperament.slice(0, 4).map(trait => (
-                    <Tag key={trait} size="small" color="default">{trait}</Tag>
+                    <Tag key={trait} color="default">{trait}</Tag>
                   ))}
                   {breed.temperament.length > 4 && (
-                    <Tag size="small">+{breed.temperament.length - 4} more</Tag>
+                    <Tag>+{breed.temperament.length - 4} more</Tag>
                   )}
                 </Space>
               </div>
@@ -461,7 +459,7 @@ const BreedsPage: React.FC = () => {
                       </Text>
                       <Space wrap size={[4, 4]}>
                         {breed.idealFor.map(ideal => (
-                          <Tag key={ideal} size="small" color="blue">{ideal}</Tag>
+                          <Tag key={ideal} color="blue">{ideal}</Tag>
                         ))}
                       </Space>
                     </div>

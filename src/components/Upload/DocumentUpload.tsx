@@ -29,7 +29,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
     setUploading(true);
     try {
-      const fileExtension = file.name.split('.').pop();
       const key = `documents/${uuidv4()}_${file.name}`;
       const url = await s3Operations.uploadFile(file, key);
       
