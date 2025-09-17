@@ -152,7 +152,6 @@ const PuppiesPage: React.FC = () => {
             styles={{
               actions: {
                 borderTop: '1px solid #f0f0f0',
-                background: '#fafafa',
               }
             }}
             cover={
