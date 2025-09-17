@@ -374,7 +374,7 @@ const BreederDirectoryPage: React.FC = () => {
   );
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 16px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <Title level={1} style={{ color: '#08979C' }}>
           Find Ethical Breeders
