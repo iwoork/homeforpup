@@ -1,0 +1,128 @@
+'use client';
+
+import React from 'react';
+import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert } from 'antd';
+import { UserOutlined, LogoutOutlined, HomeOutlined, PlusOutlined } from '@ant-design/icons';
+import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+
+const { Header: AntHeader } = Layout;
+
+const Header: React.FC = () => {
+  const { user, signIn, signOut, error } = useAuth();
+
+  const handleMenuClick = ({ key }: { key: string }) => {
+    if (key === 'logout') {
+      signOut();
+    }
+  };
+
+  const userMenu = {
+    items: [
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: <Link href="/dashboard/profile">Profile</Link>,
+      },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: 'Logout',
+      },
+    ],
+    onClick: handleMenuClick,
+  };
+
+  const navigationItems = [
+    {
+      key: 'dashboard',
+      icon: <HomeOutlined />,
+      label: <Link href="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: 'litters',
+      icon: <PlusOutlined />,
+      label: <Link href="/dashboard/litters">My Litters</Link>,
+    },
+  ];
+
+  return (
+    <>
+      <AntHeader style={{ 
+        background: '#fff', 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        borderBottom: '1px solid #f0f0f0',
+        padding: '0 24px'
+      }}>
+        <Row justify="space-between" align="middle" style={{ height: '100%', maxWidth: 1200, margin: '0 auto' }}>
+          <Col>
+            <Row align="middle" gutter={32}>
+              <Col>
+                <Link href="/" style={{ textDecoration: 'none' }}>
+                  <div style={{ 
+                    fontSize: '24px', 
+                    fontWeight: 'bold', 
+                    color: '#ff6b35',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    🐕 HomeForPup
+                  </div>
+                </Link>
+              </Col>
+              
+              {user && (
+                <Col>
+                  <Menu 
+                    mode="horizontal" 
+                    style={{ border: 'none', background: 'transparent' }}
+                    items={navigationItems}
+                  />
+                </Col>
+              )}
+            </Row>
+          </Col>
+
+          <Col>
+            {user ? (
+              <Dropdown menu={userMenu} placement="bottomRight">
+                <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Avatar icon={<UserOutlined />} />
+                  <span>{user.name}</span>
+                </Button>
+              </Dropdown>
+            ) : (
+              <Row gutter={8}>
+                <Col>
+                  <Button onClick={signIn}>Login</Button>
+                </Col>
+                <Col>
+                  <Button 
+                    type="primary" 
+                    onClick={signIn}
+                    style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
+                  >
+                    Join as Breeder
+                  </Button>
+                </Col>
+              </Row>
+            )}
+          </Col>
+        </Row>
+      </AntHeader>
+      
+      {error && (
+        <Alert
+          message="Authentication Error"
+          description={error}
+          type="error"
+          closable
+          style={{ margin: '8px 24px' }}
+        />
+      )}
+    </>
+  );
+};
+
+export default Header;
