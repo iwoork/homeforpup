@@ -53,29 +53,31 @@ const PuppiesPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px 8px' }}>
-      <Title level={1} style={{ color: '#08979C', marginBottom: '16px', fontSize: '24px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
+      <Title level={1} style={{ color: '#08979C', marginBottom: '24px' }}>
         Available Puppies
       </Title>
 
-      {/* Compact Mobile-Friendly Filters */}
+      {/* Responsive Filters */}
       <Card
         style={{
-          marginBottom: '16px',
-          borderRadius: '8px',
+          marginBottom: '24px',
+          borderRadius: '12px',
         }}
-        bodyStyle={{ padding: '12px' }}
+        bodyStyle={{ 
+          padding: window.innerWidth < 768 ? '12px' : '24px' 
+        }}
       >
-        <Row gutter={[8, 8]} align="middle">
-          {/* Top row - Main filters */}
-          <Col xs={8} sm={6} md={4}>
+        <Row gutter={[16, 16]} align="middle">
+          {/* Breed */}
+          <Col xs={8} sm={12} md={6}>
             <Select
               style={{ width: '100%' }}
               placeholder="Breed"
               value={filters.breed}
               onChange={value => setFilters(prev => ({ ...prev, breed: value }))}
               allowClear
-              size="small"
+              size={window.innerWidth < 768 ? "small" : "middle"}
             >
               {breeds.map(breed => (
                 <Option key={breed} value={breed}>{breed}</Option>
@@ -83,28 +85,30 @@ const PuppiesPage: React.FC = () => {
             </Select>
           </Col>
 
-          <Col xs={8} sm={6} md={3}>
+          {/* Gender */}
+          <Col xs={8} sm={12} md={4}>
             <Select
               style={{ width: '100%' }}
               placeholder="Gender"
               value={filters.gender}
               onChange={value => setFilters(prev => ({ ...prev, gender: value }))}
               allowClear
-              size="small"
+              size={window.innerWidth < 768 ? "small" : "middle"}
             >
               <Option value="Male">Male</Option>
               <Option value="Female">Female</Option>
             </Select>
           </Col>
 
-          <Col xs={8} sm={6} md={4}>
+          {/* Location */}
+          <Col xs={8} sm={12} md={6}>
             <Select
               style={{ width: '100%' }}
               placeholder="Location"
               value={filters.location}
               onChange={value => setFilters(prev => ({ ...prev, location: value }))}
               allowClear
-              size="small"
+              size={window.innerWidth < 768 ? "small" : "middle"}
             >
               {locations.map(loc => (
                 <Option key={loc} value={loc}>{loc}</Option>
@@ -112,53 +116,57 @@ const PuppiesPage: React.FC = () => {
             </Select>
           </Col>
 
-          {/* Second row - Price, Shipping, Reset */}
-          <Col xs={12} sm={8} md={6}>
-            <div>
-              <Paragraph style={{ marginBottom: 2, fontSize: '11px', color: '#666' }}>
-                Price: ${filters.price[0]} - ${filters.price[1]}
-              </Paragraph>
-              <Slider
-                range
-                min={500}
-                max={5000}
-                step={100}
-                value={filters.price}
-                onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
-              />
-            </div>
+          {/* Price */}
+          <Col xs={12} md={6}>
+            <Paragraph style={{ 
+              marginBottom: window.innerWidth < 768 ? 2 : 4, 
+              fontSize: window.innerWidth < 768 ? '11px' : '12px',
+              color: '#666'
+            }}>
+              Price: ${filters.price[0]} - ${filters.price[1]}
+            </Paragraph>
+            <Slider
+              range
+              min={500}
+              max={5000}
+              step={100}
+              value={filters.price}
+              onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
+            />
           </Col>
 
-          <Col xs={6} sm={4} md={3}>
+          {/* Shipping */}
+          <Col xs={6} sm={12} md={2}>
             <Checkbox
               checked={filters.shipping}
               onChange={e => setFilters(prev => ({ ...prev, shipping: e.target.checked }))}
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}
             >
-              Ship
+              {window.innerWidth < 768 ? 'Ship' : 'Shipping'}
             </Checkbox>
           </Col>
 
-          <Col xs={6} sm={4} md={4}>
+          {/* Reset Button */}
+          <Col xs={6} sm={12} md={24} style={{ textAlign: 'right' }}>
             <Button
               type="primary"
-              size="small"
+              size={window.innerWidth < 768 ? "small" : "middle"}
               style={{ 
                 background: '#FA8072', 
                 borderColor: '#FA8072',
-                fontSize: '11px',
-                width: '100%'
+                fontSize: window.innerWidth < 768 ? '11px' : '14px',
+                width: window.innerWidth < 768 ? '100%' : 'auto'
               }}
               onClick={resetFilters}
             >
-              Reset
+              {window.innerWidth < 768 ? 'Reset' : 'Reset Filters'}
             </Button>
           </Col>
         </Row>
       </Card>
 
       {/* Puppy Listings */}  
-      <Row gutter={[12, 12]}>
+      <Row gutter={[16, 16]}>
       {filteredPuppies.map((puppy) => (
         <Col xs={24} sm={12} md={6} key={puppy.id}>
           <Card
@@ -208,7 +216,7 @@ const PuppiesPage: React.FC = () => {
               }}
             >
               <div>
-                <Title level={5} style={{ marginBottom: '4px', lineHeight: '1.2' }}>
+                <Title level={4} style={{ marginBottom: '4px', lineHeight: '1.2' }}>
                   {puppy.name}
                 </Title>
                 <Paragraph style={{ margin: 0, fontSize: '13px', color: '#595959', lineHeight: '1.3' }}>
