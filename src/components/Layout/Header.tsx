@@ -2,15 +2,17 @@
 
 import React from 'react';
 import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert } from 'antd';
-import { UserOutlined, LogoutOutlined, HomeOutlined, PlusOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, HomeOutlined, PlusOutlined, HeartOutlined, TeamOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
+import { usePathname } from 'next/navigation';
 
 const { Header: AntHeader } = Layout;
 
 const Header: React.FC = () => {
   const { user, signIn, signOut, error } = useAuth();
+  const pathname = usePathname();
 
   const handleMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
@@ -34,18 +36,43 @@ const Header: React.FC = () => {
     onClick: handleMenuClick,
   };
 
-  const navigationItems = [
+  // Public navigation items (always visible)
+  const publicNavigationItems = [
     {
-      key: 'dashboard',
+      key: '/browse',
+      icon: <HeartOutlined />,
+      label: <Link href="/browse">Puppies</Link>,
+    },
+    {
+      key: '/b',
+      icon: <TeamOutlined />,
+      label: <Link href="/b">Breeders</Link>,
+    },
+    {
+      key: '/about',
+      icon: <UserOutlined />,
+      label: <Link href="/about">About</Link>,
+    },
+  ];
+
+  // Authenticated user navigation items (only when logged in)
+  const authNavigationItems = [
+    {
+      key: '/dashboard',
       icon: <HomeOutlined />,
       label: <Link href="/dashboard">Dashboard</Link>,
     },
     {
-      key: 'litters',
+      key: '/dashboard/litters',
       icon: <PlusOutlined />,
       label: <Link href="/dashboard/litters">My Litters</Link>,
     },
   ];
+
+  // Combine navigation items based on authentication status
+  const navigationItems = user 
+    ? [...publicNavigationItems, ...authNavigationItems]
+    : publicNavigationItems;
 
   return (
     <>
@@ -81,15 +108,19 @@ const Header: React.FC = () => {
                 </Link>
               </Col>
               
-              {user && (
-                <Col>
-                  <Menu 
-                    mode="horizontal" 
-                    style={{ border: 'none', background: 'transparent' }}
-                    items={navigationItems}
-                  />
-                </Col>
-              )}
+              <Col>
+                <Menu 
+                  mode="horizontal" 
+                  style={{ 
+                    border: 'none', 
+                    background: 'transparent',
+                    minWidth: '300px' // Ensure enough space for all items
+                  }}
+                  selectedKeys={[pathname]}
+                  items={navigationItems}
+                  overflowedIndicator={null} // Disable the collapse behavior
+                />
+              </Col>
             </Row>
           </Col>
 
