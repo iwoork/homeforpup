@@ -24,7 +24,8 @@ const Header: React.FC = () => {
   const pathname = usePathname();
   const [drawerVisible, setDrawerVisible] = useState(false);
 
-  const handleMenuClick = ({ key }: { key: string }) => {
+  const handleMenuClick = (e: any) => {
+    const key = e.key || e;
     if (key === 'logout') {
       signOut();
     }
@@ -150,11 +151,17 @@ const Header: React.FC = () => {
           /* Fix for Menu component to ensure all items are visible */
           .ant-menu-horizontal {
             line-height: 64px;
+            border-bottom: none !important;
           }
           .ant-menu-horizontal > .ant-menu-item,
           .ant-menu-horizontal > .ant-menu-submenu {
-            border-bottom: 2px solid transparent;
+            border-bottom: 2px solid transparent !important;
             margin: 0 8px;
+            position: relative;
+          }
+          .ant-menu-horizontal > .ant-menu-item::after,
+          .ant-menu-horizontal > .ant-menu-submenu::after {
+            display: none !important;
           }
           .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item:hover,
           .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu:hover,
@@ -164,8 +171,11 @@ const Header: React.FC = () => {
           .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-open,
           .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item-selected,
           .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-selected {
-            color: #08979C;
-            border-bottom-color: #08979C;
+            color: #08979C !important;
+            border-bottom: 2px solid #08979C !important;
+          }
+          .ant-menu-horizontal::after {
+            display: none !important;
           }
         `}</style>
         <Row justify="space-between" align="middle" style={{ height: '100%', maxWidth: 1200, margin: '0 auto' }}>

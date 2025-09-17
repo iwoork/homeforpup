@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
                 backgroundClip: 'text',
                 marginBottom: '12px'
               }}>
-                HomeForPup
+                Home For Pup
               </div>
               <Text style={{ color: '#666', lineHeight: '1.6' }}>
                 Connecting ethical breeders with loving families through transparency, trust, and community.
@@ -137,7 +137,7 @@ const Footer: React.FC = () => {
             </Space>
             <Space>
               <EnvironmentOutlined style={{ color: '#08979C' }} />
-              <Text style={{ fontSize: '12px' }}>Available across the United States</Text>
+              <Text style={{ fontSize: '12px' }}>Available across Canada</Text>
             </Space>
           </Space>
         </div>

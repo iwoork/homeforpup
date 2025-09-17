@@ -113,22 +113,47 @@ export const useAuth = (): UseAuthReturn => {
     try {
       setError(null);
       
-      // Use the Cognito logout endpoint for proper logout
+      // Clear local user state immediately
+      setUser(null);
+      
+      // First, remove the OIDC user from local storage/session
+      await oidcAuth.removeUser();
+      
+      // Get environment variables
       const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
       const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
       const logoutUri = encodeURIComponent(window.location.origin);
       
       if (cognitoDomain && clientId) {
-        // Redirect to Cognito logout
-        window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
+        // Clear any additional browser storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Redirect to Cognito logout with proper parameters
+        const logoutUrl = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}&response_type=code`;
+        window.location.href = logoutUrl;
       } else {
-        // Fallback to OIDC logout
-        await oidcAuth.signoutRedirect();
+        // Fallback: try OIDC logout first, then manual cleanup
+        try {
+          await oidcAuth.signoutRedirect();
+        } catch (oidcError) {
+          console.warn('OIDC signout failed, clearing manually:', oidcError);
+          // Manual cleanup
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location.href = '/';
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign out';
       setError(errorMessage);
       console.error('Sign out error:', error);
+      
+      // Fallback: force logout by clearing everything and redirecting
+      setUser(null);
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
     }
   }, [oidcAuth]);
 

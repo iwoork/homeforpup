@@ -180,7 +180,7 @@ const PuppiesPage: React.FC = () => {
               }}
             >
               <div>
-                <Title level={5} style={{ marginBottom: '4px', lineHeight: '1.2' }}>
+                <Title level={4} style={{ marginTop: 0, marginBottom: '4px', lineHeight: '1.2' }}>
                   {puppy.name}
                 </Title>
                 <Paragraph style={{ margin: 0, fontSize: '13px', color: '#595959', lineHeight: '1.3' }}>

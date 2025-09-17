@@ -432,28 +432,41 @@ const AboutPage: React.FC = () => {
             Whether you&apos;re looking for your perfect puppy companion or you&apos;re a breeder committed to ethical practices, 
             HomeForPup is here to connect you with your community.
           </Paragraph>
-          <Space size="large">
-            <Link href="/browse">
-              <Button size="large" style={{ height: '48px', padding: '0 32px', fontSize: '18px' }}>
-                Browse Available Puppies
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button 
-                size="large" 
-                style={{ 
-                  height: '48px', 
-                  padding: '0 32px', 
-                  fontSize: '18px',
-                  background: 'transparent',
-                  borderColor: 'white',
-                  color: 'white'
-                }}
-              >
-                Become a Verified Breeder
-              </Button>
-            </Link>
-          </Space>
+          <Row gutter={[16, 16]} justify="center">
+            <Col xs={24} sm={12} md={10}>
+              <Link href="/browse">
+                <Button 
+                  block
+                  size="large" 
+                  style={{ 
+                    height: '48px', 
+                    fontSize: '16px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Browse Available Puppies
+                </Button>
+              </Link>
+            </Col>
+            <Col xs={24} sm={12} md={10}>
+              <Link href="/auth/register">
+                <Button 
+                  block
+                  size="large" 
+                  style={{ 
+                    height: '48px', 
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    background: 'transparent',
+                    borderColor: 'white',
+                    color: 'white'
+                  }}
+                >
+                  Become a Verified Breeder
+                </Button>
+              </Link>
+            </Col>
+          </Row>
         </div>
       </section>
     </div>
