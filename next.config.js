@@ -7,6 +7,21 @@ const nextConfig = {
           hostname: '*.s3.amazonaws.com',
           pathname: '/**',
         },
+        {
+          protocol: 'https',
+          hostname: 'placedog.net',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
+          hostname: 'picsum.photos',
+          pathname: '/**',
+        },
+        {
+          protocol: 'https',
+          hostname: 'images.unsplash.com',
+          pathname: '/**',
+        }
       ],
     },
     env: {

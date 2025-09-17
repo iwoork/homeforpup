@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Drawer, Badge } from 'antd';
-import { HeartOutlined, FilterOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button } from 'antd';
+import { HeartOutlined } from '@ant-design/icons';
+import Image from 'next/image';
 
 const { Title, Paragraph } = Typography;
 const { Option } = Select;
@@ -35,7 +36,6 @@ const PuppiesPage: React.FC = () => {
     price: [1000, 4000],
     shipping: false,
   });
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const filteredPuppies = puppies.filter(p => {
     return (
@@ -48,105 +48,9 @@ const PuppiesPage: React.FC = () => {
     );
   });
 
-  // Count active filters for mobile badge
-  const activeFiltersCount = [
-    filters.breed,
-    filters.gender,
-    filters.location,
-    filters.shipping,
-    filters.price[0] !== 1000 || filters.price[1] !== 4000
-  ].filter(Boolean).length;
-
   const resetFilters = () => {
     setFilters({ breed: null, gender: null, location: null, price: [1000, 4000], shipping: false });
-    setMobileFiltersOpen(false);
   };
-
-  const FilterContent = () => (
-    <>
-      {/* Breed */}
-      <div style={{ marginBottom: '16px' }}>
-        <Typography.Text strong style={{ display: 'block', marginBottom: '8px' }}>Breed</Typography.Text>
-        <Select
-          style={{ width: '100%' }}
-          placeholder="Select breed"
-          value={filters.breed}
-          onChange={value => setFilters(prev => ({ ...prev, breed: value }))}
-          allowClear
-        >
-          {breeds.map(breed => (
-            <Option key={breed} value={breed}>{breed}</Option>
-          ))}
-        </Select>
-      </div>
-
-      {/* Gender */}
-      <div style={{ marginBottom: '16px' }}>
-        <Typography.Text strong style={{ display: 'block', marginBottom: '8px' }}>Gender</Typography.Text>
-        <Select
-          style={{ width: '100%' }}
-          placeholder="Select gender"
-          value={filters.gender}
-          onChange={value => setFilters(prev => ({ ...prev, gender: value }))}
-          allowClear
-        >
-          <Option value="Male">Male</Option>
-          <Option value="Female">Female</Option>
-        </Select>
-      </div>
-
-      {/* Location */}
-      <div style={{ marginBottom: '16px' }}>
-        <Typography.Text strong style={{ display: 'block', marginBottom: '8px' }}>Location</Typography.Text>
-        <Select
-          style={{ width: '100%' }}
-          placeholder="Select location"
-          value={filters.location}
-          onChange={value => setFilters(prev => ({ ...prev, location: value }))}
-          allowClear
-        >
-          {locations.map(loc => (
-            <Option key={loc} value={loc}>{loc}</Option>
-          ))}
-        </Select>
-      </div>
-
-      {/* Price */}
-      <div style={{ marginBottom: '16px' }}>
-        <Typography.Text strong style={{ display: 'block', marginBottom: '8px' }}>
-          Price Range: ${filters.price[0].toLocaleString()} - ${filters.price[1].toLocaleString()}
-        </Typography.Text>
-        <Slider
-          range
-          min={500}
-          max={5000}
-          step={100}
-          value={filters.price}
-          onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
-        />
-      </div>
-
-      {/* Shipping */}
-      <div style={{ marginBottom: '24px' }}>
-        <Checkbox
-          checked={filters.shipping}
-          onChange={e => setFilters(prev => ({ ...prev, shipping: e.target.checked }))}
-        >
-          <Typography.Text strong>Shipping Available</Typography.Text>
-        </Checkbox>
-      </div>
-
-      {/* Reset Button */}
-      <Button
-        block
-        type="primary"
-        style={{ background: '#FA8072', borderColor: '#FA8072' }}
-        onClick={resetFilters}
-      >
-        Reset All Filters
-      </Button>
-    </>
-  );
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
@@ -171,6 +75,7 @@ const PuppiesPage: React.FC = () => {
             <Select
               style={{ width: '100%' }}
               placeholder="Breed"
+              value={filters.breed}
               onChange={value => setFilters(prev => ({ ...prev, breed: value }))}
               allowClear
             >
@@ -185,6 +90,7 @@ const PuppiesPage: React.FC = () => {
             <Select
               style={{ width: '100%' }}
               placeholder="Gender"
+              value={filters.gender}
               onChange={value => setFilters(prev => ({ ...prev, gender: value }))}
               allowClear
             >
@@ -198,6 +104,7 @@ const PuppiesPage: React.FC = () => {
             <Select
               style={{ width: '100%' }}
               placeholder="Location"
+              value={filters.location}
               onChange={value => setFilters(prev => ({ ...prev, location: value }))}
               allowClear
             >
@@ -215,7 +122,7 @@ const PuppiesPage: React.FC = () => {
               min={500}
               max={5000}
               step={100}
-              defaultValue={filters.price}
+              value={filters.price}
               onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
             />
           </Col>
@@ -235,9 +142,7 @@ const PuppiesPage: React.FC = () => {
             <Button
               type="primary"
               style={{ background: '#FA8072', borderColor: '#FA8072' }}
-              onClick={() =>
-                setFilters({ breed: null, gender: null, location: null, price: [1000, 4000], shipping: false })
-              }
+              onClick={resetFilters}
             >
               Reset Filters
             </Button>
@@ -247,7 +152,7 @@ const PuppiesPage: React.FC = () => {
 
       {/* Puppy Listings */}  
       <Row gutter={[16, 16]}>
-      {filteredPuppies.map((puppy, id) => (
+      {filteredPuppies.map((puppy) => (
         <Col xs={24} sm={12} md={6} key={puppy.id}>
           <Card
             hoverable
@@ -264,9 +169,11 @@ const PuppiesPage: React.FC = () => {
               }
             }}
             cover={
-              <img
-                src={`https://placedog.net/500?id=${id+1}&random`}
+              <Image
+                src={`https://placedog.net/500/300?id=${puppy.id}&random`}
                 alt={puppy.name}
+                width={500}
+                height={180}
                 style={{
                   height: '180px',
                   objectFit: 'cover',
