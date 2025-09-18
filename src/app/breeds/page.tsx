@@ -1,271 +1,122 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button, Spin, Alert, Pagination } from 'antd';
 import { 
   SearchOutlined, 
   HomeOutlined,
   ThunderboltOutlined,
-  SafetyOutlined
+  SafetyOutlined,
+  LoadingOutlined
 } from '@ant-design/icons';
+import Image from 'next/image';
+import useSWR from 'swr';
+import { useMemo } from 'react';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
-// Comprehensive breed data
-const breeds = [
-  {
-    id: 1,
-    name: "Golden Retriever",
-    category: "Sporting",
-    size: "Large",
-    image: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300",
-    overview: "Friendly, intelligent, and devoted dogs that make excellent family companions and are great with children.",
-    characteristics: {
-      energyLevel: 8,
-      friendliness: 9,
-      trainability: 9,
-      groomingNeeds: 6,
-      goodWithKids: 10,
-      goodWithPets: 8
-    },
-    physicalTraits: {
-      weight: "55-75 lbs",
-      height: "21-24 inches",
-      lifespan: "10-12 years",
-      coat: "Dense, water-repellent double coat"
-    },
-    temperament: ["Friendly", "Intelligent", "Devoted", "Patient", "Gentle"],
-    idealFor: ["Families with children", "Active owners", "First-time owners"],
-    exerciseNeeds: "High - 60+ minutes daily",
-    commonHealthIssues: ["Hip dysplasia", "Elbow dysplasia", "Heart disease", "Eye conditions"],
-    groomingTips: "Weekly brushing, daily during shedding seasons. Regular baths and nail trims.",
-    trainingTips: "Highly trainable and eager to please. Respond well to positive reinforcement.",
-    funFacts: ["Originally bred to retrieve waterfowl", "Consistently ranks in top 3 most popular breeds", "Natural swimmers"]
-  },
-  {
-    id: 2,
-    name: "Labrador Retriever",
-    category: "Sporting",
-    size: "Large",
-    image: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400&h=300",
-    overview: "Outgoing, active dogs that are friendly and outgoing companions who have more than enough affection to go around for a family.",
-    characteristics: {
-      energyLevel: 9,
-      friendliness: 10,
-      trainability: 9,
-      groomingNeeds: 4,
-      goodWithKids: 10,
-      goodWithPets: 9
-    },
-    physicalTraits: {
-      weight: "55-80 lbs",
-      height: "21.5-24.5 inches",
-      lifespan: "10-12 years",
-      coat: "Short, dense, weather-resistant double coat"
-    },
-    temperament: ["Outgoing", "Active", "Friendly", "Loyal", "Gentle"],
-    idealFor: ["Active families", "Families with children", "First-time owners"],
-    exerciseNeeds: "High - 60+ minutes daily",
-    commonHealthIssues: ["Hip dysplasia", "Elbow dysplasia", "Eye conditions", "Exercise induced collapse"],
-    groomingTips: "Weekly brushing, more during shedding seasons. Regular nail trims and dental care.",
-    trainingTips: "Very trainable and food-motivated. Excel in obedience and agility training.",
-    funFacts: ["America's most popular dog breed", "Excellent swimmers", "Come in three colors: yellow, black, and chocolate"]
-  },
-  {
-    id: 3,
-    name: "French Bulldog",
-    category: "Non-Sporting",
-    size: "Small",
-    image: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=300",
-    overview: "Adaptable, playful, and smart companions with an easygoing personality that makes them perfect city dogs.",
-    characteristics: {
-      energyLevel: 4,
-      friendliness: 8,
-      trainability: 6,
-      groomingNeeds: 3,
-      goodWithKids: 8,
-      goodWithPets: 7
-    },
-    physicalTraits: {
-      weight: "20-28 lbs",
-      height: "11-13 inches",
-      lifespan: "10-12 years",
-      coat: "Short, smooth, fine coat"
-    },
-    temperament: ["Adaptable", "Playful", "Smart", "Alert", "Affectionate"],
-    idealFor: ["Apartment living", "Seniors", "Singles", "Families"],
-    exerciseNeeds: "Low to Moderate - 30 minutes daily",
-    commonHealthIssues: ["Brachycephalic airway syndrome", "Hip dysplasia", "Eye conditions", "Spinal disorders"],
-    groomingTips: "Minimal grooming needed. Weekly brushing and regular nail trims. Clean facial folds daily.",
-    trainingTips: "Can be stubborn but respond to positive reinforcement. Keep training sessions short and fun.",
-    funFacts: ["Originally bred as companions for lace workers", "Cannot swim well due to body structure", "One of the most popular city breeds"]
-  },
-  {
-    id: 4,
-    name: "German Shepherd",
-    category: "Herding",
-    size: "Large",
-    image: "https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?w=400&h=300",
-    overview: "Confident, courageous, and smart working dogs that are extremely versatile, serving as family companions, guard dogs, and service dogs.",
-    characteristics: {
-      energyLevel: 9,
-      friendliness: 7,
-      trainability: 10,
-      groomingNeeds: 7,
-      goodWithKids: 8,
-      goodWithPets: 6
-    },
-    physicalTraits: {
-      weight: "50-90 lbs",
-      height: "22-26 inches",
-      lifespan: "9-13 years",
-      coat: "Double coat with dense outer coat and soft undercoat"
-    },
-    temperament: ["Confident", "Courageous", "Smart", "Loyal", "Versatile"],
-    idealFor: ["Experienced owners", "Active families", "Those wanting a working dog"],
-    exerciseNeeds: "High - 2+ hours daily",
-    commonHealthIssues: ["Hip dysplasia", "Elbow dysplasia", "Bloat", "Degenerative myelopathy"],
-    groomingTips: "Daily brushing required. Shed heavily twice a year. Regular nail trims and dental care.",
-    trainingTips: "Highly intelligent and trainable. Need consistent, positive training and socialization.",
-    funFacts: ["Originally bred for herding sheep", "Popular police and military dogs", "Second most popular breed in the US"]
-  },
-  {
-    id: 5,
-    name: "Poodle",
-    category: "Non-Sporting",
-    size: "Varies",
-    image: "https://images.unsplash.com/photo-1616190167687-b3ebf74aa3af?w=400&h=300",
-    overview: "Exceptionally smart and active dogs with a proud, elegant appearance and confident personality. Come in three sizes.",
-    characteristics: {
-      energyLevel: 7,
-      friendliness: 8,
-      trainability: 10,
-      groomingNeeds: 9,
-      goodWithKids: 9,
-      goodWithPets: 8
-    },
-    physicalTraits: {
-      weight: "6-70 lbs (varies by size)",
-      height: "10-27 inches (varies by size)",
-      lifespan: "12-15 years",
-      coat: "Curly, dense, hypoallergenic coat"
-    },
-    temperament: ["Intelligent", "Active", "Alert", "Trainable", "Elegant"],
-    idealFor: ["Families with allergies", "Active owners", "Those wanting an intelligent dog"],
-    exerciseNeeds: "Moderate to High - 45-60 minutes daily",
-    commonHealthIssues: ["Hip dysplasia", "Progressive retinal atrophy", "Epilepsy", "Bloat"],
-    groomingTips: "Professional grooming every 6-8 weeks. Daily brushing to prevent matting.",
-    trainingTips: "Extremely intelligent and trainable. Excel in obedience, agility, and tricks.",
-    funFacts: ["Hypoallergenic coat", "Come in three sizes: Standard, Miniature, and Toy", "Originally water retrievers"]
-  },
-  {
-    id: 6,
-    name: "Goldendoodle",
-    category: "Designer",
-    size: "Medium to Large",
-    image: "https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=400&h=300",
-    overview: "A cross between Golden Retriever and Poodle, combining the friendly nature of Goldens with the intelligence of Poodles.",
-    characteristics: {
-      energyLevel: 7,
-      friendliness: 9,
-      trainability: 9,
-      groomingNeeds: 7,
-      goodWithKids: 10,
-      goodWithPets: 8
-    },
-    physicalTraits: {
-      weight: "45-75 lbs",
-      height: "20-24 inches",
-      lifespan: "10-15 years",
-      coat: "Wavy to curly, low-shedding coat"
-    },
-    temperament: ["Friendly", "Intelligent", "Energetic", "Gentle", "Social"],
-    idealFor: ["Families with children", "Those with mild allergies", "Active owners"],
-    exerciseNeeds: "Moderate to High - 45-60 minutes daily",
-    commonHealthIssues: ["Hip dysplasia", "Elbow dysplasia", "Eye conditions", "Heart disease"],
-    groomingTips: "Regular brushing 2-3 times per week. Professional grooming every 6-8 weeks.",
-    trainingTips: "Highly trainable and eager to please. Respond well to positive reinforcement.",
-    funFacts: ["First bred in the 1990s", "Often have reduced shedding", "Popular therapy dogs"]
-  },
-  {
-    id: 7,
-    name: "Cavalier King Charles Spaniel",
-    category: "Toy",
-    size: "Small",
-    image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300",
-    overview: "Gentle, friendly, and graceful dogs that combine the sporting nature of a spaniel with the gentle temperament of a toy dog.",
-    characteristics: {
-      energyLevel: 5,
-      friendliness: 10,
-      trainability: 7,
-      groomingNeeds: 6,
-      goodWithKids: 9,
-      goodWithPets: 9
-    },
-    physicalTraits: {
-      weight: "13-18 lbs",
-      height: "12-13 inches",
-      lifespan: "9-14 years",
-      coat: "Silky, medium-length coat with feathering"
-    },
-    temperament: ["Gentle", "Friendly", "Graceful", "Affectionate", "Patient"],
-    idealFor: ["Families with children", "Seniors", "Apartment living", "First-time owners"],
-    exerciseNeeds: "Moderate - 30-45 minutes daily",
-    commonHealthIssues: ["Heart conditions", "Eye problems", "Curly coat syndrome", "Episodic falling"],
-    groomingTips: "Regular brushing 2-3 times per week. Professional grooming as needed.",
-    trainingTips: "Gentle, positive training methods work best. Can be sensitive to harsh corrections.",
-    funFacts: ["Named after King Charles II", "Known as 'comfort spaniels'", "Four recognized color patterns"]
-  },
-  {
-    id: 8,
-    name: "Border Collie",
-    category: "Herding",
-    size: "Medium",
-    image: "https://images.unsplash.com/photo-1551717743-49959800b1f6?w=400&h=300",
-    overview: "Remarkably bright workaholics who are affectionate toward friends but may be reserved with strangers. Bred for herding sheep.",
-    characteristics: {
-      energyLevel: 10,
-      friendliness: 6,
-      trainability: 10,
-      groomingNeeds: 6,
-      goodWithKids: 7,
-      goodWithPets: 6
-    },
-    physicalTraits: {
-      weight: "30-55 lbs",
-      height: "18-22 inches",
-      lifespan: "12-15 years",
-      coat: "Double coat, either smooth or rough"
-    },
-    temperament: ["Intelligent", "Energetic", "Alert", "Responsive", "Tenacious"],
-    idealFor: ["Very active owners", "Those wanting a working dog", "Experienced dog owners"],
-    exerciseNeeds: "Very High - 2+ hours daily",
-    commonHealthIssues: ["Hip dysplasia", "Epilepsy", "Eye conditions", "MDR1 gene mutation"],
-    groomingTips: "Weekly brushing, daily during shedding seasons. Regular nail trims and dental care.",
-    trainingTips: "Extremely intelligent but need mental stimulation. Excel in agility, obedience, and herding trials.",
-    funFacts: ["Often considered the smartest dog breed", "Can learn over 1000 words", "Natural herding instinct"]
-  }
-];
+// Types
+interface Breed {
+  id: string;
+  name: string;
+  category: string;
+  size: string;
+  image: string;
+  overview: string;
+  characteristics: {
+    energyLevel: number;
+    friendliness: number;
+    trainability: number;
+    groomingNeeds: number;
+    goodWithKids: number;
+    goodWithPets: number;
+  };
+  physicalTraits: {
+    weight: string;
+    height: string;
+    lifespan: string;
+    coat: string;
+  };
+  temperament: string[];
+  idealFor: string[];
+  exerciseNeeds: string;
+  commonHealthIssues: string[];
+  groomingTips: string;
+  trainingTips: string;
+  funFacts: string[];
+}
 
-const categories = ["All", "Sporting", "Non-Sporting", "Toy", "Herding", "Designer"];
+interface BreedsResponse {
+  breeds: Breed[];
+  count: number;
+  total: number;
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+}
+
+// SWR fetcher function
+const fetcher = async (url: string): Promise<BreedsResponse> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch breeds');
+  }
+  return response.json();
+};
+
+// Available filter options
+const categories = ["All", "Sporting", "Non-Sporting", "Toy", "Herding", "Working", "Hound", "Terrier", "Mixed"];
 const sizes = ["All", "Small", "Medium", "Large"];
+const pageSizeOptions = [6, 12, 24, 48];
 
 const BreedsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSize, setSelectedSize] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
   const [expandedBreed, setExpandedBreed] = useState<number | null>(null);
 
-  const filteredBreeds = breeds.filter(breed => {
-    const matchesSearch = breed.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || breed.category === selectedCategory;
-    const matchesSize = selectedSize === 'All' || breed.size === selectedSize || 
-                      (selectedSize === 'Medium' && breed.size === 'Medium to Large') ||
-                      (selectedSize === 'Large' && breed.size === 'Medium to Large');
+  // Debounce search term
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when search changes
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Build API URL with query parameters
+  const apiUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
+    if (selectedCategory !== 'All') params.append('category', selectedCategory);
+    if (selectedSize !== 'All') params.append('size', selectedSize);
+    params.append('page', currentPage.toString());
+    params.append('limit', pageSize.toString());
     
-    return matchesSearch && matchesCategory && matchesSize;
+    const url = `/api/breeds?${params.toString()}`;
+    console.log('Frontend API URL:', url);
+    return url;
+  }, [debouncedSearchTerm, selectedCategory, selectedSize, currentPage, pageSize]);
+
+  // SWR hook for data fetching
+  const { data, error, isLoading, mutate } = useSWR<BreedsResponse>(apiUrl, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000, // Cache for 1 minute
   });
+
+  const breeds = data?.breeds || [];
+  const totalCount = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -290,6 +141,49 @@ const BreedsPage: React.FC = () => {
     </div>
   );
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    // Note: debouncedSearch will handle setting debouncedSearchTerm and resetting currentPage
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleSizeChange = (value: string) => {
+    setSelectedSize(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handlePageChange = (page: number, size?: number) => {
+    setCurrentPage(page);
+    if (size && size !== pageSize) {
+      setPageSize(size);
+    }
+    setExpandedBreed(null); // Collapse any expanded breed cards
+    
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePageSizeChange = (current: number, size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setSelectedCategory('All');
+    setSelectedSize('All');
+    setCurrentPage(1);
+  };
+
+  const refreshData = () => {
+    mutate();
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
       {/* Header */}
@@ -306,195 +200,334 @@ const BreedsPage: React.FC = () => {
       {/* Filters */}
       <Card style={{ marginBottom: '24px', borderRadius: '12px' }}>
         <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <Input
               prefix={<SearchOutlined />}
               placeholder="Search breeds..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               allowClear
             />
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={5}>
             <Select
               style={{ width: '100%' }}
               value={selectedCategory}
-              onChange={setSelectedCategory}
+              onChange={handleCategoryChange}
+              placeholder="Select category"
             >
               {categories.map(category => (
                 <Option key={category} value={category}>{category}</Option>
               ))}
             </Select>
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={4}>
             <Select
               style={{ width: '100%' }}
               value={selectedSize}
-              onChange={setSelectedSize}
+              onChange={handleSizeChange}
+              placeholder="Select size"
             >
               {sizes.map(size => (
                 <Option key={size} value={size}>{size}</Option>
               ))}
             </Select>
           </Col>
+          <Col xs={24} md={4}>
+            <Select
+              style={{ width: '100%' }}
+              value={pageSize}
+              onChange={(value) => handlePageSizeChange(currentPage, value)}
+              placeholder="Per page"
+            >
+              {pageSizeOptions.map(size => (
+                <Option key={size} value={size}>{size} per page</Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={24} md={5}>
+            <Space>
+              <Button 
+                onClick={clearFilters}
+                disabled={searchTerm === '' && selectedCategory === 'All' && selectedSize === 'All'}
+              >
+                Clear Filters
+              </Button>
+              <Button 
+                onClick={refreshData}
+                loading={isLoading}
+              >
+                Refresh
+              </Button>
+            </Space>
+          </Col>
         </Row>
       </Card>
 
-      {/* Results Count */}
-      <div style={{ marginBottom: '24px' }}>
-        <Text>
-          Showing <Text strong>{filteredBreeds.length}</Text> breed{filteredBreeds.length !== 1 ? 's' : ''}
-        </Text>
-      </div>
+      {/* Error State */}
+      {error && (
+        <Alert
+          message="Error Loading Breeds"
+          description="There was an error loading the breed data. Please try again later."
+          type="error"
+          showIcon
+          style={{ marginBottom: '24px' }}
+          action={
+            <Button size="small" onClick={refreshData}>
+              Retry
+            </Button>
+          }
+        />
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <Spin 
+            indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} 
+            tip="Loading breeds..."
+          />
+        </div>
+      )}
+
+      {/* Results Count and Pagination Info */}
+      {!isLoading && !error && (
+        <div style={{ marginBottom: '24px' }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Space>
+                <Text>
+                  Showing <Text strong>{data?.startIndex || 0}-{data?.endIndex || 0}</Text> of <Text strong>{totalCount}</Text> breed{totalCount !== 1 ? 's' : ''}
+                </Text>
+                {(debouncedSearchTerm || selectedCategory !== 'All' || selectedSize !== 'All') && (
+                  <Text type="secondary">
+                    (Page {currentPage} of {totalPages})
+                  </Text>
+                )}
+              </Space>
+            </Col>
+            <Col>
+              {totalPages > 1 && (
+                <Text type="secondary">
+                  Total: {totalCount} breeds
+                </Text>
+              )}
+            </Col>
+          </Row>
+        </div>
+      )}
 
       {/* Breed Cards */}
-      <Row gutter={[16, 16]}>
-        {filteredBreeds.map(breed => (
-          <Col xs={24} lg={12} key={breed.id}>
-            <Card 
-              style={cardStyle}
-              cover={
-                <img
-                  src={breed.image}
-                  alt={breed.name}
-                  style={{ height: '200px', objectFit: 'cover' }}
-                />
-              }
-            >
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <Title level={4} style={{ margin: 0 }}>{breed.name}</Title>
-                  <Space>
-                    <Tag color="blue">{breed.category}</Tag>
-                    <Tag color="green">{breed.size}</Tag>
-                  </Space>
-                </div>
-                <Paragraph style={{ margin: 0, color: '#666' }}>
-                  {breed.overview}
-                </Paragraph>
-              </div>
-
-              {/* Quick Stats */}
-              <Row gutter={[8, 8]} style={{ marginBottom: '16px' }}>
-                <Col span={12}>
-                  <div style={{ textAlign: 'center', padding: '8px', background: '#f8f9fa', borderRadius: '6px' }}>
-                    <Text style={{ fontSize: '12px', color: '#666' }}>Weight</Text>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{breed.physicalTraits.weight}</div>
-                  </div>
-                </Col>
-                <Col span={12}>
-                  <div style={{ textAlign: 'center', padding: '8px', background: '#f8f9fa', borderRadius: '6px' }}>
-                    <Text style={{ fontSize: '12px', color: '#666' }}>Lifespan</Text>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{breed.physicalTraits.lifespan}</div>
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Key Characteristics */}
-              <div style={{ marginBottom: '16px' }}>
-                <Row gutter={8}>
-                  <Col span={12}>
-                    {renderCharacteristicBar("Energy Level", breed.characteristics.energyLevel, "#FA8072")}
-                    {renderCharacteristicBar("Friendliness", breed.characteristics.friendliness, "#08979C")}
-                    {renderCharacteristicBar("Trainability", breed.characteristics.trainability, "#52c41a")}
-                  </Col>
-                  <Col span={12}>
-                    {renderCharacteristicBar("Good with Kids", breed.characteristics.goodWithKids, "#1890ff")}
-                    {renderCharacteristicBar("Grooming Needs", breed.characteristics.groomingNeeds, "#722ed1")}
-                    {renderCharacteristicBar("Good with Pets", breed.characteristics.goodWithPets, "#fa8c16")}
-                  </Col>
-                </Row>
-              </div>
-
-              {/* Temperament Tags */}
-              <div style={{ marginBottom: '16px' }}>
-                <Text strong style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}>Temperament:</Text>
-                <Space wrap size={[4, 4]}>
-                  {breed.temperament.slice(0, 4).map(trait => (
-                    <Tag key={trait} color="default">{trait}</Tag>
-                  ))}
-                  {breed.temperament.length > 4 && (
-                    <Tag>+{breed.temperament.length - 4} more</Tag>
-                  )}
-                </Space>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button
-                  type="text"
-                  size="small"
-                  onClick={() => setExpandedBreed(expandedBreed === breed.id ? null : breed.id)}
-                >
-                  {expandedBreed === breed.id ? 'Show Less' : 'Learn More'}
-                </Button>
-                <Button
-                  type="primary"
-                  size="small"
-                  style={{ background: '#FA8072', borderColor: '#FA8072' }}
-                  onClick={() => window.open(`/browse?breed=${breed.name}`, '_blank')}
-                >
-                  Find {breed.name}s
-                </Button>
-              </div>
-
-              {/* Expanded Details */}
-              {expandedBreed === breed.id && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
-                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                    {/* Exercise Needs */}
-                    <div>
-                      <Text strong style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                        <ThunderboltOutlined style={{ marginRight: '6px', color: '#FA8072' }} />
-                        Exercise Needs
-                      </Text>
-                      <Text style={{ fontSize: '14px' }}>{breed.exerciseNeeds}</Text>
+      {!isLoading && !error && (
+        <>
+          <Row gutter={[16, 16]}>
+            {breeds.map((breed, index) => (
+              <Col xs={24} lg={12} key={breed.id}>
+                <Card 
+                  style={cardStyle}
+                  cover={
+                    <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+                      <Image
+                        src={breed.image}
+                        alt={breed.name}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        onError={(e) => {
+                          // Fallback image if the original fails to load
+                          e.currentTarget.src = `https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&q=80&auto=format&fit=crop`;
+                        }}
+                      />
                     </div>
-
-                    {/* Ideal For */}
-                    <div>
-                      <Text strong style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                        <HomeOutlined style={{ marginRight: '6px', color: '#08979C' }} />
-                        Ideal For
-                      </Text>
-                      <Space wrap size={[4, 4]}>
-                        {breed.idealFor.map(ideal => (
-                          <Tag key={ideal} color="blue">{ideal}</Tag>
-                        ))}
+                  }
+                  loading={isLoading}
+                >
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <Title level={4} style={{ margin: 0 }}>{breed.name}</Title>
+                      <Space>
+                        <Tag color="blue">{breed.category}</Tag>
+                        <Tag color="green">{breed.size}</Tag>
                       </Space>
                     </div>
+                    <Paragraph style={{ margin: 0, color: '#666' }}>
+                      {breed.overview}
+                    </Paragraph>
+                  </div>
 
-                    {/* Health Considerations */}
-                    <div>
-                      <Text strong style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                        <SafetyOutlined style={{ marginRight: '6px', color: '#52c41a' }} />
-                        Common Health Issues
-                      </Text>
-                      <Text style={{ fontSize: '14px' }}>
-                        {breed.commonHealthIssues.slice(0, 3).join(', ')}
-                        {breed.commonHealthIssues.length > 3 && '...'}
-                      </Text>
-                    </div>
+                  {/* Quick Stats */}
+                  <Row gutter={[8, 8]} style={{ marginBottom: '16px' }}>
+                    <Col span={12}>
+                      <div style={{ textAlign: 'center', padding: '8px', background: '#f8f9fa', borderRadius: '6px' }}>
+                        <Text style={{ fontSize: '12px', color: '#666' }}>Weight</Text>
+                        <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{breed.physicalTraits.weight}</div>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ textAlign: 'center', padding: '8px', background: '#f8f9fa', borderRadius: '6px' }}>
+                        <Text style={{ fontSize: '12px', color: '#666' }}>Lifespan</Text>
+                        <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{breed.physicalTraits.lifespan}</div>
+                      </div>
+                    </Col>
+                  </Row>
 
-                    {/* Fun Facts */}
-                    <div>
-                      <Text strong style={{ marginBottom: '4px', display: 'block' }}>Fun Facts:</Text>
-                      <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '14px' }}>
-                        {breed.funFacts.slice(0, 2).map((fact, index) => (
-                          <li key={index}>{fact}</li>
-                        ))}
-                      </ul>
+                  {/* Key Characteristics */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <Row gutter={8}>
+                      <Col span={12}>
+                        {renderCharacteristicBar("Energy Level", breed.characteristics.energyLevel, "#FA8072")}
+                        {renderCharacteristicBar("Friendliness", breed.characteristics.friendliness, "#08979C")}
+                        {renderCharacteristicBar("Trainability", breed.characteristics.trainability, "#52c41a")}
+                      </Col>
+                      <Col span={12}>
+                        {renderCharacteristicBar("Good with Kids", breed.characteristics.goodWithKids, "#1890ff")}
+                        {renderCharacteristicBar("Grooming Needs", breed.characteristics.groomingNeeds, "#722ed1")}
+                        {renderCharacteristicBar("Good with Pets", breed.characteristics.goodWithPets, "#fa8c16")}
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* Temperament Tags */}
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text strong style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}>Temperament:</Text>
+                    <Space wrap size={[4, 4]}>
+                      {breed.temperament.slice(0, 4).map(trait => (
+                        <Tag key={trait} color="default">{trait}</Tag>
+                      ))}
+                      {breed.temperament.length > 4 && (
+                        <Tag>+{breed.temperament.length - 4} more</Tag>
+                      )}
+                    </Space>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Button
+                      type="text"
+                      size="small"
+                      onClick={() => setExpandedBreed(expandedBreed === index ? null : index)}
+                    >
+                      {expandedBreed === index ? 'Show Less' : 'Learn More'}
+                    </Button>
+                    <Button
+                      type="primary"
+                      size="small"
+                      style={{ background: '#FA8072', borderColor: '#FA8072' }}
+                      onClick={() => window.open(`/browse?breed=${breed.name}`, '_blank')}
+                    >
+                      Find {breed.name}s
+                    </Button>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {expandedBreed === index && (
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
+                      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                        {/* Exercise Needs */}
+                        <div>
+                          <Text strong style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                            <ThunderboltOutlined style={{ marginRight: '6px', color: '#FA8072' }} />
+                            Exercise Needs
+                          </Text>
+                          <Text style={{ fontSize: '14px' }}>{breed.exerciseNeeds}</Text>
+                        </div>
+
+                        {/* Ideal For */}
+                        <div>
+                          <Text strong style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                            <HomeOutlined style={{ marginRight: '6px', color: '#08979C' }} />
+                            Ideal For
+                          </Text>
+                          <Space wrap size={[4, 4]}>
+                            {breed.idealFor.map(ideal => (
+                              <Tag key={ideal} color="blue">{ideal}</Tag>
+                            ))}
+                          </Space>
+                        </div>
+
+                        {/* Health Considerations */}
+                        <div>
+                          <Text strong style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                            <SafetyOutlined style={{ marginRight: '6px', color: '#52c41a' }} />
+                            Common Health Issues
+                          </Text>
+                          <Text style={{ fontSize: '14px' }}>
+                            {breed.commonHealthIssues.slice(0, 3).join(', ')}
+                            {breed.commonHealthIssues.length > 3 && '...'}
+                          </Text>
+                        </div>
+
+                        {/* Fun Facts */}
+                        <div>
+                          <Text strong style={{ marginBottom: '4px', display: 'block' }}>Fun Facts:</Text>
+                          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '14px' }}>
+                            {breed.funFacts.slice(0, 2).map((fact, factIndex) => (
+                              <li key={factIndex}>{fact}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </Space>
                     </div>
-                  </Space>
-                </div>
-              )}
-            </Card>
-          </Col>
-        ))}
-      </Row>
+                  )}
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ 
+              marginTop: '32px', 
+              textAlign: 'center',
+              padding: '24px',
+              background: '#fafafa',
+              borderRadius: '12px',
+            }}>
+              <Pagination
+                current={currentPage}
+                total={totalCount}
+                pageSize={pageSize}
+                onChange={handlePageChange}
+                onShowSizeChange={handlePageSizeChange}
+                showSizeChanger
+                showQuickJumper
+                showTotal={(total, range) => 
+                  `${range[0]}-${range[1]} of ${total} breeds`
+                }
+                pageSizeOptions={pageSizeOptions.map(String)}
+                size="default"
+                style={{ marginBottom: '16px' }}
+              />
+              
+              {/* Additional pagination info */}
+              <Space style={{ marginTop: '16px' }}>
+                <Text type="secondary">
+                  Page {currentPage} of {totalPages}
+                </Text>
+                {currentPage > 1 && (
+                  <Button 
+                    size="small" 
+                    onClick={() => handlePageChange(1)}
+                  >
+                    First Page
+                  </Button>
+                )}
+                {currentPage < totalPages && (
+                  <Button 
+                    size="small" 
+                    onClick={() => handlePageChange(totalPages)}
+                  >
+                    Last Page
+                  </Button>
+                )}
+              </Space>
+            </div>
+          )}
+        </>
+      )}
 
       {/* No Results */}
-      {filteredBreeds.length === 0 && (
+      {!isLoading && !error && breeds.length === 0 && (
         <div style={{ 
           textAlign: 'center', 
           padding: '60px 20px',
@@ -502,7 +535,18 @@ const BreedsPage: React.FC = () => {
           borderRadius: '12px'
         }}>
           <Title level={4}>No breeds found</Title>
-          <Paragraph>Try adjusting your search terms or filters</Paragraph>
+          <Paragraph>
+            {(debouncedSearchTerm || selectedCategory !== 'All' || selectedSize !== 'All') 
+              ? 'Try adjusting your search terms or filters'
+              : 'No breed data available at the moment'
+            }
+          </Paragraph>
+          <Space>
+            {(debouncedSearchTerm || selectedCategory !== 'All' || selectedSize !== 'All') && (
+              <Button onClick={clearFilters}>Clear All Filters</Button>
+            )}
+            <Button onClick={refreshData}>Refresh Data</Button>
+          </Space>
         </div>
       )}
     </div>
