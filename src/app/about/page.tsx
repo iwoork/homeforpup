@@ -54,14 +54,14 @@ const AboutPage: React.FC = () => {
             </Text>
           </div>
           <Title level={1} style={{ color: '#2c3e50', marginBottom: '24px', fontSize: '42px', fontWeight: '700' }}>
-            Creating Paw-some Families <br />
+            Where Dog Lovers <br />
             <span style={{ 
               background: 'linear-gradient(135deg, #08979C 0%, #FA8072 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
             }}>
-              One Match at a Time
+              Become Family
             </span>
           </Title>
           <Paragraph style={{ 
