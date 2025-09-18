@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button, Spin, Alert, Pagination } from 'antd';
+import { Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button, Spin, Alert, Pagination, Carousel } from 'antd';
 import { 
   SearchOutlined, 
   HomeOutlined,
   ThunderboltOutlined,
   SafetyOutlined,
-  LoadingOutlined
+  LoadingOutlined,
+  LeftOutlined,
+  RightOutlined
 } from '@ant-design/icons';
 import Image from 'next/image';
 import useSWR from 'swr';
@@ -23,6 +25,7 @@ interface Breed {
   category: string;
   size: string;
   image: string;
+  images?: string[]; // Array of all available images
   overview: string;
   characteristics: {
     energyLevel: number;
@@ -73,6 +76,67 @@ const fetcher = async (url: string): Promise<BreedsResponse> => {
 const categories = ["All", "Sporting", "Non-Sporting", "Toy", "Herding", "Working", "Hound", "Terrier", "Mixed"];
 const sizes = ["All", "Small", "Medium", "Large"];
 const pageSizeOptions = [6, 12, 24, 48];
+
+// Custom Arrow components for carousel
+const CustomPrevArrow: React.FC<any> = ({ onClick }) => (
+  <div 
+    className="custom-arrow custom-arrow-prev" 
+    onClick={onClick}
+    style={{
+      position: 'absolute',
+      left: '10px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      zIndex: 2,
+      background: 'rgba(0,0,0,0.5)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '30px',
+      height: '30px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      opacity: 0.8,
+      transition: 'opacity 0.3s'
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+  >
+    <LeftOutlined />
+  </div>
+);
+
+const CustomNextArrow: React.FC<any> = ({ onClick }) => (
+  <div 
+    className="custom-arrow custom-arrow-next" 
+    onClick={onClick}
+    style={{
+      position: 'absolute',
+      right: '10px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      zIndex: 2,
+      background: 'rgba(0,0,0,0.5)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '30px',
+      height: '30px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      opacity: 0.8,
+      transition: 'opacity 0.3s'
+    }}
+    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+  >
+    <RightOutlined />
+  </div>
+);
 
 const BreedsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -140,6 +204,85 @@ const BreedsPage: React.FC = () => {
       />
     </div>
   );
+
+  // Image rendering component with fallback handling
+  const renderBreedImage = (breed: Breed) => {
+    const hasMultipleImages = breed.images && breed.images.length > 1;
+    
+    const fallbackImage = `https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&q=80&auto=format&fit=crop`;
+    
+    const handleImageError = (e: any) => {
+      console.log(`Image failed to load for ${breed.name}:`, e.currentTarget.src);
+      e.currentTarget.src = fallbackImage;
+    };
+
+    if (hasMultipleImages) {
+      return (
+        <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+          <Carousel
+            autoplay
+            autoplaySpeed={4000}
+            dots={breed.images!.length > 1}
+            arrows={breed.images!.length > 1}
+            prevArrow={<CustomPrevArrow />}
+            nextArrow={<CustomNextArrow />}
+            dotPosition="bottom"
+            style={{ height: '100%' }}
+          >
+            {breed.images!.map((imageUrl, index) => (
+              <div key={index}>
+                <div style={{ 
+                  height: '200px', 
+                  position: 'relative',
+                  width: '100%'
+                }}>
+                  <Image
+                    src={imageUrl}
+                    alt={`${breed.name} - Image ${index + 1}`}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    onError={handleImageError}
+                    priority={index === 0} // Only prioritize the first image
+                  />
+                </div>
+              </div>
+            ))}
+          </Carousel>
+          {/* Image count indicator */}
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            background: 'rgba(0,0,0,0.6)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            zIndex: 3
+          }}>
+            {breed.images!.length} photos
+          </div>
+        </div>
+      );
+    } else {
+      // Single image or fallback
+      const imageUrl = breed.image || fallbackImage;
+      return (
+        <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+          <Image
+            src={imageUrl}
+            alt={breed.name}
+            fill
+            style={{ objectFit: 'cover' }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={handleImageError}
+            priority
+          />
+        </div>
+      );
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -325,21 +468,7 @@ const BreedsPage: React.FC = () => {
               <Col xs={24} lg={8} key={breed.id}>
                 <Card 
                   style={cardStyle}
-                  cover={
-                    <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
-                      <Image
-                        src={breed.image}
-                        alt={breed.name}
-                        fill
-                        style={{ objectFit: 'cover' }}
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        onError={(e) => {
-                          // Fallback image if the original fails to load
-                          e.currentTarget.src = `https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&q=80&auto=format&fit=crop`;
-                        }}
-                      />
-                    </div>
-                  }
+                  cover={renderBreedImage(breed)}
                   loading={isLoading}
                 >
                   <div style={{ marginBottom: '16px' }}>
@@ -466,6 +595,16 @@ const BreedsPage: React.FC = () => {
                             ))}
                           </ul>
                         </div>
+
+                        {/* Image Gallery Info */}
+                        {breed.images && breed.images.length > 1 && (
+                          <div>
+                            <Text strong style={{ marginBottom: '4px', display: 'block' }}>Photo Gallery:</Text>
+                            <Text style={{ fontSize: '14px', color: '#666' }}>
+                              {breed.images.length} photos available - hover over the image above to browse
+                            </Text>
+                          </div>
+                        )}
                       </Space>
                     </div>
                   )}

@@ -29,6 +29,7 @@ interface BreedItem {
   Adaptability?: string;
   Trainability?: string;
   PhysicalNeeds?: string;
+  ImageUrls?: string[]; // Added ImageUrls array
 }
 
 interface TransformedBreed {
@@ -37,6 +38,7 @@ interface TransformedBreed {
   category: string;
   size: string;
   image: string;
+  images?: string[]; // Optional: include all images if needed
   overview: string;
   characteristics: {
     energyLevel: number;
@@ -105,8 +107,27 @@ const normalizeRating = (rating?: string): number => {
   return Math.min(Math.round(num), 10);
 };
 
-const generateImageUrl = (id: string): string => {
-  return `https://placedog.net/500?r&id=${id}`;
+// Updated function to get image from ImageUrls array or fallback
+const getBreedImage = (imageUrls?: string[], breedName?: string): string => {
+  // If ImageUrls array exists and has images, use the first one
+  if (imageUrls && imageUrls.length > 0) {
+    // Filter out any invalid URLs (empty strings, null, undefined)
+    const validUrls = imageUrls.filter(url => url && url.trim());
+    if (validUrls.length > 0) {
+      return validUrls[0];
+    }
+  }
+  
+  // Fallback to placeholder if no valid images
+  return `https://placedog.net/500?r&id=${breedName || 'default'}`;
+};
+
+// Helper to get all valid images for a breed
+const getBreedImages = (imageUrls?: string[]): string[] => {
+  if (!imageUrls || imageUrls.length === 0) return [];
+  
+  // Filter out any invalid URLs
+  return imageUrls.filter(url => url && url.trim());
 };
 
 const generateTemperament = (category: string, _size: string): string[] => {
@@ -153,13 +174,15 @@ const transformBreed = (item: BreedItem, index: number): TransformedBreed => {
   const breedName = item.Breed || 'Unknown Breed';
   const size = normalizeSize(item.DogSize);
   const category = normalizeCategory(item.DogBreedGroup);
+  const validImages = getBreedImages(item.ImageUrls);
   
   return {
     id: `breed-${breedName.replace(/\s+/g, '-').toLowerCase()}-${index}`,
     name: breedName,
     category,
     size,
-    image: generateImageUrl(breedName),
+    image: getBreedImage(item.ImageUrls, breedName),
+    images: validImages.length > 0 ? validImages : undefined, // Include all images if available
     overview: `A wonderful ${size.toLowerCase()} breed from the ${category} group, known for their unique characteristics and loyal companionship.`,
     characteristics: {
       energyLevel: normalizeRating(item.PhysicalNeeds),
