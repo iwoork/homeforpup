@@ -50,10 +50,10 @@ const HomePage: React.FC = () => {
       <section style={heroStyle}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
-            Find Your Perfect Puppy Companion
+            Creating Paw-some Families, One Match at a Time
           </Title>
           <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
-            Connect with verified ethical breeders committed to raising healthy, well-socialized puppies in loving family environments.
+            Discover a community where dog lovers and devoted breeders work together to create fur-ever bonds between families and their ideal companions.
           </Paragraph>
           <Row justify="center" gutter={[16, 12]} className="hero-buttons">
             <Col xs={24} sm={12} md={8}>
@@ -67,7 +67,7 @@ const HomePage: React.FC = () => {
                     fontWeight: '500'
                   }}
                 >
-                  Browse Available Puppies
+                  Meet Available Puppies
                 </Button>
               </Link>
             </Col>
@@ -85,7 +85,7 @@ const HomePage: React.FC = () => {
                     fontWeight: '500'
                   }}
                 >
-                  Join as a Breeder
+                  Join Our Community
                 </Button>
               </Link>
             </Col>
@@ -97,33 +97,33 @@ const HomePage: React.FC = () => {
       <section style={{ padding: '64px 24px', background: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
-            Why Choose HomeForPup?
+            What Makes Our Community Special?
           </Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
                 <HeartOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Ethical Breeding</Title>
+                <Title level={3}>Passionate Care</Title>
                 <Paragraph>
-                  All our breeders are committed to ethical practices, focusing on health, temperament, and responsible breeding standards.
+                  Our community of dedicated breeders and enthusiasts prioritizes the wellbeing and happiness of every puppy, treating each one as a cherished family member.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
                 <SafetyOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Health Guaranteed</Title>
+                <Title level={3}>Health & Happiness First</Title>
                 <Paragraph>
-                  Every puppy comes with health testing documentation, vaccination records, and health guarantees from verified breeders.
+                  Every puppy is raised with love and receives comprehensive health care, proper socialization, and nurturing to ensure they're ready for their forever homes.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
                 <UserOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Verified Breeders</Title>
+                <Title level={3}>Trusted Network</Title>
                 <Paragraph>
-                  Our platform carefully vets all breeders to ensure they meet our high standards for animal welfare and breeding practices.
+                  Connect with a caring network of dog lovers who share knowledge, support each other, and are committed to responsible breeding and pet ownership.
                 </Paragraph>
               </Card>
             </Col>
@@ -134,22 +134,22 @@ const HomePage: React.FC = () => {
       {/* How It Works Section */}
       <section style={{ padding: '64px 24px', background: '#F5F5F5' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>How It Works</Title>
+          <Title level={2} style={{ marginBottom: '48px' }}>Your Journey to Finding Your Paw-fect Match</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <SmileOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
-              <Title level={4}>1. Browse Puppies</Title>
-              <Paragraph>Search through a wide variety of breeds and find puppies that fit your lifestyle.</Paragraph>
+              <Title level={4}>1. Explore & Learn</Title>
+              <Paragraph>Discover different breeds, learn about their personalities, and find puppies who might be perfect additions to your family.</Paragraph>
             </Col>
             <Col xs={24} md={8}>
               <CheckCircleOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px' }} />
-              <Title level={4}>2. Connect with Breeders</Title>
-              <Paragraph>Message ethical breeders directly and learn more about their puppies.</Paragraph>
+              <Title level={4}>2. Connect & Build Relationships</Title>
+              <Paragraph>Chat with caring breeders and fellow dog enthusiasts who share your passion and can guide you in your journey.</Paragraph>
             </Col>
             <Col xs={24} md={8}>
               <HomeOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
-              <Title level={4}>3. Welcome Home</Title>
-              <Paragraph>Bring your new furry friend home and start making lifelong memories.</Paragraph>
+              <Title level={4}>3. Welcome Your New Family Member</Title>
+              <Paragraph>Bring home your perfectly matched companion and join a community that supports your lifelong journey together.</Paragraph>
             </Col>
           </Row>
         </div>
@@ -158,23 +158,23 @@ const HomePage: React.FC = () => {
       {/* Testimonials Section */}
       <section style={{ padding: '64px 24px', background: 'white' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>Happy Families</Title>
+          <Title level={2} style={{ marginBottom: '48px' }}>Stories from Our Community</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>&ldquo;We found our Cavapoo through HomeForPup and couldn&rsquo;t be happier. The breeder was amazing and supportive!&rdquo;</Paragraph>
+                <Paragraph>&ldquo;The community here truly cares about matching families with their perfect companions. Our Cavapoo feels like she was meant to be with us from day one.&rdquo;</Paragraph>
                 <Title level={4}>&mdash; Sarah & Max</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>&ldquo;Our golden retriever came home healthy and happy. The process was seamless and stress-free.&rdquo;</Paragraph>
+                <Paragraph>&ldquo;We found not just our golden retriever, but lifelong friends in the breeding community. The ongoing support has been incredible.&rdquo;</Paragraph>
                 <Title level={4}>&mdash; Daniel Family</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>&ldquo;We loved the transparency. Seeing health records and breeder info made us confident in our choice.&rdquo;</Paragraph>
+                <Paragraph>&ldquo;The transparency and genuine care from everyone we met gave us complete confidence. Our pup came home healthy, happy, and perfectly socialized.&rdquo;</Paragraph>
                 <Title level={4}>&mdash; Priya & Amit</Title>
               </Card>
             </Col>
@@ -185,9 +185,9 @@ const HomePage: React.FC = () => {
       {/* Newsletter Section */}
       <section style={{ padding: '64px 24px', background: '#E6F7F7', textAlign: 'center' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <Title level={2} style={{ marginBottom: '24px' }}>Stay Updated</Title>
+          <Title level={2} style={{ marginBottom: '24px' }}>Stay Connected with Our Community</Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Subscribe to get the latest puppy listings, breeder updates, and tips for new dog owners.
+            Join our newsletter to hear heartwarming puppy stories, get expert care tips, and be the first to meet new additions to our community family.
           </Paragraph>
           <Form className="newsletter-form" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
             <Form.Item name="email" style={{ flex: 1, marginBottom: 0 }}>
@@ -204,7 +204,7 @@ const HomePage: React.FC = () => {
                   minWidth: '120px'
                 }}
               >
-                Subscribe
+                Join Us
               </Button>
             </Form.Item>
           </Form>
@@ -215,10 +215,10 @@ const HomePage: React.FC = () => {
       <section style={{ padding: '64px 24px', background: '#fdf6e3', textAlign: 'center' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <Title level={2} style={{ marginBottom: '24px' }}>
-            Ready to Find Your Perfect Puppy?
+            Ready to Meet Your New Best Friend?
           </Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Join thousands of happy families who found their beloved companions through HomeForPup.
+            Join our community of dog lovers and discover the joy of finding your perfect four-legged family member through meaningful connections.
           </Paragraph>
           <Link href="/browse">
             <Button 
@@ -233,7 +233,7 @@ const HomePage: React.FC = () => {
                 fontWeight: '500'
               }}
             >
-              Start Your Search
+              Meet Our Puppies
             </Button>
           </Link>
         </div>
