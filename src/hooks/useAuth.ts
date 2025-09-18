@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 interface UseAuthReturn {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<void>;
+  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
@@ -88,7 +88,7 @@ export const useAuth = (): UseAuthReturn => {
     updateUserState();
   }, [oidcAuth, createOrGetBreederProfile, error]);
 
-  const signIn = useCallback(async () => {
+  const signIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
     if (!oidcAuth) {
       setError('Authentication not initialized');
       return;
@@ -96,7 +96,27 @@ export const useAuth = (): UseAuthReturn => {
 
     try {
       setError(null);
-      await oidcAuth.signinRedirect();
+      
+      // Get environment variables
+      const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
+      const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+      const redirectUri = encodeURIComponent(window.location.origin + '/callback');
+      
+      if (action === 'signup' && cognitoDomain && clientId) {
+        // Direct redirect to Cognito signup page
+        const signupUrl = `${cognitoDomain}/signup?client_id=${clientId}&response_type=code&scope=email+openid+profile&redirect_uri=${redirectUri}`;
+        
+        // Optional: Add user type as custom attribute if your Cognito supports it
+        if (userType) {
+          // Store user type in localStorage to use after signup completion
+          localStorage.setItem('pendingUserType', userType);
+        }
+        
+        window.location.href = signupUrl;
+      } else {
+        // Use OIDC signin redirect for login (default behavior)
+        await oidcAuth.signinRedirect();
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign in';
       setError(errorMessage);

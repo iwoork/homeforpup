@@ -14,8 +14,9 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/hooks/useAuth';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import UserTypeModal from '@/components/UserTypeModal';
 
 const { Header: AntHeader } = Layout;
 
@@ -23,12 +24,34 @@ const Header: React.FC = () => {
   const { user, signIn, signOut, error } = useAuth();
   const pathname = usePathname();
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
 
   const handleMenuClick = (e: any) => {
     const key = e.key || e;
     if (key === 'logout') {
       signOut();
     }
+  };
+
+  const handleJoinAsBreeder = () => {
+    if (user) {
+      // User is already logged in, redirect to dashboard
+      window.location.href = '/dashboard';
+    } else {
+      // Show user type selection modal
+      setUserTypeModalVisible(true);
+    }
+  };
+
+  const handleLogin = () => {
+    signIn();
+  };
+
+  const handleUserTypeSelection = (_userType: 'breeder' | 'adopter') => {
+    setUserTypeModalVisible(false);
+    // You can pass additional parameters to signIn if needed
+    // For now, we'll use the same signIn function and handle user type later
+    signIn();
   };
 
   const userMenu = {
@@ -241,12 +264,12 @@ const Header: React.FC = () => {
               ) : (
                 <Row gutter={8}>
                   <Col>
-                    <Button onClick={signIn}>Login</Button>
+                    <Button onClick={handleLogin}>Login</Button>
                   </Col>
                   <Col>
                     <Button 
                       type="primary" 
-                      onClick={signIn}
+                      onClick={handleJoinAsBreeder}
                       style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
                     >
                       Join as Breeder
@@ -359,7 +382,7 @@ const Header: React.FC = () => {
                   size="large" 
                   onClick={() => {
                     handleDrawerClose();
-                    signIn();
+                    handleLogin();
                   }}
                 >
                   Login
@@ -372,7 +395,7 @@ const Header: React.FC = () => {
                   size="large"
                   onClick={() => {
                     handleDrawerClose();
-                    signIn();
+                    handleJoinAsBreeder();
                   }}
                   style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
                 >
@@ -405,6 +428,14 @@ const Header: React.FC = () => {
           </div>
         )}
       </Drawer>
+      
+      {/* User Type Selection Modal */}
+      <UserTypeModal
+        visible={userTypeModalVisible}
+        onClose={() => setUserTypeModalVisible(false)}
+        onUserTypeSelect={handleUserTypeSelection}
+        onLogin={handleLogin}
+      />
       
       {error && (
         <Alert

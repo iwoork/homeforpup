@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button, Typography, Card, Row, Col, Form, Input } from 'antd';
 import { HeartOutlined, SafetyOutlined, UserOutlined, SmileOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
+import UserTypeModal from '@/components/UserTypeModal';
 
 const { Title, Paragraph } = Typography;
 
@@ -22,7 +24,34 @@ const cardStyle: React.CSSProperties = {
   textAlign: 'center',
 };
 
+
+
 const HomePage: React.FC = () => {
+  const { user, signIn } = useAuth();
+  const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
+
+  const handleJoinCommunity = () => {
+    if (user) {
+      // User is already logged in, redirect to dashboard
+      window.location.href = '/dashboard';
+    } else {
+      // Show user type selection modal for signup
+      setUserTypeModalVisible(true);
+    }
+  };
+
+  const handleUserTypeSelection = (userType: 'breeder' | 'adopter') => {
+    setUserTypeModalVisible(false);
+    // Call signIn with 'signup' action and user type
+    signIn('signup', userType);
+  };
+
+  const handleLogin = () => {
+    setUserTypeModalVisible(false);
+    // Call signIn with 'login' action for existing users
+    signIn('login');
+  };
+
   return (
     <div style={{ minHeight: '100vh' }}>
       <style jsx global>{`
@@ -72,22 +101,21 @@ const HomePage: React.FC = () => {
               </Link>
             </Col>
             <Col xs={24} sm={12} md={8}>
-              <Link href="/auth/register">
-                <Button 
-                  size="large" 
-                  block
-                  style={{ 
-                    height: '48px', 
-                    fontSize: '18px', 
-                    background: 'white', 
-                    color: '#08979C', 
-                    borderColor: 'white',
-                    fontWeight: '500'
-                  }}
-                >
-                  Join Our Community
-                </Button>
-              </Link>
+              <Button 
+                size="large" 
+                block
+                onClick={handleJoinCommunity}
+                style={{ 
+                  height: '48px', 
+                  fontSize: '18px', 
+                  background: 'white', 
+                  color: '#08979C', 
+                  borderColor: 'white',
+                  fontWeight: '500'
+                }}
+              >
+                {user ? 'Go to Dashboard' : 'Join Our Community'}
+              </Button>
             </Col>
           </Row>
         </div>
@@ -220,24 +248,52 @@ const HomePage: React.FC = () => {
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
             Join our community of dog lovers and discover the joy of finding your perfect four-legged family member through meaningful connections.
           </Paragraph>
-          <Link href="/browse">
-            <Button 
-              type="primary" 
-              size="large" 
-              style={{ 
-                height: '48px', 
-                padding: '0 32px', 
-                fontSize: '18px', 
-                background: '#FA8072', 
-                borderColor: '#FA8072',
-                fontWeight: '500'
-              }}
-            >
-              Meet Our Puppies
-            </Button>
-          </Link>
+          <Row justify="center" gutter={16}>
+            <Col>
+              <Link href="/browse">
+                <Button 
+                  type="primary" 
+                  size="large" 
+                  style={{ 
+                    height: '48px', 
+                    padding: '0 32px', 
+                    fontSize: '18px', 
+                    background: '#FA8072', 
+                    borderColor: '#FA8072',
+                    fontWeight: '500'
+                  }}
+                >
+                  Meet Our Puppies
+                </Button>
+              </Link>
+            </Col>
+            {!user && (
+              <Col>
+                <Button 
+                  size="large" 
+                  onClick={() => signIn('login')}
+                  style={{ 
+                    height: '48px', 
+                    padding: '0 32px', 
+                    fontSize: '18px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Login
+                </Button>
+              </Col>
+            )}
+          </Row>
         </div>
       </section>
+
+      {/* User Type Selection Modal */}
+      <UserTypeModal
+        visible={userTypeModalVisible}
+        onClose={() => setUserTypeModalVisible(false)}
+        onUserTypeSelect={handleUserTypeSelection}
+        onLogin={handleLogin}
+      />
     </div>
   );
 };
