@@ -377,10 +377,10 @@ const BreederDirectoryPage: React.FC = () => {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <Title level={1} style={{ color: '#08979C' }}>
-          Find Ethical Breeders
+          Connect with Caring Dog Families
         </Title>
         <Paragraph style={{ fontSize: '18px', color: '#595959', maxWidth: '600px', margin: '0 auto' }}>
-          Connect with verified breeders committed to raising healthy, well-socialized puppies
+          Get to know passionate dog lovers dedicated to raising happy, healthy pups with lots of love
         </Paragraph>
       </div>
 
@@ -524,7 +524,7 @@ const BreederDirectoryPage: React.FC = () => {
             borderRadius: '8px'
           }}>
             <Text>
-              <Text strong>{sortedBreeders.length}</Text> breeders found
+              <Text strong>{sortedBreeders.length}</Text> dog families found
             </Text>
             <div>
               <Text style={{ marginRight: '8px' }}>Sort by:</Text>
@@ -552,7 +552,7 @@ const BreederDirectoryPage: React.FC = () => {
                 background: '#fafafa',
                 borderRadius: '12px'
               }}>
-                <Title level={4}>No breeders found</Title>
+                <Title level={4}>No dog families found</Title>
                 <Paragraph>Try adjusting your filters or search terms</Paragraph>
               </div>
             )}

@@ -114,7 +114,7 @@ const HomePage: React.FC = () => {
                 <SafetyOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
                 <Title level={3}>Health & Happiness First</Title>
                 <Paragraph>
-                  Every puppy is raised with love and receives comprehensive health care, proper socialization, and nurturing to ensure they're ready for their forever homes.
+                  Every puppy is raised with love and receives comprehensive health care, proper socialization, and nurturing to ensure they&apos;re ready for their forever homes.
                 </Paragraph>
               </Card>
             </Col>
