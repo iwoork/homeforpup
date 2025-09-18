@@ -322,7 +322,7 @@ const BreedsPage: React.FC = () => {
         <>
           <Row gutter={[16, 16]}>
             {breeds.map((breed, index) => (
-              <Col xs={24} lg={12} key={breed.id}>
+              <Col xs={24} lg={8} key={breed.id}>
                 <Card 
                   style={cardStyle}
                   cover={
@@ -489,8 +489,6 @@ const BreedsPage: React.FC = () => {
                 pageSize={pageSize}
                 onChange={handlePageChange}
                 onShowSizeChange={handlePageSizeChange}
-                showSizeChanger
-                showQuickJumper
                 showTotal={(total, range) => 
                   `${range[0]}-${range[1]} of ${total} breeds`
                 }
@@ -499,28 +497,6 @@ const BreedsPage: React.FC = () => {
                 style={{ marginBottom: '16px' }}
               />
               
-              {/* Additional pagination info */}
-              <Space style={{ marginTop: '16px' }}>
-                <Text type="secondary">
-                  Page {currentPage} of {totalPages}
-                </Text>
-                {currentPage > 1 && (
-                  <Button 
-                    size="small" 
-                    onClick={() => handlePageChange(1)}
-                  >
-                    First Page
-                  </Button>
-                )}
-                {currentPage < totalPages && (
-                  <Button 
-                    size="small" 
-                    onClick={() => handlePageChange(totalPages)}
-                  >
-                    Last Page
-                  </Button>
-                )}
-              </Space>
             </div>
           )}
         </>
