@@ -48,112 +48,112 @@ const AdoptionGuidePage: React.FC = () => {
       }
     },
     {
-      title: "Find Breeders",
-      description: "Browse verified breeders on HomeForPup",
+      title: "Meet Dog Families",
+      description: "Connect with caring dog families in our community",
       icon: <UserOutlined />,
       content: {
-        overview: "Use HomeForPup's breeder directory to find verified, ethical breeders who specialize in your chosen breed.",
+        overview: "Use HomeForPup's community directory to connect with passionate dog families who specialize in your chosen breed.",
         timeframe: "1-2 weeks",
         keyActions: [
-          "Browse breeders by breed and location",
-          "Read breeder profiles and reviews",
-          "Check health testing and certifications",
-          "Follow breeders to get updates on upcoming litters",
-          "Save your favorite breeders",
-          "Research breeder backgrounds and philosophies"
+          "Browse dog families by breed and location",
+          "Read family profiles and community reviews",
+          "Check health testing and care practices",
+          "Follow families to get updates on upcoming litters",
+          "Save your favorite dog families",
+          "Learn about their breeding philosophies and values"
         ],
         tips: [
-          "Look for breeders with health testing documentation",
-          "Read reviews from previous puppy families",
-          "Consider visiting the breeder's social media or website"
+          "Look for families with comprehensive health testing",
+          "Read stories from previous puppy families",
+          "Consider visiting the family's social media or website"
         ]
       }
     },
     {
-      title: "Connect & Apply",
-      description: "Reach out to breeders and complete applications",
+      title: "Connect & Chat",
+      description: "Reach out to dog families and start conversations",
       icon: <PhoneOutlined />,
       content: {
-        overview: "Contact your chosen breeders to express interest and begin the application process.",
+        overview: "Contact your chosen dog families to express interest and begin getting to know each other.",
         timeframe: "1-2 weeks",
         keyActions: [
-          "Message breeders through HomeForPup platform",
-          "Complete breeder application forms",
+          "Message families through HomeForPup platform",
+          "Share information about your family and lifestyle",
           "Provide references if requested",
           "Schedule phone calls or video chats",
-          "Ask questions about their breeding program",
-          "Discuss your family's needs and preferences"
+          "Ask questions about their dogs and approach",
+          "Discuss your family's needs and what you're looking for"
         ],
         tips: [
-          "Be honest about your experience and lifestyle",
-          "Ask about health guarantees and contracts",
-          "Inquire about socialization practices"
+          "Be open about your experience and lifestyle",
+          "Ask about health guarantees and support",
+          "Learn about their puppy socialization practices"
         ]
       }
     },
     {
-      title: "Wait for Litter",
-      description: "Join waiting list and follow pregnancy updates",
+      title: "Wait with Excitement",
+      description: "Join waiting list and follow the puppy journey",
       icon: <ClockCircleOutlined />,
       content: {
-        overview: "Once approved, you'll be placed on a waiting list and receive updates throughout the pregnancy and puppy development.",
+        overview: "Once matched, you'll be part of the journey and receive updates throughout the pregnancy and puppy development.",
         timeframe: "2-4 months typically",
         keyActions: [
-          "Join the breeder's waiting list",
-          "Follow litter announcements and updates",
-          "Continue preparing your home",
-          "Stay in touch with your breeder",
-          "Review and sign puppy contract",
-          "Arrange for puppy pick-up or delivery"
+          "Join the family's puppy waiting list",
+          "Follow litter announcements and puppy updates",
+          "Continue preparing your home with excitement",
+          "Stay connected with your dog family",
+          "Review and discuss the puppy agreement",
+          "Plan for puppy pick-up or welcome home day"
         ],
         tips: [
-          "Be patient - good breeders often have waiting lists",
+          "Enjoy the anticipation - great dog families often have waiting lists",
           "Use this time to continue learning about puppy care",
           "Consider puppy training classes in your area"
         ]
       }
     },
     {
-      title: "Meet & Choose",
-      description: "Visit the litter and select your puppy",
+      title: "Meet & Fall in Love",
+      description: "Visit the litter and choose your perfect match",
       icon: <HeartOutlined />,
       content: {
-        overview: "Once puppies are old enough (usually 6-8 weeks), you'll visit to meet the litter and choose your puppy.",
+        overview: "Once puppies are old enough (usually 6-8 weeks), you'll visit to meet the litter and find your perfect match.",
         timeframe: "1-2 visits over 2-3 weeks",
         keyActions: [
-          "Schedule visit to meet the puppies",
-          "Observe puppy temperaments and personalities",
-          "Meet the parent dogs if possible",
-          "Tour the breeding facility",
+          "Schedule visit to meet the adorable puppies",
+          "Observe puppy personalities and play styles",
+          "Meet the parent dogs and see the family dynamic",
+          "Tour their loving home environment",
           "Ask final questions about care and health",
-          "Make your selection or let breeder match you"
+          "Choose your puppy or let the family help match you"
         ],
         tips: [
           "Don't just pick based on appearance",
           "Consider personality fit with your family",
-          "Trust your breeder's guidance on temperament matching"
+          "Trust the dog family's guidance on temperament matching"
         ]
       }
     },
     {
-      title: "Bring Home",
-      description: "Complete adoption and welcome your puppy",
+      title: "Welcome Home",
+      description: "Complete the process and welcome your new family member",
       icon: <HomeOutlined />,
       content: {
-        overview: "Finalize the adoption process and bring your new family member home.",
-        timeframe: "Pick-up day (usually 8-12 weeks old)",
+        overview: "Finalize everything and bring your new furry family member home for the adventure to begin.",
+        timeframe: "Welcome home day (usually 8-12 weeks old)",
         keyActions: [
-          "Complete final paperwork and payment",
-          "Receive health records and registration papers",
-          "Get feeding instructions and schedule",
-          "Take photos and videos",
-          "Transport puppy safely home",
+          "Complete final paperwork and arrangements",
+          "Receive health records and family information",
+          "Get feeding instructions and care guidance",
+          "Take lots of photos and videos to remember the moment",
+          "Transport puppy safely to their new home",
           "Schedule first vet appointment within 48-72 hours"
         ],
         tips: [
-          "Bring a travel crate or carrier for safe transport",
-          "Keep the first few days calm and quiet",
-          "Be prepared for an adjustment period"
+          "Bring a comfortable travel crate or carrier",
+          "Keep the first few days calm and full of love",
+          "Be patient during the adjustment period"
         ]
       }
     }
@@ -163,10 +163,10 @@ const AdoptionGuidePage: React.FC = () => {
     { category: "Essential Supplies", items: [
       "Food and water bowls",
       "High-quality puppy food",
-      "Dog bed or crate",
+      "Cozy dog bed or crate",
       "Collar and leash",
       "ID tag with your contact info",
-      "Toys for teething and play",
+      "Fun toys for teething and play",
       "Grooming supplies",
       "Waste bags and cleaning supplies"
     ]},
@@ -174,12 +174,12 @@ const AdoptionGuidePage: React.FC = () => {
       "Remove hazardous items from puppy's reach",
       "Secure electrical cords and small objects",
       "Install baby gates if needed",
-      "Designate a quiet space for puppy",
-      "Set up feeding and sleeping areas",
-      "Plan for supervised outdoor time"
+      "Designate a quiet, safe space for puppy",
+      "Set up feeding and cozy sleeping areas",
+      "Plan for supervised outdoor exploration"
     ]},
     { category: "Healthcare Setup", items: [
-      "Find and contact a local veterinarian",
+      "Find and contact a caring local veterinarian",
       "Schedule initial health check appointment",
       "Research pet insurance options",
       "Learn about vaccination schedules",
@@ -193,18 +193,18 @@ const AdoptionGuidePage: React.FC = () => {
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
         <Title level={1} style={{ color: '#08979C', marginBottom: '16px' }}>
-          Puppy Adoption Process
+          Your Puppy Welcome Home Journey
         </Title>
         <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '700px', margin: '0 auto' }}>
-          Your complete guide to finding and adopting a puppy through HomeForPup&apos;s network of ethical breeders.
-          Follow these steps for a smooth and successful adoption journey.
+          Your complete guide to finding and welcoming a puppy through HomeForPup&apos;s community of caring dog families.
+          Follow these steps for a joyful and heartwarming journey to finding your perfect match.
         </Paragraph>
       </div>
 
       {/* Process Overview */}
       <Card style={cardStyle}>
         <Title level={3} style={{ textAlign: 'center', marginBottom: '32px', color: '#08979C' }}>
-          Adoption Timeline Overview
+          Your Journey Timeline
         </Title>
         <Steps
           current={currentStep}
@@ -220,8 +220,8 @@ const AdoptionGuidePage: React.FC = () => {
         />
         
         <Alert
-          message="Average Timeline: 3-6 months from start to bringing puppy home"
-          description="This timeline can vary based on breed popularity, breeder availability, and specific requirements."
+          message="Average Journey: 3-6 months from start to welcome home day"
+          description="This timeline can vary based on breed popularity, family availability, and the perfect match-making process."
           type="info"
           showIcon
           style={{ marginTop: '24px' }}
@@ -309,7 +309,7 @@ const AdoptionGuidePage: React.FC = () => {
       {/* Preparation Checklist */}
       <Card style={cardStyle}>
         <Title level={3} style={{ marginBottom: '24px', color: '#FA8072' }}>
-          Pre-Adoption Checklist
+          Getting Ready Checklist
         </Title>
         <Row gutter={[24, 24]}>
           {checklist.map((section, sectionIndex) => (
@@ -338,29 +338,29 @@ const AdoptionGuidePage: React.FC = () => {
           Frequently Asked Questions
         </Title>
         <Collapse ghost>
-          <Panel header="How long does the adoption process typically take?" key="1">
-            <p>The complete process usually takes 3-6 months from initial research to bringing your puppy home. This includes time for research, finding the right breeder, waiting for a litter, and allowing puppies to mature to 8-12 weeks old before going home.</p>
+          <Panel header="How long does the puppy journey typically take?" key="1">
+            <p>The complete journey usually takes 3-6 months from initial research to bringing your puppy home. This includes time for research, connecting with the right dog family, waiting for a litter, and allowing puppies to mature to 8-12 weeks old before going to their new homes.</p>
           </Panel>
-          <Panel header="What should I look for in an ethical breeder?" key="2">
-            <p>Look for breeders who conduct health testing on parent dogs, provide health guarantees, allow you to meet the mother dog, keep puppies until at least 8 weeks old, ask you questions about your lifestyle, and are transparent about their breeding practices and facility.</p>
+          <Panel header="What should I look for in a caring dog family?" key="2">
+            <p>Look for families who conduct health testing on parent dogs, provide health support, allow you to meet the mother dog, keep puppies until at least 8 weeks old, ask you questions about your lifestyle, and are open about their approach to raising happy, healthy puppies.</p>
           </Panel>
-          <Panel header="How much should I expect to pay for a puppy?" key="3">
-            <p>Prices vary significantly by breed, location, and breeder reputation, typically ranging from $1,500 to $4,000 or more. Remember that initial cost is just the beginning - budget for ongoing expenses like food, veterinary care, grooming, and training.</p>
+          <Panel header="How much should I expect to invest in a puppy?" key="3">
+            <p>Investment varies significantly by breed, location, and family reputation, typically ranging from $1,500 to $4,000 or more. Remember that initial cost is just the beginning - budget for ongoing expenses like food, veterinary care, grooming, and training for your new family member.</p>
           </Panel>
           <Panel header="What if I need to travel to pick up my puppy?" key="4">
-            <p>Many breeders offer delivery services or can coordinate safe transport. If you&apos;re traveling, bring a secure carrier, plan for stops every 2-3 hours, and ensure your puppy is comfortable. Some breeders may recommend waiting until the puppy is slightly older for long trips.</p>
+            <p>Many dog families offer delivery services or can coordinate safe transport. If you&apos;re traveling, bring a secure carrier, plan for stops every 2-3 hours, and ensure your puppy is comfortable. Some families may recommend waiting until the puppy is slightly older for long trips.</p>
           </Panel>
-          <Panel header="What health guarantees should I expect?" key="5">
-            <p>Reputable breeders typically offer health guarantees covering genetic conditions for 1-2 years, require a veterinary exam within 72 hours of pickup, and provide vaccination records. The specific terms vary by breeder, so review contracts carefully.</p>
+          <Panel header="What health support should I expect?" key="5">
+            <p>Caring dog families typically offer health support covering genetic conditions for 1-2 years, encourage a veterinary exam within 72 hours of pickup, and provide vaccination records. The specific terms vary by family, so discuss expectations openly.</p>
           </Panel>
         </Collapse>
       </Card>
 
       {/* Next Steps CTA */}
       <Card style={{ ...cardStyle, background: 'linear-gradient(135deg, #E6F7F7 0%, #FFF0ED 100%)', textAlign: 'center' }}>
-        <Title level={3} style={{ marginBottom: '16px' }}>Ready to Start Your Journey?</Title>
+        <Title level={3} style={{ marginBottom: '16px' }}>Ready to Start Your Puppy Journey?</Title>
         <Paragraph style={{ marginBottom: '24px', fontSize: '16px' }}>
-          Begin your puppy adoption journey today by exploring our verified breeders and available puppies.
+          Begin your heartwarming journey today by exploring our community of caring dog families and meeting available puppies.
         </Paragraph>
         <Space size="middle">
           <Link href="/breeds">
@@ -370,7 +370,7 @@ const AdoptionGuidePage: React.FC = () => {
           </Link>
           <Link href="/b">
             <Button size="large" icon={<UserOutlined />}>
-              Find Breeders
+              Meet Dog Families
             </Button>
           </Link>
           <Link href="/browse">
@@ -380,7 +380,7 @@ const AdoptionGuidePage: React.FC = () => {
               icon={<HeartOutlined />}
               style={{ background: '#FA8072', borderColor: '#FA8072' }}
             >
-              Browse Available Puppies
+              Meet Available Puppies
             </Button>
           </Link>
         </Space>

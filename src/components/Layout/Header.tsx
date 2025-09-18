@@ -58,7 +58,7 @@ const Header: React.FC = () => {
       {
         key: '/b',
         icon: <TeamOutlined />,
-        label: <Link href="/b">Breeders</Link>,
+        label: <Link href="/b">Families</Link>,
       },
       {
         key: '/about',

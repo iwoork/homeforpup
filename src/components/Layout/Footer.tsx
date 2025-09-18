@@ -61,7 +61,7 @@ const Footer: React.FC = () => {
                 Home For Pup
               </div>
               <Text style={{ color: '#666', lineHeight: '1.6' }}>
-                Connecting ethical breeders with loving families through transparency, trust, and community.
+                Creating paw-some families by connecting caring dog lovers and passionate breeders in a supportive community.
               </Text>
             </div>
             <Space size="middle">
@@ -74,31 +74,31 @@ const Footer: React.FC = () => {
           {/* For Families */}
           <Col xs={24} sm={12} md={6}>
             <Title level={5} style={sectionTitleStyle}>For Families</Title>
-            <Link href="/browse" style={linkStyle}>Browse Puppies</Link>
-            <Link href="/b" style={linkStyle}>Find Breeders</Link>
+            <Link href="/browse" style={linkStyle}>Meet Available Puppies</Link>
+            <Link href="/b" style={linkStyle}>Connect with Dog Families</Link>
             <Link href="/breeds" style={linkStyle}>Breed Guide</Link>
-            <Link href="/adoption-guide" style={linkStyle}>Adoption Process</Link>
-            <Link href="/puppy-care" style={linkStyle}>Puppy Care Tips</Link>
+            <Link href="/adoption-guide" style={linkStyle}>Welcome Home Guide</Link>
+            <Link href="/puppy-care" style={linkStyle}>New Puppy Tips</Link>
           </Col>
 
           {/* For Breeders */}
           <Col xs={24} sm={12} md={6}>
-            <Title level={5} style={sectionTitleStyle}>For Breeders</Title>
-            <Link href="/auth/register" style={linkStyle}>Join as Breeder</Link>
-            <Link href="/breeder-benefits" style={linkStyle}>Breeder Benefits</Link>
-            <Link href="/verification-process" style={linkStyle}>Verification Process</Link>
-            <Link href="/dashboard" style={linkStyle}>Breeder Dashboard</Link>
-            <Link href="/breeder-resources" style={linkStyle}>Resources & Tools</Link>
+            <Title level={5} style={sectionTitleStyle}>For Dog Lovers</Title>
+            <Link href="/auth/register" style={linkStyle}>Join Our Community</Link>
+            <Link href="/breeder-benefits" style={linkStyle}>Community Benefits</Link>
+            <Link href="/verification-process" style={linkStyle}>Getting Started</Link>
+            <Link href="/dashboard" style={linkStyle}>Your Dashboard</Link>
+            <Link href="/breeder-resources" style={linkStyle}>Resources & Support</Link>
           </Col>
 
           {/* Company */}
           <Col xs={24} sm={12} md={6}>
-            <Title level={5} style={sectionTitleStyle}>Company</Title>
+            <Title level={5} style={sectionTitleStyle}>Our Community</Title>
             <Link href="/about" style={linkStyle}>About Us</Link>
-            <Link href="/contact" style={linkStyle}>Contact</Link>
-            <Link href="/careers" style={linkStyle}>Careers</Link>
-            <Link href="/press" style={linkStyle}>Press</Link>
-            <Link href="/blog" style={linkStyle}>Blog</Link>
+            <Link href="/contact" style={linkStyle}>Get in Touch</Link>
+            <Link href="/careers" style={linkStyle}>Join Our Team</Link>
+            <Link href="/success-stories" style={linkStyle}>Success Stories</Link>
+            <Link href="/blog" style={linkStyle}>Community Stories</Link>
           </Col>
         </Row>
 
@@ -109,10 +109,10 @@ const Footer: React.FC = () => {
           <Col xs={24} md={12}>
             <Space direction="vertical" size="small">
               <div style={{ color: '#8b4513', fontSize: '14px' }}>
-                © 2025 HomeForPup.com - Connecting Ethical Breeders with Loving Families
+                © 2025 HomeForPup.com - Creating Paw-some Families, One Match at a Time
               </div>
               <div style={{ fontSize: '12px', color: '#999' }}>
-                Promoting responsible breeding and puppy welfare
+                Bringing together dog lovers and caring breeders in a supportive community
               </div>
             </Space>
           </Col>
@@ -138,15 +138,15 @@ const Footer: React.FC = () => {
           <Space size="large" wrap>
             <Space>
               <MailOutlined style={{ color: '#08979C' }} />
-              <Text style={{ fontSize: '12px' }}>support@homeforpup.com</Text>
+              <Text style={{ fontSize: '12px' }}>hello@homeforpup.com</Text>
             </Space>
             <Space>
               <PhoneOutlined style={{ color: '#08979C' }} />
-              <Text style={{ fontSize: '12px' }}>1-800-PUP-HOME</Text>
+              <Text style={{ fontSize: '12px' }}>1-800-PUP-LOVE</Text>
             </Space>
             <Space>
               <EnvironmentOutlined style={{ color: '#08979C' }} />
-              <Text style={{ fontSize: '12px' }}>Available across Canada</Text>
+              <Text style={{ fontSize: '12px' }}>Connecting families across Canada</Text>
             </Space>
           </Space>
         </div>
