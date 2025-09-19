@@ -211,6 +211,122 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* AI Matching Section */}
+      <section style={{ padding: '64px 24px', background: 'white' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <Title level={2}>Smart Matching with AI Technology</Title>
+            <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
+              Our advanced AI technology analyzes compatibility factors to help connect families with their ideal puppy companions.
+            </Paragraph>
+          </div>
+          
+          <Row gutter={[32, 32]} align="middle">
+            <Col xs={24} lg={12}>
+              <div style={{ padding: '0 24px' }}>
+                <Title level={3} style={{ marginBottom: '24px' }}>
+                  How Our AI Creates Perfect Matches
+                </Title>
+                <div style={{ marginBottom: '24px' }}>
+                  <Title level={4} style={{ color: '#08979C', marginBottom: '8px' }}>
+                    🏠 Lifestyle Compatibility
+                  </Title>
+                  <Paragraph>
+                    Our AI considers your living space, activity level, work schedule, and family situation to recommend breeds and individual puppies that will thrive in your home.
+                  </Paragraph>
+                </div>
+                
+                <div style={{ marginBottom: '24px' }}>
+                  <Title level={4} style={{ color: '#FA8072', marginBottom: '8px' }}>
+                    🧬 Personality Profiling
+                  </Title>
+                  <Paragraph>
+                    Each puppy&apos;s temperament, energy level, and social tendencies are assessed and matched with families seeking complementary traits for harmonious relationships.
+                  </Paragraph>
+                </div>
+                
+                <div style={{ marginBottom: '24px' }}>
+                  <Title level={4} style={{ color: '#08979C', marginBottom: '8px' }}>
+                    🎯 Preference Learning
+                  </Title>
+                  <Paragraph>
+                    The system learns from your interactions and feedback to continuously improve recommendations, ensuring better matches over time.
+                  </Paragraph>
+                </div>
+              </div>
+            </Col>
+            
+            <Col xs={24} lg={12}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #E6F7F7 0%, #FFF5F5 100%)', 
+                borderRadius: '16px', 
+                padding: '32px',
+                textAlign: 'center'
+              }}>
+                <div style={{ 
+                  background: 'white', 
+                  borderRadius: '12px', 
+                  padding: '24px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  marginBottom: '24px'
+                }}>
+                  <Title level={4} style={{ color: '#08979C', marginBottom: '16px' }}>
+                    Match Compatibility Score
+                  </Title>
+                  <div style={{ 
+                    fontSize: '48px', 
+                    fontWeight: 'bold', 
+                    color: '#FA8072',
+                    marginBottom: '8px'
+                  }}>
+                    94%
+                  </div>
+                  <Paragraph style={{ margin: 0, color: '#666' }}>
+                    Excellent match based on your preferences
+                  </Paragraph>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#08979C' }}>🏃‍♂️</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>Energy Level</div>
+                    <div style={{ fontWeight: 'bold' }}>High</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FA8072' }}>👨‍👩‍👧‍👦</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>Family Size</div>
+                    <div style={{ fontWeight: 'bold' }}>4+ Members</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#08979C' }}>🏡</div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>Living Space</div>
+                    <div style={{ fontWeight: 'bold' }}>Large Yard</div>
+                  </div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+          
+          <div style={{ textAlign: 'center', marginTop: '48px' }}>
+            <Button 
+              size="large"
+              type="primary"
+              onClick={handleJoinCommunity}
+              style={{ 
+                height: '48px', 
+                padding: '0 32px', 
+                fontSize: '18px',
+                background: '#08979C',
+                borderColor: '#08979C',
+                fontWeight: '500'
+              }}
+            >
+              {user ? 'Try AI Matching' : 'Start Your AI-Powered Search'}
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section style={{ padding: '64px 24px', background: 'white' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
