@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Typography, Card, Row, Col, Form, Input } from 'antd';
+import { Button, Typography, Card, Row, Col, Form, Input, message } from 'antd';
 import { HeartOutlined, SafetyOutlined, UserOutlined, SmileOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,11 +24,11 @@ const cardStyle: React.CSSProperties = {
   textAlign: 'center',
 };
 
-
-
 const HomePage: React.FC = () => {
   const { user, signIn } = useAuth();
   const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
+  const [newsletterForm] = Form.useForm();
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
 
   const handleJoinCommunity = () => {
     if (user) {
@@ -50,6 +50,34 @@ const HomePage: React.FC = () => {
     setUserTypeModalVisible(false);
     // Call signIn with 'login' action for existing users
     signIn('login');
+  };
+
+  const handleNewsletterSubmit = async (values: { email: string }) => {
+    setNewsletterLoading(true);
+    
+    try {
+      // Replace this with your actual API endpoint
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: values.email }),
+      });
+
+      if (response.ok) {
+        message.success('Successfully subscribed to our newsletter! 🎉');
+        newsletterForm.resetFields();
+      } else {
+        const errorData = await response.json();
+        message.error(errorData.message || 'Failed to subscribe. Please try again.');
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      message.error('Something went wrong. Please try again later.');
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   return (
@@ -217,14 +245,32 @@ const HomePage: React.FC = () => {
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
             Join our newsletter to hear heartwarming puppy stories, get expert care tips, and be the first to meet new additions to our community family.
           </Paragraph>
-          <Form className="newsletter-form" style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-            <Form.Item name="email" style={{ flex: 1, marginBottom: 0 }}>
-              <Input placeholder="Enter your email" size="large" />
+          <Form 
+            form={newsletterForm}
+            onFinish={handleNewsletterSubmit}
+            className="newsletter-form" 
+            style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}
+          >
+            <Form.Item 
+              name="email" 
+              style={{ flex: 1, marginBottom: 0 }}
+              rules={[
+                { required: true, message: 'Please enter your email address' },
+                { type: 'email', message: 'Please enter a valid email address' }
+              ]}
+            >
+              <Input 
+                placeholder="Enter your email" 
+                size="large" 
+                disabled={newsletterLoading}
+              />
             </Form.Item>
             <Form.Item style={{ marginBottom: 0 }}>
               <Button 
                 type="primary" 
                 size="large" 
+                htmlType="submit"
+                loading={newsletterLoading}
                 block
                 style={{ 
                   background: '#08979C', 
