@@ -1,18 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Avatar, Button, Tabs, Image, Tag, Divider, Space, Rate } from 'antd';
+import { Card, Row, Col, Typography, Avatar, Button, Tabs, Image, Tag, Space, Rate } from 'antd';
 import { 
-  HeartOutlined, 
   CalendarOutlined, 
   EnvironmentOutlined,
   PhoneOutlined,
   MailOutlined,
-  MessageOutlined,
-  ShareAltOutlined,
   CheckCircleOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
+import AnnouncementsFeed from '@/components/AnnouncementsFeed';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
@@ -39,66 +37,6 @@ const breederData = {
   currentFamilies: 298
 };
 
-// Post interface for better type safety
-interface Post {
-  id: number;
-  type: string;
-  date: string;
-  title: string;
-  content: string;
-  images?: string[];
-  likes: number;
-  comments: number;
-  isFromFamily?: boolean;
-  familyName?: string;
-}
-
-// Mock posts data
-const posts: Post[] = [
-  {
-    id: 1,
-    type: "litter_announcement",
-    date: "2025-03-15",
-    title: "New Cavapoo Litter Expected!",
-    content: "Exciting news! Bella and Max are expecting their first litter together. Due date is April 20th. Both parents have passed all health clearances. Taking reservations now!",
-    images: ["https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400", "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400"],
-    likes: 24,
-    comments: 8
-  },
-  {
-    id: 2,
-    type: "puppy_update",
-    date: "2025-03-12",
-    title: "Week 6 Update - Golden Retriever Litter",
-    content: "The golden babies are 6 weeks old and personalities are really shining through! They've started basic potty training and are eating solid food. Vet check scheduled for this Friday.",
-    images: ["https://images.unsplash.com/photo-1552053831-71594a27632d?w=400", "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=400", "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400"],
-    likes: 45,
-    comments: 12
-  },
-  {
-    id: 3,
-    type: "family_update",
-    date: "2025-03-10",
-    title: "Update from the Johnson Family",
-    content: "Luna is doing amazing in her new home! She's already learned sit, stay, and come. The kids absolutely adore her. Thank you Sarah for this perfect addition to our family!",
-    images: ["https://images.unsplash.com/photo-1583511655826-05700d52f4d9?w=400"],
-    likes: 38,
-    comments: 6,
-    isFromFamily: true,
-    familyName: "Johnson Family"
-  },
-  {
-    id: 4,
-    type: "health_update",
-    date: "2025-03-08",
-    title: "Health Testing Complete",
-    content: "Just received Rosie's latest health clearances - all clear for hips, elbows, eyes, and genetic testing. She's approved for breeding and we're planning her next litter for fall 2025.",
-    images: ["https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400"],
-    likes: 22,
-    comments: 4
-  }
-];
-
 const BreederCommunityPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("posts");
 
@@ -107,62 +45,6 @@ const BreederCommunityPage: React.FC = () => {
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
     marginBottom: '16px'
   };
-
-  const renderPost = (post: Post) => (
-    <Card key={post.id} style={cardStyle}>
-      <div style={{ marginBottom: '12px' }}>
-        <Space align="center">
-          <Avatar src={post.isFromFamily ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" : breederData.profileImage} />
-          <div>
-            <Text strong>{post.isFromFamily ? post.familyName : breederData.businessName}</Text>
-            <br />
-            <Text type="secondary">{post.date}</Text>
-            {post.isFromFamily && <Tag color="blue" style={{ marginLeft: '8px' }}>Family Update</Tag>}
-          </div>
-        </Space>
-      </div>
-      
-      <Title level={4} style={{ marginBottom: '8px' }}>{post.title}</Title>
-      <Paragraph>{post.content}</Paragraph>
-      
-      {post.images && post.images.length > 0 && (
-        <div style={{ marginBottom: '16px' }}>
-          <Image.PreviewGroup>
-            <Row gutter={[8, 8]}>
-              {post.images.map((img: string, idx: number) => (
-                <Col key={idx} span={post.images!.length === 1 ? 24 : 8}>
-                  <Image
-                    src={img}
-                    alt={`Post image ${idx + 1}`}
-                    style={{ 
-                      width: '100%', 
-                      height: post.images!.length === 1 ? '300px' : '150px',
-                      objectFit: 'cover',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </Col>
-              ))}
-            </Row>
-          </Image.PreviewGroup>
-        </div>
-      )}
-      
-      <Divider style={{ margin: '12px 0' }} />
-      
-      <Space>
-        <Button type="text" icon={<HeartOutlined />} size="small">
-          {post.likes} Likes
-        </Button>
-        <Button type="text" icon={<MessageOutlined />} size="small">
-          {post.comments} Comments
-        </Button>
-        <Button type="text" icon={<ShareAltOutlined />} size="small">
-          Share
-        </Button>
-      </Space>
-    </Card>
-  );
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
@@ -312,9 +194,7 @@ const BreederCommunityPage: React.FC = () => {
             size="large"
           >
             <TabPane tab="Community Posts" key="posts">
-              <div>
-                {posts.map(renderPost)}
-              </div>
+              <AnnouncementsFeed />
             </TabPane>
             
             <TabPane tab="Available Puppies" key="available">

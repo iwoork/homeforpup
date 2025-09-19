@@ -1,16 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert, Drawer } from 'antd';
+import { Layout, Menu, Button, Dropdown, Avatar, Row, Col, Alert, Drawer, Badge } from 'antd';
 import { 
   UserOutlined, 
   LogoutOutlined, 
   HomeOutlined, 
   PlusOutlined, 
-  HeartOutlined, 
   TeamOutlined,
   MenuOutlined,
-  CloseOutlined 
+  CloseOutlined,
+  MessageOutlined,
+  BellOutlined,
+  SearchOutlined,
+  InfoCircleOutlined,
+  DashboardOutlined,
+  FileTextOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -20,14 +26,22 @@ import UserTypeModal from '@/components/UserTypeModal';
 
 const { Header: AntHeader } = Layout;
 
+// Interface for menu click events
+interface MenuClickEvent {
+  key: string;
+}
+
 const Header: React.FC = () => {
   const { user, signIn, signOut, error } = useAuth();
   const pathname = usePathname();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
+  
+  // Mock unread message count - replace with actual data
+  const unreadMessageCount = 3;
 
-  const handleMenuClick = (e: any) => {
-    const key = e.key || e;
+  const handleMenuClick = (e: MenuClickEvent) => {
+    const key = e.key;
     if (key === 'logout') {
       signOut();
     }
@@ -49,17 +63,28 @@ const Header: React.FC = () => {
 
   const handleUserTypeSelection = (_userType: 'breeder' | 'adopter') => {
     setUserTypeModalVisible(false);
-    // You can pass additional parameters to signIn if needed
-    // For now, we'll use the same signIn function and handle user type later
     signIn();
   };
 
   const userMenu = {
     items: [
       {
+        key: 'dashboard',
+        icon: <DashboardOutlined />,
+        label: <Link href="/dashboard">Dashboard</Link>,
+      },
+      {
         key: 'profile',
         icon: <UserOutlined />,
         label: <Link href="/dashboard/profile">Profile</Link>,
+      },
+      {
+        key: 'settings',
+        icon: <SettingOutlined />,
+        label: <Link href="/dashboard/settings">Settings</Link>,
+      },
+      {
+        type: 'divider' as const,
       },
       {
         key: 'logout',
@@ -70,58 +95,66 @@ const Header: React.FC = () => {
     onClick: handleMenuClick,
   };
 
-  // Navigation items - organized properly for logged in vs logged out users
-  const getNavigationItems = () => {
-    const publicItems = [
-      {
-        key: '/browse',
-        icon: <HeartOutlined />,
-        label: <Link href="/browse">Puppies</Link>,
-      },
-      {
-        key: '/b',
-        icon: <TeamOutlined />,
-        label: <Link href="/b">Families</Link>,
-      },
-      {
-        key: '/about',
-        icon: <UserOutlined />,
-        label: <Link href="/about">About</Link>,
-      },
-    ];
+  // Navigation items for public (non-authenticated) users
+  const getPublicNavigationItems = () => [
+    {
+      key: '/browse',
+      icon: <SearchOutlined />,
+      label: <Link href="/browse">Find Puppies</Link>,
+    },
+    {
+      key: '/breeders',
+      icon: <TeamOutlined />,
+      label: <Link href="/breeders">Browse Breeders</Link>,
+    },
+    {
+      key: '/about',
+      icon: <InfoCircleOutlined />,
+      label: <Link href="/about">About</Link>,
+    },
+  ];
 
-    if (user) {
-      // For logged in users, add dashboard items
-      return [
-        ...publicItems,
-        {
-          key: '/dashboard',
-          icon: <HomeOutlined />,
-          label: <Link href="/dashboard">Dashboard</Link>,
-        },
-        {
-          key: '/dashboard/litters',
-          icon: <PlusOutlined />,
-          label: <Link href="/dashboard/litters">My Litters</Link>,
-        },
-      ];
-    }
+  // Navigation items for authenticated users
+  const getAuthenticatedNavigationItems = () => [
+    {
+      key: '/dashboard',
+      icon: <HomeOutlined />,
+      label: <Link href="/dashboard">Dashboard</Link>,
+    },
+    {
+      key: '/dashboard/messages',
+      icon: unreadMessageCount > 0 ? (
+        <Badge count={unreadMessageCount} size="small" offset={[4, -4]}>
+          <MessageOutlined />
+        </Badge>
+      ) : (
+        <MessageOutlined />
+      ),
+      label: <Link href="/dashboard/messages">Messages</Link>,
+    },
+    {
+      key: '/dashboard/announcements',
+      icon: <BellOutlined />,
+      label: <Link href="/dashboard/announcements">Community</Link>,
+    },
+    {
+      key: '/browse',
+      icon: <SearchOutlined />,
+      label: <Link href="/browse">Browse</Link>,
+    },
+  ];
 
-    return publicItems;
-  };
-
-  const navigationItems = getNavigationItems();
+  const navigationItems = user ? getAuthenticatedNavigationItems() : getPublicNavigationItems();
 
   const handleDrawerClose = () => {
     setDrawerVisible(false);
   };
 
   const handleMenuItemClick = () => {
-    // Close drawer when a menu item is clicked on mobile
     setDrawerVisible(false);
   };
 
-  // Mobile menu items for drawer (with click handlers)
+  // Mobile menu items for drawer
   const mobileNavigationItems = navigationItems.map(item => ({
     ...item,
     label: (
@@ -137,7 +170,10 @@ const Header: React.FC = () => {
         background: '#fff', 
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         borderBottom: '1px solid #f0f0f0',
-        padding: '0 24px'
+        padding: '0 24px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000
       }}>
         <style jsx global>{`
           @media (min-width: 992px) {
@@ -171,7 +207,7 @@ const Header: React.FC = () => {
             }
           }
           
-          /* Fix for Menu component to ensure all items are visible */
+          /* Enhanced Menu styling */
           .ant-menu-horizontal {
             line-height: 64px;
             border-bottom: none !important;
@@ -179,8 +215,9 @@ const Header: React.FC = () => {
           .ant-menu-horizontal > .ant-menu-item,
           .ant-menu-horizontal > .ant-menu-submenu {
             border-bottom: 2px solid transparent !important;
-            margin: 0 8px;
+            margin: 0 4px;
             position: relative;
+            transition: all 0.2s ease;
           }
           .ant-menu-horizontal > .ant-menu-item::after,
           .ant-menu-horizontal > .ant-menu-submenu::after {
@@ -196,14 +233,22 @@ const Header: React.FC = () => {
           .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-submenu-selected {
             color: #08979C !important;
             border-bottom: 2px solid #08979C !important;
+            background-color: rgba(8, 151, 156, 0.05) !important;
           }
           .ant-menu-horizontal::after {
             display: none !important;
           }
+          
+          /* Badge styling for messages */
+          .ant-badge-count {
+            background-color: #ff4d4f;
+            border-color: #ff4d4f;
+          }
         `}</style>
+        
         <Row justify="space-between" align="middle" style={{ height: '100%', maxWidth: 1200, margin: '0 auto' }}>
           <Col flex="none">
-            <Link href="/" style={{ textDecoration: 'none' }}>
+            <Link href={user ? "/dashboard" : "/"} style={{ textDecoration: 'none' }}>
               <div
                 style={{
                   fontSize: "24px",
@@ -235,14 +280,14 @@ const Header: React.FC = () => {
             display: 'flex', 
             justifyContent: 'center',
             alignItems: 'center',
-            minWidth: 0, // Allow flex item to shrink
+            minWidth: 0,
           }}>
             <Menu 
               mode="horizontal" 
               style={{ 
                 border: 'none', 
                 background: 'transparent',
-                minWidth: 0, // Allow menu to shrink if needed
+                minWidth: 0,
               }}
               selectedKeys={[pathname]}
               items={navigationItems}
@@ -255,12 +300,18 @@ const Header: React.FC = () => {
             {/* Desktop Auth Section */}
             <div className="desktop-auth" style={{ display: 'block' }}>
               {user ? (
-                <Dropdown menu={userMenu} placement="bottomRight">
-                  <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Avatar icon={<UserOutlined />} />
-                    <span>{user.name}</span>
-                  </Button>
-                </Dropdown>
+                <Row align="middle" gutter={12}>
+                  {/* Quick Action Buttons for Authenticated Users */}
+            
+                  <Col>
+                    <Dropdown menu={userMenu} placement="bottomRight">
+                      <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Avatar icon={<UserOutlined />} />
+                        <span>{user.name}</span>
+                      </Button>
+                    </Dropdown>
+                  </Col>
+                </Row>
               ) : (
                 <Row gutter={8}>
                   <Col>
@@ -270,9 +321,9 @@ const Header: React.FC = () => {
                     <Button 
                       type="primary" 
                       onClick={handleJoinAsBreeder}
-                      style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
+                      style={{ background: '#08979C', borderColor: '#08979C' }}
                     >
-                      Join our Community
+                      Join as Breeder
                     </Button>
                   </Col>
                 </Row>
@@ -283,7 +334,15 @@ const Header: React.FC = () => {
             <div className="mobile-menu" style={{ display: 'none' }}>
               <Button
                 type="text"
-                icon={<MenuOutlined />}
+                icon={
+                  user && unreadMessageCount > 0 ? (
+                    <Badge count={unreadMessageCount} size="small" offset={[4, -4]}>
+                      <MenuOutlined />
+                    </Badge>
+                  ) : (
+                    <MenuOutlined />
+                  )
+                }
                 onClick={() => setDrawerVisible(true)}
                 style={{ fontSize: '18px', padding: '4px 8px' }}
               />
@@ -296,7 +355,7 @@ const Header: React.FC = () => {
       <Drawer
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Link href="/" onClick={handleDrawerClose} style={{ textDecoration: 'none' }}>
+            <Link href={user ? "/dashboard" : "/"} onClick={handleDrawerClose} style={{ textDecoration: 'none' }}>
               <div
                 style={{
                   fontSize: "20px",
@@ -321,7 +380,7 @@ const Header: React.FC = () => {
         placement="right"
         onClose={handleDrawerClose}
         open={drawerVisible}
-        width={280}
+        width={300}
         closeIcon={<CloseOutlined />}
         styles={{
           header: {
@@ -339,21 +398,58 @@ const Header: React.FC = () => {
           }}>
             <Row align="middle" gutter={12}>
               <Col>
-                <Avatar icon={<UserOutlined />} size={40} />
+                <Avatar icon={<UserOutlined />} size={48} />
               </Col>
               <Col flex={1}>
                 <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{user.name}</div>
-                <Button 
-                  type="link" 
-                  size="small" 
-                  style={{ padding: '0', height: 'auto', color: '#666' }}
-                  onClick={() => {
-                    handleDrawerClose();
-                    // Navigate to profile
-                  }}
-                >
-                  View Profile
-                </Button>
+                <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                  Breeder Account
+                </div>
+                
+              </Col>
+            </Row>
+          </div>
+        )}
+
+        {/* Quick Actions for Authenticated Users */}
+        {user && (
+          <div style={{ 
+            padding: '16px 0', 
+            borderBottom: '1px solid #f0f0f0', 
+            marginBottom: '16px' 
+          }}>
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: 'bold', 
+              color: '#666', 
+              marginBottom: '12px' 
+            }}>
+              Quick Actions
+            </div>
+            <Row gutter={[0, 8]}>
+              <Col span={24}>
+                <Link href="/dashboard/litters/new">
+                  <Button 
+                    block 
+                    icon={<PlusOutlined />}
+                    onClick={handleDrawerClose}
+                    style={{ textAlign: 'left' }}
+                  >
+                    Add New Litter
+                  </Button>
+                </Link>
+              </Col>
+              <Col span={24}>
+                <Link href="/dashboard/announcements/new">
+                  <Button 
+                    block 
+                    icon={<FileTextOutlined />}
+                    onClick={handleDrawerClose}
+                    style={{ textAlign: 'left' }}
+                  >
+                    Create Announcement
+                  </Button>
+                </Link>
               </Col>
             </Row>
           </div>
@@ -375,6 +471,14 @@ const Header: React.FC = () => {
             left: '24px', 
             right: '24px' 
           }}>
+            <div style={{ 
+              fontSize: '14px', 
+              color: '#666', 
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              Join our community of responsible dog breeders
+            </div>
             <Row gutter={[0, 12]} style={{ width: '100%' }}>
               <Col span={24}>
                 <Button 
@@ -397,7 +501,7 @@ const Header: React.FC = () => {
                     handleDrawerClose();
                     handleJoinAsBreeder();
                   }}
-                  style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
+                  style={{ background: '#08979C', borderColor: '#08979C' }}
                 >
                   Join as Breeder
                 </Button>
@@ -421,6 +525,10 @@ const Header: React.FC = () => {
               onClick={() => {
                 handleDrawerClose();
                 signOut();
+              }}
+              style={{ 
+                color: '#ff4d4f',
+                borderColor: '#ff4d4f'
               }}
             >
               Logout
