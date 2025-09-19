@@ -272,7 +272,7 @@ const Header: React.FC = () => {
                       onClick={handleJoinAsBreeder}
                       style={{ background: '#ff6b35', borderColor: '#ff6b35' }}
                     >
-                      Join as Breeder
+                      Join our Community
                     </Button>
                   </Col>
                 </Row>
