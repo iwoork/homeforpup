@@ -323,7 +323,7 @@ const Header: React.FC = () => {
                       onClick={handleJoinAsBreeder}
                       style={{ background: '#08979C', borderColor: '#08979C' }}
                     >
-                      Join as Breeder
+                      Join
                     </Button>
                   </Col>
                 </Row>
