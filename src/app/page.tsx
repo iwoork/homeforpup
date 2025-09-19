@@ -40,16 +40,16 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleUserTypeSelection = (userType: 'breeder' | 'adopter') => {
+  const handleUserTypeSelection = (_userType: 'breeder' | 'adopter') => {
     setUserTypeModalVisible(false);
-    // Call signIn with 'signup' action and user type
-    signIn('signup', userType);
+    // Call signIn without parameters to match Header component behavior
+    signIn();
   };
 
   const handleLogin = () => {
     setUserTypeModalVisible(false);
-    // Call signIn with 'login' action for existing users
-    signIn('login');
+    // Call signIn without parameters to match Header component behavior
+    signIn();
   };
 
   const handleNewsletterSubmit = async (values: { email: string }) => {
@@ -433,7 +433,7 @@ const HomePage: React.FC = () => {
               <Col>
                 <Button 
                   size="large" 
-                  onClick={() => signIn('login')}
+                  onClick={handleLogin}
                   style={{ 
                     height: '48px', 
                     padding: '0 32px', 
