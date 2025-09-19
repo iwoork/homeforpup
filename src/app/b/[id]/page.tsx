@@ -1,22 +1,40 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Avatar, Button, Tabs, Image, Tag, Space, Rate } from 'antd';
+import { 
+  Card, 
+  Row, 
+  Col, 
+  Typography, 
+  Avatar, 
+  Button, 
+  Tabs, 
+  Image, 
+  Tag, 
+  Space, 
+  Rate,
+  Input,
+  message
+} from 'antd';
 import { 
   CalendarOutlined, 
   EnvironmentOutlined,
   PhoneOutlined,
   MailOutlined,
   CheckCircleOutlined,
-  TrophyOutlined,
+  EditOutlined,
+  SaveOutlined,
+  CloseOutlined,
+  CameraOutlined
 } from '@ant-design/icons';
 import AnnouncementsFeed from '@/components/AnnouncementsFeed';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
+const { TextArea } = Input;
 
 // Mock data for a breeder
-const breederData = {
+const initialBreederData = {
   id: 1,
   name: "Sarah Johnson",
   businessName: "Happy Tails Breeding",
@@ -37,8 +55,223 @@ const breederData = {
   currentFamilies: 298
 };
 
+interface EditableTextProps {
+  value: string;
+  onChange: (value: string) => void;
+  editing: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  isOwner: boolean;
+  multiline?: boolean;
+  placeholder?: string;
+}
+
+const EditableText: React.FC<EditableTextProps> = ({
+  value,
+  onChange,
+  editing,
+  onEdit,
+  onSave,
+  onCancel,
+  isOwner,
+  multiline = false,
+  placeholder = "Click to edit"
+}) => {
+  if (!isOwner) {
+    return multiline ? <Paragraph>{value}</Paragraph> : <Text>{value}</Text>;
+  }
+
+  if (editing) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+        {multiline ? (
+          <TextArea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            autoSize={{ minRows: 3, maxRows: 6 }}
+            style={{ flex: 1 }}
+          />
+        ) : (
+          <Input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            style={{ flex: 1 }}
+          />
+        )}
+        <Space>
+          <Button 
+            type="primary" 
+            icon={<SaveOutlined />} 
+            size="small"
+            onClick={onSave}
+          >
+            Save
+          </Button>
+          <Button 
+            icon={<CloseOutlined />} 
+            size="small"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        </Space>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '8px',
+        cursor: 'pointer',
+        padding: '4px',
+        borderRadius: '4px',
+        border: '1px solid transparent'
+      }}
+      className="editable-field"
+      onClick={onEdit}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.border = '1px solid #d9d9d9';
+        e.currentTarget.style.backgroundColor = '#fafafa';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.border = '1px solid transparent';
+        e.currentTarget.style.backgroundColor = 'transparent';
+      }}
+    >
+      {multiline ? <Paragraph style={{ margin: 0 }}>{value}</Paragraph> : <Text>{value}</Text>}
+      <EditOutlined style={{ color: '#999', fontSize: '12px' }} />
+    </div>
+  );
+};
+
+interface EditableTagsProps {
+  tags: string[];
+  onUpdate: (tags: string[]) => void;
+  isOwner: boolean;
+  title: string;
+}
+
+const EditableTags: React.FC<EditableTagsProps> = ({ tags, onUpdate, isOwner, title }) => {
+  const [editing, setEditing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [tempTags, setTempTags] = useState(tags);
+
+  const handleSave = () => {
+    onUpdate(tempTags);
+    setEditing(false);
+    message.success(`${title} updated successfully!`);
+  };
+
+  const handleCancel = () => {
+    setTempTags(tags);
+    setInputValue('');
+    setEditing(false);
+  };
+
+  const handleAddTag = () => {
+    if (inputValue && !tempTags.includes(inputValue)) {
+      setTempTags([...tempTags, inputValue]);
+      setInputValue('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTempTags(tempTags.filter(tag => tag !== tagToRemove));
+  };
+
+  if (!isOwner) {
+    return (
+      <Space wrap>
+        {tags.map(tag => (
+          <Tag key={tag} color="blue" style={{ marginBottom: '4px' }}>
+            {tag}
+          </Tag>
+        ))}
+      </Space>
+    );
+  }
+
+  if (editing) {
+    return (
+      <div>
+        <Space wrap style={{ marginBottom: '8px' }}>
+          {tempTags.map(tag => (
+            <Tag
+              key={tag}
+              closable
+              color="blue"
+              onClose={() => handleRemoveTag(tag)}
+              style={{ marginBottom: '4px' }}
+            >
+              {tag}
+            </Tag>
+          ))}
+        </Space>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <Input
+            placeholder="Add new breed"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onPressEnter={handleAddTag}
+            style={{ flex: 1 }}
+          />
+          <Button onClick={handleAddTag}>Add</Button>
+        </div>
+        <Space>
+          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>
+            Save
+          </Button>
+          <Button icon={<CloseOutlined />} onClick={handleCancel}>
+            Cancel
+          </Button>
+        </Space>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        cursor: 'pointer',
+        padding: '4px',
+        borderRadius: '4px',
+        border: '1px solid transparent'
+      }}
+      className="editable-tags"
+      onClick={() => setEditing(true)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.border = '1px solid #d9d9d9';
+        e.currentTarget.style.backgroundColor = '#fafafa';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.border = '1px solid transparent';
+        e.currentTarget.style.backgroundColor = 'transparent';
+      }}
+    >
+      <Space wrap style={{ width: '100%' }}>
+        {tags.map(tag => (
+          <Tag key={tag} color="blue" style={{ marginBottom: '4px' }}>
+            {tag}
+          </Tag>
+        ))}
+        <EditOutlined style={{ color: '#999', fontSize: '12px', alignSelf: 'center' }} />
+      </Space>
+    </div>
+  );
+};
+
 const BreederCommunityPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("posts");
+  const [breederData, setBreederData] = useState(initialBreederData);
+  const [isOwner, setIsOwner] = useState(true); // In real app, this would be determined by authentication
+  const [editingStates, setEditingStates] = useState<Record<string, boolean>>({});
+  const [tempValues, setTempValues] = useState<Record<string, string>>({});
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -46,8 +279,57 @@ const BreederCommunityPage: React.FC = () => {
     marginBottom: '16px'
   };
 
+  const startEditing = (field: string) => {
+    setEditingStates({ ...editingStates, [field]: true });
+    setTempValues({ ...tempValues, [field]: breederData[field as keyof typeof breederData] as string });
+  };
+
+  const saveField = (field: string) => {
+    setBreederData({ ...breederData, [field]: tempValues[field] });
+    setEditingStates({ ...editingStates, [field]: false });
+    message.success('Information updated successfully!');
+  };
+
+  const cancelEdit = (field: string) => {
+    setEditingStates({ ...editingStates, [field]: false });
+    setTempValues({ ...tempValues, [field]: breederData[field as keyof typeof breederData] as string });
+  };
+
+  const updateTempValue = (field: string, value: string) => {
+    setTempValues({ ...tempValues, [field]: value });
+  };
+
+  const updateSpecialties = (newSpecialties: string[]) => {
+    setBreederData({ ...breederData, specialties: newSpecialties });
+  };
+
+  const updateCertifications = (newCertifications: string[]) => {
+    setBreederData({ ...breederData, certifications: newCertifications });
+  };
+
+  const handleImageUpload = (type: 'profile' | 'cover') => {
+    // In a real app, this would handle actual file upload
+    message.info(`${type} image upload would be handled here`);
+  };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      {/* Toggle Owner Mode Button (for demo purposes) */}
+      {isOwner && (
+        <div style={{ marginBottom: '16px', textAlign: 'right' }}>
+          <Button
+            type="dashed"
+            onClick={() => setIsOwner(!isOwner)}
+            style={{ marginRight: '8px' }}
+          >
+            Toggle Edit Mode (Demo)
+          </Button>
+          <Text type="secondary">
+            {isOwner ? 'Editing Enabled' : 'View Only Mode'}
+          </Text>
+        </div>
+      )}
+
       {/* Cover Photo & Profile Header */}
       <Card 
         style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden' }}
@@ -62,6 +344,22 @@ const BreederCommunityPage: React.FC = () => {
             position: 'relative'
           }}
         >
+          {isOwner && (
+            <Button
+              icon={<CameraOutlined />}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(0,0,0,0.5)',
+                color: 'white',
+                border: 'none'
+              }}
+              onClick={() => handleImageUpload('cover')}
+            >
+              Change Cover
+            </Button>
+          )}
           <div style={{
             position: 'absolute',
             bottom: '20px',
@@ -71,21 +369,61 @@ const BreederCommunityPage: React.FC = () => {
             <Row align="bottom" justify="space-between">
               <Col>
                 <Space align="end" size={16}>
-                  <Avatar 
-                    size={120} 
-                    src={breederData.profileImage}
-                    style={{ border: '4px solid white' }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <Avatar 
+                      size={120} 
+                      src={breederData.profileImage}
+                      style={{ border: '4px solid white' }}
+                    />
+                    {isOwner && (
+                      <Button
+                        icon={<CameraOutlined />}
+                        size="small"
+                        style={{
+                          position: 'absolute',
+                          bottom: '8px',
+                          right: '8px',
+                          background: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '28px',
+                          height: '28px',
+                          padding: '0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        onClick={() => handleImageUpload('profile')}
+                      />
+                    )}
+                  </div>
                   <div>
-                    <Title level={2} style={{ color: 'white', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                      {breederData.businessName}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <EditableText
+                        value={breederData.businessName}
+                        onChange={(value) => updateTempValue('businessName', value)}
+                        editing={editingStates.businessName || false}
+                        onEdit={() => startEditing('businessName')}
+                        onSave={() => saveField('businessName')}
+                        onCancel={() => cancelEdit('businessName')}
+                        isOwner={isOwner}
+                        placeholder="Business name"
+                      />
                       {breederData.verified && (
-                        <CheckCircleOutlined style={{ color: '#52c41a', marginLeft: '8px' }} />
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
                       )}
-                    </Title>
-                    <Text style={{ color: 'white', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                      by {breederData.name}
-                    </Text>
+                    </div>
+                    <EditableText
+                      value={`by ${breederData.name}`}
+                      onChange={(value) => updateTempValue('name', value.replace('by ', ''))}
+                      editing={editingStates.name || false}
+                      onEdit={() => startEditing('name')}
+                      onSave={() => saveField('name')}
+                      onCancel={() => cancelEdit('name')}
+                      isOwner={isOwner}
+                      placeholder="Your name"
+                    />
                     <br />
                     <Space style={{ marginTop: '4px' }}>
                       <Rate disabled defaultValue={breederData.rating} style={{ fontSize: '14px' }} />
@@ -116,49 +454,92 @@ const BreederCommunityPage: React.FC = () => {
         <Col xs={24} lg={8}>
           {/* About Card */}
           <Card title="About" style={cardStyle}>
-            <Paragraph>{breederData.about}</Paragraph>
+            <EditableText
+              value={breederData.about}
+              onChange={(value) => updateTempValue('about', value)}
+              editing={editingStates.about || false}
+              onEdit={() => startEditing('about')}
+              onSave={() => saveField('about')}
+              onCancel={() => cancelEdit('about')}
+              isOwner={isOwner}
+              multiline={true}
+              placeholder="Tell people about your breeding program..."
+            />
             
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div>
+            <Space direction="vertical" style={{ width: '100%', marginTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <EnvironmentOutlined style={{ color: '#08979C', marginRight: '8px' }} />
-                <Text>{breederData.location}</Text>
+                <EditableText
+                  value={breederData.location}
+                  onChange={(value) => updateTempValue('location', value)}
+                  editing={editingStates.location || false}
+                  onEdit={() => startEditing('location')}
+                  onSave={() => saveField('location')}
+                  onCancel={() => cancelEdit('location')}
+                  isOwner={isOwner}
+                  placeholder="Your location"
+                />
               </div>
-              <div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <CalendarOutlined style={{ color: '#08979C', marginRight: '8px' }} />
-                <Text>{breederData.experience} experience</Text>
+                <EditableText
+                  value={`${breederData.experience} experience`}
+                  onChange={(value) => updateTempValue('experience', value.replace(' experience', ''))}
+                  editing={editingStates.experience || false}
+                  onEdit={() => startEditing('experience')}
+                  onSave={() => saveField('experience')}
+                  onCancel={() => cancelEdit('experience')}
+                  isOwner={isOwner}
+                  placeholder="Years of experience"
+                />
               </div>
-              <div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <PhoneOutlined style={{ color: '#08979C', marginRight: '8px' }} />
-                <Text>{breederData.phone}</Text>
+                <EditableText
+                  value={breederData.phone}
+                  onChange={(value) => updateTempValue('phone', value)}
+                  editing={editingStates.phone || false}
+                  onEdit={() => startEditing('phone')}
+                  onSave={() => saveField('phone')}
+                  onCancel={() => cancelEdit('phone')}
+                  isOwner={isOwner}
+                  placeholder="Phone number"
+                />
               </div>
-              <div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <MailOutlined style={{ color: '#08979C', marginRight: '8px' }} />
-                <Text>{breederData.email}</Text>
+                <EditableText
+                  value={breederData.email}
+                  onChange={(value) => updateTempValue('email', value)}
+                  editing={editingStates.email || false}
+                  onEdit={() => startEditing('email')}
+                  onSave={() => saveField('email')}
+                  onCancel={() => cancelEdit('email')}
+                  isOwner={isOwner}
+                  placeholder="Email address"
+                />
               </div>
             </Space>
           </Card>
 
           {/* Specialties */}
           <Card title="Breeds We Specialize In" style={cardStyle}>
-            <Space wrap>
-              {breederData.specialties.map(breed => (
-                <Tag key={breed} color="blue" style={{ marginBottom: '4px' }}>
-                  {breed}
-                </Tag>
-              ))}
-            </Space>
+            <EditableTags
+              tags={breederData.specialties}
+              onUpdate={updateSpecialties}
+              isOwner={isOwner}
+              title="Specialties"
+            />
           </Card>
 
           {/* Certifications */}
           <Card title="Certifications & Memberships" style={cardStyle}>
-            <Space direction="vertical">
-              {breederData.certifications.map(cert => (
-                <div key={cert}>
-                  <TrophyOutlined style={{ color: '#FA8072', marginRight: '8px' }} />
-                  <Text>{cert}</Text>
-                </div>
-              ))}
-            </Space>
+            <EditableTags
+              tags={breederData.certifications}
+              onUpdate={updateCertifications}
+              isOwner={isOwner}
+              title="Certifications"
+            />
           </Card>
 
           {/* Stats */}
