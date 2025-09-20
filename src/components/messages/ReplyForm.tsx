@@ -14,9 +14,13 @@ import {
   SendOutlined,
   PaperClipOutlined
 } from '@ant-design/icons';
-import { ReplyFormValues } from '@/types/messaging';
 
 const { TextArea } = Input;
+
+// Type definition for reply form
+interface ReplyFormValues {
+  content: string;
+}
 
 interface ReplyFormProps {
   onSend: (values: ReplyFormValues) => Promise<void>;

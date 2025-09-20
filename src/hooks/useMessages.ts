@@ -2,8 +2,16 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Message, MessageThread, MessageFilters, ComposeMessageFormValues } from '@/types/messaging';
+import { Message, MessageThread, MessageFilters } from '@/types/messaging';
 import { MessageService } from '@/services/messageService';
+
+// Type definition for compose message form
+interface ComposeMessageFormValues {
+  recipient: string;
+  subject: string;
+  content: string;
+  messageType?: string;
+}
 
 interface UseMessagesProps {
   userId: string;
@@ -48,15 +56,23 @@ export const useMessages = ({
   const [filters, setFilters] = useState<MessageFilters>({});
 
   const messageService = useRef(new MessageService());
-  const pollingRef = useRef<NodeJS.Timeout>();
+  const pollingRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastUpdateRef = useRef<string>('');
+
+  // Helper function to safely get unread count
+  const getUnreadCount = (thread: MessageThread, userId: string): number => {
+    if (typeof thread.unreadCount === 'object' && thread.unreadCount !== null) {
+      return (thread.unreadCount as Record<string, number>)[userId] || 0;
+    }
+    return 0;
+  };
 
   // Fetch threads from DynamoDB
   const fetchThreads = useCallback(async () => {
     if (!userId) return;
 
     try {
-      const fetchedThreads = await messageService.current.getUserThreads(userId);
+      const fetchedThreads = await messageService.current.getUserThreads();
       
       // Check if data has actually changed to avoid unnecessary re-renders
       const newLastUpdate = fetchedThreads[0]?.updatedAt || '';
@@ -69,7 +85,7 @@ export const useMessages = ({
       
       // Update unread count
       const totalUnread = fetchedThreads.reduce((sum, thread) => 
-        sum + (thread.unreadCount[userId] || 0), 0
+        sum + getUnreadCount(thread, userId), 0
       );
       setUnreadCount(totalUnread);
       
@@ -152,7 +168,7 @@ export const useMessages = ({
     await fetchMessages(thread.id);
     
     // Mark as read if there are unread messages
-    if ((thread.unreadCount[userId] || 0) > 0) {
+    if (getUnreadCount(thread, userId) > 0) {
       markThreadAsRead(thread.id);
     }
   }, [fetchMessages, userId]);
@@ -191,7 +207,16 @@ export const useMessages = ({
     setSendingMessage(true);
     try {
       const otherParticipant = selectedThread.participants.find(p => p !== userId);
-      const recipientName = otherParticipant ? selectedThread.participantNames[otherParticipant] : 'Unknown';
+      
+      // Try to get participant name safely
+      let recipientName = 'Unknown';
+      if (otherParticipant) {
+        if ('participantNames' in selectedThread && selectedThread.participantNames) {
+          recipientName = (selectedThread.participantNames as Record<string, string>)[otherParticipant] || 'Unknown';
+        } else if (selectedThread.lastMessage.senderId === otherParticipant) {
+          recipientName = selectedThread.lastMessage.senderName || 'Unknown';
+        }
+      }
 
       const message = await messageService.current.sendReply(
         selectedThread.id,
@@ -220,31 +245,20 @@ export const useMessages = ({
   // Mark thread as read
   const markThreadAsRead = useCallback(async (threadId: string) => {
     try {
-      await messageService.current.markThreadAsRead(threadId, userId);
+      await messageService.current.markThreadAsRead(threadId);
       
-      // Optimistically update UI
-      setThreads(prev => prev.map(t => 
-        t.id === threadId 
-          ? { ...t, unreadCount: { ...t.unreadCount, [userId]: 0 } }
-          : t
-      ));
-      
-      // Update total unread count
-      setUnreadCount(prev => {
-        const thread = threads.find(t => t.id === threadId);
-        const threadUnread = thread?.unreadCount[userId] || 0;
-        return Math.max(0, prev - threadUnread);
-      });
+      // Refresh threads to get updated data from server
+      await fetchThreads();
       
     } catch (err) {
       console.error('Failed to mark thread as read:', err);
     }
-  }, [userId, threads]);
+  }, [fetchThreads]);
 
   // Delete thread
   const deleteThread = useCallback(async (threadId: string) => {
     try {
-      await messageService.current.deleteThread(threadId, userId);
+      await messageService.current.deleteThread(threadId);
       
       setThreads(prev => prev.filter(t => t.id !== threadId));
       
@@ -257,7 +271,7 @@ export const useMessages = ({
       console.error('Failed to delete thread:', err);
       throw err;
     }
-  }, [selectedThread?.id, userId]);
+  }, [selectedThread?.id]);
 
   // Search/filter threads
   const searchThreads = useCallback(async (newFilters: MessageFilters) => {
@@ -303,7 +317,7 @@ export const useMessages = ({
     }
 
     if (filters.read !== undefined) {
-      const isUnread = (thread.unreadCount[userId] || 0) > 0;
+      const isUnread = getUnreadCount(thread, userId) > 0;
       if (filters.read && isUnread) return false;
       if (!filters.read && !isUnread) return false;
     }

@@ -21,7 +21,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useMessages } from '@/hooks/useMessages';
-import { MessageFilters, ComposeMessageFormValues } from '@/types/messaging';
+import { MessageFilters } from '@/types/messaging';
 import ThreadsList from '@/components/messages/ThreadsList';
 import MessageView from '@/components/messages/MessageView';
 import ComposeMessage from '@/components/messages/ComposeMessage';
@@ -31,6 +31,14 @@ const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 const { Search } = Input;
 const { confirm } = Modal;
+
+// Type definition for compose message form
+interface ComposeMessageFormValues {
+  recipient: string;
+  subject: string;
+  content: string;
+  messageType?: string;
+}
 
 // Mock user data - replace with actual user service
 const AVAILABLE_USERS = [
@@ -123,7 +131,7 @@ const MessagesPage: React.FC = () => {
         try {
           await deleteThread(threadId);
           antMessage.success('Conversation deleted');
-        } catch (error) {
+        } catch {
           antMessage.error('Failed to delete conversation');
         }
       }

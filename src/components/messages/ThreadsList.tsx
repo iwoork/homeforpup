@@ -56,12 +56,20 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
     }
   };
 
+  // Helper function to safely get unread count
+  const getUnreadCount = (thread: MessageThread, userId: string): number => {
+    if (typeof thread.unreadCount === 'object' && thread.unreadCount !== null) {
+      return (thread.unreadCount as Record<string, number>)[userId] || 0;
+    }
+    return 0;
+  };
+
   const getThreadMenuItems = (thread: MessageThread) => [
     {
       key: 'markRead',
       icon: <EyeOutlined />,
       label: 'Mark as Read',
-      disabled: (thread.unreadCount[currentUserId] || 0) === 0,
+      disabled: getUnreadCount(thread, currentUserId) === 0,
       onClick: () => onMarkAsRead(thread.id)
     },
     {
@@ -88,7 +96,24 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
 
   const getOtherParticipantName = (thread: MessageThread) => {
     const otherParticipant = thread.participants.find(p => p !== currentUserId);
-    return otherParticipant ? thread.participantNames[otherParticipant] : 'Unknown';
+    
+    // Try to get name from participantNames if it exists, otherwise use a fallback
+    if (otherParticipant) {
+      // Check if participantNames exists on the thread object
+      if ('participantNames' in thread && thread.participantNames) {
+        return (thread.participantNames as Record<string, string>)[otherParticipant] || 'Unknown User';
+      }
+      
+      // Fallback: try to extract name from the last message or use the participant ID
+      if (thread.lastMessage.senderId === otherParticipant) {
+        return thread.lastMessage.senderName || `User ${otherParticipant.slice(-4)}`;
+      }
+      
+      // If the other participant is the receiver of the last message
+      return `User ${otherParticipant.slice(-4)}`;
+    }
+    
+    return 'Unknown';
   };
 
   return (
@@ -125,13 +150,13 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
           >
             <List.Item.Meta
               avatar={
-                <Badge count={thread.unreadCount[currentUserId] || 0} size="small">
+                <Badge count={getUnreadCount(thread, currentUserId)} size="small">
                   <Avatar icon={<UserOutlined />} />
                 </Badge>
               }
               title={
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong={(thread.unreadCount[currentUserId] || 0) > 0} style={{ fontSize: '14px' }}>
+                  <Text strong={getUnreadCount(thread, currentUserId) > 0} style={{ fontSize: '14px' }}>
                     {getOtherParticipantName(thread)}
                   </Text>
                   <Text type="secondary" style={{ fontSize: '11px' }}>
@@ -148,7 +173,7 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
                     type="secondary" 
                     style={{ 
                       fontSize: '12px',
-                      fontWeight: (thread.unreadCount[currentUserId] || 0) > 0 ? 500 : 'normal'
+                      fontWeight: getUnreadCount(thread, currentUserId) > 0 ? 500 : 'normal'
                     }}
                   >
                     {thread.lastMessage.content.length > 50 
@@ -159,7 +184,7 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
                   <div style={{ marginTop: '4px' }}>
                     <Tag 
                       color={getMessageTypeColor(thread.lastMessage.messageType)}
-                      size="small"
+                      style={{ fontSize: '11px', padding: '0 6px', height: '18px', lineHeight: '18px' }}
                     >
                       {thread.lastMessage.messageType}
                     </Tag>

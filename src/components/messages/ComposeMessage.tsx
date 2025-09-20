@@ -16,9 +16,16 @@ import {
   SendOutlined,
   PaperClipOutlined
 } from '@ant-design/icons';
-import { ComposeMessageFormValues } from '@/types/messaging';
 
 const { TextArea } = Input;
+
+// Type definition for compose message form
+interface ComposeMessageFormValues {
+  recipient: string;
+  subject: string;
+  content: string;
+  messageType?: string;
+}
 
 interface ComposeMessageProps {
   visible: boolean;

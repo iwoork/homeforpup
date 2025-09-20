@@ -1,6 +1,6 @@
-// services/messageService.ts (Simplified for development)
+// src/services/messageService.ts (Simplified for development)
 import { Message, MessageThread, MessageFilters } from '@/types/messaging';
-import { getAccessToken } from '@/utils/auth';
+import { getAccessToken, getMockToken } from '@/utils/auth';
 
 export class MessageService {
   private apiUrl = '/api/messages';
@@ -10,8 +10,20 @@ export class MessageService {
     options: RequestInit = {}
   ): Promise<T> {
     try {
-      // Get auth token from storage or use mock for development
-      const token = getAccessToken() || 'mock-token';
+      // Try multiple token sources
+      let token = getAccessToken();
+      
+      if (!token) {
+        console.log('No access token found, trying mock token...');
+        token = getMockToken();
+      }
+      
+      if (!token) {
+        console.log('No token found anywhere, using default mock');
+        token = 'mock-development-token';
+      }
+
+      console.log('Using token:', token ? `${token.substring(0, 20)}...` : 'null');
       
       const response = await fetch(`${this.apiUrl}${url}`, {
         ...options,
@@ -32,6 +44,14 @@ export class MessageService {
       console.error('API request failed:', error);
       throw error;
     }
+  }
+
+  // Helper function to safely get unread count
+  private getUnreadCount(thread: MessageThread, userId: string): number {
+    if (typeof thread.unreadCount === 'object' && thread.unreadCount !== null) {
+      return (thread.unreadCount as Record<string, number>)[userId] || 0;
+    }
+    return 0;
   }
 
   // Create a new thread and send first message
@@ -121,7 +141,7 @@ export class MessageService {
 
       // Read filter
       if (filters.read !== undefined) {
-        const isUnread = (thread.unreadCount[userId] || 0) > 0;
+        const isUnread = this.getUnreadCount(thread, userId) > 0;
         if (filters.read && isUnread) return false;
         if (!filters.read && !isUnread) return false;
       }
@@ -139,7 +159,10 @@ export class MessageService {
   async getUserUnreadCount(userId: string): Promise<number> {
     const threads = await this.getUserThreads();
     return threads.reduce((total, thread) => 
-      total + (thread.unreadCount[userId] || 0), 0
+      total + this.getUnreadCount(thread, userId), 0
     );
   }
 }
+
+// Also export as default for compatibility
+export default MessageService;

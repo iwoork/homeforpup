@@ -155,11 +155,19 @@ const MessageView: React.FC<MessageViewProps> = ({
                         <Text type="secondary" style={{ fontSize: '11px' }}>
                           {dayjs(msg.timestamp).format('MMM DD, h:mm A')}
                         </Text>
-                        <Tag color={getMessageTypeColor(msg.messageType)} size="small">
+                        <Tag 
+                          color={getMessageTypeColor(msg.messageType)} 
+                          style={{ fontSize: '11px', padding: '0 6px', height: '18px', lineHeight: '18px' }}
+                        >
                           {msg.messageType}
                         </Tag>
                         {!msg.read && msg.receiverId === currentUserId && (
-                          <Tag color="red" size="small">New</Tag>
+                          <Tag 
+                            color="red" 
+                            style={{ fontSize: '11px', padding: '0 6px', height: '18px', lineHeight: '18px' }}
+                          >
+                            New
+                          </Tag>
                         )}
                       </Space>
                     </div>

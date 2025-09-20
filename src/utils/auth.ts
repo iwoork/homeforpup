@@ -204,39 +204,131 @@ export function getAccessToken(): string | null {
   }
 
   try {
-    // First, try to find the OIDC storage key by checking all localStorage keys
-    const oidcStorageKey = Object.keys(localStorage).find(key => 
-      key.startsWith('oidc.user:') && key.includes(process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID || '')
-    );
-
-    if (oidcStorageKey) {
-      const oidcStorage = localStorage.getItem(oidcStorageKey);
-      if (oidcStorage) {
-        const userData = JSON.parse(oidcStorage);
-        console.log('Access token found:', userData.access_token ? 'Yes' : 'No');
-        return userData.access_token || null;
-      }
-    }
-
-    // Alternative: Check with specific key
-    const cognitoAuthority = process.env.NEXT_PUBLIC_COGNITO_AUTHORITY;
-    const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
+    console.log('Getting access token...');
     
-    if (cognitoAuthority && clientId) {
-      const specificKey = `oidc.user:${cognitoAuthority}:${clientId}`;
-      const specificStorage = localStorage.getItem(specificKey);
-      if (specificStorage) {
-        const userData = JSON.parse(specificStorage);
-        return userData.access_token || null;
+    // First, try to find ANY OIDC storage key
+    const allOidcKeys = Object.keys(localStorage).filter(key => key.includes('oidc'));
+    console.log('All OIDC keys found:', allOidcKeys);
+
+    for (const key of allOidcKeys) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        console.log(`Checking key: ${key}`);
+        try {
+          const userData = JSON.parse(value);
+          console.log('User data structure:', Object.keys(userData));
+          
+          // Check for access_token in different possible locations
+          if (userData.access_token) {
+            console.log('Found access_token in root');
+            return userData.access_token;
+          }
+          if (userData.accessToken) {
+            console.log('Found accessToken in root');
+            return userData.accessToken;
+          }
+          if (userData.id_token) {
+            console.log('Found id_token, using as fallback');
+            return userData.id_token;
+          }
+          if (userData.profile?.access_token) {
+            console.log('Found access_token in profile');
+            return userData.profile.access_token;
+          }
+        } catch (parseError) {
+          console.log(`Failed to parse ${key}:`, parseError);
+        }
       }
     }
 
-    console.log('No access token found in storage');
+    // Try the useAuth hook's stored token pattern
+    const userKeys = Object.keys(localStorage).filter(key => 
+      key.includes('user') || key.includes('auth') || key.includes('token')
+    );
+    console.log('User/auth related keys:', userKeys);
+
+    for (const key of userKeys) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        try {
+          const data = JSON.parse(value);
+          if (data.access_token || data.accessToken || data.token) {
+            console.log(`Found token in ${key}`);
+            return data.access_token || data.accessToken || data.token;
+          }
+        } catch {
+          // If it's not JSON, check if it's a raw token
+          if (value.includes('.') && value.split('.').length === 3) {
+            console.log(`Found raw JWT token in ${key}`);
+            return value;
+          }
+        }
+      }
+    }
+
+    console.log('No access token found in any storage location');
     return null;
   } catch (error) {
     console.error('Error getting access token:', error);
     return null;
   }
+}
+
+// Function to get token from useAuth hook context (alternative approach)
+export function getTokenFromAuthContext(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    // Check if the useAuth hook stores token differently
+    // This pattern is common with react-oidc-context
+    const authKeys = Object.keys(localStorage).filter(key => 
+      key.includes('oidc') && key.includes('user')
+    );
+
+    for (const key of authKeys) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        try {
+          const userData = JSON.parse(value);
+          // Check for different token field names
+          const token = userData.access_token || 
+                       userData.id_token || 
+                       userData.token ||
+                       userData.accessToken;
+          
+          if (token) {
+            console.log('Found token via auth context pattern');
+            return token;
+          }
+        } catch (error) {
+          console.log('Error parsing auth context data:', error);
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error getting token from auth context:', error);
+    return null;
+  }
+}
+
+// For development: Set a mock token manually
+export function setMockToken(token: string = 'mock-development-token'): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('dev-auth-token', token);
+    console.log('Mock token set for development');
+  }
+}
+
+// For development: Get mock token
+export function getMockToken(): string | null {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('dev-auth-token');
+  }
+  return null;
 }
 
 // Debug function to help troubleshoot OIDC storage
@@ -270,6 +362,8 @@ export function debugOIDCStorage(): void {
         const parsed = JSON.parse(value);
         console.log('  └─ Profile:', parsed.profile ? 'Available' : 'Missing');
         console.log('  └─ Access Token:', parsed.access_token ? 'Available' : 'Missing');
+        console.log('  └─ ID Token:', parsed.id_token ? 'Available' : 'Missing');
+        console.log('  └─ Expires at:', parsed.expires_at ? new Date(parsed.expires_at * 1000) : 'Missing');
       } catch (e) {
         console.log('  └─ Parse error:', e);
       }
