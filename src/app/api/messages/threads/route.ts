@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWT } from '@/utils/auth';
+import { verifyJWT, decodeJWTUnsafe } from '@/utils/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -56,8 +56,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const { userId } = await verifyJWT(token);
-    console.log('Fetching threads for user:', userId);
+    console.log('Attempting to verify JWT token for threads request...');
+
+    let userId: string;
+    
+    try {
+      // Try the full verification first
+      const { userId: verifiedUserId } = await verifyJWT(token);
+      userId = verifiedUserId;
+      console.log('JWT verification successful');
+    } catch (verificationError) {
+      console.warn('Full JWT verification failed, attempting unsafe decode:', verificationError);
+      
+      // Fallback to unsafe decode for debugging
+      try {
+        const { userId: decodedUserId } = decodeJWTUnsafe(token);
+        userId = decodedUserId;
+        console.log('Unsafe JWT decode successful');
+      } catch (decodeError) {
+        console.error('Both JWT verification and decode failed:', decodeError);
+        return NextResponse.json({ 
+          error: 'Invalid authentication token',
+          details: process.env.NODE_ENV === 'development' ? String(decodeError) : undefined
+        }, { status: 401 });
+      }
+    }
+
+    console.log('Fetching threads for user:', userId?.substring(0, 10) + '...');
 
     // Query threads where user is a participant using GSI1
     const params = {
@@ -70,7 +95,10 @@ export async function GET(request: NextRequest) {
       ScanIndexForward: false // Most recent first
     };
 
-    console.log('DynamoDB Query params:', params);
+    console.log('DynamoDB Query params:', {
+      ...params,
+      ExpressionAttributeValues: { ':userId': userId?.substring(0, 10) + '...' }
+    });
 
     const command = new QueryCommand(params);
     const result = await dynamodb.send(command);

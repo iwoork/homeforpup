@@ -20,16 +20,19 @@ const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-mess
 
 export async function POST(request: NextRequest) {
   try {
-    // Get and verify JWT token
+    // Get and verify JWT token - this ensures sender identity
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const { userId, name: senderName } = await verifyJWT(token);
+    // Verify the JWT token and extract user info
+    const { userId: authenticatedUserId, name: authenticatedUserName, email } = await verifyJWT(token);
+    
     const body = await request.json();
     const { recipientId, recipientName, subject, content, messageType } = body;
 
+    // Validate required fields
     if (!recipientId || !subject || !content) {
       return NextResponse.json(
         { error: 'Missing required fields: recipientId, subject, content' }, 
@@ -37,17 +40,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Creating new thread and message:', { userId, recipientId, subject });
+    // Security check: prevent users from sending messages as someone else
+    if (!authenticatedUserId) {
+      return NextResponse.json({ error: 'Invalid user authentication' }, { status: 401 });
+    }
+
+    // Prevent self-messaging
+    if (authenticatedUserId === recipientId) {
+      return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
+    }
+
+    console.log('Creating new thread and message from authenticated user:', {
+      senderId: authenticatedUserId,
+      recipientId,
+      subject: subject.substring(0, 50) + '...' // Log truncated subject for privacy
+    });
 
     const threadId = uuidv4();
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
+    // Use authenticated user info (not client-provided data)
     const message = {
       id: messageId,
       threadId,
-      senderId: userId,
-      senderName,
+      senderId: authenticatedUserId, // Always use authenticated user ID
+      senderName: authenticatedUserName, // Always use authenticated user name
       receiverId: recipientId,
       receiverName: recipientName,
       subject,
@@ -60,22 +78,22 @@ export async function POST(request: NextRequest) {
     const thread = {
       id: threadId,
       subject,
-      participants: [userId, recipientId],
+      participants: [authenticatedUserId, recipientId],
       participantNames: {
-        [userId]: senderName,
+        [authenticatedUserId]: authenticatedUserName, // Use authenticated name
         [recipientId]: recipientName
       },
       lastMessage: message,
       messageCount: 1,
       unreadCount: {
-        [userId]: 0,
-        [recipientId]: 1
+        [authenticatedUserId]: 0, // Sender has read their own message
+        [recipientId]: 1 // Recipient has 1 unread message
       },
       createdAt: timestamp,
       updatedAt: timestamp
     };
 
-    // Transaction to create both thread and message
+    // Transaction to create both thread and message atomically
     const transactItems = [
       // Create message
       {
@@ -84,7 +102,7 @@ export async function POST(request: NextRequest) {
           Item: {
             PK: threadId,
             SK: messageId,
-            GSI1PK: userId,
+            GSI1PK: authenticatedUserId,
             GSI1SK: timestamp,
             GSI2PK: recipientId,
             GSI2SK: timestamp,
@@ -100,7 +118,7 @@ export async function POST(request: NextRequest) {
             PK: threadId,
             threadId,
             ...thread,
-            GSI1PK: userId,
+            GSI1PK: authenticatedUserId,
             GSI1SK: timestamp
           }
         }
@@ -110,11 +128,11 @@ export async function POST(request: NextRequest) {
         Put: {
           TableName: THREADS_TABLE,
           Item: {
-            PK: `${threadId}#${userId}`,
+            PK: `${threadId}#${authenticatedUserId}`,
             threadId,
-            participantId: userId,
+            participantId: authenticatedUserId,
             ...thread,
-            GSI1PK: userId,
+            GSI1PK: authenticatedUserId,
             GSI1SK: timestamp
           }
         }
@@ -141,12 +159,28 @@ export async function POST(request: NextRequest) {
 
     await dynamodb.send(command);
 
-    console.log('Thread and message created successfully:', threadId);
+    console.log('Thread and message created successfully:', {
+      threadId,
+      messageId,
+      from: authenticatedUserId,
+      to: recipientId
+    });
 
     return NextResponse.json({ thread, message }, { status: 201 });
 
   } catch (error) {
     console.error('Error sending message:', error);
+    
+    // Handle specific JWT errors
+    if (error instanceof Error) {
+      if (error.message.includes('Token expired') || error.message.includes('Invalid token')) {
+        return NextResponse.json({ error: 'Authentication expired. Please log in again.' }, { status: 401 });
+      }
+      if (error.message.includes('Token verification failed')) {
+        return NextResponse.json({ error: 'Invalid authentication.' }, { status: 401 });
+      }
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to send message',

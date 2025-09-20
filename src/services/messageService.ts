@@ -1,92 +1,123 @@
-// src/services/messageService.ts (Simplified for development)
+// services/messageService.ts
+'use client';
+
 import { Message, MessageThread, MessageFilters } from '@/types/messaging';
-import { getAccessToken, getMockToken } from '@/utils/auth';
 
 export class MessageService {
-  private apiUrl = '/api/messages';
+  private baseUrl = '/api/messages';
+  private getTokenCallback: (() => string | null) | null = null;
 
-  private async makeRequest<T>(
-    url: string, 
-    options: RequestInit = {}
-  ): Promise<T> {
+  // Set the token getter function from useAuth
+  setTokenGetter(getToken: () => string | null) {
+    this.getTokenCallback = getToken;
+  }
+
+  // Get authentication token from your auth hook
+  private async getAuthToken(): Promise<string> {
+    if (this.getTokenCallback) {
+      const token = this.getTokenCallback();
+      if (token) {
+        return token;
+      }
+    }
+    
+    // Fallback: try to get from localStorage with the correct key structure
     try {
-      // Try multiple token sources
-      let token = getAccessToken();
-      
-      if (!token) {
-        console.log('No access token found, trying mock token...');
-        token = getMockToken();
-      }
-      
-      if (!token) {
-        console.log('No token found anywhere, using default mock');
-        token = 'mock-development-token';
-      }
+      // Try different possible OIDC storage keys
+      const possibleKeys = [
+        `oidc.user:${process.env.NEXT_PUBLIC_COGNITO_AUTHORITY}:${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}`,
+        `oidc.user:https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_USER_POOL_ID}:${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}`
+      ];
 
-      console.log('Using token:', token ? `${token.substring(0, 20)}...` : 'null');
+      for (const key of possibleKeys) {
+        const userData = localStorage.getItem(key);
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          const token = parsedData.access_token || parsedData.id_token;
+          if (token) {
+            return token;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get token from localStorage:', error);
+    }
+    
+    throw new Error('No authentication token available');
+  }
+
+  private async makeAuthenticatedRequest(url: string, options: RequestInit = {}) {
+    try {
+      const token = await this.getAuthToken();
       
-      const response = await fetch(`${this.apiUrl}${url}`, {
+      const response = await fetch(url, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
           ...options.headers,
         },
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       return response.json();
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error(`API request failed for ${url}:`, error);
       throw error;
     }
   }
 
-  // Helper function to safely get unread count
-  private getUnreadCount(thread: MessageThread, userId: string): number {
-    if (typeof thread.unreadCount === 'object' && thread.unreadCount !== null) {
-      return (thread.unreadCount as Record<string, number>)[userId] || 0;
-    }
-    return 0;
+  async getUserThreads(): Promise<MessageThread[]> {
+    const data = await this.makeAuthenticatedRequest(`${this.baseUrl}/threads`);
+    return data.threads || [];
   }
 
-  // Create a new thread and send first message
+  async getThreadMessages(threadId: string, limit: number = 50): Promise<Message[]> {
+    const data = await this.makeAuthenticatedRequest(
+      `${this.baseUrl}/threads/${threadId}/messages?limit=${limit}`
+    );
+    return data.messages || [];
+  }
+
   async createThread(
-    senderId: string,
+    senderId: string, // This will be verified against the JWT token
     senderName: string,
-    receiverId: string,
-    receiverName: string,
+    recipientId: string,
+    recipientName: string,
     subject: string,
     content: string,
-    messageType: string = 'general'
+    messageType?: string
   ): Promise<{ thread: MessageThread; message: Message }> {
-    return this.makeRequest('/send', {
+    // Note: senderId will be verified on the server against the JWT token
+    const data = await this.makeAuthenticatedRequest(`${this.baseUrl}/send`, {
       method: 'POST',
       body: JSON.stringify({
-        recipientId: receiverId,
-        recipientName: receiverName,
+        recipientId,
+        recipientName,
         subject,
         content,
         messageType
-      })
+      }),
     });
+
+    return data;
   }
 
-  // Send a reply to existing thread
   async sendReply(
     threadId: string,
-    senderId: string,
+    senderId: string, // This will be verified against the JWT token
     senderName: string,
     receiverId: string,
     receiverName: string,
     content: string,
     subject?: string
   ): Promise<Message> {
-    const response = await this.makeRequest<{ message: Message }>('/reply', {
+    // Note: senderId will be verified on the server against the JWT token
+    const data = await this.makeAuthenticatedRequest(`${this.baseUrl}/reply`, {
       method: 'POST',
       body: JSON.stringify({
         threadId,
@@ -94,75 +125,34 @@ export class MessageService {
         receiverId,
         receiverName,
         subject
-      })
+      }),
     });
-    return response.message;
+
+    return data.message;
   }
 
-  // Get threads for a user (userId determined from auth token)
-  async getUserThreads(): Promise<MessageThread[]> {
-    const response = await this.makeRequest<{ threads: MessageThread[] }>('/threads');
-    return response.threads;
-  }
-
-  // Get messages for a thread
-  async getThreadMessages(threadId: string, limit: number = 50): Promise<Message[]> {
-    const response = await this.makeRequest<{ messages: Message[] }>(`/threads/${threadId}/messages?limit=${limit}`);
-    return response.messages;
-  }
-
-  // Mark thread as read for user (userId determined from auth token)
   async markThreadAsRead(threadId: string): Promise<void> {
-    await this.makeRequest(`/threads/${threadId}/read`, {
-      method: 'PATCH'
+    await this.makeAuthenticatedRequest(`${this.baseUrl}/threads/${threadId}/read`, {
+      method: 'PATCH',
     });
   }
 
-  // Delete thread (userId determined from auth token)
   async deleteThread(threadId: string): Promise<void> {
-    await this.makeRequest(`/threads/${threadId}`, {
-      method: 'DELETE'
+    await this.makeAuthenticatedRequest(`${this.baseUrl}/threads/${threadId}`, {
+      method: 'DELETE',
     });
   }
 
-  // Search threads (client-side filtering for now)
   async searchThreads(userId: string, filters: MessageFilters): Promise<MessageThread[]> {
-    const threads = await this.getUserThreads();
+    const queryParams = new URLSearchParams();
     
-    return threads.filter(thread => {
-      // Search filter
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        const matchesSearch = 
-          thread.subject.toLowerCase().includes(searchTerm) ||
-          thread.lastMessage.content.toLowerCase().includes(searchTerm);
-        if (!matchesSearch) return false;
-      }
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.read !== undefined) queryParams.append('read', filters.read.toString());
+    if (filters.type) queryParams.append('type', filters.type);
 
-      // Read filter
-      if (filters.read !== undefined) {
-        const isUnread = this.getUnreadCount(thread, userId) > 0;
-        if (filters.read && isUnread) return false;
-        if (!filters.read && !isUnread) return false;
-      }
-
-      // Type filter
-      if (filters.type && thread.lastMessage.messageType !== filters.type) {
-        return false;
-      }
-
-      return true;
-    });
-  }
-
-  // Get total unread count for user
-  async getUserUnreadCount(userId: string): Promise<number> {
-    const threads = await this.getUserThreads();
-    return threads.reduce((total, thread) => 
-      total + this.getUnreadCount(thread, userId), 0
+    const data = await this.makeAuthenticatedRequest(
+      `${this.baseUrl}/threads/search?${queryParams.toString()}`
     );
+    return data.threads || [];
   }
 }
-
-// Also export as default for compatibility
-export default MessageService;

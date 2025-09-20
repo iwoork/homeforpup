@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Message, MessageThread, MessageFilters } from '@/types/messaging';
 import { MessageService } from '@/services/messageService';
+import { useAuth } from '@/hooks/useAuth';
 
 // Type definition for compose message form
 interface ComposeMessageFormValues {
@@ -45,6 +46,7 @@ export const useMessages = ({
   userName,
   pollingInterval = 5000 
 }: UseMessagesProps): UseMessagesReturn => {
+  const { getToken } = useAuth(); // Get the token function from useAuth
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -58,6 +60,13 @@ export const useMessages = ({
   const messageService = useRef(new MessageService());
   const pollingRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastUpdateRef = useRef<string>('');
+
+  // Initialize message service with token getter
+  useEffect(() => {
+    if (getToken) {
+      messageService.current.setTokenGetter(getToken);
+    }
+  }, [getToken]);
 
   // Helper function to safely get unread count
   const getUnreadCount = (thread: MessageThread, userId: string): number => {
@@ -100,7 +109,11 @@ export const useMessages = ({
       setError(null);
     } catch (err) {
       console.error('Error fetching threads:', err);
-      setError('Failed to load conversations');
+      if (err instanceof Error && err.message.includes('No authentication token available')) {
+        setError('Authentication required. Please log in again.');
+      } else {
+        setError('Failed to load conversations');
+      }
     }
   }, [userId, selectedThread?.id, threads.length]);
 
@@ -120,26 +133,30 @@ export const useMessages = ({
       setError(null);
     } catch (err) {
       console.error('Error fetching messages:', err);
-      setError('Failed to load messages');
+      if (err instanceof Error && err.message.includes('No authentication token available')) {
+        setError('Authentication required. Please log in again.');
+      } else {
+        setError('Failed to load messages');
+      }
     }
   }, []);
 
   // Initial load
   useEffect(() => {
     const initializeData = async () => {
+      if (!userId || !getToken) return;
+      
       setLoading(true);
       await fetchThreads();
       setLoading(false);
     };
 
-    if (userId) {
-      initializeData();
-    }
-  }, [userId, fetchThreads]);
+    initializeData();
+  }, [userId, getToken, fetchThreads]);
 
   // Set up polling for real-time updates
   useEffect(() => {
-    if (!userId || loading) return;
+    if (!userId || loading || !getToken) return;
 
     const startPolling = () => {
       pollingRef.current = setInterval(() => {
@@ -160,7 +177,7 @@ export const useMessages = ({
         clearInterval(pollingRef.current);
       }
     };
-  }, [userId, loading, selectedThread?.id, pollingInterval, fetchThreads, fetchMessages]);
+  }, [userId, loading, selectedThread?.id, pollingInterval, getToken, fetchThreads, fetchMessages]);
 
   // Handle thread selection
   const selectThread = useCallback(async (thread: MessageThread) => {

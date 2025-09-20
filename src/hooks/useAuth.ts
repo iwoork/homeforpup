@@ -1,3 +1,4 @@
+// hooks/useAuth.ts
 'use client';
 
 import { useAuth as useOidcAuth } from 'react-oidc-context';
@@ -13,12 +14,39 @@ interface UseAuthReturn {
   signOut: () => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
+  getToken: () => string | null; // Add method to get JWT token
 }
 
 export const useAuth = (): UseAuthReturn => {
   const oidcAuth = useOidcAuth();
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Method to get the current JWT token
+  const getToken = useCallback((): string | null => {
+    if (oidcAuth?.user?.access_token) {
+      return oidcAuth.user.access_token;
+    }
+    
+    if (oidcAuth?.user?.id_token) {
+      return oidcAuth.user.id_token;
+    }
+
+    // Fallback: try to get from localStorage
+    try {
+      const storageKey = `oidc.user:${process.env.NEXT_PUBLIC_COGNITO_AUTHORITY}:${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}`;
+      const userData = localStorage.getItem(storageKey);
+      
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        return parsedData.access_token || parsedData.id_token || null;
+      }
+    } catch (error) {
+      console.warn('Failed to get token from localStorage:', error);
+    }
+
+    return null;
+  }, [oidcAuth]);
 
   const createOrGetBreederProfile = useCallback(async (userId: string, email: string, name: string) => {
     try {
@@ -186,6 +214,7 @@ export const useAuth = (): UseAuthReturn => {
       signOut,
       error: error || 'Authentication context not available',
       isAuthenticated: false,
+      getToken: () => null,
     };
   }
 
@@ -196,5 +225,6 @@ export const useAuth = (): UseAuthReturn => {
     signOut,
     error,
     isAuthenticated: oidcAuth.isAuthenticated,
+    getToken,
   };
 };
