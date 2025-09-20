@@ -236,27 +236,8 @@ const BreederDirectoryPage: React.FC = () => {
   };
 
   const getRandomCoverPhoto = (breederId: number) => {
-  const dogPhotos = [
-    'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1559190394-90ab6371c552?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1503256207526-0d5d80fa2f47?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1534361960057-19889db9621e?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1546975490-e8b92a360b24?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1551717743-49959800b1f6?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=800&h=300&fit=crop&crop=faces',
-    'https://images.unsplash.com/photo-1560807707-8cc77767d783?w=800&h=300&fit=crop&crop=faces'
-  ];
-  
-  // Use breeder ID as seed for consistent random selection
-  return dogPhotos[breederId % dogPhotos.length];
-};
+    return `https://picsum.photos/800/300?random=${breederId}`;
+  };
 
   // Render breeder card
   const renderBreederCard = (breeder: Breeder) => (
@@ -276,15 +257,12 @@ const BreederDirectoryPage: React.FC = () => {
           <div 
             style={{
               height: '120px',
-              backgroundImage: `url(${breeder.coverImage || getRandomCoverPhoto(breeder.id)})`,
+              backgroundImage: `url(${getRandomCoverPhoto(breeder.id)})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               borderRadius: '8px',
               position: 'relative',
               marginBottom: '16px'
-            }}
-            onError={(e) => {
-              e.currentTarget.style.backgroundImage = `url(${getRandomCoverPhoto(breeder.id)})`;
             }}
           >
             <div style={{ 
@@ -509,7 +487,7 @@ const BreederDirectoryPage: React.FC = () => {
                 <Col xs={24} sm={16}>
                   <Space wrap>
                     <Text strong style={{ color: '#08979C', fontSize: '14px' }}>
-                      {breeder.pricing}
+                      {breeder.pricing?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                     </Text>
                     <Text style={{ fontSize: '12px', color: '#666' }}>
                       Response: {breeder.avgResponseTime}

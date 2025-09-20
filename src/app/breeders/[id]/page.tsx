@@ -99,7 +99,7 @@ const BreederProfilePage: React.FC = () => {
         <div 
           style={{
             height: '300px',
-            backgroundImage: `url(${breeder.coverImage})`,
+            backgroundImage: `url(https://picsum.photos/1200/300?random=${breederId || 'default'})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             position: 'relative'
@@ -423,42 +423,6 @@ const BreederProfilePage: React.FC = () => {
               </Card>
             </TabPane>
             
-            <TabPane tab="Our Dogs" key="dogs">
-              <Card style={cardStyle}>
-                <Title level={4}>Meet Our Breeding Dogs</Title>
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12}>
-                    <Card 
-                      cover={
-                        <Image 
-                          src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300&fit=crop" 
-                          alt="Bella"
-                          style={{ height: '200px', objectFit: 'cover' }}
-                        />
-                      }
-                    >
-                      <Title level={5}>Bella</Title>
-                      <Text>F1 Cavapoo • Health Tested • Champion Bloodline</Text>
-                    </Card>
-                  </Col>
-                  <Col xs={24} sm={12}>
-                    <Card 
-                      cover={
-                        <Image 
-                          src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400&h=300&fit=crop" 
-                          alt="Max"
-                          style={{ height: '200px', objectFit: 'cover' }}
-                        />
-                      }
-                    >
-                      <Title level={5}>Max</Title>
-                      <Text>Poodle Stud • OFA Certified • Proven Producer</Text>
-                    </Card>
-                  </Col>
-                </Row>
-              </Card>
-            </TabPane>
-            
             <TabPane tab="Reviews" key="reviews">
               <Card style={cardStyle}>
                 <div style={{ marginBottom: '24px' }}>
@@ -486,7 +450,7 @@ const BreederProfilePage: React.FC = () => {
                   {[1,2,3,4,5,6].map(i => (
                     <Col xs={12} sm={8} key={i}>
                       <Image
-                        src={`https://images.unsplash.com/photo-${1587300003388 + i}-59208cc962cb?w=300&h=300&fit=crop`}
+                        src={`https://picsum.photos/300/300?random=${(breederId || 'gallery') + i}`}
                         alt={`Gallery image ${i}`}
                         style={{ 
                           width: '100%', 
