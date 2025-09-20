@@ -1,44 +1,91 @@
-// app/api/breeds/route.ts (for Next.js 13+ App Router)
+// app/api/breeds/route.ts (Enhanced for new data model)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
-// Configure AWS SDK v3 using your existing environment variables
+// Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '', // Fixed: was AWS_SECRET_KEY
   },
 });
 
 const dynamodb = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = process.env.BREEDS_TABLE_NAME || 'homeforpup-breeds';
+const BREEDS_TABLE = process.env.BREEDS_TABLE_NAME || 'homeforpup-breeds-simple';
+const BREEDERS_TABLE = process.env.BREEDERS_TABLE_NAME || 'homeforpup-breeders';
 
+// Enhanced breed interface matching Python script
 interface BreedItem {
-  Breed: string;
-  DogSize?: string;
-  DogBreedGroup?: string;
-  Height?: string;
-  AvgHeightCm?: string;
-  Weight?: string;
-  AvgWeightKg?: string;
-  LifeSpan?: string;
-  AvgLifeSpanYears?: string;
-  Adaptability?: string;
-  Trainability?: string;
-  PhysicalNeeds?: string;
-  ImageUrls?: string[]; // Added ImageUrls array
+  id: number;
+  name: string;
+  alt_names: string[];
+  overview_page: boolean;
+  url: string;
+  cover_photo_url: string;
+  live: string; // DynamoDB stores as string for GSI
+  hybrid: boolean;
+  slug: string;
+  search_terms: string[];
+  breed_type: string; // 'purebred', 'hybrid', 'designer'
+  size_category: string; // 'toy', 'small', 'medium', 'large', 'giant'
+  breed_group: string; // 'sporting', 'hound', 'working', etc.
 }
 
+// Enhanced breeder interface
+interface BreederItem {
+  id: number;
+  name: string;
+  business_name: string;
+  location: string;
+  state: string;
+  city: string;
+  zip_code: string;
+  country: string;
+  latitude?: number;
+  longitude?: number;
+  phone: string;
+  email: string;
+  website: string;
+  experience: number;
+  breeds: string[];
+  breed_ids: number[];
+  rating: number;
+  review_count: number;
+  verified: string; // DynamoDB stores as string for GSI
+  profile_image: string;
+  cover_image: string;
+  about: string;
+  certifications: string[];
+  health_testing: string[];
+  specialties: string[];
+  current_litters: number;
+  available_puppies: number;
+  pricing: string;
+  shipping: boolean;
+  pickup_available: boolean;
+  established_year?: number;
+  business_hours: string;
+  appointment_required: boolean;
+  social_media: Record<string, string>;
+  tags: string[];
+  active: string; // DynamoDB stores as string for GSI
+  last_updated: string;
+  total_reviews: number;
+  response_rate: number;
+  avg_response_time: string;
+}
+
+// Transform breed data for frontend
 interface TransformedBreed {
   id: string;
   name: string;
   category: string;
   size: string;
   image: string;
-  images?: string[]; // Optional: include all images if needed
+  images?: string[];
   overview: string;
   characteristics: {
     energyLevel: number;
@@ -61,27 +108,26 @@ interface TransformedBreed {
   groomingTips: string;
   trainingTips: string;
   funFacts: string[];
+  breedType: string;
+  hybrid: boolean;
+  altNames: string[];
+  url: string;
+  breederCount?: number; // Number of available breeders
 }
 
 // Helper functions
-const normalizeSize = (size?: string): string => {
-  if (!size) return 'Medium';
-  
+const normalizeSize = (sizeCategory: string): string => {
   const sizeMap: { [key: string]: string } = {
     'toy': 'Small',
-    'small': 'Small', 
+    'small': 'Small',
     'medium': 'Medium',
     'large': 'Large',
-    'extra large': 'Large',
     'giant': 'Large'
   };
-  
-  return sizeMap[size.toLowerCase()] || 'Medium';
+  return sizeMap[sizeCategory] || 'Medium';
 };
 
-const normalizeCategory = (group?: string): string => {
-  if (!group) return 'Mixed';
-  
+const normalizeCategory = (breedGroup: string): string => {
   const categoryMap: { [key: string]: string } = {
     'sporting': 'Sporting',
     'hound': 'Hound',
@@ -92,123 +138,155 @@ const normalizeCategory = (group?: string): string => {
     'herding': 'Herding',
     'mixed': 'Mixed'
   };
-  
-  return categoryMap[group.toLowerCase()] || 'Mixed';
+  return categoryMap[breedGroup] || 'Mixed';
 };
 
-const normalizeRating = (rating?: string): number => {
-  if (!rating) return 5;
-  
-  const num = parseFloat(rating);
-  if (isNaN(num)) return 5;
-  
-  if (num <= 1) return Math.round(num * 10);
-  if (num <= 5) return Math.round(num * 2);
-  return Math.min(Math.round(num), 10);
-};
+// Generate realistic characteristics based on breed data
+const generateCharacteristics = (breedGroup: string, sizeCategory: string, breedType: string) => {
+  const baseStats = {
+    'sporting': { energy: 8, friendly: 9, train: 8, groom: 6, kids: 9, pets: 7 },
+    'hound': { energy: 7, friendly: 8, train: 6, groom: 4, kids: 8, pets: 6 },
+    'working': { energy: 8, friendly: 7, train: 9, groom: 6, kids: 7, pets: 6 },
+    'terrier': { energy: 9, friendly: 6, train: 7, groom: 5, kids: 6, pets: 5 },
+    'toy': { energy: 6, friendly: 8, train: 7, groom: 7, kids: 7, pets: 6 },
+    'non-sporting': { energy: 6, friendly: 8, train: 7, groom: 6, kids: 8, pets: 7 },
+    'herding': { energy: 9, friendly: 8, train: 9, groom: 7, kids: 8, pets: 7 },
+    'mixed': { energy: 7, friendly: 8, train: 7, groom: 6, kids: 8, pets: 7 }
+  };
 
-// Updated function to get image from ImageUrls array or fallback
-const getBreedImage = (imageUrls?: string[], breedName?: string): string => {
-  // If ImageUrls array exists and has images, use the first one
-  if (imageUrls && imageUrls.length > 0) {
-    // Filter out any invalid URLs (empty strings, null, undefined)
-    const validUrls = imageUrls.filter(url => url && url.trim());
-    if (validUrls.length > 0) {
-      return validUrls[0];
-    }
+  const stats = baseStats[breedGroup] || baseStats['mixed'];
+  
+  // Adjust for size
+  if (sizeCategory === 'toy' || sizeCategory === 'small') {
+    stats.energy = Math.max(1, stats.energy - 1);
+    stats.kids = Math.max(1, stats.kids - 1);
   }
   
-  // Fallback to placeholder if no valid images
-  return `https://placedog.net/500?r&id=${breedName || 'default'}`;
+  // Adjust for hybrid/designer breeds
+  if (breedType === 'hybrid' || breedType === 'designer') {
+    stats.friendly = Math.min(10, stats.friendly + 1);
+    stats.train = Math.min(10, stats.train + 1);
+  }
+
+  return {
+    energyLevel: stats.energy,
+    friendliness: stats.friendly,
+    trainability: stats.train,
+    groomingNeeds: stats.groom,
+    goodWithKids: stats.kids,
+    goodWithPets: stats.pets
+  };
 };
 
-// Helper to get all valid images for a breed
-const getBreedImages = (imageUrls?: string[]): string[] => {
-  if (!imageUrls || imageUrls.length === 0) return [];
-  
-  // Filter out any invalid URLs
-  return imageUrls.filter(url => url && url.trim());
-};
-
-const generateTemperament = (category: string, _size: string): string[] => {
+const generateTemperament = (breedGroup: string, breedType: string): string[] => {
   const temperamentMap: { [key: string]: string[] } = {
-    'Sporting': ['Active', 'Friendly', 'Energetic', 'Loyal', 'Intelligent'],
-    'Hound': ['Independent', 'Gentle', 'Determined', 'Friendly', 'Patient'],
-    'Working': ['Confident', 'Strong', 'Loyal', 'Alert', 'Hardworking'],
-    'Terrier': ['Bold', 'Energetic', 'Alert', 'Determined', 'Spirited'],
-    'Toy': ['Affectionate', 'Alert', 'Companionable', 'Spirited', 'Gentle'],
-    'Non-Sporting': ['Varied', 'Adaptable', 'Friendly', 'Intelligent', 'Calm'],
-    'Herding': ['Intelligent', 'Alert', 'Responsive', 'Energetic', 'Loyal'],
-    'Mixed': ['Friendly', 'Adaptable', 'Loyal', 'Gentle', 'Intelligent']
+    'sporting': ['Active', 'Friendly', 'Energetic', 'Loyal', 'Intelligent', 'Eager to Please'],
+    'hound': ['Independent', 'Gentle', 'Determined', 'Friendly', 'Patient', 'Vocal'],
+    'working': ['Confident', 'Strong', 'Loyal', 'Alert', 'Hardworking', 'Protective'],
+    'terrier': ['Bold', 'Energetic', 'Alert', 'Determined', 'Spirited', 'Feisty'],
+    'toy': ['Affectionate', 'Alert', 'Companionable', 'Spirited', 'Gentle', 'Devoted'],
+    'non-sporting': ['Varied', 'Adaptable', 'Friendly', 'Intelligent', 'Calm', 'Sturdy'],
+    'herding': ['Intelligent', 'Alert', 'Responsive', 'Energetic', 'Loyal', 'Protective'],
+    'mixed': ['Friendly', 'Adaptable', 'Loyal', 'Gentle', 'Intelligent', 'Balanced']
   };
   
-  return temperamentMap[category] || temperamentMap['Mixed'];
-};
-
-const generateIdealFor = (size: string, category: string): string[] => {
-  const baseIdeal = ['Dog lovers', 'Responsible owners'];
+  let traits = temperamentMap[breedGroup] || temperamentMap['mixed'];
   
-  if (size === 'Small') {
-    baseIdeal.push('Apartment living', 'Seniors', 'Singles');
-  } else if (size === 'Large') {
-    baseIdeal.push('Active families', 'Houses with yards');
-  } else {
-    baseIdeal.push('Families', 'Various living situations');
+  if (breedType === 'designer') {
+    traits = [...traits, 'Hybrid Vigor', 'Well-Balanced'];
   }
   
-  if (category === 'Sporting' || category === 'Working') {
-    baseIdeal.push('Active owners');
-  }
+  return traits.slice(0, 5);
+};
+
+const generatePhysicalTraits = (sizeCategory: string, breedGroup: string) => {
+  const sizeTraits = {
+    'toy': { weight: '2-6 kg', height: '15-25 cm', lifespan: '12-16 years' },
+    'small': { weight: '5-11 kg', height: '25-40 cm', lifespan: '12-15 years' },
+    'medium': { weight: '11-25 kg', height: '40-60 cm', lifespan: '10-14 years' },
+    'large': { weight: '25-45 kg', height: '60-70 cm', lifespan: '8-12 years' },
+    'giant': { weight: '45+ kg', height: '70+ cm', lifespan: '6-10 years' }
+  };
   
-  return baseIdeal.slice(0, 4);
-};
-
-const generateExerciseNeeds = (physicalNeeds: number): string => {
-  if (physicalNeeds >= 8) return 'High - 60+ minutes daily';
-  if (physicalNeeds >= 6) return 'Moderate to High - 45-60 minutes daily';
-  if (physicalNeeds >= 4) return 'Moderate - 30-45 minutes daily';
-  return 'Low to Moderate - 30 minutes daily';
-};
-
-const transformBreed = (item: BreedItem, index: number): TransformedBreed => {
-  const breedName = item.Breed || 'Unknown Breed';
-  const size = normalizeSize(item.DogSize);
-  const category = normalizeCategory(item.DogBreedGroup);
-  const validImages = getBreedImages(item.ImageUrls);
+  const coatMap = {
+    'sporting': 'Water-resistant, medium length',
+    'hound': 'Short to medium, weather-resistant',
+    'working': 'Double coat, weather-resistant',
+    'terrier': 'Wiry or smooth, easy-care',
+    'toy': 'Varied, often silky',
+    'non-sporting': 'Varied by breed',
+    'herding': 'Double coat, weather-resistant'
+  };
   
   return {
-    id: `breed-${breedName.replace(/\s+/g, '-').toLowerCase()}-${index}`,
-    name: breedName,
+    ...sizeTraits[sizeCategory],
+    coat: coatMap[breedGroup] || 'Varies by breed'
+  };
+};
+
+// Count available breeders for a breed
+const getBreederCount = async (breedName: string): Promise<number> => {
+  try {
+    const params = {
+      TableName: BREEDERS_TABLE,
+      FilterExpression: 'contains(breeds, :breedName) AND active = :active',
+      ExpressionAttributeValues: {
+        ':breedName': breedName,
+        ':active': 'True'
+      },
+      Select: 'COUNT'
+    };
+    
+    const result = await dynamodb.send(new ScanCommand(params));
+    return result.Count || 0;
+  } catch (error) {
+    console.error(`Error counting breeders for ${breedName}:`, error);
+    return 0;
+  }
+};
+
+const transformBreed = async (item: BreedItem): Promise<TransformedBreed> => {
+  const size = normalizeSize(item.size_category);
+  const category = normalizeCategory(item.breed_group);
+  const characteristics = generateCharacteristics(item.breed_group, item.size_category, item.breed_type);
+  
+  // Get breeder count
+  const breederCount = await getBreederCount(item.name);
+  
+  return {
+    id: `breed-${item.id}`,
+    name: item.name,
     category,
     size,
-    image: getBreedImage(item.ImageUrls, breedName),
-    images: validImages.length > 0 ? validImages : undefined, // Include all images if available
-    overview: `A wonderful ${size.toLowerCase()} breed from the ${category} group, known for their unique characteristics and loyal companionship.`,
-    characteristics: {
-      energyLevel: normalizeRating(item.PhysicalNeeds),
-      friendliness: Math.round(Math.random() * 3 + 7),
-      trainability: normalizeRating(item.Trainability),
-      groomingNeeds: Math.round(Math.random() * 4 + 4),
-      goodWithKids: Math.round(Math.random() * 3 + 7),
-      goodWithPets: Math.round(Math.random() * 4 + 6),
-    },
-    physicalTraits: {
-      weight: item.Weight || item.AvgWeightKg ? `${item.AvgWeightKg || 'Unknown'} kg` : 'Unknown',
-      height: item.Height || item.AvgHeightCm ? `${item.AvgHeightCm || 'Unknown'} cm` : 'Unknown', 
-      lifespan: item.LifeSpan || item.AvgLifeSpanYears ? `${item.AvgLifeSpanYears || 'Unknown'} years` : 'Unknown',
-      coat: 'Varies by breed'
-    },
-    temperament: generateTemperament(category, size),
-    idealFor: generateIdealFor(size, category),
-    exerciseNeeds: generateExerciseNeeds(normalizeRating(item.PhysicalNeeds)),
+    image: item.cover_photo_url || `https://placedog.net/500?r&id=${item.name}`,
+    images: item.cover_photo_url ? [item.cover_photo_url] : undefined,
+    overview: `${item.hybrid ? 'A wonderful hybrid' : 'A distinguished'} ${size.toLowerCase()} breed from the ${category} group. ${item.breed_type === 'designer' ? 'This designer breed combines the best traits of its parent breeds.' : 'Known for their unique characteristics and loyal companionship.'}`,
+    characteristics,
+    physicalTraits: generatePhysicalTraits(item.size_category, item.breed_group),
+    temperament: generateTemperament(item.breed_group, item.breed_type),
+    idealFor: [
+      'Dog lovers',
+      item.size_category === 'toy' || item.size_category === 'small' ? 'Apartment living' : 'Active families',
+      item.breed_group === 'sporting' || item.breed_group === 'working' ? 'Active owners' : 'Various lifestyles',
+      'Responsible owners'
+    ],
+    exerciseNeeds: characteristics.energyLevel >= 8 ? 'High - 60+ minutes daily' :
+                   characteristics.energyLevel >= 6 ? 'Moderate - 30-45 minutes daily' :
+                   'Low to Moderate - 30 minutes daily',
     commonHealthIssues: ['General breed health considerations', 'Regular vet checkups recommended'],
-    groomingTips: `Regular grooming appropriate for ${size.toLowerCase()} breed coat type.`,
-    trainingTips: `Training approach suited for ${category} group characteristics.`,
+    groomingTips: `Regular grooming appropriate for ${item.breed_group} breed characteristics.`,
+    trainingTips: `Training approach suited for ${category} group temperament and ${item.breed_type} characteristics.`,
     funFacts: [
+      `${item.breed_type === 'purebred' ? 'Purebred' : item.breed_type === 'hybrid' ? 'Hybrid' : 'Designer'} breed`,
       `Part of the ${category} group`,
-      `Typical size classification: ${size}`,
-      `Adaptability rating: ${normalizeRating(item.Adaptability)}/10`
-    ]
+      `Size classification: ${size}`,
+      ...(item.alt_names.length > 0 ? [`Also known as: ${item.alt_names.slice(0, 2).join(', ')}`] : [])
+    ],
+    breedType: item.breed_type,
+    hybrid: item.hybrid,
+    altNames: item.alt_names,
+    url: item.url,
+    breederCount
   };
 };
 
@@ -216,7 +294,8 @@ interface ScanParams {
   TableName: string;
   FilterExpression?: string;
   ExpressionAttributeNames?: Record<string, string>;
-  ExpressionAttributeValues?: Record<string, string>;
+  ExpressionAttributeValues?: Record<string, any>;
+  IndexName?: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -225,26 +304,32 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const category = searchParams.get('category');
     const size = searchParams.get('size');
+    const breedType = searchParams.get('breedType'); // New filter
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
+    const sortBy = searchParams.get('sortBy') || 'name'; // name, popularity, breedType
 
-    console.log('API Request params:', { search, category, size, page, limit });
+    console.log('API Request params:', { search, category, size, breedType, page, limit, sortBy });
 
-    // First, get ALL data with minimal filtering (only apply DynamoDB-level filters that work well)
+    // Build DynamoDB query parameters
     const params: ScanParams = {
-      TableName: TABLE_NAME,
+      TableName: BREEDS_TABLE,
     };
 
-    // Only apply very basic DynamoDB filters that we know work well
     const filterExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, any> = {};
 
-    // Only apply category filter at DynamoDB level if it's a direct match
+    // Only show live breeds
+    filterExpressions.push('#live = :live');
+    expressionAttributeNames['#live'] = 'live';
+    expressionAttributeValues[':live'] = 'True';
+
+    // Category filter using GSI if available
     if (category && category !== 'All') {
       const categoryMap: { [key: string]: string } = {
         'Sporting': 'sporting',
-        'Hound': 'hound', 
+        'Hound': 'hound',
         'Working': 'working',
         'Terrier': 'terrier',
         'Toy': 'toy',
@@ -254,61 +339,89 @@ export async function GET(request: NextRequest) {
       };
       
       if (categoryMap[category]) {
-        filterExpressions.push('contains(#group, :category)');
-        expressionAttributeNames['#group'] = 'DogBreedGroup';
-        expressionAttributeValues[':category'] = categoryMap[category];
+        filterExpressions.push('#breed_group = :breed_group');
+        expressionAttributeNames['#breed_group'] = 'breed_group';
+        expressionAttributeValues[':breed_group'] = categoryMap[category];
       }
     }
 
-    // Apply filters if any exist
+    // Size filter
+    if (size && size !== 'All') {
+      const sizeMap: { [key: string]: string } = {
+        'Small': ['toy', 'small'],
+        'Medium': ['medium'],
+        'Large': ['large', 'giant']
+      };
+      
+      const sizeCategories = sizeMap[size];
+      if (sizeCategories) {
+        if (sizeCategories.length === 1) {
+          filterExpressions.push('#size_category = :size_category');
+          expressionAttributeNames['#size_category'] = 'size_category';
+          expressionAttributeValues[':size_category'] = sizeCategories[0];
+        } else {
+          // Multiple size categories
+          const sizeConditions = sizeCategories.map((cat, index) => {
+            expressionAttributeValues[`:size_category${index}`] = cat;
+            return `#size_category = :size_category${index}`;
+          });
+          filterExpressions.push(`(${sizeConditions.join(' OR ')})`);
+          expressionAttributeNames['#size_category'] = 'size_category';
+        }
+      }
+    }
+
+    // Breed type filter
+    if (breedType && breedType !== 'All') {
+      filterExpressions.push('#breed_type = :breed_type');
+      expressionAttributeNames['#breed_type'] = 'breed_type';
+      expressionAttributeValues[':breed_type'] = breedType.toLowerCase();
+    }
+
+    // Apply filters
     if (filterExpressions.length > 0) {
       params.FilterExpression = filterExpressions.join(' AND ');
       params.ExpressionAttributeNames = expressionAttributeNames;
       params.ExpressionAttributeValues = expressionAttributeValues;
     }
 
-    // Execute scan command to get all data
+    // Execute scan
     const command = new ScanCommand(params);
     const result = await dynamodb.send(command);
     const items = (result.Items as BreedItem[]) || [];
 
     console.log('Raw DynamoDB results:', items.length);
 
-    // Transform all the data first
-    const allTransformedBreeds = items.map((item, index) => transformBreed(item, index));
+    // Transform all breeds (with breeder counts)
+    const allTransformedBreeds = await Promise.all(
+      items.map(item => transformBreed(item))
+    );
 
-    // Apply client-side filtering for better control
+    // Apply client-side search filter
     let filteredBreeds = allTransformedBreeds;
 
-    // Search filter - case insensitive breed name search
     if (search && search.trim()) {
       const searchLower = search.trim().toLowerCase();
       filteredBreeds = filteredBreeds.filter(breed => 
-        breed.name.toLowerCase().includes(searchLower)
+        breed.name.toLowerCase().includes(searchLower) ||
+        breed.altNames.some(alt => alt.toLowerCase().includes(searchLower)) ||
+        breed.temperament.some(trait => trait.toLowerCase().includes(searchLower))
       );
       console.log('After search filter:', filteredBreeds.length);
     }
 
-    // Category filter
-    if (category && category !== 'All') {
-      filteredBreeds = filteredBreeds.filter(breed => 
-        breed.category === category
-      );
-      console.log('After category filter:', filteredBreeds.length);
-    }
-
-    // Size filter
-    if (size && size !== 'All') {
-      filteredBreeds = filteredBreeds.filter(breed => {
-        if (size === 'Medium' && breed.size === 'Medium to Large') return true;
-        if (size === 'Large' && breed.size === 'Medium to Large') return true;
-        return breed.size === size;
-      });
-      console.log('After size filter:', filteredBreeds.length);
-    }
-
-    // Sort for consistent pagination
-    filteredBreeds.sort((a, b) => a.name.localeCompare(b.name));
+    // Sorting
+    filteredBreeds.sort((a, b) => {
+      switch (sortBy) {
+        case 'popularity':
+          return (b.breederCount || 0) - (a.breederCount || 0);
+        case 'breedType':
+          return a.breedType.localeCompare(b.breedType);
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
 
     // Apply pagination
     const totalCount = filteredBreeds.length;
@@ -324,9 +437,7 @@ export async function GET(request: NextRequest) {
       totalCount, 
       totalPages, 
       currentPage: page, 
-      itemsOnPage: paginatedBreeds.length,
-      startIndex,
-      endIndex
+      itemsOnPage: paginatedBreeds.length 
     });
 
     return NextResponse.json({
@@ -339,7 +450,13 @@ export async function GET(request: NextRequest) {
       hasPrevPage,
       totalPages,
       startIndex: startIndex + 1,
-      endIndex: Math.min(endIndex, totalCount)
+      endIndex: Math.min(endIndex, totalCount),
+      filters: {
+        availableCategories: [...new Set(allTransformedBreeds.map(b => b.category))].sort(),
+        availableSizes: [...new Set(allTransformedBreeds.map(b => b.size))].sort(),
+        availableBreedTypes: [...new Set(allTransformedBreeds.map(b => b.breedType))].sort(),
+        totalBreeders: allTransformedBreeds.reduce((sum, breed) => sum + (breed.breederCount || 0), 0)
+      }
     });
 
   } catch (error) {

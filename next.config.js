@@ -21,6 +21,11 @@ const nextConfig = {
           protocol: 'https',
           hostname: 'dog.ceo',
           pathname: '/**',
+        },
+        {
+          protocol: 'https',
+          hostname: '*.gooddog.com',
+          pathname: '/**',
         }
       ],
     },
