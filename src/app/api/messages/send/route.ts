@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the JWT token and extract user info
-    const { userId: authenticatedUserId, name: authenticatedUserName, email } = await verifyJWT(token);
+    const { userId: authenticatedUserId, name: authenticatedUserName } = await verifyJWT(token);
     
     const body = await request.json();
     const { recipientId, recipientName, subject, content, messageType } = body;
