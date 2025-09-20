@@ -14,53 +14,10 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { Breeder, BreederStats, BreederReview } from '@/types/breeder';
-import AnnouncementsFeed from '@/components/AnnouncementsFeed';
+import { Breeder } from '@/types/breeder';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
-
-// Mock data
-const mockBreederStats: BreederStats = {
-  totalLitters: 45,
-  totalPuppies: 312,
-  currentFamilies: 298,
-  yearsActive: 15,
-  satisfactionRate: 98
-};
-
-const mockReviews: BreederReview[] = [
-  {
-    id: 1,
-    familyName: "The Martinez Family",
-    rating: 5,
-    date: "2 weeks ago",
-    review: "Sarah was amazing throughout the entire process. Our goldendoodle Charlie is healthy, well-socialized, and has the most wonderful temperament. Highly recommend!",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100",
-    puppyName: "Charlie",
-    breed: "Goldendoodle"
-  },
-  {
-    id: 2,
-    familyName: "The Johnson Family", 
-    rating: 5,
-    date: "1 month ago",
-    review: "Professional, caring, and transparent. Our Cavapoo Luna came with excellent health records and has been a perfect addition to our family.",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
-    puppyName: "Luna",
-    breed: "Cavapoo"
-  },
-  {
-    id: 3,
-    familyName: "The Chen Family",
-    rating: 5,
-    date: "2 months ago", 
-    review: "Exceptional breeder with genuine care for their dogs and puppies. The health testing and socialization program is top-notch.",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100",
-    puppyName: "Buddy",
-    breed: "Bernedoodle"
-  }
-];
 
 // SWR fetcher
 const fetcher = async (url: string): Promise<{ breeder: Breeder }> => {
@@ -402,33 +359,6 @@ const BreederProfilePage: React.FC = () => {
               </div>
             </Space>
           </Card>
-
-          {/* Stats */}
-          <Card title="Breeding Statistics" style={cardStyle}>
-            <Row gutter={[16, 16]}>
-              <Col span={12} style={{ textAlign: 'center' }}>
-                <Statistic
-                  title="Total Litters"
-                  value={mockBreederStats.totalLitters}
-                  valueStyle={{ color: '#08979C' }}
-                />
-              </Col>
-              <Col span={12} style={{ textAlign: 'center' }}>
-                <Statistic
-                  title="Puppies Placed"
-                  value={mockBreederStats.totalPuppies}
-                  valueStyle={{ color: '#FA8072' }}
-                />
-              </Col>
-              <Col span={24} style={{ textAlign: 'center' }}>
-                <Statistic
-                  title="Happy Families"
-                  value={mockBreederStats.currentFamilies}
-                  valueStyle={{ color: '#52c41a' }}
-                />
-              </Col>
-            </Row>
-          </Card>
         </Col>
 
         {/* Main Content */}
@@ -439,7 +369,17 @@ const BreederProfilePage: React.FC = () => {
             size="large"
           >
             <TabPane tab="Community Posts" key="posts">
-              <AnnouncementsFeed />
+              <Card style={cardStyle}>
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <Title level={4}>Community Updates</Title>
+                  <Paragraph>
+                    Stay connected with our latest news, puppy updates, and family stories.
+                  </Paragraph>
+                  <Button type="primary" style={{ background: '#08979C', borderColor: '#08979C' }}>
+                    View All Posts
+                  </Button>
+                </div>
+              </Card>
             </TabPane>
             
             <TabPane tab="Available Puppies" key="available">
@@ -530,47 +470,12 @@ const BreederProfilePage: React.FC = () => {
                   </Space>
                 </div>
                 
-                <Space direction="vertical" style={{ width: '100%' }} size="large">
-                  {mockReviews.map(review => (
-                    <div 
-                      key={review.id} 
-                      style={{ 
-                        borderBottom: '1px solid #f0f0f0', 
-                        paddingBottom: '16px', 
-                        marginBottom: '16px' 
-                      }}
-                    >
-                      <Space align="start" style={{ width: '100%' }}>
-                        <Avatar src={review.avatar} size={48} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ marginBottom: '8px' }}>
-                            <Space align="center" style={{ marginBottom: '4px' }}>
-                              <Text strong>{review.familyName}</Text>
-                              <Rate disabled value={review.rating} style={{ fontSize: '12px' }} />
-                              <Text type="secondary" style={{ fontSize: '12px' }}>
-                                {review.date}
-                              </Text>
-                            </Space>
-                            <div>
-                              <Tag color="blue" style={{ fontSize: '11px' }}>
-                                {review.breed} • {review.puppyName}
-                              </Tag>
-                            </div>
-                          </div>
-                          <Paragraph style={{ marginBottom: 0, fontSize: '14px' }}>
-                            "{review.review}"
-                          </Paragraph>
-                        </div>
-                      </Space>
-                    </div>
-                  ))}
-                  
-                  <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                    <Button type="dashed" size="large">
-                      Load More Reviews
-                    </Button>
-                  </div>
-                </Space>
+                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <Title level={5}>Reviews Coming Soon</Title>
+                  <Paragraph>
+                    Family reviews and testimonials will be displayed here once our review system is fully implemented.
+                  </Paragraph>
+                </div>
               </Card>
             </TabPane>
 
