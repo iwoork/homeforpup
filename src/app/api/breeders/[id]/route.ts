@@ -151,11 +151,11 @@ const transformBreeder = (item: BreederItem): TransformedBreeder => {
 // GET individual breeder by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const breederId = parseInt(resolvedParams.id);
+    const params = await context.params;
+    const breederId = parseInt(params.id);
     
     if (isNaN(breederId)) {
       return NextResponse.json(
@@ -218,11 +218,11 @@ export async function GET(
 // PUT to update breeder information (for owner edits)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const breederId = parseInt(resolvedParams.id);
+    const params = await context.params;
+    const breederId = parseInt(params.id);
     
     if (isNaN(breederId)) {
       return NextResponse.json(

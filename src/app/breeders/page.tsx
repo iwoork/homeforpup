@@ -9,7 +9,6 @@ import {
   SearchOutlined, 
   EnvironmentOutlined, 
   CheckCircleOutlined, 
-  StarOutlined,
   HeartOutlined,
   EyeOutlined,
   FilterOutlined,
@@ -20,8 +19,6 @@ import {
   GlobalOutlined,
   CalendarOutlined,
   TeamOutlined,
-  ShoppingOutlined,
-  HomeOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import useSWR from 'swr';
@@ -238,11 +235,28 @@ const BreederDirectoryPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Format social media links
-  const formatSocialMedia = (socialMedia: Record<string, string>) => {
-    const platforms = Object.entries(socialMedia).filter(([key, value]) => value && value.trim());
-    return platforms.slice(0, 2); // Show max 2 platforms
-  };
+  const getRandomCoverPhoto = (breederId: number) => {
+  const dogPhotos = [
+    'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1559190394-90ab6371c552?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1552053831-71594a27632d?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1537151625747-768eb6cf92b2?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1503256207526-0d5d80fa2f47?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1534361960057-19889db9621e?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1546975490-e8b92a360b24?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1551717743-49959800b1f6?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=800&h=300&fit=crop&crop=faces',
+    'https://images.unsplash.com/photo-1560807707-8cc77767d783?w=800&h=300&fit=crop&crop=faces'
+  ];
+  
+  // Use breeder ID as seed for consistent random selection
+  return dogPhotos[breederId % dogPhotos.length];
+};
 
   // Render breeder card
   const renderBreederCard = (breeder: Breeder) => (
@@ -262,7 +276,7 @@ const BreederDirectoryPage: React.FC = () => {
           <div 
             style={{
               height: '120px',
-              backgroundImage: `url(${breeder.coverImage})`,
+              backgroundImage: `url(${breeder.coverImage || getRandomCoverPhoto(breeder.id)})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               borderRadius: '8px',
@@ -270,7 +284,7 @@ const BreederDirectoryPage: React.FC = () => {
               marginBottom: '16px'
             }}
             onError={(e) => {
-              e.currentTarget.style.backgroundImage = `url(https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=200&fit=crop)`;
+              e.currentTarget.style.backgroundImage = `url(${getRandomCoverPhoto(breeder.id)})`;
             }}
           >
             <div style={{ 
@@ -674,9 +688,12 @@ const BreederDirectoryPage: React.FC = () => {
                 onChange={setSelectedBreed}
                 allowClear
                 showSearch
-                filterOption={(input, option) =>
-                  (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                }
+                filterOption={(input, option) => {
+                  // Use label property which is more reliable in newer Ant Design versions
+                  const label = option?.label || option?.children;
+                  const searchText = String(label || '');
+                  return searchText.toLowerCase().includes(input.toLowerCase());
+                }}
               >
                 {breederFilters?.availableBreeds.map(breed => (
                   <Option key={breed} value={breed}>{breed}</Option>

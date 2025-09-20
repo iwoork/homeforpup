@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -14,7 +14,7 @@ const client = new DynamoDBClient({
 });
 
 const dynamodb = DynamoDBDocumentClient.from(client);
-const BREEDS_TABLE = process.env.BREEDS_TABLE_NAME || 'homeforpup-breeds-simple';
+const BREEDS_TABLE = process.env.BREEDS_TABLE_NAME || 'homeforpup-breeds';
 const BREEDERS_TABLE = process.env.BREEDERS_TABLE_NAME || 'homeforpup-breeders';
 
 // Enhanced breed interface matching Python script
@@ -32,50 +32,6 @@ interface BreedItem {
   breed_type: string; // 'purebred', 'hybrid', 'designer'
   size_category: string; // 'toy', 'small', 'medium', 'large', 'giant'
   breed_group: string; // 'sporting', 'hound', 'working', etc.
-}
-
-// Enhanced breeder interface
-interface BreederItem {
-  id: number;
-  name: string;
-  business_name: string;
-  location: string;
-  state: string;
-  city: string;
-  zip_code: string;
-  country: string;
-  latitude?: number;
-  longitude?: number;
-  phone: string;
-  email: string;
-  website: string;
-  experience: number;
-  breeds: string[];
-  breed_ids: number[];
-  rating: number;
-  review_count: number;
-  verified: string; // DynamoDB stores as string for GSI
-  profile_image: string;
-  cover_image: string;
-  about: string;
-  certifications: string[];
-  health_testing: string[];
-  specialties: string[];
-  current_litters: number;
-  available_puppies: number;
-  pricing: string;
-  shipping: boolean;
-  pickup_available: boolean;
-  established_year?: number;
-  business_hours: string;
-  appointment_required: boolean;
-  social_media: Record<string, string>;
-  tags: string[];
-  active: string; // DynamoDB stores as string for GSI
-  last_updated: string;
-  total_reviews: number;
-  response_rate: number;
-  avg_response_time: string;
 }
 
 // Transform breed data for frontend
@@ -143,7 +99,7 @@ const normalizeCategory = (breedGroup: string): string => {
 
 // Generate realistic characteristics based on breed data
 const generateCharacteristics = (breedGroup: string, sizeCategory: string, breedType: string) => {
-  const baseStats = {
+  const baseStats: Record<string, { energy: number; friendly: number; train: number; groom: number; kids: number; pets: number }> = {
     'sporting': { energy: 8, friendly: 9, train: 8, groom: 6, kids: 9, pets: 7 },
     'hound': { energy: 7, friendly: 8, train: 6, groom: 4, kids: 8, pets: 6 },
     'working': { energy: 8, friendly: 7, train: 9, groom: 6, kids: 7, pets: 6 },
@@ -200,7 +156,7 @@ const generateTemperament = (breedGroup: string, breedType: string): string[] =>
 };
 
 const generatePhysicalTraits = (sizeCategory: string, breedGroup: string) => {
-  const sizeTraits = {
+  const sizeTraits: Record<string, { weight: string; height: string; lifespan: string }> = {
     'toy': { weight: '2-6 kg', height: '15-25 cm', lifespan: '12-16 years' },
     'small': { weight: '5-11 kg', height: '25-40 cm', lifespan: '12-15 years' },
     'medium': { weight: '11-25 kg', height: '40-60 cm', lifespan: '10-14 years' },
@@ -208,7 +164,7 @@ const generatePhysicalTraits = (sizeCategory: string, breedGroup: string) => {
     'giant': { weight: '45+ kg', height: '70+ cm', lifespan: '6-10 years' }
   };
   
-  const coatMap = {
+  const coatMap: Record<string, string> = {
     'sporting': 'Water-resistant, medium length',
     'hound': 'Short to medium, weather-resistant',
     'working': 'Double coat, weather-resistant',
@@ -234,7 +190,7 @@ const getBreederCount = async (breedName: string): Promise<number> => {
         ':breedName': breedName,
         ':active': 'True'
       },
-      Select: 'COUNT'
+      Select: 'COUNT' as const // Add 'as const' to ensure proper typing
     };
     
     const result = await dynamodb.send(new ScanCommand(params));
@@ -347,7 +303,7 @@ export async function GET(request: NextRequest) {
 
     // Size filter
     if (size && size !== 'All') {
-      const sizeMap: { [key: string]: string } = {
+      const sizeMap: { [key: string]: string[] } = { // Changed from string to string[]
         'Small': ['toy', 'small'],
         'Medium': ['medium'],
         'Large': ['large', 'giant']

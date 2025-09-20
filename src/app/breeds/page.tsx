@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Typography, Input, Select, Tag, Progress, Space, Button, 
-  Spin, Alert, Pagination, Badge, Tooltip, Statistic, Avatar
+  Spin, Alert, Pagination, Badge, Tooltip, Statistic
 } from 'antd';
 import { 
   SearchOutlined, 

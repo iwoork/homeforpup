@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { 
   Card, Row, Col, Typography, Avatar, Button, Tabs, Image, Tag, Space, 
-  Rate, Spin, Alert, Statistic
+  Rate, Spin, Alert
 } from 'antd';
 import { 
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, 
