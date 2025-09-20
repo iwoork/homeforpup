@@ -22,6 +22,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useMessages } from '@/hooks/useMessages'; // Add this import
 import UserTypeModal from '@/components/UserTypeModal';
 
 const { Header: AntHeader } = Layout;
@@ -37,8 +38,12 @@ const Header: React.FC = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
   
-  // Mock unread message count - replace with actual data
-  const unreadMessageCount = 3;
+  // Get real unread message count from useMessages hook
+  const { unreadCount } = useMessages({
+    userId: user?.id || '',
+    userName: user?.name || '',
+    pollingInterval: 5000
+  });
 
   const handleMenuClick = (e: MenuClickEvent) => {
     const key = e.key;
@@ -123,8 +128,8 @@ const Header: React.FC = () => {
     },
     {
       key: '/dashboard/messages',
-      icon: unreadMessageCount > 0 ? (
-        <Badge count={unreadMessageCount} size="small" offset={[4, -4]}>
+      icon: unreadCount > 0 ? (
+        <Badge count={unreadCount} size="small" offset={[4, -4]}>
           <MessageOutlined />
         </Badge>
       ) : (
@@ -335,8 +340,8 @@ const Header: React.FC = () => {
               <Button
                 type="text"
                 icon={
-                  user && unreadMessageCount > 0 ? (
-                    <Badge count={unreadMessageCount} size="small" offset={[4, -4]}>
+                  user && unreadCount > 0 ? (
+                    <Badge count={unreadCount} size="small" offset={[4, -4]}>
                       <MenuOutlined />
                     </Badge>
                   ) : (

@@ -34,9 +34,12 @@ interface ThreadItem {
 }
 
 // Transform thread data for frontend
-const transformThread = (item: ThreadItem) => {
+const transformThread = (item: ThreadItem, userId: string) => {
+  // Extract threadId from PK if it's a participant record
+  const threadId = item.threadId || item.PK.split('#')[0];
+  
   return {
-    id: item.threadId || item.PK,
+    id: threadId,
     subject: item.subject,
     participants: item.participants,
     participantNames: item.participantNames,
@@ -106,12 +109,26 @@ export async function GET(request: NextRequest) {
 
     console.log('Raw DynamoDB threads results:', items.length);
 
-    // Transform threads for frontend
-    const threads = items
-      .filter(item => item.threadId) // Only get actual thread records, not participant records
-      .map(transformThread);
+    // Filter to only get participant records (not main thread records)
+    // Participant records have PK format: threadId#participantId
+    const participantRecords = items.filter(item => 
+      item.PK.includes('#') && item.PK.includes(userId)
+    );
 
-    console.log('Transformed threads:', threads.length);
+    console.log('Filtered participant records:', participantRecords.length);
+
+    // Transform threads for frontend - only include threads where user is actually a participant
+    const threads = participantRecords
+      .filter(item => item.participants && item.participants.includes(userId))
+      .map(item => transformThread(item, userId))
+      // Remove duplicates based on thread ID
+      .filter((thread, index, self) => 
+        index === self.findIndex(t => t.id === thread.id)
+      )
+      // Sort by most recent activity
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    console.log('Final transformed threads:', threads.length);
 
     return NextResponse.json({ threads });
 
