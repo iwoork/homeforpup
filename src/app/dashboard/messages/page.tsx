@@ -42,9 +42,8 @@ interface ComposeMessageFormValues {
 
 // Mock user data - replace with actual user service
 const AVAILABLE_USERS = [
-  { id: 'user123', name: 'Sarah Johnson', email: 'sarah@email.com' },
-  { id: 'user456', name: 'Mike Thompson', email: 'mike@email.com' },
-  { id: 'user789', name: 'Emma Davis', email: 'emma@email.com' }
+  { id: 'c4e84488-a0c1-70ac-8376-ee8b6151167b', name: 'Efren Macasaet', email: 'efren@iwoork.com' },
+  { id: '64482488-9081-7089-fb5b-969fdb276668', name: 'Efren Macasaet', email: 'efren@homeforpup.com' },
 ];
 
 const MessagesPage: React.FC = () => {

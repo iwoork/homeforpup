@@ -138,7 +138,7 @@ const Footer: React.FC = () => {
           <Space size="large" wrap>
             <Space>
               <MailOutlined style={{ color: '#08979C' }} />
-              <Text style={{ fontSize: '12px' }}>hello@homeforpup.com</Text>
+              <Text style={{ fontSize: '12px' }}>support@homeforpup.com</Text>
             </Space>
             <Space>
               <PhoneOutlined style={{ color: '#08979C' }} />
