@@ -72,7 +72,7 @@ const MessagesPage: React.FC = () => {
   } = useMessages({
     userId: user?.id || '',
     userName: user?.name || '',
-    pollingInterval: 5000 // Poll every 5 seconds
+    pollingInterval: 50000
   });
 
   // Handle search
