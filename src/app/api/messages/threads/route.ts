@@ -34,7 +34,7 @@ interface ThreadItem {
 }
 
 // Transform thread data for frontend
-const transformThread = (item: ThreadItem, userId: string) => {
+const transformThread = (item: ThreadItem) => {
   // Extract threadId from PK if it's a participant record
   const threadId = item.threadId || item.PK.split('#')[0];
   
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     // Transform threads for frontend - only include threads where user is actually a participant
     const threads = participantRecords
       .filter(item => item.participants && item.participants.includes(userId))
-      .map(item => transformThread(item, userId))
+      .map(item => transformThread(item))
       // Remove duplicates based on thread ID
       .filter((thread, index, self) => 
         index === self.findIndex(t => t.id === thread.id)
