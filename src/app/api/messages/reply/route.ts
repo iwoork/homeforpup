@@ -17,6 +17,31 @@ const client = new DynamoDBClient({
 const dynamodb = DynamoDBDocumentClient.from(client);
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
+const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
+
+// Helper function to get user name from users table
+async function getUserName(userId: string): Promise<string> {
+  try {
+    const result = await dynamodb.send(new GetCommand({
+      TableName: USERS_TABLE,
+      Key: { userId: userId }
+    }));
+    
+    if (result.Item) {
+      // Try different name fields
+      const name = result.Item.name || result.Item.firstName || result.Item.displayName;
+      if (name && name.trim() !== '') {
+        return name;
+      }
+    }
+    
+    // Fallback: return truncated user ID
+    return `User ${userId.slice(-4)}`;
+  } catch (error) {
+    console.error('Error fetching user name:', error);
+    return `User ${userId.slice(-4)}`;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,13 +52,13 @@ export async function POST(request: NextRequest) {
     }
 
     let userId: string;
-    let senderName: string;
+    let senderNameFromJWT: string;
     
     try {
       const { userId: verifiedUserId, name: verifiedName } = await verifyJWT(token);
       userId = verifiedUserId;
-      senderName = verifiedName;
-      console.log('JWT verification successful for reply, user:', userId.substring(0, 10) + '...');
+      senderNameFromJWT = verifiedName;
+      console.log('JWT verification successful for reply, user:', userId.substring(0, 10) + '...', 'name from JWT:', senderNameFromJWT);
     } catch (verificationError) {
       console.error('JWT verification failed:', verificationError);
       return NextResponse.json({ 
@@ -89,6 +114,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
     }
 
+    // Get proper names for both sender and recipient
+    const [senderName, resolvedReceiverName] = await Promise.all([
+      // For sender: try JWT name first, then lookup in database
+      (senderNameFromJWT && senderNameFromJWT !== 'User' && senderNameFromJWT.trim() !== '') 
+        ? Promise.resolve(senderNameFromJWT)
+        : getUserName(userId),
+      
+      // For recipient: use provided name if valid, otherwise lookup in database
+      (receiverName && receiverName !== 'Unknown User' && receiverName.trim() !== '') 
+        ? Promise.resolve(receiverName)
+        : getUserName(receiverId)
+    ]);
+
+    console.log('Resolved names for reply - Sender:', senderName, 'Receiver:', resolvedReceiverName);
+
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
@@ -96,9 +136,9 @@ export async function POST(request: NextRequest) {
       id: messageId,
       threadId,
       senderId: userId, // Always use authenticated user ID
-      senderName, // Always use authenticated user name
+      senderName: senderName, // Use resolved sender name
       receiverId,
-      receiverName,
+      receiverName: resolvedReceiverName, // Use resolved receiver name
       subject: subject || `Re: ${threadResult.Item.subject}`,
       content,
       timestamp,
@@ -128,14 +168,17 @@ export async function POST(request: NextRequest) {
         Update: {
           TableName: THREADS_TABLE,
           Key: { PK: threadId },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc',
+          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName',
           ExpressionAttributeNames: {
-            '#receiver': receiverId
+            '#receiver': receiverId,
+            '#sender': userId
           },
           ExpressionAttributeValues: {
             ':msg': message,
             ':inc': 1,
-            ':timestamp': timestamp
+            ':timestamp': timestamp,
+            ':senderName': senderName,
+            ':receiverName': resolvedReceiverName
           }
         }
       },
@@ -144,11 +187,17 @@ export async function POST(request: NextRequest) {
         Update: {
           TableName: THREADS_TABLE,
           Key: { PK: `${threadId}#${userId}` },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp',
+          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName',
+          ExpressionAttributeNames: {
+            '#sender': userId,
+            '#receiver': receiverId
+          },
           ExpressionAttributeValues: {
             ':msg': message,
             ':inc': 1,
-            ':timestamp': timestamp
+            ':timestamp': timestamp,
+            ':senderName': senderName,
+            ':receiverName': resolvedReceiverName
           }
         }
       },
@@ -157,14 +206,17 @@ export async function POST(request: NextRequest) {
         Update: {
           TableName: THREADS_TABLE,
           Key: { PK: `${threadId}#${receiverId}` },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc',
+          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName',
           ExpressionAttributeNames: {
-            '#receiver': receiverId
+            '#receiver': receiverId,
+            '#sender': userId
           },
           ExpressionAttributeValues: {
             ':msg': message,
             ':inc': 1,
-            ':timestamp': timestamp
+            ':timestamp': timestamp,
+            ':senderName': senderName,
+            ':receiverName': resolvedReceiverName
           }
         }
       }
@@ -176,7 +228,7 @@ export async function POST(request: NextRequest) {
 
     await dynamodb.send(command);
 
-    console.log('Reply sent successfully:', messageId);
+    console.log('Reply sent successfully:', messageId, 'from:', senderName, 'to:', resolvedReceiverName);
 
     return NextResponse.json({ message }, { status: 201 });
 

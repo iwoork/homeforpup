@@ -1,7 +1,7 @@
 // src/app/api/messages/send/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { verifyJWT } from '@/utils/auth';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,6 +17,31 @@ const client = new DynamoDBClient({
 const dynamodb = DynamoDBDocumentClient.from(client);
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
+const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
+
+// Helper function to get user name from users table
+async function getUserName(userId: string): Promise<string> {
+  try {
+    const result = await dynamodb.send(new GetCommand({
+      TableName: USERS_TABLE,
+      Key: { userId: userId }
+    }));
+    
+    if (result.Item) {
+      // Try different name fields
+      const name = result.Item.name || result.Item.firstName || result.Item.displayName;
+      if (name && name.trim() !== '') {
+        return name;
+      }
+    }
+    
+    // Fallback: return truncated user ID
+    return `User ${userId.slice(-4)}`;
+  } catch (error) {
+    console.error('Error fetching user name:', error);
+    return `User ${userId.slice(-4)}`;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,13 +53,13 @@ export async function POST(request: NextRequest) {
 
     // Verify the JWT token and extract user info
     let authenticatedUserId: string;
-    let authenticatedUserName: string;
+    let authenticatedUserNameFromJWT: string;
     
     try {
       const { userId, name } = await verifyJWT(token);
       authenticatedUserId = userId;
-      authenticatedUserName = name;
-      console.log('JWT verification successful for send message, user:', authenticatedUserId.substring(0, 10) + '...');
+      authenticatedUserNameFromJWT = name;
+      console.log('JWT verification successful for send message, user:', authenticatedUserId.substring(0, 10) + '...', 'name from JWT:', authenticatedUserNameFromJWT);
     } catch (verificationError) {
       console.error('JWT verification failed:', verificationError);
       return NextResponse.json({ 
@@ -84,18 +109,33 @@ export async function POST(request: NextRequest) {
       subject: subject.substring(0, 50) + '...' // Log truncated subject for privacy
     });
 
+    // Get proper names for both sender and recipient
+    const [senderName, receiverName] = await Promise.all([
+      // For sender: try JWT name first, then lookup in database
+      (authenticatedUserNameFromJWT && authenticatedUserNameFromJWT !== 'User' && authenticatedUserNameFromJWT.trim() !== '') 
+        ? Promise.resolve(authenticatedUserNameFromJWT)
+        : getUserName(authenticatedUserId),
+      
+      // For recipient: use provided name if valid, otherwise lookup in database
+      (recipientName && recipientName !== 'Unknown User' && recipientName.trim() !== '') 
+        ? Promise.resolve(recipientName)
+        : getUserName(recipientId)
+    ]);
+
+    console.log('Resolved names - Sender:', senderName, 'Receiver:', receiverName);
+
     const threadId = uuidv4();
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // Use authenticated user info (not client-provided data)
+    // Use authenticated user info with proper names
     const message = {
       id: messageId,
       threadId,
       senderId: authenticatedUserId, // Always use authenticated user ID
-      senderName: authenticatedUserName, // Always use authenticated user name
+      senderName: senderName, // Use resolved sender name
       receiverId: recipientId,
-      receiverName: recipientName || 'Unknown User', // Fallback for name
+      receiverName: receiverName, // Use resolved receiver name
       subject,
       content,
       timestamp,
@@ -108,8 +148,8 @@ export async function POST(request: NextRequest) {
       subject,
       participants: [authenticatedUserId, recipientId],
       participantNames: {
-        [authenticatedUserId]: authenticatedUserName, // Use authenticated name
-        [recipientId]: recipientName || 'Unknown User'
+        [authenticatedUserId]: senderName, // Use resolved sender name
+        [recipientId]: receiverName // Use resolved receiver name
       },
       lastMessage: message,
       messageCount: 1,
@@ -190,8 +230,8 @@ export async function POST(request: NextRequest) {
     console.log('Thread and message created successfully:', {
       threadId,
       messageId,
-      from: authenticatedUserId.substring(0, 10) + '...',
-      to: recipientId.substring(0, 10) + '...'
+      from: `${senderName} (${authenticatedUserId.substring(0, 10)}...)`,
+      to: `${receiverName} (${recipientId.substring(0, 10)}...)`
     });
 
     return NextResponse.json({ thread, message }, { status: 201 });
