@@ -13,7 +13,13 @@ const client = new DynamoDBClient({
   },
 });
 
-const dynamodb = DynamoDBDocumentClient.from(client);
+const dynamodb = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true,
+    convertEmptyValues: false,
+    convertClassInstanceToMap: false,
+  },
+});
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 

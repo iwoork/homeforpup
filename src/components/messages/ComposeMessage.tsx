@@ -116,7 +116,6 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnClose
     >
       <Form
         form={form}
@@ -155,6 +154,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
               const user = users.find(u => u.userId === option.value);
               if (!user) return option.label;
               
+              console.log('user',user)
               return (
                 <div style={{ 
                   display: 'flex', 

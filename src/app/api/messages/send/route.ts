@@ -5,7 +5,7 @@ import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-s
 import { verifyJWT } from '@/utils/auth';
 import { v4 as uuidv4 } from 'uuid';
 
-// Configure AWS SDK v3
+// Configure AWS SDK v3 with removeUndefinedValues option
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
@@ -14,7 +14,15 @@ const client = new DynamoDBClient({
   },
 });
 
-const dynamodb = DynamoDBDocumentClient.from(client);
+// Configure DynamoDB Document Client to remove undefined values
+const dynamodb = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true, // This will fix the error
+    convertEmptyValues: false,
+    convertClassInstanceToMap: false,
+  },
+});
+
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
@@ -30,8 +38,8 @@ async function getUserInfo(userId: string) {
     if (result.Item) {
       return {
         name: result.Item.displayName || result.Item.name || result.Item.firstName || 'Unknown User',
-        displayName: result.Item.displayName,
-        profileImage: result.Item.profileImage,
+        displayName: result.Item.displayName || null,
+        profileImage: result.Item.profileImage || null,
         userType: result.Item.userType || 'adopter'
       };
     }
@@ -39,19 +47,42 @@ async function getUserInfo(userId: string) {
     // Fallback: return basic info with truncated user ID
     return {
       name: `User ${userId.slice(-4)}`,
-      displayName: undefined,
-      profileImage: undefined,
+      displayName: null,
+      profileImage: null,
       userType: 'adopter'
     };
   } catch (error) {
     console.error('Error fetching user info:', error);
     return {
       name: `User ${userId.slice(-4)}`,
-      displayName: undefined,
-      profileImage: undefined,
+      displayName: null,
+      profileImage: null,
       userType: 'adopter'
     };
   }
+}
+
+// Helper function to clean undefined values from objects
+function cleanUndefinedValues(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(cleanUndefinedValues).filter(item => item !== undefined);
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanUndefinedValues(value);
+      }
+    }
+    return cleaned;
+  }
+  
+  return obj;
 }
 
 export async function POST(request: NextRequest) {
@@ -128,7 +159,7 @@ export async function POST(request: NextRequest) {
         ? Promise.resolve({
             name: recipientName,
             displayName: recipientName,
-            profileImage: undefined,
+            profileImage: null,
             userType: 'adopter'
           })
         : getUserInfo(recipientId)
@@ -140,8 +171,8 @@ export async function POST(request: NextRequest) {
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // Create message with comprehensive user info
-    const message = {
+    // Create message with comprehensive user info - clean undefined values
+    const message = cleanUndefinedValues({
       id: messageId,
       threadId,
       senderId: authenticatedUserId,
@@ -154,9 +185,9 @@ export async function POST(request: NextRequest) {
       timestamp,
       read: false,
       messageType: messageType || 'general'
-    };
+    });
 
-    const thread = {
+    const thread = cleanUndefinedValues({
       id: threadId,
       subject,
       participants: [authenticatedUserId, recipientId],
@@ -186,7 +217,7 @@ export async function POST(request: NextRequest) {
       },
       createdAt: timestamp,
       updatedAt: timestamp
-    };
+    });
 
     // Transaction to create both thread and message atomically
     const transactItems = [
@@ -194,7 +225,7 @@ export async function POST(request: NextRequest) {
       {
         Put: {
           TableName: MESSAGES_TABLE,
-          Item: {
+          Item: cleanUndefinedValues({
             PK: threadId,
             SK: messageId,
             GSI1PK: authenticatedUserId,
@@ -202,48 +233,48 @@ export async function POST(request: NextRequest) {
             GSI2PK: recipientId,
             GSI2SK: timestamp,
             ...message
-          }
+          })
         }
       },
       // Create main thread record
       {
         Put: {
           TableName: THREADS_TABLE,
-          Item: {
+          Item: cleanUndefinedValues({
             PK: threadId,
             threadId,
             ...thread,
             GSI1PK: authenticatedUserId,
             GSI1SK: timestamp
-          }
+          })
         }
       },
       // Create participant record for sender
       {
         Put: {
           TableName: THREADS_TABLE,
-          Item: {
+          Item: cleanUndefinedValues({
             PK: `${threadId}#${authenticatedUserId}`,
             threadId,
             participantId: authenticatedUserId,
             ...thread,
             GSI1PK: authenticatedUserId,
             GSI1SK: timestamp
-          }
+          })
         }
       },
       // Create participant record for recipient
       {
         Put: {
           TableName: THREADS_TABLE,
-          Item: {
+          Item: cleanUndefinedValues({
             PK: `${threadId}#${recipientId}`,
             threadId,
             participantId: recipientId,
             ...thread,
             GSI1PK: recipientId,
             GSI1SK: timestamp
-          }
+          })
         }
       }
     ];
