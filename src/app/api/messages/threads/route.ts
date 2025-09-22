@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWT, decodeJWTUnsafe } from '@/utils/auth';
+import { verifyJWT } from '@/utils/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -34,9 +34,14 @@ interface ThreadItem {
 }
 
 // Transform thread data for frontend
-const transformThread = (item: ThreadItem) => {
+const transformThread = (item: ThreadItem, currentUserId: string) => {
   // Extract threadId from PK if it's a participant record
   const threadId = item.threadId || item.PK.split('#')[0];
+  
+  // Only return threads where current user is a participant
+  if (!item.participants.includes(currentUserId)) {
+    return null;
+  }
   
   return {
     id: threadId,
@@ -64,30 +69,22 @@ export async function GET(request: NextRequest) {
     let userId: string;
     
     try {
-      // Try the full verification first
+      // Use full verification for security
       const { userId: verifiedUserId } = await verifyJWT(token);
       userId = verifiedUserId;
-      console.log('JWT verification successful');
+      console.log('JWT verification successful for user:', userId.substring(0, 10) + '...');
     } catch (verificationError) {
-      console.warn('Full JWT verification failed, attempting unsafe decode:', verificationError);
-      
-      // Fallback to unsafe decode for debugging
-      try {
-        const { userId: decodedUserId } = decodeJWTUnsafe(token);
-        userId = decodedUserId;
-        console.log('Unsafe JWT decode successful');
-      } catch (decodeError) {
-        console.error('Both JWT verification and decode failed:', decodeError);
-        return NextResponse.json({ 
-          error: 'Invalid authentication token',
-          details: process.env.NODE_ENV === 'development' ? String(decodeError) : undefined
-        }, { status: 401 });
-      }
+      console.error('JWT verification failed:', verificationError);
+      return NextResponse.json({ 
+        error: 'Invalid authentication token',
+        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+      }, { status: 401 });
     }
 
     console.log('Fetching threads for user:', userId?.substring(0, 10) + '...');
 
     // Query threads where user is a participant using GSI1
+    // This ensures we only get threads for the authenticated user
     const params = {
       TableName: THREADS_TABLE,
       IndexName: 'GSI1',
@@ -111,22 +108,26 @@ export async function GET(request: NextRequest) {
 
     // Filter to only get participant records (not main thread records)
     // Participant records have PK format: threadId#participantId
+    // AND ensure the current user is in the participants array for security
     const participantRecords = items.filter(item => 
-      item.PK.includes('#') && item.PK.includes(userId)
+      item.PK.includes('#') && 
+      item.PK.includes(userId) &&
+      item.participants && 
+      item.participants.includes(userId)
     );
 
     console.log('Filtered participant records:', participantRecords.length);
 
-    // Transform threads for frontend - only include threads where user is actually a participant
+    // Transform threads for frontend - with additional security check
     const threads = participantRecords
-      .filter(item => item.participants && item.participants.includes(userId))
-      .map(item => transformThread(item))
+      .map(item => transformThread(item, userId))
+      .filter(thread => thread !== null) // Remove any null results from security filtering
       // Remove duplicates based on thread ID
       .filter((thread, index, self) => 
-        index === self.findIndex(t => t.id === thread.id)
+        index === self.findIndex(t => t!.id === thread!.id)
       )
       // Sort by most recent activity
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      .sort((a, b) => new Date(b!.updatedAt).getTime() - new Date(a!.updatedAt).getTime());
 
     console.log('Final transformed threads:', threads.length);
 

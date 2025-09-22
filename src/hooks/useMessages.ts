@@ -1,9 +1,9 @@
 // hooks/useMessages.ts
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import useSWR, { mutate } from 'swr';
 import { Message, MessageThread, MessageFilters } from '@/types/messaging';
-import { MessageService } from '@/services/messageService';
 import { useAuth } from '@/hooks/useAuth';
 
 // Type definition for compose message form
@@ -38,35 +38,116 @@ interface UseMessagesReturn {
   deleteThread: (threadId: string) => void;
   searchThreads: (filters: MessageFilters) => void;
   loadMoreMessages: () => Promise<void>;
-  refreshThreads: () => Promise<void>;
+  refreshThreads: () => void;
 }
+
+// API fetcher function with authentication
+const createFetcher = (getToken: () => string | null) => {
+  return async (url: string) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response.json();
+  };
+};
+
+// API request function with authentication
+const createApiRequest = (getToken: () => string | null) => {
+  return async (url: string, options: RequestInit = {}) => {
+    const token = getToken();
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response.json();
+  };
+};
 
 export const useMessages = ({ 
   userId, 
   userName,
   pollingInterval = 5000 
 }: UseMessagesProps): UseMessagesReturn => {
-  const { getToken } = useAuth(); // Get the token function from useAuth
-  const [threads, setThreads] = useState<MessageThread[]>([]);
+  const { getToken } = useAuth();
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<MessageFilters>({});
 
-  const messageService = useRef(new MessageService());
-  const pollingRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastUpdateRef = useRef<string>('');
+  // Create memoized fetcher and request functions
+  const fetcher = useMemo(() => createFetcher(getToken), [getToken]);
+  const apiRequest = useMemo(() => createApiRequest(getToken), [getToken]);
 
-  // Initialize message service with token getter
-  useEffect(() => {
-    if (getToken) {
-      messageService.current.setTokenGetter(getToken);
+  // Fetch threads using SWR with automatic revalidation
+  const {
+    data: threadsData,
+    error: threadsError,
+    isLoading: threadsLoading,
+    mutate: mutateThreads
+  } = useSWR(
+    userId ? '/api/messages/threads' : null,
+    fetcher,
+    {
+      refreshInterval: pollingInterval,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 2000, // Prevent duplicate requests within 2 seconds
+      onError: (error) => {
+        console.error('Error fetching threads:', error);
+      }
     }
-  }, [getToken]);
+  );
+
+  // Fetch messages for selected thread using SWR
+  const {
+    data: messagesData,
+    error: messagesError,
+    isLoading: messagesLoading,
+    mutate: mutateMessages
+  } = useSWR(
+    selectedThread ? `/api/messages/threads/${selectedThread.id}/messages` : null,
+    fetcher,
+    {
+      refreshInterval: selectedThread ? pollingInterval : 0,
+      revalidateOnFocus: true,
+      onError: (error) => {
+        console.error('Error fetching messages:', error);
+      }
+    }
+  );
+
+  const threads = threadsData?.threads || [];
+  const messages = messagesData?.messages || [];
+  const loading = threadsLoading || messagesLoading;
+  const error = threadsError?.message || messagesError?.message || null;
 
   // Helper function to safely get unread count
   const getUnreadCount = (thread: MessageThread, userId: string): number => {
@@ -76,138 +157,42 @@ export const useMessages = ({
     return 0;
   };
 
-  // Fetch threads from DynamoDB
-  const fetchThreads = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const fetchedThreads = await messageService.current.getUserThreads();
-      
-      // Check if data has actually changed to avoid unnecessary re-renders
-      const newLastUpdate = fetchedThreads[0]?.updatedAt || '';
-      if (newLastUpdate === lastUpdateRef.current && threads.length > 0) {
-        return;
-      }
-      
-      lastUpdateRef.current = newLastUpdate;
-      setThreads(fetchedThreads);
-      
-      // Update unread count
-      const totalUnread = fetchedThreads.reduce((sum, thread) => 
-        sum + getUnreadCount(thread, userId), 0
-      );
-      setUnreadCount(totalUnread);
-      
-      // Update selected thread if it exists in the new data
-      if (selectedThread) {
-        const updatedSelectedThread = fetchedThreads.find(t => t.id === selectedThread.id);
-        if (updatedSelectedThread) {
-          setSelectedThread(updatedSelectedThread);
-        }
-      }
-      
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching threads:', err);
-      if (err instanceof Error && err.message.includes('No authentication token available')) {
-        setError('Authentication required. Please log in again.');
-      } else {
-        setError('Failed to load conversations');
-      }
-    }
-  }, [userId, selectedThread?.id, threads.length]);
-
-  // Fetch messages for selected thread
-  const fetchMessages = useCallback(async (threadId: string, append: boolean = false) => {
-    try {
-      if (!append) setMessages([]);
-      
-      const fetchedMessages = await messageService.current.getThreadMessages(threadId, 50);
-      
-      if (append) {
-        setMessages(prev => [...prev, ...fetchedMessages]);
-      } else {
-        setMessages(fetchedMessages);
-      }
-      
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-      if (err instanceof Error && err.message.includes('No authentication token available')) {
-        setError('Authentication required. Please log in again.');
-      } else {
-        setError('Failed to load messages');
-      }
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    const initializeData = async () => {
-      if (!userId || !getToken) return;
-      
-      setLoading(true);
-      await fetchThreads();
-      setLoading(false);
-    };
-
-    initializeData();
-  }, [userId, getToken, fetchThreads]);
-
-  // Set up polling for real-time updates
-  useEffect(() => {
-    if (!userId || loading || !getToken) return;
-
-    const startPolling = () => {
-      pollingRef.current = setInterval(() => {
-        fetchThreads();
-        
-        // Also refresh messages for selected thread
-        if (selectedThread) {
-          fetchMessages(selectedThread.id);
-        }
-      }, pollingInterval);
-    };
-
-    startPolling();
-
-    // Cleanup polling on unmount or dependency change
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  }, [userId, loading, selectedThread?.id, pollingInterval, getToken, fetchThreads, fetchMessages]);
+  // Calculate total unread count
+  const unreadCount = useMemo(() => {
+    return threads.reduce((sum, thread) => sum + getUnreadCount(thread, userId), 0);
+  }, [threads, userId]);
 
   // Handle thread selection
   const selectThread = useCallback(async (thread: MessageThread) => {
     setSelectedThread(thread);
-    await fetchMessages(thread.id);
     
     // Mark as read if there are unread messages
     if (getUnreadCount(thread, userId) > 0) {
       markThreadAsRead(thread.id);
     }
-  }, [fetchMessages, userId]);
+  }, [userId]);
 
   // Send new message (create thread)
   const sendMessage = useCallback(async (values: ComposeMessageFormValues, recipientName: string) => {
     setSendingMessage(true);
     try {
-      const { thread, message } = await messageService.current.createThread(
-        userId,
-        userName,
-        values.recipient,
-        recipientName,
-        values.subject,
-        values.content,
-        values.messageType
-      );
+      const data = await apiRequest('/api/messages/send', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipientId: values.recipient,
+          recipientName,
+          subject: values.subject,
+          content: values.content,
+          messageType: values.messageType
+        }),
+      });
 
       // Update local state
-      setThreads(prev => [thread, ...prev]);
-      setSelectedThread(thread);
-      setMessages([message]);
+      setSelectedThread(data.thread);
+      
+      // Refresh threads and messages
+      mutateThreads();
+      mutate(`/api/messages/threads/${data.thread.id}/messages`);
       
     } catch (err) {
       console.error('Failed to send message:', err);
@@ -215,7 +200,7 @@ export const useMessages = ({
     } finally {
       setSendingMessage(false);
     }
-  }, [userId, userName]);
+  }, [apiRequest, mutateThreads]);
 
   // Send reply to existing thread
   const sendReply = useCallback(async (content: string) => {
@@ -235,21 +220,20 @@ export const useMessages = ({
         }
       }
 
-      const message = await messageService.current.sendReply(
-        selectedThread.id,
-        userId,
-        userName,
-        otherParticipant || '',
-        recipientName,
-        content,
-        selectedThread.subject
-      );
+      await apiRequest('/api/messages/reply', {
+        method: 'POST',
+        body: JSON.stringify({
+          threadId: selectedThread.id,
+          content,
+          receiverId: otherParticipant || '',
+          receiverName: recipientName,
+          subject: selectedThread.subject
+        }),
+      });
 
-      // Update local messages
-      setMessages(prev => [...prev, message]);
-      
-      // Refresh threads to update counts and last message
-      await fetchThreads();
+      // Refresh both threads and messages
+      mutateThreads();
+      mutateMessages();
       
     } catch (err) {
       console.error('Failed to send reply:', err);
@@ -257,49 +241,47 @@ export const useMessages = ({
     } finally {
       setSendingMessage(false);
     }
-  }, [selectedThread, userId, userName, fetchThreads]);
+  }, [selectedThread, userId, apiRequest, mutateThreads, mutateMessages]);
 
   // Mark thread as read
   const markThreadAsRead = useCallback(async (threadId: string) => {
     try {
-      await messageService.current.markThreadAsRead(threadId);
+      await apiRequest(`/api/messages/threads/${threadId}/read`, {
+        method: 'PATCH',
+      });
       
       // Refresh threads to get updated data from server
-      await fetchThreads();
+      mutateThreads();
       
     } catch (err) {
       console.error('Failed to mark thread as read:', err);
     }
-  }, [fetchThreads]);
+  }, [apiRequest, mutateThreads]);
 
   // Delete thread
   const deleteThread = useCallback(async (threadId: string) => {
     try {
-      await messageService.current.deleteThread(threadId);
-      
-      setThreads(prev => prev.filter(t => t.id !== threadId));
+      await apiRequest(`/api/messages/threads/${threadId}`, {
+        method: 'DELETE',
+      });
       
       if (selectedThread?.id === threadId) {
         setSelectedThread(null);
-        setMessages([]);
       }
+      
+      // Refresh threads
+      mutateThreads();
       
     } catch (err) {
       console.error('Failed to delete thread:', err);
       throw err;
     }
-  }, [selectedThread?.id]);
+  }, [selectedThread?.id, apiRequest, mutateThreads]);
 
-  // Search/filter threads
-  const searchThreads = useCallback(async (newFilters: MessageFilters) => {
+  // Search/filter threads (client-side filtering for now)
+  const searchThreads = useCallback((newFilters: MessageFilters) => {
     setFilters(newFilters);
-    try {
-      const filteredThreads = await messageService.current.searchThreads(userId, newFilters);
-      setThreads(filteredThreads);
-    } catch (err) {
-      console.error('Failed to search threads:', err);
-    }
-  }, [userId]);
+  }, []);
 
   // Load more messages for current thread
   const loadMoreMessages = useCallback(async () => {
@@ -307,44 +289,48 @@ export const useMessages = ({
 
     setLoadingMoreMessages(true);
     try {
-      await fetchMessages(selectedThread.id, true);
+      // This could be enhanced to support pagination
+      const data = await fetcher(`/api/messages/threads/${selectedThread.id}/messages?limit=100`);
+      mutate(`/api/messages/threads/${selectedThread.id}/messages`, data, false);
     } catch (err) {
       console.error('Failed to load more messages:', err);
     } finally {
       setLoadingMoreMessages(false);
     }
-  }, [selectedThread, loadingMoreMessages, fetchMessages]);
+  }, [selectedThread, loadingMoreMessages, fetcher]);
 
   // Manual refresh
-  const refreshThreads = useCallback(async () => {
-    await fetchThreads();
+  const refreshThreads = useCallback(() => {
+    mutateThreads();
     if (selectedThread) {
-      await fetchMessages(selectedThread.id);
+      mutateMessages();
     }
-  }, [fetchThreads, selectedThread, fetchMessages]);
+  }, [mutateThreads, mutateMessages, selectedThread]);
 
   // Filter threads based on current filters
-  const filteredThreads = threads.filter(thread => {
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      const matchesSearch = 
-        thread.subject.toLowerCase().includes(searchTerm) ||
-        thread.lastMessage.content.toLowerCase().includes(searchTerm);
-      if (!matchesSearch) return false;
-    }
+  const filteredThreads = useMemo(() => {
+    return threads.filter(thread => {
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        const matchesSearch = 
+          thread.subject.toLowerCase().includes(searchTerm) ||
+          thread.lastMessage.content.toLowerCase().includes(searchTerm);
+        if (!matchesSearch) return false;
+      }
 
-    if (filters.read !== undefined) {
-      const isUnread = getUnreadCount(thread, userId) > 0;
-      if (filters.read && isUnread) return false;
-      if (!filters.read && !isUnread) return false;
-    }
+      if (filters.read !== undefined) {
+        const isUnread = getUnreadCount(thread, userId) > 0;
+        if (filters.read && isUnread) return false;
+        if (!filters.read && !isUnread) return false;
+      }
 
-    if (filters.type && thread.lastMessage.messageType !== filters.type) {
-      return false;
-    }
+      if (filters.type && thread.lastMessage.messageType !== filters.type) {
+        return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [threads, filters, userId]);
 
   return {
     threads: filteredThreads,

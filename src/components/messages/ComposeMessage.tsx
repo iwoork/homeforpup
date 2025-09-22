@@ -30,7 +30,7 @@ interface ComposeMessageFormValues {
 interface ComposeMessageProps {
   visible: boolean;
   onClose: () => void;
-  onSend: (values: ComposeMessageFormValues) => Promise<void>;
+  onSend: (values: ComposeMessageFormValues, recipientName: string) => Promise<void>;
   loading: boolean;
   availableUsers?: Array<{ id: string; name: string; email?: string }>;
 }
@@ -46,13 +46,31 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
 
   const handleSubmit = async (values: ComposeMessageFormValues) => {
     try {
-      await onSend(values);
+      // Find the recipient name from available users
+      const selectedUser = availableUsers.find(user => user.id === values.recipient);
+      const recipientName = selectedUser?.name || 'Unknown User';
+      
+      await onSend(values, recipientName);
       form.resetFields();
       onClose();
       antMessage.success('Message sent successfully!');
     } catch (error) {
       console.error('Failed to send message:', error);
-      antMessage.error('Failed to send message');
+      
+      // Handle specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Authentication expired')) {
+          antMessage.error('Your session has expired. Please log in again.');
+        } else if (error.message.includes('Invalid authentication')) {
+          antMessage.error('Authentication error. Please log in again.');
+        } else if (error.message.includes('Cannot send message to yourself')) {
+          antMessage.error('You cannot send a message to yourself.');
+        } else {
+          antMessage.error('Failed to send message. Please try again.');
+        }
+      } else {
+        antMessage.error('Failed to send message. Please try again.');
+      }
     }
   };
 
@@ -68,7 +86,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnHidden
+      destroyOnClose
     >
       <Form
         form={form}
@@ -81,7 +99,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
           rules={[{ required: true, message: 'Please select a recipient' }]}
         >
           <Select
-            placeholder="Select recipient or enter email"
+            placeholder="Select recipient"
             showSearch
             filterOption={(input, option) =>
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
@@ -90,6 +108,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
               value: user.id,
               label: `${user.name}${user.email ? ` (${user.email})` : ''}`
             }))}
+            notFoundContent="No users found"
           />
         </Form.Item>
 
@@ -109,17 +128,28 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
         <Form.Item
           name="subject"
           label="Subject"
-          rules={[{ required: true, message: 'Please enter a subject' }]}
+          rules={[
+            { required: true, message: 'Please enter a subject' },
+            { max: 200, message: 'Subject cannot exceed 200 characters' }
+          ]}
         >
-          <Input placeholder="Enter subject" />
+          <Input placeholder="Enter subject" maxLength={200} showCount />
         </Form.Item>
 
         <Form.Item
           name="content"
           label="Message"
-          rules={[{ required: true, message: 'Please enter your message' }]}
+          rules={[
+            { required: true, message: 'Please enter your message' },
+            { max: 10000, message: 'Message cannot exceed 10,000 characters' }
+          ]}
         >
-          <TextArea rows={6} placeholder="Type your message here..." />
+          <TextArea 
+            rows={6} 
+            placeholder="Type your message here..." 
+            maxLength={10000}
+            showCount
+          />
         </Form.Item>
 
         <Form.Item label="Attachments">
@@ -127,13 +157,14 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
             multiple
             beforeUpload={() => false}
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            disabled
           >
             <p className="ant-upload-drag-icon">
               <PaperClipOutlined />
             </p>
-            <p className="ant-upload-text">Click or drag files to attach</p>
+            <p className="ant-upload-text">Attachments coming soon</p>
             <p className="ant-upload-hint">
-              Support for PDF, DOC, DOCX, JPG, PNG files up to 10MB
+              File attachments will be available in a future update
             </p>
           </Upload.Dragger>
         </Form.Item>
@@ -145,11 +176,12 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
               htmlType="submit" 
               icon={<SendOutlined />}
               loading={loading}
+              disabled={loading}
               style={{ background: '#08979C', borderColor: '#08979C' }}
             >
               Send Message
             </Button>
-            <Button onClick={handleCancel}>
+            <Button onClick={handleCancel} disabled={loading}>
               Cancel
             </Button>
           </Space>

@@ -27,7 +27,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the JWT token and extract user info
-    const { userId: authenticatedUserId, name: authenticatedUserName } = await verifyJWT(token);
+    let authenticatedUserId: string;
+    let authenticatedUserName: string;
+    
+    try {
+      const { userId, name } = await verifyJWT(token);
+      authenticatedUserId = userId;
+      authenticatedUserName = name;
+      console.log('JWT verification successful for send message, user:', authenticatedUserId.substring(0, 10) + '...');
+    } catch (verificationError) {
+      console.error('JWT verification failed:', verificationError);
+      return NextResponse.json({ 
+        error: 'Invalid authentication token',
+        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+      }, { status: 401 });
+    }
     
     const body = await request.json();
     const { recipientId, recipientName, subject, content, messageType } = body;
@@ -50,9 +64,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
     }
 
+    // Validate recipient ID format (basic check)
+    if (typeof recipientId !== 'string' || recipientId.trim().length === 0) {
+      return NextResponse.json({ error: 'Invalid recipient ID' }, { status: 400 });
+    }
+
+    // Validate content length
+    if (content.length > 10000) { // 10KB limit
+      return NextResponse.json({ error: 'Message content too long' }, { status: 400 });
+    }
+
+    if (subject.length > 200) { // 200 char limit for subject
+      return NextResponse.json({ error: 'Subject too long' }, { status: 400 });
+    }
+
     console.log('Creating new thread and message from authenticated user:', {
-      senderId: authenticatedUserId,
-      recipientId,
+      senderId: authenticatedUserId.substring(0, 10) + '...',
+      recipientId: recipientId.substring(0, 10) + '...',
       subject: subject.substring(0, 50) + '...' // Log truncated subject for privacy
     });
 
@@ -67,7 +95,7 @@ export async function POST(request: NextRequest) {
       senderId: authenticatedUserId, // Always use authenticated user ID
       senderName: authenticatedUserName, // Always use authenticated user name
       receiverId: recipientId,
-      receiverName: recipientName,
+      receiverName: recipientName || 'Unknown User', // Fallback for name
       subject,
       content,
       timestamp,
@@ -81,7 +109,7 @@ export async function POST(request: NextRequest) {
       participants: [authenticatedUserId, recipientId],
       participantNames: {
         [authenticatedUserId]: authenticatedUserName, // Use authenticated name
-        [recipientId]: recipientName
+        [recipientId]: recipientName || 'Unknown User'
       },
       lastMessage: message,
       messageCount: 1,
@@ -162,8 +190,8 @@ export async function POST(request: NextRequest) {
     console.log('Thread and message created successfully:', {
       threadId,
       messageId,
-      from: authenticatedUserId,
-      to: recipientId
+      from: authenticatedUserId.substring(0, 10) + '...',
+      to: recipientId.substring(0, 10) + '...'
     });
 
     return NextResponse.json({ thread, message }, { status: 201 });

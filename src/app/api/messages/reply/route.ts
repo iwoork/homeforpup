@@ -26,7 +26,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const { userId, name: senderName } = await verifyJWT(token);
+    let userId: string;
+    let senderName: string;
+    
+    try {
+      const { userId: verifiedUserId, name: verifiedName } = await verifyJWT(token);
+      userId = verifiedUserId;
+      senderName = verifiedName;
+      console.log('JWT verification successful for reply, user:', userId.substring(0, 10) + '...');
+    } catch (verificationError) {
+      console.error('JWT verification failed:', verificationError);
+      return NextResponse.json({ 
+        error: 'Invalid authentication token',
+        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+      }, { status: 401 });
+    }
+
     const body = await request.json();
     const { threadId, content, receiverId, receiverName, subject } = body;
 
@@ -37,7 +52,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Sending reply to thread:', threadId, 'from:', userId, 'to:', receiverId);
+    // Security check: prevent users from sending messages as someone else
+    if (!userId) {
+      return NextResponse.json({ error: 'Invalid user authentication' }, { status: 401 });
+    }
+
+    console.log('Sending reply to thread:', threadId, 'from:', userId.substring(0, 10) + '...', 'to:', receiverId.substring(0, 10) + '...');
 
     // Verify thread exists and user has access
     const threadCommand = new GetCommand({
@@ -47,7 +67,26 @@ export async function POST(request: NextRequest) {
 
     const threadResult = await dynamodb.send(threadCommand);
     if (!threadResult.Item) {
+      console.log('Thread not found or access denied for user:', userId);
       return NextResponse.json({ error: 'Thread not found or access denied' }, { status: 403 });
+    }
+
+    // Verify user is actually a participant in the thread
+    const threadParticipants = threadResult.Item.participants || [];
+    if (!threadParticipants.includes(userId)) {
+      console.log('User is not a participant in thread:', threadId);
+      return NextResponse.json({ error: 'Access denied - not a participant' }, { status: 403 });
+    }
+
+    // Verify the receiverId is also a participant in the thread
+    if (!threadParticipants.includes(receiverId)) {
+      console.log('Receiver is not a participant in thread:', threadId);
+      return NextResponse.json({ error: 'Invalid receiver - not a participant' }, { status: 400 });
+    }
+
+    // Prevent self-messaging
+    if (userId === receiverId) {
+      return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
     }
 
     const messageId = uuidv4();
@@ -56,8 +95,8 @@ export async function POST(request: NextRequest) {
     const message = {
       id: messageId,
       threadId,
-      senderId: userId,
-      senderName,
+      senderId: userId, // Always use authenticated user ID
+      senderName, // Always use authenticated user name
       receiverId,
       receiverName,
       subject: subject || `Re: ${threadResult.Item.subject}`,
@@ -143,6 +182,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error sending reply:', error);
+    
+    // Handle specific JWT errors
+    if (error instanceof Error) {
+      if (error.message.includes('Token expired') || error.message.includes('Invalid token')) {
+        return NextResponse.json({ error: 'Authentication expired. Please log in again.' }, { status: 401 });
+      }
+      if (error.message.includes('Token verification failed')) {
+        return NextResponse.json({ error: 'Invalid authentication.' }, { status: 401 });
+      }
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to send reply',

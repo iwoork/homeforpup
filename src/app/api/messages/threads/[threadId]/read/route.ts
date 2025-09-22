@@ -1,7 +1,7 @@
 // src/app/api/messages/threads/[threadId]/read/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { verifyJWT } from '@/utils/auth';
 
 // Configure AWS SDK v3
@@ -31,23 +31,41 @@ export async function PATCH(
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const { userId } = await verifyJWT(token);
-    console.log('Marking thread as read:', threadId, 'for user:', userId);
+    let userId: string;
+    try {
+      const { userId: verifiedUserId } = await verifyJWT(token);
+      userId = verifiedUserId;
+      console.log('JWT verification successful for mark as read, user:', userId.substring(0, 10) + '...');
+    } catch (verificationError) {
+      console.error('JWT verification failed:', verificationError);
+      return NextResponse.json({ 
+        error: 'Invalid authentication token',
+        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+      }, { status: 401 });
+    }
+
+    console.log('Marking thread as read:', threadId, 'for user:', userId.substring(0, 10) + '...');
 
     // First, verify user has access to this thread
-    const threadResult = await dynamodb.send(new QueryCommand({
+    const threadResult = await dynamodb.send(new GetCommand({
       TableName: THREADS_TABLE,
-      KeyConditionExpression: 'PK = :pk',
-      ExpressionAttributeValues: {
-        ':pk': `${threadId}#${userId}`
-      }
+      Key: { PK: `${threadId}#${userId}` }
     }));
 
-    if (!threadResult.Items || threadResult.Items.length === 0) {
+    if (!threadResult.Item) {
+      console.log('Thread not found or access denied for user:', userId);
       return NextResponse.json({ error: 'Thread not found or access denied' }, { status: 403 });
     }
 
+    // Verify user is actually a participant in the thread
+    const threadParticipants = threadResult.Item.participants || [];
+    if (!threadParticipants.includes(userId)) {
+      console.log('User is not a participant in thread:', threadId);
+      return NextResponse.json({ error: 'Access denied - not a participant' }, { status: 403 });
+    }
+
     // Mark all unread messages in thread as read for this user
+    // Only mark messages where the current user is the receiver (for security)
     const messagesResult = await dynamodb.send(new QueryCommand({
       TableName: MESSAGES_TABLE,
       KeyConditionExpression: 'PK = :threadId',
@@ -63,6 +81,8 @@ export async function PATCH(
     }));
 
     const unreadMessages = messagesResult.Items || [];
+
+    console.log(`Found ${unreadMessages.length} unread messages for user ${userId} in thread ${threadId}`);
 
     // Update each unread message to mark as read
     const updatePromises = unreadMessages.map(message => {
@@ -116,6 +136,17 @@ export async function PATCH(
 
   } catch (error) {
     console.error('Error marking thread as read:', error);
+    
+    // Handle specific JWT errors
+    if (error instanceof Error) {
+      if (error.message.includes('Token expired') || error.message.includes('Invalid token')) {
+        return NextResponse.json({ error: 'Authentication expired. Please log in again.' }, { status: 401 });
+      }
+      if (error.message.includes('Token verification failed')) {
+        return NextResponse.json({ error: 'Invalid authentication.' }, { status: 401 });
+      }
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to mark thread as read',

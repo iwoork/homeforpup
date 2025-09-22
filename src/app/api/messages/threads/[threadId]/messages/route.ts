@@ -1,7 +1,7 @@
 // src/app/api/messages/threads/[threadId]/messages/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { verifyJWT } from '@/utils/auth';
 
 // Configure AWS SDK v3
@@ -15,6 +15,7 @@ const client = new DynamoDBClient({
 
 const dynamodb = DynamoDBDocumentClient.from(client);
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
+const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 
 // Message interface matching DynamoDB structure
 interface MessageItem {
@@ -69,8 +70,39 @@ export async function GET(
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const { userId } = await verifyJWT(token);
-    console.log('Fetching messages for thread:', threadId, 'user:', userId);
+    let userId: string;
+    try {
+      const { userId: verifiedUserId } = await verifyJWT(token);
+      userId = verifiedUserId;
+      console.log('JWT verification successful for messages request, user:', userId.substring(0, 10) + '...');
+    } catch (verificationError) {
+      console.error('JWT verification failed:', verificationError);
+      return NextResponse.json({ 
+        error: 'Invalid authentication token',
+        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+      }, { status: 401 });
+    }
+
+    console.log('Fetching messages for thread:', threadId, 'user:', userId.substring(0, 10) + '...');
+
+    // First, verify user has access to this thread by checking participant record
+    const threadAccessCommand = new GetCommand({
+      TableName: THREADS_TABLE,
+      Key: { PK: `${threadId}#${userId}` }
+    });
+
+    const threadAccessResult = await dynamodb.send(threadAccessCommand);
+    if (!threadAccessResult.Item) {
+      console.log('User does not have access to thread:', threadId);
+      return NextResponse.json({ error: 'Thread not found or access denied' }, { status: 403 });
+    }
+
+    // Verify user is actually a participant in the thread
+    const threadParticipants = threadAccessResult.Item.participants || [];
+    if (!threadParticipants.includes(userId)) {
+      console.log('User is not a participant in thread:', threadId);
+      return NextResponse.json({ error: 'Access denied - not a participant' }, { status: 403 });
+    }
 
     // Get limit from query params
     const { searchParams } = new URL(request.url);
@@ -95,19 +127,20 @@ export async function GET(
 
     console.log('Raw DynamoDB messages results:', items.length);
 
-    // Verify user has access to this thread by checking if they're sender or receiver of any message
-    const hasAccess = items.some(item => 
+    // Additional security check: Filter messages to only include those where current user 
+    // is either sender or receiver
+    const authorizedMessages = items.filter(item => 
       item.senderId === userId || item.receiverId === userId
     );
 
-    if (!hasAccess && items.length > 0) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    if (authorizedMessages.length !== items.length) {
+      console.warn(`Filtered out ${items.length - authorizedMessages.length} unauthorized messages for user ${userId}`);
     }
 
     // Transform messages for frontend
-    const messages = items.map(transformMessage);
+    const messages = authorizedMessages.map(transformMessage);
 
-    console.log('Transformed messages:', messages.length);
+    console.log('Transformed authorized messages:', messages.length);
 
     return NextResponse.json({ messages });
 
