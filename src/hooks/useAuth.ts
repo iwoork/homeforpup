@@ -3,9 +3,7 @@
 
 import { useAuth as useOidcAuth } from 'react-oidc-context';
 import { useEffect, useState, useCallback } from 'react';
-import { User } from '@/types';
-import { dbOperations } from '@/lib/dynamodb';
-import { v4 as uuidv4 } from 'uuid';
+import { User } from '@/types/user';
 
 interface UseAuthReturn {
   user: User | null;
@@ -14,7 +12,9 @@ interface UseAuthReturn {
   signOut: () => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
-  getToken: () => string | null; // Add method to get JWT token
+  getToken: () => string | null;
+  syncUser: (userData?: Partial<User>) => Promise<User | null>;
+  updateUser: (updates: Partial<User>) => Promise<User | null>;
 }
 
 export const useAuth = (): UseAuthReturn => {
@@ -24,12 +24,12 @@ export const useAuth = (): UseAuthReturn => {
 
   // Method to get the current JWT token
   const getToken = useCallback((): string | null => {
-    if (oidcAuth?.user?.access_token) {
-      return oidcAuth.user.access_token;
-    }
-    
     if (oidcAuth?.user?.id_token) {
       return oidcAuth.user.id_token;
+    }
+
+    if (oidcAuth?.user?.access_token) {
+      return oidcAuth.user.access_token;
     }
 
     // Fallback: try to get from localStorage
@@ -48,32 +48,73 @@ export const useAuth = (): UseAuthReturn => {
     return null;
   }, [oidcAuth]);
 
-  const createOrGetBreederProfile = useCallback(async (userId: string, email: string, name: string) => {
-    try {
-      // Check if breeder profile exists
-      const breederResult = await dbOperations.getBreeder(userId);
-      
-      if (!breederResult.Item) {
-        // Create breeder profile
-        await dbOperations.createBreeder({
-          id: uuidv4(),
-          userId: userId,
-          name: name,
-          email: email,
-          phone: '',
-          location: '',
-          description: '',
-          verified: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-    } catch (error) {
-      console.error('Error handling breeder profile:', error);
-      // Don't throw the error - allow authentication to continue
-      // This prevents auth from failing due to DB issues
+  // Method to sync user data with DynamoDB
+  const syncUser = useCallback(async (userData?: Partial<User>): Promise<User | null> => {
+    const token = getToken();
+    if (!token) {
+      console.warn('No token available for user sync');
+      return null;
     }
-  }, []);
+
+    try {
+      // Check if there's a pending user type from registration
+      const pendingUserType = localStorage.getItem('pendingUserType') as 'breeder' | 'adopter' | null;
+      if (pendingUserType) {
+        localStorage.removeItem('pendingUserType');
+      }
+
+      const response = await fetch('/api/users/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userType: pendingUserType || userData?.userType || 'adopter',
+          ...userData
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const { user: syncedUser, isNewUser } = await response.json();
+      
+      console.log(`User sync successful (${isNewUser ? 'new' : 'existing'} user):`, {
+        userId: syncedUser.userId.substring(0, 10) + '...',
+        name: syncedUser.name,
+        userType: syncedUser.userType
+      });
+
+      setUser(syncedUser);
+      setError(null);
+      return syncedUser;
+
+    } catch (error) {
+      console.error('Failed to sync user:', error);
+      setError(error instanceof Error ? error.message : 'Failed to sync user data');
+      return null;
+    }
+  }, [getToken]);
+
+  // Method to update user data
+  const updateUser = useCallback(async (updates: Partial<User>): Promise<User | null> => {
+    if (!user) {
+      console.warn('No user to update');
+      return null;
+    }
+
+    try {
+      const updatedUser = await syncUser({ ...user, ...updates });
+      return updatedUser;
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update user');
+      return null;
+    }
+  }, [user, syncUser]);
 
   // Update user state when OIDC auth state changes
   useEffect(() => {
@@ -89,18 +130,15 @@ export const useAuth = (): UseAuthReturn => {
         const email = profile.email || '';
         const name = profile.name || profile.email?.split('@')[0] || 'User';
 
-        const userData: User = {
-          id: userId,
-          email: email,
-          name: name,
-          isBreeder: true,
-        };
+        console.log('OIDC authentication successful, syncing user data...');
 
-        setUser(userData);
-        setError(null);
+        // Sync user data with DynamoDB
+        await syncUser({
+          userId,
+          email,
+          name
+        });
 
-        // Create or get breeder profile in background
-        await createOrGetBreederProfile(userId, email, name);
       } else if (!oidcAuth.isLoading) {
         setUser(null);
       }
@@ -114,7 +152,7 @@ export const useAuth = (): UseAuthReturn => {
     };
 
     updateUserState();
-  }, [oidcAuth, createOrGetBreederProfile, error]);
+  }, [oidcAuth, syncUser, error]);
 
   const signIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
     if (!oidcAuth) {
@@ -131,15 +169,13 @@ export const useAuth = (): UseAuthReturn => {
       const redirectUri = encodeURIComponent(window.location.origin + '/callback');
       
       if (action === 'signup' && cognitoDomain && clientId) {
-        // Direct redirect to Cognito signup page
-        const signupUrl = `${cognitoDomain}/signup?client_id=${clientId}&response_type=code&scope=email+openid+profile&redirect_uri=${redirectUri}`;
-        
-        // Optional: Add user type as custom attribute if your Cognito supports it
+        // Store user type for after signup completion
         if (userType) {
-          // Store user type in localStorage to use after signup completion
           localStorage.setItem('pendingUserType', userType);
         }
         
+        // Direct redirect to Cognito signup page
+        const signupUrl = `${cognitoDomain}/signup?client_id=${clientId}&response_type=code&scope=email+openid+profile&redirect_uri=${redirectUri}`;
         window.location.href = signupUrl;
       } else {
         // Use OIDC signin redirect for login (default behavior)
@@ -215,6 +251,8 @@ export const useAuth = (): UseAuthReturn => {
       error: error || 'Authentication context not available',
       isAuthenticated: false,
       getToken: () => null,
+      syncUser: async () => null,
+      updateUser: async () => null,
     };
   }
 
@@ -226,5 +264,7 @@ export const useAuth = (): UseAuthReturn => {
     error,
     isAuthenticated: oidcAuth.isAuthenticated,
     getToken,
+    syncUser,
+    updateUser,
   };
 };

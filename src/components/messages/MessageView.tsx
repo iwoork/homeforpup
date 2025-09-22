@@ -1,4 +1,4 @@
-// components/messages/MessageView.tsx (Debug Version)
+// components/messages/MessageView.tsx
 'use client';
 
 import React from 'react';
@@ -11,20 +11,19 @@ import {
   Empty,
   Button,
   Spin,
-  Collapse
+  Avatar
 } from 'antd';
 import {
   InboxOutlined,
   StarOutlined,
   FlagOutlined,
   LoadingOutlined,
-  BugOutlined
+  UserOutlined
 } from '@ant-design/icons';
 import { Message, MessageThread } from '@/types/messaging';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
-const { Panel } = Collapse;
 
 interface MessageViewProps {
   selectedThread: MessageThread | null;
@@ -52,56 +51,77 @@ const MessageView: React.FC<MessageViewProps> = ({
     }
   };
 
-  // Helper function to get participant name from thread
-  const getParticipantName = (userId: string): string => {
-    if (!selectedThread) return 'Unknown';
+  // Helper function to get participant info from thread
+  const getParticipantInfo = (userId: string) => {
+    if (!selectedThread) return { name: 'Unknown', avatar: undefined, userType: undefined };
     
-    console.log('Getting participant name for userId:', userId.substring(0, 10) + '...');
-    console.log('Thread participantNames:', selectedThread.participantNames);
-    
-    // Check participantNames object first
-    if (selectedThread.participantNames && typeof selectedThread.participantNames === 'object') {
+    // Method 1: Check participantInfo object (enhanced participant data)
+    if (selectedThread.participantInfo && selectedThread.participantInfo[userId]) {
+      const info = selectedThread.participantInfo[userId];
+      return {
+        name: info.displayName || info.name || 'Unknown User',
+        avatar: info.profileImage,
+        userType: info.userType
+      };
+    }
+
+    // Method 2: Check participantNames object (basic name mapping)
+    if (selectedThread.participantNames && selectedThread.participantNames[userId]) {
       const name = selectedThread.participantNames[userId];
-      console.log('Found name in participantNames:', name);
       if (name && name !== 'Unknown User' && name !== 'Unknown') {
-        return name;
+        return { name, avatar: undefined, userType: undefined };
       }
     }
     
-    // Fallback: look through messages for this user's name
+    // Method 3: Fallback to look through messages for this user's name
     for (const message of messages) {
       if (message.senderId === userId && message.senderName && message.senderName !== 'Unknown User') {
-        console.log('Found name in message senderName:', message.senderName);
-        return message.senderName;
+        return { 
+          name: message.senderName, 
+          avatar: message.senderAvatar,
+          userType: undefined 
+        };
       }
       if (message.receiverId === userId && message.receiverName && message.receiverName !== 'Unknown User') {
-        console.log('Found name in message receiverName:', message.receiverName);
-        return message.receiverName;
+        return { 
+          name: message.receiverName, 
+          avatar: undefined,
+          userType: undefined 
+        };
       }
     }
     
-    console.log('No name found, using fallback');
     // Last resort: show truncated user ID
-    return `User ${userId.slice(-4)}`;
+    return { 
+      name: `User ${userId.slice(-4)}`, 
+      avatar: undefined,
+      userType: undefined 
+    };
   };
 
-  // Get display name for message sender
-  const getMessageSenderName = (message: Message): string => {
-    console.log('Getting sender name for message:', {
-      messageId: message.id.substring(0, 10) + '...',
-      senderId: message.senderId.substring(0, 10) + '...',
-      senderName: message.senderName,
-      receiverId: message.receiverId.substring(0, 10) + '...',
-      receiverName: message.receiverName
-    });
-    
-    // First, try the message's own senderName
+  // Get display info for message sender
+  const getMessageSenderInfo = (message: Message) => {
+    // First, try the message's own sender data
     if (message.senderName && message.senderName !== 'Unknown User' && message.senderName !== 'Unknown') {
-      return message.senderName;
+      return {
+        name: message.senderName,
+        avatar: message.senderAvatar,
+        userType: undefined // We don't store userType in message objects
+      };
     }
     
-    // Fallback to participant name lookup
-    return getParticipantName(message.senderId);
+    // Fallback to participant info lookup
+    return getParticipantInfo(message.senderId);
+  };
+
+  // Helper to get user type badge color
+  const getUserTypeBadgeColor = (userType?: string) => {
+    switch (userType) {
+      case 'breeder': return 'green';
+      case 'adopter': return 'blue';
+      case 'both': return 'purple';
+      default: return 'default';
+    }
   };
 
   const sortedMessages = [...messages].sort((a, b) => 
@@ -130,39 +150,13 @@ const MessageView: React.FC<MessageViewProps> = ({
     );
   }
 
-  // Get the other participant's name for the header
+  // Get the other participant's info for the header
   const otherParticipant = selectedThread.participants.find(p => p !== currentUserId);
-  const otherParticipantName = otherParticipant ? getParticipantName(otherParticipant) : 'Unknown';
+  const otherParticipantInfo = otherParticipant ? getParticipantInfo(otherParticipant) : 
+    { name: 'Unknown', avatar: undefined, userType: undefined };
 
   return (
     <>
-      {/* Debug Panel */}
-      <Collapse size="small" style={{ margin: '8px' }}>
-        <Panel header={<><BugOutlined /> Debug Info</>} key="debug">
-          <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-            <div><strong>Current User ID:</strong> {currentUserId.substring(0, 10)}...</div>
-            <div><strong>Thread Participants:</strong> {JSON.stringify(selectedThread.participants.map(p => p.substring(0, 10) + '...'))}</div>
-            <div><strong>Participant Names:</strong> {JSON.stringify(selectedThread.participantNames)}</div>
-            <div><strong>Other Participant:</strong> {otherParticipant?.substring(0, 10)}...</div>
-            <div><strong>Other Participant Name:</strong> {otherParticipantName}</div>
-            <div><strong>Messages Count:</strong> {messages.length}</div>
-            {messages.length > 0 && (
-              <div>
-                <strong>First Message:</strong>
-                <pre style={{ fontSize: '10px', marginTop: '4px' }}>
-                  {JSON.stringify({
-                    senderId: messages[0].senderId.substring(0, 10) + '...',
-                    senderName: messages[0].senderName,
-                    receiverId: messages[0].receiverId.substring(0, 10) + '...',
-                    receiverName: messages[0].receiverName
-                  }, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        </Panel>
-      </Collapse>
-
       {/* Thread Header */}
       <div style={{ 
         padding: '16px 24px', 
@@ -170,13 +164,30 @@ const MessageView: React.FC<MessageViewProps> = ({
         background: '#fff'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Title level={4} style={{ margin: 0, color: '#08979C' }}>
-              {selectedThread.subject}
-            </Title>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              Conversation with {otherParticipantName} • {selectedThread.messageCount} messages • Last updated {dayjs(selectedThread.updatedAt).fromNow()}
-            </Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Avatar 
+              src={otherParticipantInfo.avatar}
+              icon={!otherParticipantInfo.avatar ? <UserOutlined /> : undefined}
+              size={40}
+            />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                <Title level={4} style={{ margin: 0, color: '#08979C' }}>
+                  {selectedThread.subject}
+                </Title>
+                {otherParticipantInfo.userType && (
+                  <Tag 
+                    color={getUserTypeBadgeColor(otherParticipantInfo.userType)}
+                    style={{ fontSize: '10px', padding: '0 4px', height: '16px', lineHeight: '16px' }}
+                  >
+                    {otherParticipantInfo.userType}
+                  </Tag>
+                )}
+              </div>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Conversation with {otherParticipantInfo.name} • {selectedThread.messageCount} messages • Last updated {dayjs(selectedThread.updatedAt).fromNow()}
+              </Text>
+            </div>
           </div>
           <Space>
             <Button icon={<StarOutlined />} type="text">Star</Button>
@@ -216,7 +227,7 @@ const MessageView: React.FC<MessageViewProps> = ({
             <List
               dataSource={sortedMessages}
               renderItem={(msg) => {
-                const senderName = getMessageSenderName(msg);
+                const senderInfo = getMessageSenderInfo(msg);
                 const isCurrentUser = msg.senderId === currentUserId;
                 
                 return (
@@ -238,10 +249,25 @@ const MessageView: React.FC<MessageViewProps> = ({
                       bodyStyle={{ padding: '12px 16px' }}
                     >
                       <div style={{ marginBottom: '8px' }}>
-                        <Space>
-                          <Text strong style={{ fontSize: '13px' }}>
-                            {senderName}
-                          </Text>
+                        <Space align="center">
+                          <Avatar 
+                            src={senderInfo.avatar}
+                            icon={!senderInfo.avatar ? <UserOutlined /> : undefined}
+                            size={24}
+                          />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Text strong style={{ fontSize: '13px' }}>
+                              {senderInfo.name}
+                            </Text>
+                            {senderInfo.userType && (
+                              <Tag 
+                                color={getUserTypeBadgeColor(senderInfo.userType)}
+                                style={{ fontSize: '9px', padding: '0 3px', height: '14px', lineHeight: '14px' }}
+                              >
+                                {senderInfo.userType}
+                              </Tag>
+                            )}
+                          </div>
                           <Text type="secondary" style={{ fontSize: '11px' }}>
                             {dayjs(msg.timestamp).format('MMM DD, h:mm A')}
                           </Text>

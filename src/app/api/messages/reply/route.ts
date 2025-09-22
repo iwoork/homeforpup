@@ -19,8 +19,8 @@ const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-me
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
 
-// Helper function to get user name from users table
-async function getUserName(userId: string): Promise<string> {
+// Helper function to get user info from users table
+async function getUserInfo(userId: string) {
   try {
     const result = await dynamodb.send(new GetCommand({
       TableName: USERS_TABLE,
@@ -28,18 +28,28 @@ async function getUserName(userId: string): Promise<string> {
     }));
     
     if (result.Item) {
-      // Try different name fields
-      const name = result.Item.name || result.Item.firstName || result.Item.displayName;
-      if (name && name.trim() !== '') {
-        return name;
-      }
+      return {
+        name: result.Item.displayName || result.Item.name || result.Item.firstName || 'Unknown User',
+        displayName: result.Item.displayName,
+        profileImage: result.Item.profileImage,
+        userType: result.Item.userType || 'adopter'
+      };
     }
     
-    // Fallback: return truncated user ID
-    return `User ${userId.slice(-4)}`;
+    return {
+      name: `User ${userId.slice(-4)}`,
+      displayName: undefined,
+      profileImage: undefined,
+      userType: 'adopter'
+    };
   } catch (error) {
-    console.error('Error fetching user name:', error);
-    return `User ${userId.slice(-4)}`;
+    console.error('Error fetching user info:', error);
+    return {
+      name: `User ${userId.slice(-4)}`,
+      displayName: undefined,
+      profileImage: undefined,
+      userType: 'adopter'
+    };
   }
 }
 
@@ -77,9 +87,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Security check: prevent users from sending messages as someone else
+    // Security checks
     if (!userId) {
       return NextResponse.json({ error: 'Invalid user authentication' }, { status: 401 });
+    }
+
+    if (userId === receiverId) {
+      return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
     }
 
     console.log('Sending reply to thread:', threadId, 'from:', userId.substring(0, 10) + '...', 'to:', receiverId.substring(0, 10) + '...');
@@ -109,25 +123,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid receiver - not a participant' }, { status: 400 });
     }
 
-    // Prevent self-messaging
-    if (userId === receiverId) {
-      return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
-    }
-
-    // Get proper names for both sender and recipient
-    const [senderName, resolvedReceiverName] = await Promise.all([
-      // For sender: try JWT name first, then lookup in database
-      (senderNameFromJWT && senderNameFromJWT !== 'User' && senderNameFromJWT.trim() !== '') 
-        ? Promise.resolve(senderNameFromJWT)
-        : getUserName(userId),
-      
-      // For recipient: use provided name if valid, otherwise lookup in database
+    // Get comprehensive user info for both sender and recipient
+    const [senderInfo, receiverInfo] = await Promise.all([
+      getUserInfo(userId),
       (receiverName && receiverName !== 'Unknown User' && receiverName.trim() !== '') 
-        ? Promise.resolve(receiverName)
-        : getUserName(receiverId)
+        ? Promise.resolve({
+            name: receiverName,
+            displayName: receiverName,
+            profileImage: undefined,
+            userType: 'adopter'
+          })
+        : getUserInfo(receiverId)
     ]);
 
-    console.log('Resolved names for reply - Sender:', senderName, 'Receiver:', resolvedReceiverName);
+    console.log('Resolved user info for reply - Sender:', senderInfo.name, 'Receiver:', receiverInfo.name);
 
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
@@ -135,10 +144,11 @@ export async function POST(request: NextRequest) {
     const message = {
       id: messageId,
       threadId,
-      senderId: userId, // Always use authenticated user ID
-      senderName: senderName, // Use resolved sender name
+      senderId: userId,
+      senderName: senderInfo.name,
+      senderAvatar: senderInfo.profileImage,
       receiverId,
-      receiverName: resolvedReceiverName, // Use resolved receiver name
+      receiverName: receiverInfo.name,
       subject: subject || `Re: ${threadResult.Item.subject}`,
       content,
       timestamp,
@@ -168,7 +178,7 @@ export async function POST(request: NextRequest) {
         Update: {
           TableName: THREADS_TABLE,
           Key: { PK: threadId },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName',
+          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName, participantInfo.#sender = :senderInfo, participantInfo.#receiver = :receiverInfo',
           ExpressionAttributeNames: {
             '#receiver': receiverId,
             '#sender': userId
@@ -177,8 +187,20 @@ export async function POST(request: NextRequest) {
             ':msg': message,
             ':inc': 1,
             ':timestamp': timestamp,
-            ':senderName': senderName,
-            ':receiverName': resolvedReceiverName
+            ':senderName': senderInfo.name,
+            ':receiverName': receiverInfo.name,
+            ':senderInfo': {
+              name: senderInfo.name,
+              displayName: senderInfo.displayName,
+              profileImage: senderInfo.profileImage,
+              userType: senderInfo.userType
+            },
+            ':receiverInfo': {
+              name: receiverInfo.name,
+              displayName: receiverInfo.displayName,
+              profileImage: receiverInfo.profileImage,
+              userType: receiverInfo.userType
+            }
           }
         }
       },
@@ -187,7 +209,7 @@ export async function POST(request: NextRequest) {
         Update: {
           TableName: THREADS_TABLE,
           Key: { PK: `${threadId}#${userId}` },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName',
+          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName, participantInfo.#sender = :senderInfo, participantInfo.#receiver = :receiverInfo',
           ExpressionAttributeNames: {
             '#sender': userId,
             '#receiver': receiverId
@@ -196,8 +218,20 @@ export async function POST(request: NextRequest) {
             ':msg': message,
             ':inc': 1,
             ':timestamp': timestamp,
-            ':senderName': senderName,
-            ':receiverName': resolvedReceiverName
+            ':senderName': senderInfo.name,
+            ':receiverName': receiverInfo.name,
+            ':senderInfo': {
+              name: senderInfo.name,
+              displayName: senderInfo.displayName,
+              profileImage: senderInfo.profileImage,
+              userType: senderInfo.userType
+            },
+            ':receiverInfo': {
+              name: receiverInfo.name,
+              displayName: receiverInfo.displayName,
+              profileImage: receiverInfo.profileImage,
+              userType: receiverInfo.userType
+            }
           }
         }
       },
@@ -206,7 +240,7 @@ export async function POST(request: NextRequest) {
         Update: {
           TableName: THREADS_TABLE,
           Key: { PK: `${threadId}#${receiverId}` },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName',
+          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName, participantInfo.#sender = :senderInfo, participantInfo.#receiver = :receiverInfo',
           ExpressionAttributeNames: {
             '#receiver': receiverId,
             '#sender': userId
@@ -215,8 +249,20 @@ export async function POST(request: NextRequest) {
             ':msg': message,
             ':inc': 1,
             ':timestamp': timestamp,
-            ':senderName': senderName,
-            ':receiverName': resolvedReceiverName
+            ':senderName': senderInfo.name,
+            ':receiverName': receiverInfo.name,
+            ':senderInfo': {
+              name: senderInfo.name,
+              displayName: senderInfo.displayName,
+              profileImage: senderInfo.profileImage,
+              userType: senderInfo.userType
+            },
+            ':receiverInfo': {
+              name: receiverInfo.name,
+              displayName: receiverInfo.displayName,
+              profileImage: receiverInfo.profileImage,
+              userType: receiverInfo.userType
+            }
           }
         }
       }
@@ -228,7 +274,7 @@ export async function POST(request: NextRequest) {
 
     await dynamodb.send(command);
 
-    console.log('Reply sent successfully:', messageId, 'from:', senderName, 'to:', resolvedReceiverName);
+    console.log('Reply sent successfully:', messageId, 'from:', senderInfo.name, 'to:', receiverInfo.name);
 
     return NextResponse.json({ message }, { status: 201 });
 

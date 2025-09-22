@@ -1,0 +1,137 @@
+// src/app/api/users/available/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { verifyJWTEnhanced } from '@/utils/enhanced-auth';
+
+// Configure AWS SDK v3
+const client = new DynamoDBClient({
+  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+});
+
+const dynamodb = DynamoDBDocumentClient.from(client);
+const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get and verify JWT token
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    }
+
+    let currentUserId: string;
+    try {
+      const { userId } = await verifyJWTEnhanced(token);
+      currentUserId = userId;
+      console.log('Fetching available users for:', currentUserId.substring(0, 10) + '...');
+    } catch (verificationError) {
+      console.error('Enhanced JWT verification failed:', verificationError);
+      return NextResponse.json({ 
+        error: 'Invalid authentication token',
+        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+      }, { status: 401 });
+    }
+
+    // Get query parameters for filtering
+    const { searchParams } = new URL(request.url);
+    const userType = searchParams.get('userType'); // 'breeder', 'adopter', 'both'
+    const search = searchParams.get('search');
+    const location = searchParams.get('location');
+    const limit = parseInt(searchParams.get('limit') || '50');
+
+    // Build scan parameters
+    const scanParams: any = {
+      TableName: USERS_TABLE,
+      FilterExpression: 'accountStatus = :activeStatus AND userId <> :currentUserId',
+      ExpressionAttributeValues: {
+        ':activeStatus': 'active',
+        ':currentUserId': currentUserId
+      },
+      Limit: Math.min(limit, 100) // Cap at 100 for performance
+    };
+
+    // Only add ExpressionAttributeNames if we actually need it
+    const attributeNames: Record<string, string> = {};
+
+    // Add user type filter if specified
+    if (userType && ['breeder', 'adopter', 'both'].includes(userType)) {
+      scanParams.FilterExpression += ' AND userType = :userType';
+      scanParams.ExpressionAttributeValues[':userType'] = userType;
+    }
+
+    // Add search filter if specified (search in name, displayName, email)
+    if (search && search.trim()) {
+      scanParams.FilterExpression += ' AND (contains(#name, :search) OR contains(displayName, :search) OR contains(email, :search))';
+      attributeNames['#name'] = 'name';
+      scanParams.ExpressionAttributeValues[':search'] = search.trim();
+    }
+
+    // Add location filter if specified
+    if (location && location.trim()) {
+      scanParams.FilterExpression += ' AND contains(#location, :location)';
+      attributeNames['#location'] = 'location';
+      scanParams.ExpressionAttributeValues[':location'] = location.trim();
+    }
+
+    // Only add ExpressionAttributeNames if we have attributes to map
+    if (Object.keys(attributeNames).length > 0) {
+      scanParams.ExpressionAttributeNames = attributeNames;
+    }
+
+    console.log('Scanning users with params:', {
+      userType,
+      search,
+      location,
+      limit
+    });
+
+    // Execute scan
+    const result = await dynamodb.send(new ScanCommand(scanParams));
+    const users = result.Items || [];
+
+    console.log(`Found ${users.length} available users`);
+
+    // Transform users for frontend consumption
+    const availableUsers = users.map(user => ({
+      userId: user.userId,
+      name: user.displayName || user.name || 'Unknown User',
+      displayName: user.displayName,
+      email: user.preferences?.privacy?.showEmail ? user.email : undefined,
+      userType: user.userType,
+      location: user.preferences?.privacy?.showLocation ? user.location : undefined,
+      profileImage: user.profileImage,
+      verified: user.verified,
+      // Include additional info that might be useful for messaging
+      bio: user.bio,
+      breederInfo: user.userType === 'breeder' || user.userType === 'both' ? {
+        kennelName: user.breederInfo?.kennelName,
+        specialties: user.breederInfo?.specialties,
+        experience: user.breederInfo?.experience
+      } : undefined
+    })).sort((a, b) => {
+      // Sort by name alphabetically
+      return a.name.localeCompare(b.name);
+    });
+
+    return NextResponse.json({ 
+      users: availableUsers,
+      total: availableUsers.length,
+      hasMore: result.LastEvaluatedKey ? true : false
+    });
+
+  } catch (error) {
+    console.error('Error fetching available users:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch available users',
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      }, 
+      { status: 500 }
+    );
+  }
+}

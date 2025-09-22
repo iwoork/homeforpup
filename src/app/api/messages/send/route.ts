@@ -19,8 +19,8 @@ const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-me
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
 
-// Helper function to get user name from users table
-async function getUserName(userId: string): Promise<string> {
+// Helper function to get user info from users table
+async function getUserInfo(userId: string) {
   try {
     const result = await dynamodb.send(new GetCommand({
       TableName: USERS_TABLE,
@@ -28,18 +28,29 @@ async function getUserName(userId: string): Promise<string> {
     }));
     
     if (result.Item) {
-      // Try different name fields
-      const name = result.Item.name || result.Item.firstName || result.Item.displayName;
-      if (name && name.trim() !== '') {
-        return name;
-      }
+      return {
+        name: result.Item.displayName || result.Item.name || result.Item.firstName || 'Unknown User',
+        displayName: result.Item.displayName,
+        profileImage: result.Item.profileImage,
+        userType: result.Item.userType || 'adopter'
+      };
     }
     
-    // Fallback: return truncated user ID
-    return `User ${userId.slice(-4)}`;
+    // Fallback: return basic info with truncated user ID
+    return {
+      name: `User ${userId.slice(-4)}`,
+      displayName: undefined,
+      profileImage: undefined,
+      userType: 'adopter'
+    };
   } catch (error) {
-    console.error('Error fetching user name:', error);
-    return `User ${userId.slice(-4)}`;
+    console.error('Error fetching user info:', error);
+    return {
+      name: `User ${userId.slice(-4)}`,
+      displayName: undefined,
+      profileImage: undefined,
+      userType: 'adopter'
+    };
   }
 }
 
@@ -79,63 +90,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Security check: prevent users from sending messages as someone else
+    // Security checks
     if (!authenticatedUserId) {
       return NextResponse.json({ error: 'Invalid user authentication' }, { status: 401 });
     }
 
-    // Prevent self-messaging
     if (authenticatedUserId === recipientId) {
       return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
     }
 
-    // Validate recipient ID format (basic check)
     if (typeof recipientId !== 'string' || recipientId.trim().length === 0) {
       return NextResponse.json({ error: 'Invalid recipient ID' }, { status: 400 });
     }
 
     // Validate content length
-    if (content.length > 10000) { // 10KB limit
+    if (content.length > 10000) {
       return NextResponse.json({ error: 'Message content too long' }, { status: 400 });
     }
 
-    if (subject.length > 200) { // 200 char limit for subject
+    if (subject.length > 200) {
       return NextResponse.json({ error: 'Subject too long' }, { status: 400 });
     }
 
     console.log('Creating new thread and message from authenticated user:', {
       senderId: authenticatedUserId.substring(0, 10) + '...',
       recipientId: recipientId.substring(0, 10) + '...',
-      subject: subject.substring(0, 50) + '...' // Log truncated subject for privacy
+      subject: subject.substring(0, 50) + '...'
     });
 
-    // Get proper names for both sender and recipient
-    const [senderName, receiverName] = await Promise.all([
-      // For sender: try JWT name first, then lookup in database
-      (authenticatedUserNameFromJWT && authenticatedUserNameFromJWT !== 'User' && authenticatedUserNameFromJWT.trim() !== '') 
-        ? Promise.resolve(authenticatedUserNameFromJWT)
-        : getUserName(authenticatedUserId),
+    // Get comprehensive user info for both sender and recipient
+    const [senderInfo, receiverInfo] = await Promise.all([
+      // For sender: get from database (JWT name might not be reliable)
+      getUserInfo(authenticatedUserId),
       
       // For recipient: use provided name if valid, otherwise lookup in database
       (recipientName && recipientName !== 'Unknown User' && recipientName.trim() !== '') 
-        ? Promise.resolve(recipientName)
-        : getUserName(recipientId)
+        ? Promise.resolve({
+            name: recipientName,
+            displayName: recipientName,
+            profileImage: undefined,
+            userType: 'adopter'
+          })
+        : getUserInfo(recipientId)
     ]);
 
-    console.log('Resolved names - Sender:', senderName, 'Receiver:', receiverName);
+    console.log('Resolved user info - Sender:', senderInfo.name, 'Receiver:', receiverInfo.name);
 
     const threadId = uuidv4();
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // Use authenticated user info with proper names
+    // Create message with comprehensive user info
     const message = {
       id: messageId,
       threadId,
-      senderId: authenticatedUserId, // Always use authenticated user ID
-      senderName: senderName, // Use resolved sender name
+      senderId: authenticatedUserId,
+      senderName: senderInfo.name,
+      senderAvatar: senderInfo.profileImage,
       receiverId: recipientId,
-      receiverName: receiverName, // Use resolved receiver name
+      receiverName: receiverInfo.name,
       subject,
       content,
       timestamp,
@@ -148,14 +161,28 @@ export async function POST(request: NextRequest) {
       subject,
       participants: [authenticatedUserId, recipientId],
       participantNames: {
-        [authenticatedUserId]: senderName, // Use resolved sender name
-        [recipientId]: receiverName // Use resolved receiver name
+        [authenticatedUserId]: senderInfo.name,
+        [recipientId]: receiverInfo.name
+      },
+      participantInfo: {
+        [authenticatedUserId]: {
+          name: senderInfo.name,
+          displayName: senderInfo.displayName,
+          profileImage: senderInfo.profileImage,
+          userType: senderInfo.userType
+        },
+        [recipientId]: {
+          name: receiverInfo.name,
+          displayName: receiverInfo.displayName,
+          profileImage: receiverInfo.profileImage,
+          userType: receiverInfo.userType
+        }
       },
       lastMessage: message,
       messageCount: 1,
       unreadCount: {
-        [authenticatedUserId]: 0, // Sender has read their own message
-        [recipientId]: 1 // Recipient has 1 unread message
+        [authenticatedUserId]: 0,
+        [recipientId]: 1
       },
       createdAt: timestamp,
       updatedAt: timestamp
@@ -230,8 +257,8 @@ export async function POST(request: NextRequest) {
     console.log('Thread and message created successfully:', {
       threadId,
       messageId,
-      from: `${senderName} (${authenticatedUserId.substring(0, 10)}...)`,
-      to: `${receiverName} (${recipientId.substring(0, 10)}...)`
+      from: `${senderInfo.name} (${authenticatedUserId.substring(0, 10)}...)`,
+      to: `${receiverInfo.name} (${recipientId.substring(0, 10)}...)`
     });
 
     return NextResponse.json({ thread, message }, { status: 201 });

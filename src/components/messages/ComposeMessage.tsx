@@ -1,7 +1,7 @@
 // components/messages/ComposeMessage.tsx
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -10,12 +10,18 @@ import {
   Button,
   Space,
   Upload,
-  message as antMessage
+  message as antMessage,
+  Tag,
+  Spin,
+  Alert
 } from 'antd';
 import {
   SendOutlined,
-  PaperClipOutlined
+  PaperClipOutlined,
+  UserOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
+import { useAvailableUsers } from '@/hooks/useAvailableUsers';
 
 const { TextArea } = Input;
 
@@ -32,23 +38,39 @@ interface ComposeMessageProps {
   onClose: () => void;
   onSend: (values: ComposeMessageFormValues, recipientName: string) => Promise<void>;
   loading: boolean;
-  availableUsers?: Array<{ id: string; name: string; email?: string }>;
 }
 
 const ComposeMessage: React.FC<ComposeMessageProps> = ({
   visible,
   onClose,
   onSend,
-  loading,
-  availableUsers = []
+  loading
 }) => {
   const [form] = Form.useForm<ComposeMessageFormValues>();
+  const { users, loading: usersLoading, error: usersError, searchUsers, refreshUsers } = useAvailableUsers();
+
+  // Refresh users when modal opens
+  useEffect(() => {
+    if (visible) {
+      refreshUsers();
+    }
+  }, [visible, refreshUsers]);
+
+  // Helper to get user type badge color
+  const getUserTypeBadgeColor = (userType: string) => {
+    switch (userType) {
+      case 'breeder': return 'green';
+      case 'adopter': return 'blue';
+      case 'both': return 'purple';
+      default: return 'default';
+    }
+  };
 
   const handleSubmit = async (values: ComposeMessageFormValues) => {
     try {
-      // Find the recipient name from available users
-      const selectedUser = availableUsers.find(user => user.id === values.recipient);
-      const recipientName = selectedUser?.name || 'Unknown User';
+      // Find the recipient from available users
+      const selectedUser = users.find(user => user.userId === values.recipient);
+      const recipientName = selectedUser?.displayName || selectedUser?.name || 'Unknown User';
       
       await onSend(values, recipientName);
       form.resetFields();
@@ -79,6 +101,14 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
     onClose();
   };
 
+  const handleUserSearch = async (search: string) => {
+    if (search.trim()) {
+      await searchUsers({ search: search.trim() });
+    } else {
+      await refreshUsers();
+    }
+  };
+
   return (
     <Modal
       title="Compose New Message"
@@ -93,6 +123,22 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
         layout="vertical"
         onFinish={handleSubmit}
       >
+        {/* Show error if users failed to load */}
+        {usersError && (
+          <Alert
+            message="Failed to load users"
+            description={usersError}
+            type="error"
+            showIcon
+            style={{ marginBottom: '16px' }}
+            action={
+              <Button size="small" onClick={refreshUsers}>
+                Retry
+              </Button>
+            }
+          />
+        )}
+
         <Form.Item
           name="recipient"
           label="To"
@@ -101,14 +147,82 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
           <Select
             placeholder="Select recipient"
             showSearch
-            filterOption={(input, option) =>
-              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-            }
-            options={availableUsers.map(user => ({
-              value: user.id,
-              label: `${user.name}${user.email ? ` (${user.email})` : ''}`
+            loading={usersLoading}
+            onSearch={handleUserSearch}
+            filterOption={false}
+            suffixIcon={usersLoading ? <Spin size="small" /> : <SearchOutlined />}
+            optionRender={(option) => {
+              const user = users.find(u => u.userId === option.value);
+              if (!user) return option.label;
+              
+              return (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '4px 0'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                    <UserOutlined />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 500, fontSize: '14px' }}>
+                        {user.displayName || user.name}
+                      </div>
+                      {user.email && (
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {user.email}
+                        </div>
+                      )}
+                      {user.location && (
+                        <div style={{ fontSize: '11px', color: '#999' }}>
+                          📍 {user.location}
+                        </div>
+                      )}
+                      {user.breederInfo?.kennelName && (
+                        <div style={{ fontSize: '11px', color: '#08979C' }}>
+                          🏠 {user.breederInfo.kennelName}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                    <Tag 
+                      color={getUserTypeBadgeColor(user.userType)}
+                      style={{ fontSize: '10px', padding: '0 4px', height: '16px', lineHeight: '16px', margin: 0 }}
+                    >
+                      {user.userType}
+                    </Tag>
+                    {user.verified && (
+                      <div style={{ fontSize: '10px', color: '#52c41a' }}>
+                        ✓ Verified
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+            options={users.map(user => ({
+              value: user.userId,
+              label: `${user.displayName || user.name}${user.email ? ` (${user.email})` : ''}`,
+              user: user
             }))}
-            notFoundContent="No users found"
+            notFoundContent={
+              usersLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <Spin size="small" />
+                  <div style={{ marginTop: '8px' }}>Loading users...</div>
+                </div>
+              ) : users.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <div>No users found</div>
+                  <Button size="small" type="link" onClick={refreshUsers}>
+                    Refresh
+                  </Button>
+                </div>
+              ) : (
+                "No users match your search"
+              )
+            }
           />
         </Form.Item>
 
@@ -176,7 +290,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
               htmlType="submit" 
               icon={<SendOutlined />}
               loading={loading}
-              disabled={loading}
+              disabled={loading || usersLoading}
               style={{ background: '#08979C', borderColor: '#08979C' }}
             >
               Send Message

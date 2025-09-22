@@ -1,55 +1,24 @@
-// pages/dashboard/messages.tsx
+// app/dashboard/messages/page.tsx (Example usage)
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Layout,
-  Typography,
-  Button,
-  Input,
-  Space,
-  Dropdown,
-  Badge,
-  Modal,
-  message as antMessage
-} from 'antd';
-import {
-  MessageOutlined,
-  PlusOutlined,
-  FilterOutlined,
-  SyncOutlined
-} from '@ant-design/icons';
+import { Layout, Row, Col, Button, Input, Select, Space, Card } from 'antd';
+import { PlusOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useMessages } from '@/hooks/useMessages';
-import { MessageFilters } from '@/types/messaging';
 import ThreadsList from '@/components/messages/ThreadsList';
 import MessageView from '@/components/messages/MessageView';
 import ComposeMessage from '@/components/messages/ComposeMessage';
 import ReplyForm from '@/components/messages/ReplyForm';
 
-const { Content, Sider } = Layout;
-const { Title, Text } = Typography;
+const { Content } = Layout;
 const { Search } = Input;
-const { confirm } = Modal;
 
-// Type definition for compose message form
-interface ComposeMessageFormValues {
-  recipient: string;
-  subject: string;
-  content: string;
-  messageType?: string;
-}
-
-// Mock user data - replace with actual user service
-const AVAILABLE_USERS = [
-  { id: 'c4e84488-a0c1-70ac-8376-ee8b6151167b', name: 'Efren Macasaet', email: 'efren@iwoork.com' },
-  { id: '64482488-9081-7089-fb5b-969fdb276668', name: 'Efren Macasaet', email: 'efren@homeforpup.com' },
-];
-
-const MessagesPage: React.FC = () => {
+export default function MessagesPage() {
   const { user } = useAuth();
   const [composeVisible, setComposeVisible] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [messageTypeFilter, setMessageTypeFilter] = useState<string | undefined>();
 
   const {
     threads,
@@ -69,205 +38,161 @@ const MessagesPage: React.FC = () => {
     loadMoreMessages,
     refreshThreads
   } = useMessages({
-    userId: user?.id || '',
+    userId: user?.userId || '',
     userName: user?.name || '',
-    pollingInterval: 50000
+    pollingInterval: 5000
   });
 
-  // Handle search
   const handleSearch = (value: string) => {
-    setSearchValue(value);
-    searchThreads({ search: value });
+    setSearchText(value);
+    searchThreads({ search: value, type: messageTypeFilter });
   };
 
-  // Handle filter dropdown
-  const handleFilter = (filterType: string) => {
-    const filters: MessageFilters = {};
-    
-    switch (filterType) {
-      case 'unread':
-        filters.read = false;
-        break;
-      case 'inquiries':
-        filters.type = 'inquiry';
-        break;
-      case 'business':
-        filters.type = 'business';
-        break;
-      default:
-        // 'all' - no filters
-        break;
-    }
-    
-    searchThreads(filters);
+  const handleFilterChange = (value: string | undefined) => {
+    setMessageTypeFilter(value);
+    searchThreads({ search: searchText, type: value });
   };
 
-  // Handle sending new message
-  const handleSendMessage = async (values: ComposeMessageFormValues) => {
-    const recipient = AVAILABLE_USERS.find(u => u.id === values.recipient);
-    if (!recipient) {
-      antMessage.error('Recipient not found');
-      return;
-    }
-
-    await sendMessage(values, recipient.name);
+  const handleSendMessage = async (values: any, recipientName: string) => {
+    await sendMessage(values, recipientName);
     setComposeVisible(false);
   };
 
-  // Handle sending reply
-  const handleSendReply = async (content: string) => {
-    await sendReply(content);
+  const handleSendReply = async (values: { content: string }) => {
+    await sendReply(values.content);
   };
-
-  // Handle thread deletion with confirmation
-  const handleDeleteThread = (threadId: string) => {
-    confirm({
-      title: 'Delete Conversation',
-      content: 'Are you sure you want to delete this entire conversation? This action cannot be undone.',
-      okText: 'Delete',
-      okType: 'danger',
-      onOk: async () => {
-        try {
-          await deleteThread(threadId);
-          antMessage.success('Conversation deleted');
-        } catch {
-          antMessage.error('Failed to delete conversation');
-        }
-      }
-    });
-  };
-
-  // Filter dropdown items
-  const filterItems = [
-    { key: 'all', label: 'All Messages' },
-    { key: 'unread', label: 'Unread Only' },
-    { key: 'inquiries', label: 'Puppy Inquiries' },
-    { key: 'business', label: 'Business' }
-  ];
 
   if (!user) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
-        <Text>Please log in to access messages.</Text>
+        Please log in to access messages.
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Title level={2} style={{ color: '#08979C', marginBottom: '8px' }}>
-              <MessageOutlined style={{ marginRight: '12px' }} />
-              Messages
-              <Badge count={unreadCount} offset={[10, 0]} />
-            </Title>
-            <Text style={{ color: '#595959' }}>
-              Manage your conversations with potential puppy families and fellow breeders.
-            </Text>
-          </div>
-          <Button 
-            icon={<SyncOutlined />} 
-            onClick={refreshThreads}
-            loading={loading}
-          >
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <div style={{ marginBottom: '16px', padding: '8px 12px', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: '6px' }}>
-          <Text type="danger">{error}</Text>
-        </div>
-      )}
-
-      <Layout style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', minHeight: '600px' }}>
-        {/* Conversations Sidebar */}
-        <Sider 
-          width={400} 
-          style={{ 
-            background: '#fafafa', 
-            borderRight: '1px solid #f0f0f0',
-            padding: '16px 0'
-          }}
-        >
-          <div style={{ padding: '0 16px', marginBottom: '16px' }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <Search
-                placeholder="Search conversations..."
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onSearch={handleSearch}
-                style={{ width: '100%' }}
-              />
-              <Space>
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />}
-                  onClick={() => setComposeVisible(true)}
-                  style={{ background: '#08979C', borderColor: '#08979C' }}
-                >
-                  New Message
-                </Button>
-                <Dropdown
-                  menu={{
-                    items: filterItems,
-                    onClick: ({ key }) => handleFilter(key)
-                  }}
-                  trigger={['click']}
-                >
-                  <Button icon={<FilterOutlined />}>
-                    Filter
+    <Layout style={{ minHeight: '100vh' }}>
+      <Content style={{ padding: '24px' }}>
+        <Row gutter={24} style={{ height: 'calc(100vh - 100px)' }}>
+          {/* Left Side - Threads List */}
+          <Col xs={24} lg={8}>
+            <Card 
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Messages ({unreadCount} unread)</span>
+                  <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />}
+                    size="small"
+                    onClick={() => setComposeVisible(true)}
+                    style={{ background: '#08979C', borderColor: '#08979C' }}
+                  >
+                    New
                   </Button>
-                </Dropdown>
-              </Space>
-            </Space>
+                </div>
+              }
+              bodyStyle={{ padding: 0 }}
+              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
+              {/* Search and Filter Controls */}
+              <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Search
+                    placeholder="Search messages..."
+                    allowClear
+                    onSearch={handleSearch}
+                    style={{ width: '100%' }}
+                  />
+                  <Select
+                    placeholder="Filter by type"
+                    allowClear
+                    style={{ width: '100%' }}
+                    onChange={handleFilterChange}
+                    suffixIcon={<FilterOutlined />}
+                  >
+                    <Select.Option value="inquiry">Puppy Inquiry</Select.Option>
+                    <Select.Option value="business">Business</Select.Option>
+                    <Select.Option value="general">General</Select.Option>
+                    <Select.Option value="urgent">Urgent</Select.Option>
+                  </Select>
+                </Space>
+              </div>
+
+              {/* Threads List */}
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <ThreadsList
+                  threads={threads}
+                  selectedThreadId={selectedThread?.id}
+                  currentUserId={user.userId}
+                  loading={loading}
+                  onSelectThread={selectThread}
+                  onMarkAsRead={markThreadAsRead}
+                  onDeleteThread={deleteThread}
+                />
+              </div>
+            </Card>
+          </Col>
+
+          {/* Right Side - Message View */}
+          <Col xs={24} lg={16}>
+            <Card 
+              bodyStyle={{ padding: 0 }}
+              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            >
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <MessageView
+                  selectedThread={selectedThread}
+                  messages={messages}
+                  currentUserId={user.userId}
+                  loading={loading}
+                  loadingMore={loadingMoreMessages}
+                  onLoadMore={loadMoreMessages}
+                />
+                
+                {/* Reply Form */}
+                {selectedThread && (
+                  <ReplyForm
+                    onSend={handleSendReply}
+                    loading={sendingMessage}
+                  />
+                )}
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Compose Message Modal */}
+        <ComposeMessage
+          visible={composeVisible}
+          onClose={() => setComposeVisible(false)}
+          onSend={handleSendMessage}
+          loading={sendingMessage}
+        />
+
+        {/* Error Display */}
+        {error && (
+          <div style={{ 
+            position: 'fixed', 
+            bottom: '20px', 
+            right: '20px',
+            background: '#ff4d4f',
+            color: 'white',
+            padding: '12px 16px',
+            borderRadius: '6px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}>
+            {error}
+            <Button 
+              type="text" 
+              size="small" 
+              style={{ color: 'white', marginLeft: '8px' }}
+              onClick={refreshThreads}
+            >
+              Retry
+            </Button>
           </div>
-
-          <ThreadsList
-            threads={threads}
-            selectedThreadId={selectedThread?.id}
-            currentUserId={user.id}
-            loading={loading}
-            onSelectThread={selectThread}
-            onMarkAsRead={markThreadAsRead}
-            onDeleteThread={handleDeleteThread}
-          />
-        </Sider>
-
-        {/* Messages Content */}
-        <Content style={{ display: 'flex', flexDirection: 'column' }}>
-          <MessageView
-            selectedThread={selectedThread}
-            messages={messages}
-            currentUserId={user.id}
-            loading={loading && !!selectedThread}
-            loadingMore={loadingMoreMessages}
-            onLoadMore={messages.length >= 20 ? loadMoreMessages : undefined}
-          />
-
-          {/* Reply Form - only show when thread is selected */}
-          {selectedThread && (
-            <ReplyForm
-              onSend={({ content }) => handleSendReply(content)}
-              loading={sendingMessage}
-            />
-          )}
-        </Content>
-      </Layout>
-
-      {/* Compose New Message Modal */}
-      <ComposeMessage
-        visible={composeVisible}
-        onClose={() => setComposeVisible(false)}
-        onSend={handleSendMessage}
-        loading={sendingMessage}
-        availableUsers={AVAILABLE_USERS}
-      />
-    </div>
+        )}
+      </Content>
+    </Layout>
   );
-};
-
-export default MessagesPage;
+}

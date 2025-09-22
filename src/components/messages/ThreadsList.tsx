@@ -10,7 +10,8 @@ import {
   Empty,
   Dropdown,
   Button,
-  Tag
+  Tag,
+  MenuProps
 } from 'antd';
 import {
   UserOutlined,
@@ -64,7 +65,68 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
     return 0;
   };
 
-  const getThreadMenuItems = (thread: MessageThread) => [
+  // Enhanced function to get other participant's name and info
+  const getOtherParticipantInfo = (thread: MessageThread) => {
+    const otherParticipant = thread.participants.find(p => p !== currentUserId);
+    
+    if (!otherParticipant) {
+      return { name: 'Unknown', avatar: undefined, userType: undefined };
+    }
+
+    // Method 1: Check participantInfo object (enhanced participant data)
+    if (thread.participantInfo && thread.participantInfo[otherParticipant]) {
+      const info = thread.participantInfo[otherParticipant];
+      return {
+        name: info.displayName || info.name || 'Unknown User',
+        avatar: info.profileImage,
+        userType: info.userType
+      };
+    }
+
+    // Method 2: Check participantNames object (basic name mapping)
+    if (thread.participantNames && thread.participantNames[otherParticipant]) {
+      const name = thread.participantNames[otherParticipant];
+      if (name && name !== 'Unknown User' && name !== 'Unknown') {
+        return { name, avatar: undefined, userType: undefined };
+      }
+    }
+    
+    // Method 3: Check last message for sender/receiver names
+    if (thread.lastMessage) {
+      // If other participant sent the last message
+      if (thread.lastMessage.senderId === otherParticipant && 
+          thread.lastMessage.senderName && 
+          thread.lastMessage.senderName !== 'Unknown User' && 
+          thread.lastMessage.senderName !== 'Unknown') {
+        return { 
+          name: thread.lastMessage.senderName, 
+          avatar: thread.lastMessage.senderAvatar,
+          userType: undefined 
+        };
+      }
+      
+      // If other participant received the last message
+      if (thread.lastMessage.receiverId === otherParticipant && 
+          thread.lastMessage.receiverName && 
+          thread.lastMessage.receiverName !== 'Unknown User' && 
+          thread.lastMessage.receiverName !== 'Unknown') {
+        return { 
+          name: thread.lastMessage.receiverName, 
+          avatar: undefined,
+          userType: undefined 
+        };
+      }
+    }
+    
+    // Method 4: Fallback to partial user ID
+    return { 
+      name: `User ${otherParticipant.slice(-4)}`, 
+      avatar: undefined,
+      userType: undefined 
+    };
+  };
+
+  const getThreadMenuItems = (thread: MessageThread): MenuProps['items'] => [
     {
       key: 'markRead',
       icon: <EyeOutlined />,
@@ -83,7 +145,7 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
       label: 'Flag as Important'
     },
     {
-      type: 'divider' as const
+      type: 'divider'
     },
     {
       key: 'delete',
@@ -94,26 +156,14 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
     }
   ];
 
-  const getOtherParticipantName = (thread: MessageThread) => {
-    const otherParticipant = thread.participants.find(p => p !== currentUserId);
-    
-    // Try to get name from participantNames if it exists, otherwise use a fallback
-    if (otherParticipant) {
-      // Check if participantNames exists on the thread object
-      if ('participantNames' in thread && thread.participantNames) {
-        return (thread.participantNames as Record<string, string>)[otherParticipant] || 'Unknown User';
-      }
-      
-      // Fallback: try to extract name from the last message or use the participant ID
-      if (thread.lastMessage.senderId === otherParticipant) {
-        return thread.lastMessage.senderName || `User ${otherParticipant.slice(-4)}`;
-      }
-      
-      // If the other participant is the receiver of the last message
-      return `User ${otherParticipant.slice(-4)}`;
+  // Helper to get user type badge color
+  const getUserTypeBadgeColor = (userType?: string) => {
+    switch (userType) {
+      case 'breeder': return 'green';
+      case 'adopter': return 'blue';
+      case 'both': return 'purple';
+      default: return 'default';
     }
-    
-    return 'Unknown';
   };
 
   return (
@@ -122,81 +172,99 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
         dataSource={threads}
         loading={loading}
         locale={{ emptyText: <Empty description="No conversations yet" /> }}
-        renderItem={(thread) => (
-          <List.Item
-            key={thread.id}
-            style={{
-              padding: '12px 16px',
-              backgroundColor: selectedThreadId === thread.id ? '#e6f7ff' : 'transparent',
-              borderLeft: selectedThreadId === thread.id ? '3px solid #1890ff' : '3px solid transparent',
-              cursor: 'pointer',
-              borderBottom: '1px solid #f0f0f0'
-            }}
-            onClick={() => onSelectThread(thread)}
-            actions={[
-              <Dropdown
-                key="more"
-                menu={{ items: getThreadMenuItems(thread) }}
-                trigger={['click']}
-              >
-                <Button 
-                  type="text" 
-                  icon={<MoreOutlined />} 
-                  size="small"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </Dropdown>
-            ]}
-          >
-            <List.Item.Meta
-              avatar={
-                <Badge count={getUnreadCount(thread, currentUserId)} size="small">
-                  <Avatar icon={<UserOutlined />} />
-                </Badge>
-              }
-              title={
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong={getUnreadCount(thread, currentUserId) > 0} style={{ fontSize: '14px' }}>
-                    {getOtherParticipantName(thread)}
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: '11px' }}>
-                    {dayjs(thread.updatedAt).fromNow()}
-                  </Text>
-                </div>
-              }
-              description={
-                <div>
-                  <Text strong style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
-                    {thread.subject}
-                  </Text>
-                  <Text 
-                    type="secondary" 
-                    style={{ 
-                      fontSize: '12px',
-                      fontWeight: getUnreadCount(thread, currentUserId) > 0 ? 500 : 'normal'
-                    }}
-                  >
-                    {thread.lastMessage.content.length > 50 
-                      ? `${thread.lastMessage.content.substring(0, 50)}...` 
-                      : thread.lastMessage.content
-                    }
-                  </Text>
-                  <div style={{ marginTop: '4px' }}>
-                    <Tag 
-                      color={getMessageTypeColor(thread.lastMessage.messageType)}
-                      style={{ fontSize: '11px', padding: '0 6px', height: '18px', lineHeight: '18px' }}
-                    >
-                      {thread.lastMessage.messageType}
-                    </Tag>
-                    <Text type="secondary" style={{ fontSize: '11px', marginLeft: '8px' }}>
-                      {thread.messageCount} messages
+        renderItem={(thread) => {
+          const otherParticipantInfo = getOtherParticipantInfo(thread);
+          const unreadCount = getUnreadCount(thread, currentUserId);
+          
+          return (
+            <List.Item
+              key={thread.id}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: selectedThreadId === thread.id ? '#e6f7ff' : 'transparent',
+                borderLeft: selectedThreadId === thread.id ? '3px solid #1890ff' : '3px solid transparent',
+                cursor: 'pointer',
+                borderBottom: '1px solid #f0f0f0'
+              }}
+              onClick={() => onSelectThread(thread)}
+              actions={[
+                <Dropdown
+                  key="more"
+                  menu={{ items: getThreadMenuItems(thread) }}
+                  trigger={['click']}
+                >
+                  <Button 
+                    type="text" 
+                    icon={<MoreOutlined />} 
+                    size="small"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Dropdown>
+              ]}
+            >
+              <List.Item.Meta
+                avatar={
+                  <Badge count={unreadCount} size="small">
+                    <Avatar 
+                      src={otherParticipantInfo.avatar}
+                      icon={!otherParticipantInfo.avatar ? <UserOutlined /> : undefined}
+                    />
+                  </Badge>
+                }
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Text strong={unreadCount > 0} style={{ fontSize: '14px' }}>
+                        {otherParticipantInfo.name}
+                      </Text>
+                      {otherParticipantInfo.userType && (
+                        <Tag 
+                          color={getUserTypeBadgeColor(otherParticipantInfo.userType)}
+                          style={{ fontSize: '10px', padding: '0 4px', height: '16px', lineHeight: '16px' }}
+                        >
+                          {otherParticipantInfo.userType}
+                        </Tag>
+                      )}
+                    </div>
+                    <Text type="secondary" style={{ fontSize: '11px' }}>
+                      {dayjs(thread.updatedAt).fromNow()}
                     </Text>
                   </div>
-                </div>
-              }
-            />
-          </List.Item>
-        )}
+                }
+                description={
+                  <div>
+                    <Text strong style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
+                      {thread.subject}
+                    </Text>
+                    <Text 
+                      type="secondary" 
+                      style={{ 
+                        fontSize: '12px',
+                        fontWeight: unreadCount > 0 ? 500 : 'normal'
+                      }}
+                    >
+                      {thread.lastMessage.content.length > 50 
+                        ? `${thread.lastMessage.content.substring(0, 50)}...` 
+                        : thread.lastMessage.content
+                      }
+                    </Text>
+                    <div style={{ marginTop: '4px' }}>
+                      <Tag 
+                        color={getMessageTypeColor(thread.lastMessage.messageType)}
+                        style={{ fontSize: '11px', padding: '0 6px', height: '18px', lineHeight: '18px' }}
+                      >
+                        {thread.lastMessage.messageType}
+                      </Tag>
+                      <Text type="secondary" style={{ fontSize: '11px', marginLeft: '8px' }}>
+                        {thread.messageCount} messages
+                      </Text>
+                    </div>
+                  </div>
+                }
+              />
+            </List.Item>
+          );
+        }}
       />
     </div>
   );

@@ -93,7 +93,6 @@ const createApiRequest = (getToken: () => string | null) => {
 
 export const useMessages = ({ 
   userId, 
-  userName,
   pollingInterval = 5000 
 }: UseMessagesProps): UseMessagesReturn => {
   const { getToken } = useAuth();
