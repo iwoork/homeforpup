@@ -10,7 +10,7 @@ const ServerLayout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ClientHeader />
-      <main style={{ flex: 1, padding: '0 50px', marginTop: 64 }}>
+      <main style={{ flex: 1, marginTop: 64 }}>
         {children}
       </main>
       <Footer />
