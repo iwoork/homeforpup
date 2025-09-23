@@ -15,6 +15,9 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Breeder } from '@/types/breeder';
+import { useAuth } from '@/hooks/useAuth';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ComposeMessage from '@/components/messages/ComposeMessage';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
@@ -32,6 +35,7 @@ const BreederProfilePage: React.FC = () => {
   const params = useParams();
   const breederId = params?.id as string;
   const [activeTab, setActiveTab] = useState("posts");
+  const [composeVisible, setComposeVisible] = useState(false);
 
   // Fetch breeder data
   const { data, error, isLoading } = useSWR<{ breeder: Breeder }>(
@@ -44,6 +48,8 @@ const BreederProfilePage: React.FC = () => {
   );
 
   const breeder = data?.breeder;
+  const { user: authUser, getToken } = useAuth();
+  const isOwnProfile = authUser && breeder && authUser.userId === String(breeder.id);
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -91,92 +97,21 @@ const BreederProfilePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
-      {/* Cover Photo & Profile Header */}
-      <Card 
-        style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden' }}
-        bodyStyle={{ padding: 0 }}
-      >
-        <div 
-          style={{
-            height: '300px',
-            backgroundImage: `url(https://picsum.photos/1200/300?random=${breederId || 'default'})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative'
-          }}
-        >          
-          <div style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '24px',
-            right: '24px'
-          }}>
-            <Row align="bottom" justify="space-between">
-              <Col>
-                <Space align="end" size={16}>
-                  <Avatar 
-                    size={120} 
-                    src={breeder.profileImage}
-                    style={{ border: '4px solid white' }}
-                  />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Title level={2} style={{ 
-                        margin: 0, 
-                        color: 'white', 
-                        textShadow: '0 2px 4px rgba(0,0,0,0.5)' 
-                      }}>
-                        {breeder.businessName}
-                      </Title>
-                      {breeder.verified && (
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
-                      )}
-                    </div>
-                    <Text style={{ 
-                      color: 'white', 
-                      textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                      fontSize: '16px'
-                    }}>
-                      by {breeder.name}
-                    </Text>
-                    <br />
-                    <Space style={{ marginTop: '8px' }}>
-                      <Rate 
-                        disabled 
-                        value={breeder.rating} 
-                        style={{ fontSize: '16px' }}
-                        allowHalf
-                      />
-                      <Text style={{ 
-                        color: 'white', 
-                        textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                        fontSize: '14px'
-                      }}>
-                        {breeder.rating.toFixed(1)} ({breeder.reviewCount} reviews)
-                      </Text>
-                    </Space>
-                  </div>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  <Button 
-                    type="primary" 
-                    size="large" 
-                    style={{ background: '#FA8072', borderColor: '#FA8072' }}
-                    icon={<MailOutlined />}
-                  >
-                    Message Breeder
-                  </Button>
-                  <Button size="large" icon={<HeartOutlined />}>
-                    Follow Updates
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-          </div>
-        </div>
-      </Card>
+      {/* Profile Header (re-using shared component) */}
+      <ProfileHeader 
+        user={{
+          userId: String(breeder.id),
+          displayName: breeder.businessName,
+          name: breeder.name,
+          verified: breeder.verified,
+          profileImage: breeder.profileImage,
+          location: breeder.location,
+          lastActiveAt: breeder.lastUpdated,
+        }}
+        isOwnProfile={Boolean(isOwnProfile)}
+        editHref={`/breeders/${breeder.id}/edit`}
+        onMessageClick={() => setComposeVisible(true)}
+      />
 
       <Row gutter={[24, 24]}>
         {/* Left Sidebar - Breeder Info */}
@@ -525,6 +460,32 @@ const BreederProfilePage: React.FC = () => {
           </Col>
         </Row>
       </Card>
+      {/* Compose Message Modal */}
+      <ComposeMessage
+        visible={composeVisible}
+        onClose={() => setComposeVisible(false)}
+        loading={false}
+        defaultRecipientId={String(breeder.id)}
+        onSend={async (values, recipientName) => {
+          const token = getToken();
+          if (!token) return;
+          await fetch('/api/messages/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              recipientId: values.recipient,
+              recipientName,
+              subject: values.subject,
+              content: values.content,
+              messageType: values.messageType || 'general',
+            }),
+          });
+          setComposeVisible(false);
+        }}
+      />
     </div>
   );
 };

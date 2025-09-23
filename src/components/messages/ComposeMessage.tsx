@@ -38,13 +38,15 @@ interface ComposeMessageProps {
   onClose: () => void;
   onSend: (values: ComposeMessageFormValues, recipientName: string) => Promise<void>;
   loading: boolean;
+  defaultRecipientId?: string;
 }
 
 const ComposeMessage: React.FC<ComposeMessageProps> = ({
   visible,
   onClose,
   onSend,
-  loading
+  loading,
+  defaultRecipientId
 }) => {
   const [form] = Form.useForm<ComposeMessageFormValues>();
   const { users, loading: usersLoading, error: usersError, searchUsers, refreshUsers } = useAvailableUsers();
@@ -55,6 +57,13 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
       refreshUsers();
     }
   }, [visible, refreshUsers]);
+
+  // Preselect default recipient if provided
+  useEffect(() => {
+    if (visible && defaultRecipientId) {
+      form.setFieldsValue({ recipient: defaultRecipientId });
+    }
+  }, [visible, defaultRecipientId, form]);
 
   // Helper to get user type badge color
   const getUserTypeBadgeColor = (userType: string) => {
@@ -116,6 +125,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
       onCancel={handleCancel}
       footer={null}
       width={600}
+      styles={{ body: { padding: 16 } }}
     >
       <Form
         form={form}

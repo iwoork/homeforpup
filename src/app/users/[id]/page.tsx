@@ -14,6 +14,9 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
+import { useAuth } from '@/hooks/useAuth';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ComposeMessage from '@/components/messages/ComposeMessage';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
@@ -94,6 +97,7 @@ const AdopterProfilePage: React.FC = () => {
   const params = useParams();
   const adopterId = params?.id as string;
   const [activeTab, setActiveTab] = useState("about");
+  const [composeVisible, setComposeVisible] = useState(false);
 
   // Fetch adopter data
   const { data, error, isLoading } = useSWR<{ user: AdopterUser }>(
@@ -105,19 +109,11 @@ const AdopterProfilePage: React.FC = () => {
     }
   );
 
-  // Fetch current user data to check if viewing own profile
-  const { data: currentUserData } = useSWR<{ user: CurrentUser }>(
-    '/api/auth/me', // Adjust this endpoint based on your auth system
-    currentUserFetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
+  // Use global auth for current user
+  const { user: authUser, getToken } = useAuth();
 
   const adopter = data?.user;
-  const currentUser = currentUserData?.user;
-  const isOwnProfile = currentUser && adopter && currentUser.userId === adopter.userId;
+  const isOwnProfile = authUser && adopter && authUser.userId === adopter.userId;
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -197,111 +193,22 @@ const AdopterProfilePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '10px auto', padding: '16px' }}>
-      {/* Cover Photo & Profile Header */}
-      <Card 
-        style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden' }}
-        bodyStyle={{ padding: 0 }}
-      >
-        <div 
-          style={{
-            height: '250px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >          
-          <div style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '24px',
-            right: '24px'
-          }}>
-            <Row align="bottom" justify="space-between">
-              <Col>
-                <Space align="end" size={16}>
-                  <Avatar 
-                    size={120} 
-                    src={adopter.profileImage}
-                    icon={<UserOutlined />}
-                    style={{ border: '4px solid white' }}
-                  />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Title level={2} style={{ 
-                        margin: 0, 
-                        color: 'white', 
-                        textShadow: '0 2px 4px rgba(0,0,0,0.5)' 
-                      }}>
-                        {adopter.displayName || adopter.name}
-                      </Title>
-                      {adopter.verified && (
-                        <Tooltip title="Verified User">
-                          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
-                        </Tooltip>
-                      )}
-                    </div>
-                    <Text style={{ 
-                      color: 'white', 
-                      textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                      fontSize: '16px'
-                    }}>
-                      Looking for the perfect furry companion
-                    </Text>
-                    <br />
-                    <Space style={{ marginTop: '8px' }}>
-                      <Tag color="purple" style={{ fontSize: '12px' }}>
-                        {adopter.adopterInfo.experienceLevel?.replace('-', ' ').toUpperCase()}
-                      </Tag>
-                      {adopter.preferences?.privacy?.showLocation && adopter.location && (
-                        <Tag icon={<EnvironmentOutlined />} style={{ fontSize: '12px' }}>
-                          {adopter.location}
-                        </Tag>
-                      )}
-                      <Tag style={{ fontSize: '12px' }}>
-                        {formatLastActive(adopter.lastActiveAt)}
-                      </Tag>
-                    </Space>
-                  </div>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  {isOwnProfile ? (
-                    // Show edit profile button for own profile
-                    <Link href={`/profile/edit`}>
-                      <Button 
-                        type="primary" 
-                        size="large" 
-                        style={{ background: '#52c41a', borderColor: '#52c41a' }}
-                        icon={<EditOutlined />}
-                      >
-                        Edit Profile
-                      </Button>
-                    </Link>
-                  ) : (
-                    // Show contact buttons for other profiles
-                    <>
-                      <Button 
-                        type="primary" 
-                        size="large" 
-                        style={{ background: '#667eea', borderColor: '#667eea' }}
-                        icon={<MessageOutlined />}
-                      >
-                        Send Message
-                      </Button>
-                      <Button size="large" icon={<HeartOutlined />}>
-                        Add to Favorites
-                      </Button>
-                    </>
-                  )}
-                </Space>
-              </Col>
-            </Row>
-          </div>
-        </div>
-      </Card>
+      {/* Profile Header */}
+      <ProfileHeader 
+        user={{
+          userId: adopter.userId,
+          displayName: adopter.displayName,
+          name: adopter.name,
+          verified: adopter.verified,
+          profileImage: adopter.profileImage,
+          location: adopter.location,
+          lastActiveAt: adopter.lastActiveAt,
+          adopterInfo: { experienceLevel: adopter.adopterInfo.experienceLevel },
+          preferences: adopter.preferences,
+        }}
+        isOwnProfile={Boolean(isOwnProfile)}
+        onMessageClick={() => setComposeVisible(true)}
+      />
 
       <Row gutter={[24, 24]}>
         {/* Left Sidebar - Adopter Info */}
@@ -369,7 +276,7 @@ const AdopterProfilePage: React.FC = () => {
             title="Contact Information" 
             style={cardStyle}
             extra={isOwnProfile && (
-              <Link href="/profile/edit">
+              <Link href={`/users/${adopter.userId}/edit`}>
                 <Button 
                   type="text" 
                   size="small" 
@@ -411,7 +318,7 @@ const AdopterProfilePage: React.FC = () => {
             title="Living Situation" 
             style={cardStyle}
             extra={isOwnProfile && (
-              <Link href="/profile/edit">
+              <Link href={`/users/${adopter.userId}/edit`}>
                 <Button 
                   type="text" 
                   size="small" 
@@ -474,7 +381,7 @@ const AdopterProfilePage: React.FC = () => {
               title="Interested Breeds" 
               style={cardStyle}
               extra={isOwnProfile && (
-                <Link href="/profile/edit">
+                <Link href={`/users/${adopter.userId}/edit`}>
                   <Button 
                     type="text" 
                     size="small" 
@@ -501,7 +408,7 @@ const AdopterProfilePage: React.FC = () => {
             title="Dog Preferences" 
             style={cardStyle}
             extra={isOwnProfile && (
-              <Link href="/profile/edit">
+              <Link href={`/users/${adopter.userId}/edit`}>
                 <Button 
                   type="text" 
                   size="small" 
@@ -698,7 +605,7 @@ const AdopterProfilePage: React.FC = () => {
             // Show profile management actions for own profile
             <>
               <Col xs={24} sm={8}>
-                <Link href="/profile/edit">
+                <Link href={`/users/${adopter.userId}/edit`}>
                   <Button 
                     type="primary" 
                     block 
@@ -743,6 +650,7 @@ const AdopterProfilePage: React.FC = () => {
                   size="large"
                   icon={<MessageOutlined />}
                   style={{ background: '#667eea', borderColor: '#667eea' }}
+                  onClick={() => setComposeVisible(true)}
                 >
                   Send Message
                 </Button>
@@ -769,6 +677,32 @@ const AdopterProfilePage: React.FC = () => {
           )}
         </Row>
       </Card>
+      {/* Compose Message Modal */}
+      <ComposeMessage
+        visible={composeVisible}
+        onClose={() => setComposeVisible(false)}
+        loading={false}
+        defaultRecipientId={adopter.userId}
+        onSend={async (values, recipientName) => {
+          const token = getToken();
+          if (!token) return;
+          await fetch('/api/messages/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              recipientId: values.recipient,
+              recipientName,
+              subject: values.subject,
+              content: values.content,
+              messageType: values.messageType || 'general',
+            }),
+          });
+          setComposeVisible(false);
+        }}
+      />
     </div>
   );
 };

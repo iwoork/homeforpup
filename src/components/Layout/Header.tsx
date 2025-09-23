@@ -78,11 +78,21 @@ const Header: React.FC = () => {
         icon: <DashboardOutlined />,
         label: <Link href="/dashboard">Dashboard</Link>,
       },
-      {
-        key: 'profile',
+      user ? {
+        key: 'my-profile',
         icon: <UserOutlined />,
-        label: <Link href="/dashboard/profile">Profile</Link>,
-      },
+        label: <Link href={`/users/${user.userId}`}>My Profile</Link>,
+      } : null,
+      user ? {
+        key: 'edit-profile',
+        icon: <SettingOutlined />,
+        label: <Link href={`/users/${user.userId}/edit`}>Edit Profile</Link>,
+      } : null,
+      user && (user.userType === 'breeder' || user.userType === 'both') ? {
+        key: 'edit-breeder-profile',
+        icon: <SettingOutlined />,
+        label: <Link href={`/breeders/${user.userId}/edit`}>Edit Breeder Profile</Link>,
+      } : null,
       {
         key: 'settings',
         icon: <SettingOutlined />,

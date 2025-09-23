@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Layout, Row, Col, Button, Input, Select, Space, Card } from 'antd';
+import { Layout, Row, Col, Button, Input, Select, Space, Card, Drawer } from 'antd';
 import { PlusOutlined, FilterOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useMessages } from '@/hooks/useMessages';
@@ -20,6 +20,7 @@ type MessageType = "general" | "inquiry" | "business" | "urgent";
 export default function MessagesPage() {
   const { user } = useAuth();
   const [composeVisible, setComposeVisible] = useState(false);
+  const [threadsDrawerOpen, setThreadsDrawerOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   // Fix the type annotation here
   const [messageTypeFilter, setMessageTypeFilter] = useState<MessageType | undefined>();
@@ -76,11 +77,35 @@ export default function MessagesPage() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout>
+      <style jsx global>{`
+        @media (max-width: 991px) {
+          .threads-desktop { display: none !important; }
+          .mobile-actions { display: block !important; }
+        }
+        @media (min-width: 992px) {
+          .threads-desktop { display: block !important; }
+          .mobile-actions { display: none !important; }
+        }
+      `}</style>
       <Content style={{ padding: '24px' }}>
-        <Row gutter={24} style={{ height: 'calc(100vh - 100px)' }}>
+        {/* Mobile actions bar */}
+        <div className="mobile-actions" style={{ display: 'none', marginBottom: 12 }}>
+          <Space>
+            <Button onClick={() => setThreadsDrawerOpen(true)}>Conversations</Button>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => setComposeVisible(true)}
+              style={{ background: '#08979C', borderColor: '#08979C' }}
+            >
+              New
+            </Button>
+          </Space>
+        </div>
+        <Row gutter={24}>
           {/* Left Side - Threads List */}
-          <Col xs={24} lg={8}>
+          <Col xs={24} lg={8} className="threads-desktop">
             <Card 
               title={
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -97,7 +122,7 @@ export default function MessagesPage() {
                 </div>
               }
               bodyStyle={{ padding: 0 }}
-              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              style={{ display: 'flex', flexDirection: 'column', position: 'sticky', top: 24 }}
             >
               {/* Search and Filter Controls */}
               <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
@@ -124,7 +149,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Threads List */}
-              <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
                 <ThreadsList
                   threads={threads}
                   selectedThreadId={selectedThread?.id}
@@ -142,7 +167,7 @@ export default function MessagesPage() {
           <Col xs={24} lg={16}>
             <Card 
               bodyStyle={{ padding: 0 }}
-              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+              style={{ display: 'flex', flexDirection: 'column' }}
             >
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <MessageView
@@ -165,6 +190,51 @@ export default function MessagesPage() {
             </Card>
           </Col>
         </Row>
+
+        {/* Mobile Threads Drawer */}
+        <Drawer
+          title="Conversations"
+          placement="left"
+          onClose={() => setThreadsDrawerOpen(false)}
+          open={threadsDrawerOpen}
+          width={320}
+          bodyStyle={{ padding: 0 }}
+        >
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: 12 }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Search
+                  placeholder="Search messages..."
+                  allowClear
+                  onSearch={handleSearch}
+                  style={{ width: '100%' }}
+                />
+                <Select
+                  placeholder="Filter by type"
+                  allowClear
+                  style={{ width: '100%' }}
+                  onChange={handleFilterChange}
+                >
+                  <Select.Option value="inquiry">Puppy Inquiry</Select.Option>
+                  <Select.Option value="business">Business</Select.Option>
+                  <Select.Option value="general">General</Select.Option>
+                  <Select.Option value="urgent">Urgent</Select.Option>
+                </Select>
+              </Space>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <ThreadsList
+                threads={threads}
+                selectedThreadId={selectedThread?.id}
+                currentUserId={user.userId}
+                loading={loading}
+                onSelectThread={(t) => { selectThread(t); setThreadsDrawerOpen(false); }}
+                onMarkAsRead={markThreadAsRead}
+                onDeleteThread={deleteThread}
+              />
+            </div>
+          </div>
+        </Drawer>
 
         {/* Compose Message Modal */}
         <ComposeMessage

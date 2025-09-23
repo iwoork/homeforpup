@@ -13,7 +13,7 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 
 const { Title, Paragraph, Text } = Typography;
@@ -82,6 +82,8 @@ const COMMON_BREEDS = [
 const EditProfilePage: React.FC = () => {
   const { user, getToken } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const routeUserId = (params?.id as string) || '';
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
@@ -101,6 +103,14 @@ const EditProfilePage: React.FC = () => {
     // Redirect to login
     router.push('/login');
   }, [router]);
+
+  // Redirect if attempting to edit someone else's profile
+  useEffect(() => {
+    if (!user) return;
+    if (routeUserId && user.userId && routeUserId !== user.userId) {
+      router.replace(`/users/${routeUserId}`);
+    }
+  }, [user, routeUserId, router]);
 
   // Create a fetcher that uses the getToken method from useAuth
   const createAuthenticatedFetcher = useCallback(() => {
