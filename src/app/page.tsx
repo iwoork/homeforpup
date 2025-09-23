@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { Button, Typography, Card, Row, Col, Form, Input, message } from 'antd';
 import { HeartOutlined, SafetyOutlined, UserOutlined, SmileOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
-import UserTypeModal from '@/components/UserTypeModal';
+import { useAuth } from '@/hooks';
+import { UserTypeModal } from '@/components';
 
 const { Title, Paragraph } = Typography;
 

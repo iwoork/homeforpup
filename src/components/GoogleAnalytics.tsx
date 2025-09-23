@@ -1,7 +1,7 @@
 'use client';
 
 import Script from 'next/script';
-import { GA_TRACKING_ID } from '@/lib/gtag';
+import { GA_TRACKING_ID } from '@/lib';
 
 export default function GoogleAnalytics() {
   if (!GA_TRACKING_ID) {

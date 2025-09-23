@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth as useOidcAuth } from 'react-oidc-context';
 import { Spin, Alert, Progress } from 'antd';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 
 export default function AuthCallback() {
   const oidcAuth = useOidcAuth();

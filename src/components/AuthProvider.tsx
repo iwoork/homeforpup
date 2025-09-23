@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { AuthProvider as OidcAuthProvider } from 'react-oidc-context';
-import { cognitoAuthConfig } from '@/lib/auth-config';
+import { cognitoAuthConfig } from '@/lib';
 import { Alert, Spin } from 'antd';
 
 interface AuthProviderProps {
