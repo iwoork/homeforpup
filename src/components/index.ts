@@ -1,8 +1,5 @@
 // Component exports organized by type
 
-// Layout components
-export { default as Layout } from './layout/ServerLayout';
-
 // Form components
 export { default as AddDogForm } from './forms/AddDogForm';
 export { default as UserTypeModal } from './forms/UserTypeModal';
