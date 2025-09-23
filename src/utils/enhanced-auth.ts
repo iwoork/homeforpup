@@ -47,6 +47,7 @@ export async function verifyJWTEnhanced(token: string): Promise<{ userId: string
         throw new Error('Invalid token structure');
       }
     } catch (error) {
+      console.log('error', error)
       reject(new Error('Failed to decode JWT token'));
       return;
     }
@@ -139,6 +140,7 @@ export function decodeJWTUnsafe(token: string): { userId: string; email: string;
       name: decoded.name || decoded.email.split('@')[0] || 'User'
     };
   } catch (error) {
+    console.error(error);
     throw new Error('Failed to decode token');
   }
 }

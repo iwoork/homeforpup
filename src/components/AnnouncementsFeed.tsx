@@ -145,7 +145,7 @@ const AnnouncementsFeed: React.FC<AnnouncementsFeedProps> = ({
       const mockAnnouncements: Announcement[] = [
         {
           id: '1',
-          breederId: user?.id || 'user1',
+          breederId: user?.userId || 'user1',
           breederName: user?.name || 'Mountain View Kennel',
           breederAvatar: undefined,
           kennel: 'Mountain View Kennel',
@@ -268,7 +268,7 @@ const AnnouncementsFeed: React.FC<AnnouncementsFeedProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [maxItems, user?.id, user?.name]);
+  }, [maxItems, user?.userId, user?.name]);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -278,7 +278,7 @@ const AnnouncementsFeed: React.FC<AnnouncementsFeedProps> = ({
     try {
       const newAnnouncement: Announcement = {
         id: Date.now().toString(),
-        breederId: user?.id || '',
+        breederId: user?.userId || '',
         breederName: user?.name || 'Your Kennel',
         title: values.title,
         content: values.content,
@@ -579,7 +579,7 @@ const AnnouncementsFeed: React.FC<AnnouncementsFeedProps> = ({
                   items: [
                     { key: 'view', icon: <EyeOutlined />, label: 'View Details' },
                     { key: 'flag', icon: <FlagOutlined />, label: 'Report' },
-                    ...(announcement.breederId === user?.id ? [
+                    ...(announcement.breederId === user?.userId ? [
                       { type: 'divider' as const },
                       { key: 'edit', icon: <EditOutlined />, label: 'Edit' },
                       { key: 'delete', icon: <DeleteOutlined />, label: 'Delete', danger: true }
@@ -843,7 +843,7 @@ const AnnouncementsFeed: React.FC<AnnouncementsFeedProps> = ({
                 // Add comment logic here
                 const newComment: AnnouncementComment = {
                   id: Date.now().toString(),
-                  userId: user?.id || '',
+                  userId: user?.userId || '',
                   userName: user?.name || 'Anonymous',
                   content: values.comment,
                   timestamp: dayjs().toISOString(),

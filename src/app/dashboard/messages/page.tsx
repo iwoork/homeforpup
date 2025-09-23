@@ -1,9 +1,9 @@
-// app/dashboard/messages/page.tsx (Example usage)
+// app/dashboard/messages/page.tsx (Fixed version)
 'use client';
 
 import React, { useState } from 'react';
 import { Layout, Row, Col, Button, Input, Select, Space, Card } from 'antd';
-import { PlusOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { PlusOutlined, FilterOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useMessages } from '@/hooks/useMessages';
 import ThreadsList from '@/components/messages/ThreadsList';
@@ -14,11 +14,15 @@ import ReplyForm from '@/components/messages/ReplyForm';
 const { Content } = Layout;
 const { Search } = Input;
 
+// Define the message type union
+type MessageType = "general" | "inquiry" | "business" | "urgent";
+
 export default function MessagesPage() {
   const { user } = useAuth();
   const [composeVisible, setComposeVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [messageTypeFilter, setMessageTypeFilter] = useState<string | undefined>();
+  // Fix the type annotation here
+  const [messageTypeFilter, setMessageTypeFilter] = useState<MessageType | undefined>();
 
   const {
     threads,
@@ -48,7 +52,8 @@ export default function MessagesPage() {
     searchThreads({ search: value, type: messageTypeFilter });
   };
 
-  const handleFilterChange = (value: string | undefined) => {
+  // Fix the parameter type here as well
+  const handleFilterChange = (value: MessageType | undefined) => {
     setMessageTypeFilter(value);
     searchThreads({ search: searchText, type: value });
   };

@@ -65,13 +65,13 @@ const MessageView: React.FC<MessageViewProps> = ({
       };
     }
 
-    // Method 2: Check participantNames object (basic name mapping)
-    if (selectedThread.participantNames && selectedThread.participantNames[userId]) {
-      const name = selectedThread.participantNames[userId];
-      if (name && name !== 'Unknown User' && name !== 'Unknown') {
-        return { name, avatar: undefined, userType: undefined };
-      }
-    }
+    // // Method 2: Check participantNames object (basic name mapping)
+    // if (selectedThread.participantNames && selectedThread.participantNames[userId]) {
+    //   const name = selectedThread.participantNames[userId];
+    //   if (name && name !== 'Unknown User' && name !== 'Unknown') {
+    //     return { name, avatar: undefined, userType: undefined };
+    //   }
+    // }
     
     // Method 3: Fallback to look through messages for this user's name
     for (const message of messages) {

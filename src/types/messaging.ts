@@ -32,6 +32,12 @@ export interface MessageThread {
   messageCount: number;
   unreadCount: number;
   updatedAt: string;
+  participantInfo?: Record<string, {
+    name: string;
+    displayName?: string;
+    userType: string;
+    profileImage?: string;
+  }>;
 }
 
 export interface Announcement {

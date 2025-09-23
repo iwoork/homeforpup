@@ -73,23 +73,23 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
       return { name: 'Unknown', avatar: undefined, userType: undefined };
     }
 
-    // Method 1: Check participantInfo object (enhanced participant data)
-    if (thread.participantInfo && thread.participantInfo[otherParticipant]) {
-      const info = thread.participantInfo[otherParticipant];
-      return {
-        name: info.displayName || info.name || 'Unknown User',
-        avatar: info.profileImage,
-        userType: info.userType
-      };
-    }
+    // // Method 1: Check participantInfo object (enhanced participant data)
+    // if (thread.participantInfo && thread.participantInfo[otherParticipant]) {
+    //   const info = thread.participantInfo[otherParticipant];
+    //   return {
+    //     name: info.displayName || info.name || 'Unknown User',
+    //     avatar: info.profileImage,
+    //     userType: info.userType
+    //   };
+    // }
 
-    // Method 2: Check participantNames object (basic name mapping)
-    if (thread.participantNames && thread.participantNames[otherParticipant]) {
-      const name = thread.participantNames[otherParticipant];
-      if (name && name !== 'Unknown User' && name !== 'Unknown') {
-        return { name, avatar: undefined, userType: undefined };
-      }
-    }
+    // // Method 2: Check participantNames object (basic name mapping)
+    // if (thread.participantNames && thread.participantNames[otherParticipant]) {
+    //   const name = thread.participantNames[otherParticipant];
+    //   if (name && name !== 'Unknown User' && name !== 'Unknown') {
+    //     return { name, avatar: undefined, userType: undefined };
+    //   }
+    // }
     
     // Method 3: Check last message for sender/receiver names
     if (thread.lastMessage) {

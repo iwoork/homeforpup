@@ -40,7 +40,7 @@ const Header: React.FC = () => {
   
   // Get real unread message count from useMessages hook
   const { unreadCount } = useMessages({
-    userId: user?.id || '',
+    userId: user?.userId || '',
     userName: user?.name || '',
     pollingInterval: 5000
   });

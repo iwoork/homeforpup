@@ -1,4 +1,4 @@
-// page.tsx (Enhanced Dashboard with Messaging & Announcements)
+// page.tsx (Enhanced Dashboard with Messaging & Announcements) - Fixed
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -133,7 +133,8 @@ const DashboardPage: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchDashboardData = useCallback(async () => {
-    if (!user?.id) return;
+    // Fixed: Changed user?.id to user?.userId
+    if (!user?.userId) return;
 
     try {
       setLoading(true);
@@ -145,7 +146,7 @@ const DashboardPage: React.FC = () => {
           id: '1',
           senderId: 'user123',
           senderName: 'Sarah Johnson',
-          receiverId: user.id,
+          receiverId: user.userId, // Fixed: using userId instead of id
           subject: 'Interested in your Golden Retriever litter',
           content: 'Hi! I saw your upcoming Golden Retriever litter and would love to learn more about available puppies.',
           timestamp: dayjs().subtract(2, 'hours').toISOString(),
@@ -155,7 +156,7 @@ const DashboardPage: React.FC = () => {
           id: '2',
           senderId: 'user456',
           senderName: 'Mike Thompson',
-          receiverId: user.id,
+          receiverId: user.userId, // Fixed: using userId instead of id
           subject: 'Health clearance question',
           content: 'Could you share the health clearances for the parents of your Labrador litter?',
           timestamp: dayjs().subtract(1, 'day').toISOString(),
@@ -166,7 +167,7 @@ const DashboardPage: React.FC = () => {
       const mockAnnouncements: Announcement[] = [
         {
           id: '1',
-          breederId: user.id,
+          breederId: user.userId, // Fixed: using userId instead of id
           breederName: user.name || 'Your Name',
           title: 'Exciting Golden Retriever Litter Expected!',
           content: 'We are thrilled to announce an upcoming litter from our champion bloodlines. Both parents have excellent health clearances and amazing temperaments.',
@@ -208,7 +209,7 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.name]);
+  }, [user?.userId, user?.name]); // Fixed: updated dependencies
 
   useEffect(() => {
     if (user) {
@@ -265,7 +266,7 @@ const DashboardPage: React.FC = () => {
       // In real implementation, this would send to your API
       const newAnnouncement: Announcement = {
         id: Date.now().toString(),
-        breederId: user?.id || '',
+        breederId: user?.userId || '', // Fixed: using userId instead of id
         breederName: user?.name || 'Your Name',
         title: values.title,
         content: values.content,

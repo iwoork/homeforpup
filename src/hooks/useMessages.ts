@@ -158,7 +158,7 @@ export const useMessages = ({
 
   // Calculate total unread count
   const unreadCount = useMemo(() => {
-    return threads.reduce((sum, thread) => sum + getUnreadCount(thread, userId), 0);
+    return threads.reduce((sum: number, thread: MessageThread) => sum + getUnreadCount(thread, userId), 0);
   }, [threads, userId]);
 
   // Handle thread selection
@@ -308,7 +308,7 @@ export const useMessages = ({
 
   // Filter threads based on current filters
   const filteredThreads = useMemo(() => {
-    return threads.filter(thread => {
+    return threads.filter((thread: MessageThread) => {
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
         const matchesSearch = 
