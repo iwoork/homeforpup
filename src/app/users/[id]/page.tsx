@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import { 
-  Card, Row, Col, Typography, Avatar, Button, Tabs, Tag, Space, 
-   Spin, Alert, Progress, Tooltip, List
+  Card, Row, Col, Typography, Button, Tabs, Tag, Space, 
+   Spin, Alert, Progress, List
 } from 'antd';
 import { 
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, 
-  CheckCircleOutlined, HeartOutlined, TeamOutlined, 
+  HeartOutlined, TeamOutlined, 
   LoadingOutlined, UserOutlined, SafetyOutlined,
   HomeOutlined, PlusOutlined, MessageOutlined, EyeOutlined, EditOutlined
 } from '@ant-design/icons';
@@ -68,13 +68,6 @@ interface AdopterUser {
   lastActiveAt: string;
 }
 
-// Current user interface (you may need to adjust this based on your auth system)
-interface CurrentUser {
-  userId: string;
-  name: string;
-  email: string;
-  // Add other relevant fields based on your auth system
-}
 
 // SWR fetchers
 const fetcher = async (url: string): Promise<{ user: AdopterUser }> => {
@@ -85,13 +78,6 @@ const fetcher = async (url: string): Promise<{ user: AdopterUser }> => {
   return response.json();
 };
 
-const currentUserFetcher = async (url: string): Promise<{ user: CurrentUser }> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Failed to fetch current user');
-  }
-  return response.json();
-};
 
 const AdopterProfilePage: React.FC = () => {
   const params = useParams();
@@ -142,17 +128,6 @@ const AdopterProfilePage: React.FC = () => {
     }
   };
 
-  const formatLastActive = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Active today';
-    if (diffDays <= 7) return `Active ${diffDays} days ago`;
-    if (diffDays <= 30) return `Active ${Math.ceil(diffDays / 7)} weeks ago`;
-    return `Active ${Math.ceil(diffDays / 30)} months ago`;
-  };
 
   // Loading state
   if (isLoading) {

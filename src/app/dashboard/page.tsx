@@ -36,9 +36,7 @@ import {
   UserOutlined,
   CalendarOutlined,
   MessageOutlined,
-  BellOutlined,
   SendOutlined,
-  FileTextOutlined,
   NotificationOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
@@ -46,7 +44,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDogs } from '@/hooks/useDogs';
 import { Litter, Dog } from '@/types';
 import AddDogForm from '@/components/AddDogForm';
-import PhotoUpload from '@/components/Upload/PhotoUpload';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -338,20 +335,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const getAnnouncementTypeColor = (type: string) => {
-    switch (type) {
-      case 'litter':
-        return '#FA8072';
-      case 'health':
-        return '#08979C';
-      case 'achievement':
-        return '#722ED1';
-      case 'general':
-        return '#1890FF';
-      default:
-        return '#1890FF';
-    }
-  };
 
   const getDogMenuItems = (dog: Dog) => [
     {

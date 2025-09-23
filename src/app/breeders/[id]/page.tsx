@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import { 
-  Card, Row, Col, Typography, Avatar, Button, Tabs, Image, Tag, Space, 
+  Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space, 
   Rate, Spin, Alert
 } from 'antd';
 import { 
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, 
-  CheckCircleOutlined, GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
+  GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
   HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined, 
   LoadingOutlined
 } from '@ant-design/icons';

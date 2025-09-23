@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
         if (exclusiveStartKey && typeof exclusiveStartKey === 'object') {
           (scanParams as any).ExclusiveStartKey = exclusiveStartKey;
         }
-      } catch (e) {
+      } catch {
         console.warn('Invalid startKey provided, ignoring.');
       }
     }

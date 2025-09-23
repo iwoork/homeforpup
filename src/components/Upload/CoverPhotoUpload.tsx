@@ -12,7 +12,7 @@ interface CoverPhotoUploadProps {
   onChange?: (url: string) => void;
 }
 
-const CoverPhotoUpload: React.FC<CoverPhotoUploadProps> = ({ value, onChange }) => {
+const CoverPhotoUpload: React.FC<CoverPhotoUploadProps> = ({ onChange }) => {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -47,7 +47,7 @@ const CoverPhotoUpload: React.FC<CoverPhotoUploadProps> = ({ value, onChange }) 
             const url = await s3Operations.uploadFile(croppedFile, key);
             onChange?.(url);
             message.success('Cover photo updated');
-          } catch (e) {
+          } catch {
             message.error('Failed to upload cover photo');
           } finally {
             setUploading(false);

@@ -25,7 +25,7 @@ interface UsersResponse {
   nextKey?: string | null;
 }
 
-const makeFetcher = (token: string | null) => async (url: string): Promise<{ users: BasicUser[] }> => {
+const makeFetcher = (token: string | null) => async (url: string): Promise<UsersResponse> => {
   const res = await fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
@@ -34,7 +34,7 @@ const makeFetcher = (token: string | null) => async (url: string): Promise<{ use
 };
 
 export default function UsersIndexPage() {
-  const { getToken, user } = useAuth();
+  const { getToken } = useAuth();
   const [type, setType] = useState<'all' | 'breeder' | 'adopter' | 'both'>('all');
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
@@ -49,7 +49,7 @@ export default function UsersIndexPage() {
     return `/api/users/available?${params.toString()}`;
   }, [type, query, location]);
 
-  const { data, error, isLoading, mutate } = useSWR<UsersResponse>(
+  const { data, error, isLoading } = useSWR<UsersResponse>(
     token ? url : null,
     makeFetcher(token || null),
     { revalidateOnFocus: false }

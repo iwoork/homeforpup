@@ -42,6 +42,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({ open, file, aspec
       return () => URL.revokeObjectURL(url);
     } else {
       setImgUrl(null);
+      return undefined;
     }
   }, [file]);
 
@@ -77,7 +78,7 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({ open, file, aspec
     setStartDrag(null);
   };
 
-  const performCrop = async () => {
+  const performCrop = () => {
     if (!imgRef.current || !containerRef.current) return;
     const image = imgRef.current;
     const container = containerRef.current;
