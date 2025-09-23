@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, Row, Col, Typography, Button, Form, Input, Select, Switch, 
-  Upload, Spin, Alert, Tabs, Space, Divider, Tag, Avatar,
-  InputNumber, Checkbox, App
+  Spin, Alert, Tabs, Space, Divider, Tag, Avatar,
+  InputNumber, App
 } from 'antd';
 import { 
-  UserOutlined, CameraOutlined, SaveOutlined, LoadingOutlined,
-  EnvironmentOutlined, PhoneOutlined, MailOutlined, HomeOutlined,
-  HeartOutlined, TeamOutlined, SafetyOutlined, PlusOutlined,
-  DeleteOutlined, EditOutlined, EyeOutlined
+  UserOutlined, SaveOutlined, LoadingOutlined,
+  EnvironmentOutlined, PhoneOutlined,
+  SafetyOutlined, PlusOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -80,7 +80,7 @@ const COMMON_BREEDS = [
 
 // Component that uses the App context
 const EditProfilePage: React.FC = () => {
-  const { user, logout, getToken } = useAuth();
+  const { user, getToken } = useAuth();
   const router = useRouter();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -93,6 +93,14 @@ const EditProfilePage: React.FC = () => {
 
   // Get message API from Ant Design App context
   const { message } = App.useApp();
+
+  // Handle logout - replace with your auth method
+  const handleLogout = useCallback(() => {
+    // Clear auth data (adjust based on your auth implementation)
+    localStorage.removeItem('token');
+    // Redirect to login
+    router.push('/login');
+  }, [router]);
 
   // Create a fetcher that uses the getToken method from useAuth
   const createAuthenticatedFetcher = useCallback(() => {
@@ -183,7 +191,7 @@ const EditProfilePage: React.FC = () => {
       }
       
       // Prepare update payload
-      const updateData = {
+      const updateData: any = {
         displayName: values.displayName,
         phone: values.phone,
         location: values.location,
@@ -247,14 +255,16 @@ const EditProfilePage: React.FC = () => {
       }
 
       const result = await response.json();
-      
-      // Invalidate SWR cache to refetch data
-      mutate(`/api/users/${profile.userId}`);
-      
-      message.success('Profile updated successfully!');
-      
-      // Redirect to profile view
-      router.push(`/users/${profile.userId}`);
+
+      if (result) {      
+        // Invalidate SWR cache to refetch data
+        mutate(`/api/users/${profile.userId}`);
+        
+        message.success('Profile updated successfully!');
+        
+        // Redirect to profile view
+        router.push(`/users/${profile.userId}`);
+      }
 
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -268,9 +278,29 @@ const EditProfilePage: React.FC = () => {
     if (!value.trim() || !profile) return;
 
     // Create a local state update for immediate UI feedback
-    const currentArray = field === 'specialties' && profile.breederInfo ? 
-      profile.breederInfo.specialties : 
-      profile.adopterInfo?.[field] || [];
+    let currentArray: string[] = [];
+    
+    if (field === 'specialties' && profile.breederInfo) {
+      currentArray = profile.breederInfo.specialties;
+    } else if (profile.adopterInfo) {
+      // Handle specific adopter info fields
+      switch (field) {
+        case 'preferredBreeds':
+          currentArray = profile.adopterInfo.preferredBreeds || [];
+          break;
+        case 'previousPets':
+          currentArray = profile.adopterInfo.previousPets || [];
+          break;
+        case 'dealBreakers':
+          currentArray = profile.adopterInfo.dealBreakers || [];
+          break;
+        case 'specialRequirements':
+          currentArray = profile.adopterInfo.specialRequirements || [];
+          break;
+        default:
+          currentArray = [];
+      }
+    }
 
     if (currentArray.includes(value.trim())) {
       message.warning('This item already exists');
@@ -281,7 +311,7 @@ const EditProfilePage: React.FC = () => {
     const newArray = [...currentArray, value.trim()];
     
     // Update the SWR cache optimistically
-    mutate(`/api/users/${user?.userId}`, (currentData) => {
+    mutate(`/api/users/${user?.userId}`, (currentData: any) => {
       if (!currentData) return currentData;
       
       const updatedData = { ...currentData };
@@ -313,15 +343,35 @@ const EditProfilePage: React.FC = () => {
     if (!profile) return;
 
     // Get current array
-    const currentArray = field === 'specialties' && profile.breederInfo ? 
-      profile.breederInfo.specialties : 
-      profile.adopterInfo?.[field] || [];
+    let currentArray: string[] = [];
+    
+    if (field === 'specialties' && profile.breederInfo) {
+      currentArray = profile.breederInfo.specialties;
+    } else if (profile.adopterInfo) {
+      // Handle specific adopter info fields
+      switch (field) {
+        case 'preferredBreeds':
+          currentArray = profile.adopterInfo.preferredBreeds || [];
+          break;
+        case 'previousPets':
+          currentArray = profile.adopterInfo.previousPets || [];
+          break;
+        case 'dealBreakers':
+          currentArray = profile.adopterInfo.dealBreakers || [];
+          break;
+        case 'specialRequirements':
+          currentArray = profile.adopterInfo.specialRequirements || [];
+          break;
+        default:
+          currentArray = [];
+      }
+    }
 
     const newArray = [...currentArray];
     newArray.splice(index, 1);
 
     // Update the SWR cache optimistically
-    mutate(`/api/users/${user?.userId}`, (currentData) => {
+    mutate(`/api/users/${user?.userId}`, (currentData: any) => {
       if (!currentData) return currentData;
       
       const updatedData = { ...currentData };
@@ -378,7 +428,7 @@ const EditProfilePage: React.FC = () => {
             showIcon
             style={{ marginTop: '50px' }}
             action={
-              <Button type="primary" onClick={() => logout()}>
+              <Button type="primary" onClick={handleLogout}>
                 Login Again
               </Button>
             }
@@ -420,7 +470,7 @@ const EditProfilePage: React.FC = () => {
               <Button onClick={() => window.location.reload()}>
                 Refresh Page
               </Button>
-              <Button type="primary" onClick={() => logout()}>
+              <Button type="primary" onClick={handleLogout}>
                 Login Again
               </Button>
             </Space>
@@ -444,7 +494,7 @@ const EditProfilePage: React.FC = () => {
               <Button onClick={() => router.push('/onboarding')}>
                 Complete Profile Setup
               </Button>
-              <Button type="primary" onClick={() => logout()}>
+              <Button type="primary" onClick={handleLogout}>
                 Login Again
               </Button>
             </Space>
@@ -456,8 +506,7 @@ const EditProfilePage: React.FC = () => {
 
   const cardStyle = {
     borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-    marginBottom: '16px'
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
   };
 
   return (
@@ -647,7 +696,7 @@ const EditProfilePage: React.FC = () => {
               <Col span={24}>
                 <Card title="Notification Preferences" style={cardStyle}>
                   <Paragraph type="secondary">
-                    Choose how you'd like to be notified about messages and updates
+                    Choose how you&apos;d like to be notified about messages and updates
                   </Paragraph>
                   <Row gutter={[16, 16]}>
                     <Col xs={24} sm={8}>

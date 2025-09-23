@@ -17,21 +17,21 @@ const client = new DynamoDBClient({
 const dynamodb = DynamoDBDocumentClient.from(client);
 const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
 
-// User interface matching the database structure
-interface UserItem {
+// Base user interface for database storage (all required fields)
+interface DatabaseUserItem {
   userId: string;
   name: string;
   displayName: string;
   firstName?: string;
   lastName?: string;
-  email: string;
+  email: string; // Required in database
   phone?: string;
   location?: string;
   bio?: string;
   profileImage?: string;
   verified: boolean;
   userType: 'adopter' | 'breeder' | 'both';
-  accountStatus: 'active' | 'inactive' | 'pending';
+  accountStatus: 'active' | 'inactive' | 'pending'; // Required in database
   preferences: {
     notifications: {
       email: boolean;
@@ -71,42 +71,72 @@ interface UserItem {
   lastActiveAt: string;
 }
 
-// Helper function to sanitize user data based on privacy settings
-const sanitizeUserData = (user: UserItem, isOwnProfile: boolean = false): UserItem => {
-  // If it's the user's own profile, return all data
+// Public interface for sanitized user data (privacy-sensitive fields are optional)
+interface PublicUserItem extends Omit<DatabaseUserItem, 'email' | 'phone' | 'location' | 'accountStatus'> {
+  email?: string;
+  phone?: string;
+  location?: string;
+  // accountStatus is completely omitted from public view
+}
+
+// Full profile interface for own profile view (alias for clarity)
+type PrivateUserItem = DatabaseUserItem;
+
+// Union type for API responses
+type UserProfileResponse = PublicUserItem | PrivateUserItem;
+
+// Type-safe sanitization function
+const sanitizeUserData = (user: DatabaseUserItem, isOwnProfile: boolean): UserProfileResponse => {
   if (isOwnProfile) {
-    return user;
+    // Return full profile for own profile
+    return user as PrivateUserItem;
   }
 
-  // Apply privacy settings for other users viewing the profile
-  const sanitized = { ...user };
+  // Create public profile by omitting sensitive fields and selectively including privacy-controlled fields
+  const { email, phone, location, ...basePublicFields } = user;
+  
+  // Build public profile (accountStatus is implicitly excluded by not being in basePublicFields)
+  const publicProfile: PublicUserItem = {
+    ...basePublicFields
+  };
 
-  // Hide email if privacy setting is false
-  if (!user.preferences?.privacy?.showEmail) {
-    delete sanitized.email;
+  // Conditionally add privacy-controlled fields
+  if (user.preferences?.privacy?.showEmail) {
+    publicProfile.email = email;
   }
 
-  // Hide phone if privacy setting is false
-  if (!user.preferences?.privacy?.showPhone) {
-    delete sanitized.phone;
+  if (user.preferences?.privacy?.showPhone && phone) {
+    publicProfile.phone = phone;
   }
 
-  // Hide location if privacy setting is false
-  if (!user.preferences?.privacy?.showLocation) {
-    delete sanitized.location;
+  if (user.preferences?.privacy?.showLocation && location) {
+    publicProfile.location = location;
   }
 
-  // Always hide sensitive internal data from public view
-  delete sanitized.accountStatus;
-
-  return sanitized;
+  return publicProfile;
 };
+
+// API Response interface
+interface UserProfileAPIResponse {
+  user: UserProfileResponse;
+  isOwnProfile: boolean;
+  success: true;
+}
+
+interface ErrorAPIResponse {
+  message: string;
+  error?: string;
+  details?: string;
+  success?: never;
+}
+
+type APIResponse = UserProfileAPIResponse | ErrorAPIResponse;
 
 // GET user profile by ID
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse<APIResponse>> {
   try {
     const params = await context.params;
     const userId = params.id;
@@ -120,7 +150,7 @@ export async function GET(
 
     console.log('Fetching user profile for ID:', userId.substring(0, 10) + '...');
 
-    // Optional: Get current user from token to check if viewing own profile
+    // Get current user from token to check if viewing own profile
     let currentUserId: string | null = null;
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
@@ -129,7 +159,7 @@ export async function GET(
         const decoded = await verifyJWTEnhanced(token);
         currentUserId = decoded.userId;
       } catch (verificationError) {
-        // Token is invalid, but we can still show public profile
+        console.error(verificationError);
         console.log('Invalid token provided, showing public profile only');
       }
     }
@@ -137,9 +167,7 @@ export async function GET(
     // Get user by ID using GetCommand
     const command = new GetCommand({
       TableName: USERS_TABLE,
-      Key: {
-        userId: userId
-      }
+      Key: { userId }
     });
 
     const result = await dynamodb.send(command);
@@ -151,7 +179,17 @@ export async function GET(
       );
     }
 
-    const userItem = result.Item as UserItem;
+    // Type assertion with runtime validation
+    const userItem = result.Item as DatabaseUserItem;
+    
+    // Validate required fields exist
+    if (!userItem.userId || !userItem.email || !userItem.accountStatus) {
+      console.error('Invalid user data structure:', userItem);
+      return NextResponse.json(
+        { message: 'Invalid user data' },
+        { status: 500 }
+      );
+    }
     
     // Check if user is active
     if (userItem.accountStatus !== 'active') {
@@ -187,11 +225,23 @@ export async function GET(
   }
 }
 
+// Interface for update requests
+interface UserUpdateRequest {
+  displayName?: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  profileImage?: string;
+  preferences?: DatabaseUserItem['preferences'];
+  adopterInfo?: DatabaseUserItem['adopterInfo'];
+  breederInfo?: DatabaseUserItem['breederInfo'];
+}
+
 // PUT to update user profile
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse<APIResponse>> {
   try {
     const params = await context.params;
     const userId = params.id;
@@ -206,7 +256,7 @@ export async function PUT(
     // Verify JWT token for authentication
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+      return NextResponse.json({ message: 'No token provided' }, { status: 401 });
     }
 
     let currentUserId: string;
@@ -215,7 +265,7 @@ export async function PUT(
       currentUserId = decoded.userId;
     } catch (verificationError) {
       return NextResponse.json({ 
-        error: 'Invalid authentication token',
+        message: 'Invalid authentication token',
         details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
       }, { status: 401 });
     }
@@ -228,15 +278,15 @@ export async function PUT(
       );
     }
 
-    const updates = await request.json();
+    const updates: UserUpdateRequest = await request.json();
 
     // Build update expression for allowed fields
     const updateExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    const expressionAttributeValues: Record<string, unknown> = {};
 
-    // Define allowed fields that users can update
-    const allowedFields = [
+    // Define allowed fields that users can update (type-safe)
+    const allowedFields: (keyof UserUpdateRequest)[] = [
       'displayName',
       'phone',
       'location',
@@ -244,7 +294,7 @@ export async function PUT(
       'profileImage'
     ];
 
-    // Handle simple field updates
+    // Handle simple field updates with type safety
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
         updateExpressions.push(`#${field} = :${field}`);
@@ -253,7 +303,7 @@ export async function PUT(
       }
     }
 
-    // Handle nested object updates
+    // Handle nested object updates with proper typing
     if (updates.preferences) {
       updateExpressions.push('#preferences = :preferences');
       expressionAttributeNames['#preferences'] = 'preferences';
@@ -296,11 +346,22 @@ export async function PUT(
 
     const result = await dynamodb.send(updateCommand);
 
+    if (!result.Attributes) {
+      return NextResponse.json(
+        { message: 'Update failed' },
+        { status: 500 }
+      );
+    }
+
     console.log('User profile updated successfully:', userId.substring(0, 10) + '...');
 
+    // Return the updated user data (user's own profile, so return all data)
+    const updatedUser = result.Attributes as DatabaseUserItem;
+    const sanitizedUser = sanitizeUserData(updatedUser, true); // Always own profile for updates
+
     return NextResponse.json({
-      user: result.Attributes,
-      message: 'Profile updated successfully',
+      user: sanitizedUser,
+      isOwnProfile: true,
       success: true
     });
 

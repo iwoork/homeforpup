@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import { 
   Card, Row, Col, Typography, Avatar, Button, Tabs, Tag, Space, 
-   Spin, Alert, Progress, Badge, Tooltip, List
+   Spin, Alert, Progress, Tooltip, List
 } from 'antd';
 import { 
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, 
-  CheckCircleOutlined, GlobalOutlined, HeartOutlined, TeamOutlined, 
-  StarOutlined, LoadingOutlined, UserOutlined, SafetyOutlined,
+  CheckCircleOutlined, HeartOutlined, TeamOutlined, 
+  LoadingOutlined, UserOutlined, SafetyOutlined,
   HomeOutlined, PlusOutlined, MessageOutlined, EyeOutlined, EditOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
@@ -553,7 +553,7 @@ const AdopterProfilePage: React.FC = () => {
                     <Card title="Previous Pet Experience" style={cardStyle}>
                       <List
                         dataSource={adopter.adopterInfo.previousPets}
-                        renderItem={(pet, index) => (
+                        renderItem={(pet) => (
                           <List.Item>
                             <Text>• {pet}</Text>
                           </List.Item>
@@ -588,7 +588,7 @@ const AdopterProfilePage: React.FC = () => {
                         description={
                           <List
                             dataSource={adopter.adopterInfo.dealBreakers}
-                            renderItem={(item, index) => (
+                            renderItem={(item) => (
                               <List.Item style={{ padding: '4px 0' }}>
                                 <Text>• {item}</Text>
                               </List.Item>
@@ -664,7 +664,7 @@ const AdopterProfilePage: React.FC = () => {
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <Title level={4}>Photo Gallery</Title>
                   <Paragraph>
-                    Photos and updates from this adopter's journey will appear here.
+                    Photos and updates from this adopter&apos;s journey will appear here.
                   </Paragraph>
                   <Button type="primary" icon={<EyeOutlined />}>
                     View Gallery
@@ -678,7 +678,7 @@ const AdopterProfilePage: React.FC = () => {
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <Title level={4}>Adoption Journey</Title>
                   <Paragraph>
-                    Track this adopter's progress and milestones in finding their perfect companion.
+                    Track this adopter&apos;s progress and milestones in finding their perfect companion.
                   </Paragraph>
                   <Space>
                     <Button type="primary">View Timeline</Button>
