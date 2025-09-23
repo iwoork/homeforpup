@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Layout as AntLayout } from 'antd';
 import ClientHeader from './ClientHeader';
@@ -11,7 +9,7 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const ServerLayout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       <ClientHeader />
@@ -23,4 +21,4 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 };
 
-export default Layout;
+export default ServerLayout;
