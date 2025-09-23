@@ -427,243 +427,495 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Statistics Cards */}
+      {/* Quick Stats Bar */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #08979C 0%, #13C2C2 100%)', 
+        borderRadius: '12px', 
+        padding: '24px', 
+        marginBottom: '32px',
+        color: 'white'
+      }}>
+        <Row gutter={[24, 16]} align="middle">
+          {isBreeder ? (
+            <>
+              <Col xs={12} sm={6}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {activeLitters.length}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>Active Litters</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {dogs.length}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>My Dogs</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {availablePuppies}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>Available Puppies</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {unreadCount}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>New Messages</div>
+                </div>
+              </Col>
+            </>
+          ) : (
+            <>
+              <Col xs={12} sm={8}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {unreadCount}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>Unread Messages</div>
+                </div>
+              </Col>
+              <Col xs={12} sm={8}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {Array.isArray((user as any)?.adopterInfo?.preferredBreeds) ? (user as any).adopterInfo.preferredBreeds.length : 0}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>Saved Breeds</div>
+                </div>
+              </Col>
+              <Col xs={24} sm={8}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '4px' }}>
+                    {messages.length}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: 0.9 }}>Total Conversations</div>
+                </div>
+              </Col>
+            </>
+          )}
+        </Row>
+      </div>
+
+
+      {/* Main Task Sections */}
       {isBreeder ? (
-        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
-          <Col xs={24} sm={12} lg={6}>
-            <Card style={cardStyle} hoverable>
-              <Statistic
-                title="Active Litters"
-                value={activeLitters.length}
-                prefix={<StarOutlined style={{ color: '#FA8072' }} />}
-                valueStyle={{ color: '#FA8072' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card style={cardStyle} hoverable>
-              <Statistic
-                title="Breeding Dogs"
-                value={breedingDogs.length}
-                prefix={<HeartOutlined style={{ color: '#08979C' }} />}
-                valueStyle={{ color: '#08979C' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card style={cardStyle} hoverable>
-              <Statistic
-                title="Total Dogs"
-                value={dogs.length}
-                prefix={<UserOutlined style={{ color: '#FA8072' }} />}
-                valueStyle={{ color: '#FA8072' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card style={cardStyle} hoverable>
-              <Statistic
-                title="Available Puppies"
-                value={availablePuppies}
-                prefix={<PlusOutlined style={{ color: '#08979C' }} />}
-                valueStyle={{ color: '#08979C' }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      ) : (
-        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
-          <Col xs={24} sm={12} lg={6}>
-            <Card style={cardStyle} hoverable>
-              <Statistic
-                title="Unread Messages"
-                value={unreadCount}
-                prefix={<MessageOutlined style={{ color: '#08979C' }} />}
-                valueStyle={{ color: '#08979C' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card style={cardStyle} hoverable>
-              <Statistic
-                title="Saved Breeds"
-                value={Array.isArray((user as any)?.adopterInfo?.preferredBreeds) ? (user as any).adopterInfo.preferredBreeds.length : 0}
-                prefix={<HeartOutlined style={{ color: '#FA8072' }} />}
-                valueStyle={{ color: '#FA8072' }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-
-      <Row gutter={[16, 16]}>
-        {/* Recent Litters or Recommendations */}
-        <Col xs={24} lg={12}>
+        <div>
+          {/* Manage Your Breeding Program */}
           <Card 
-            title={isBreeder ? 'Recent Litters' : 'Recommendations For You'} 
-            style={{ ...cardStyle, height: '450px' }}
-            extra={
-              isBreeder ? (
-                <Link href="/dashboard/litters/new">
-                  <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
-                    style={{ background: '#FA8072', borderColor: '#FA8072' }}
-                  >
-                    Add Litter
-                  </Button>
-                </Link>
-              ) : (
-                <Link href="/browse">
-                  <Button 
-                    type="primary" 
-                    icon={<EyeOutlined />}
-                    style={{ background: '#08979C', borderColor: '#08979C' }}
-                  >
-                    Browse All
-                  </Button>
-                </Link>
-              )
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <StarOutlined style={{ color: '#08979C', fontSize: '20px' }} />
+                <span>Manage Your Breeding Program</span>
+              </div>
             }
+            style={{ ...cardStyle, marginBottom: '24px' }}
           >
-            {isBreeder ? (
-              <List
-                dataSource={litters.slice(0, 5)}
-                loading={loading}
-                locale={{ emptyText: 'No litters yet. Add your first litter to get started!' }}
-                renderItem={(litter, index) => (
-                  <List.Item key={`litter-${litter.id || index}`}>
-                    <List.Item.Meta
-                      title={`${litter.breed} Litter`}
-                      description={
-                        <Space direction="vertical" size="small">
-                          <Text type="secondary">
-                            <CalendarOutlined /> Expected: {litter.expectedDate}
-                          </Text>
-                          <Tag color="blue">{litter.status}</Tag>
-                        </Space>
-                      }
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <div style={{ 
+                  background: '#f0f9ff', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #bae7ff'
+                }}>
+                  <Title level={4} style={{ marginBottom: '16px', color: '#08979C' }}>
+                    Active Litters ({activeLitters.length})
+                  </Title>
+                  {activeLitters.length > 0 ? (
+                    <List
+                      dataSource={activeLitters.slice(0, 3)}
+                      renderItem={(litter, index) => (
+                        <List.Item key={`litter-${litter.id || index}`} style={{ padding: '8px 0' }}>
+                          <div style={{ width: '100%' }}>
+                            <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                              {litter.breed} Litter
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>
+                              <CalendarOutlined /> Expected: {litter.expectedDate}
+                            </div>
+                            <Tag color="blue" style={{ marginTop: '4px' }}>{litter.status}</Tag>
+                          </div>
+                        </List.Item>
+                      )}
                     />
-                  </List.Item>
-                )}
-              />
-            ) : (
-              <List
-                dataSource={Array.isArray((user as any)?.adopterInfo?.preferredBreeds) ? (user as any).adopterInfo.preferredBreeds as string[] : []}
-                locale={{ emptyText: 'Set your preferences to get recommendations.' }}
-                renderItem={(breed, i) => (
-                  <List.Item key={`rec-${breed}-${i}`}>
-                    <List.Item.Meta
-                      title={breed}
-                      description={<Text type="secondary">Popular near you</Text>}
-                    />
-                  </List.Item>
-                )}
-              />
-            )}
-          </Card>
-        </Col>
-
-        {/* My Dogs or Quick Links */}
-        <Col xs={24} lg={12}>
-          <Card 
-            title={isBreeder ? `My Dogs (${dogs.length})` : 'Quick Links'}
-            style={{ ...cardStyle, height: '450px' }}
-            extra={
-              isBreeder ? (
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />}
-                  onClick={handleAddDog}
-                  style={{ background: '#08979C', borderColor: '#08979C' }}
-                >
-                  Add Dog
-                </Button>
-              ) : null
-            }
-          >
-            {isBreeder ? (
-              <div style={{ height: '350px', overflowY: 'auto' }}>
-                <List
-                  dataSource={dogs.slice(0, 10)}
-                  loading={dogsLoading}
-                  locale={{ emptyText: 'No dogs yet. Add your first dog to get started!' }}
-                  renderItem={(dog) => (
-                    <List.Item
-                      key={dog.id}
-                      actions={[
-                        <Dropdown
-                          key="more"
-                          menu={{ items: getDogMenuItems(dog) }}
-                          trigger={['click']}
-                        >
-                          <Button 
-                            type="text" 
-                            icon={<MoreOutlined />} 
-                            size="small"
-                          />
-                        </Dropdown>
-                      ]}
-                    >
-                      <List.Item.Meta
-                        avatar={
-                          <Avatar 
-                            src={dog.photoUrl} 
-                            icon={<UserOutlined />}
-                            size="large"
-                          />
-                        }
-                        title={
-                          <Space>
-                            <strong>{dog.name}</strong>
-                            <Tag color={getBreedingStatusColor(dog.breedingStatus)}>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                      <StarOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
+                      <div>No active litters yet</div>
+                      <div style={{ fontSize: '12px' }}>Create your first litter to get started</div>
+                    </div>
+                  )}
+                  <div style={{ marginTop: '16px' }}>
+                    <Link href="/dashboard/litters/new">
+                      <Button 
+                        type="primary" 
+                        icon={<PlusOutlined />}
+                        style={{ background: '#08979C', borderColor: '#08979C' }}
+                      >
+                        Add New Litter
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <div style={{ 
+                  background: '#fff7e6', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #ffd591'
+                }}>
+                  <Title level={4} style={{ marginBottom: '16px', color: '#FA8072' }}>
+                    My Dogs ({dogs.length})
+                  </Title>
+                  {dogs.length > 0 ? (
+                    <List
+                      dataSource={dogs.slice(0, 3)}
+                      renderItem={(dog) => (
+                        <List.Item key={dog.id} style={{ padding: '8px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                            <Avatar src={dog.photoUrl} icon={<UserOutlined />} size="small" />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '500' }}>{dog.name}</div>
+                              <div style={{ fontSize: '12px', color: '#666' }}>
+                                {dog.breed} • {dog.gender} • {dog.weight ? `${dog.weight} lbs` : 'Weight not specified'}
+                              </div>
+                            </div>
+                            <Tag color={getBreedingStatusColor(dog.breedingStatus)} style={{ margin: 0 }}>
                               {dog.breedingStatus.replace('_', ' ')}
                             </Tag>
-                          </Space>
-                        }
-                        description={
-                          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                            <Text type="secondary">
-                              {dog.breed} • {dog.gender} • {dog.weight ? `${dog.weight} lbs` : 'Weight not specified'}
-                            </Text>
-                            <Space>
-                              <Tag color={getHealthStatusColor(dog.healthStatus)}>
-                                {dog.healthStatus} health
-                              </Tag>
-                              {dog.birthDate && (
-                                <Text type="secondary" style={{ fontSize: '12px' }}>
-                                  Born {dayjs(dog.birthDate).format('MMM DD, YYYY')}
-                                </Text>
-                              )}
-                            </Space>
-                          </Space>
-                        }
-                      />
-                    </List.Item>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                      <UserOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
+                      <div>No dogs registered yet</div>
+                      <div style={{ fontSize: '12px' }}>Add your breeding dogs to get started</div>
+                    </div>
                   )}
-                />
-              </div>
-            ) : (
-              <List
-                dataSource={[
-                  { title: 'Edit Preferences', href: `/users/${user?.userId}/edit` },
-                  { title: 'Browse Puppies', href: '/browse' },
-                  { title: 'Find Breeders', href: '/breeders' },
-                  { title: 'Messages', href: '/dashboard/messages' },
-                ]}
-                renderItem={(item) => (
-                  <List.Item>
-                    <Link href={item.href}>
-                      <Button block>{item.title}</Button>
-                    </Link>
-                  </List.Item>
-                )}
-              />
-            )}
+                  <div style={{ marginTop: '16px' }}>
+                    <Button 
+                      type="primary" 
+                      icon={<PlusOutlined />}
+                      onClick={handleAddDog}
+                      style={{ background: '#FA8072', borderColor: '#FA8072' }}
+                    >
+                      Add New Dog
+                    </Button>
+                  </div>
+                </div>
+              </Col>
+            </Row>
           </Card>
-        </Col>
-      </Row>
+
+          {/* Connect with Adopters */}
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <MessageOutlined style={{ color: '#13C2C2', fontSize: '20px' }} />
+                <span>Connect with Adopters</span>
+                {unreadCount > 0 && (
+                  <Badge count={unreadCount} style={{ backgroundColor: '#ff4d4f' }} />
+                )}
+              </div>
+            }
+            style={{ ...cardStyle, marginBottom: '24px' }}
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <div style={{ 
+                  background: '#f0f9ff', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #bae7ff'
+                }}>
+                  <Title level={4} style={{ marginBottom: '16px', color: '#13C2C2' }}>
+                    Recent Messages ({messages.length})
+                  </Title>
+                  {messages.length > 0 ? (
+                    <List
+                      dataSource={messages.slice(0, 3)}
+                      renderItem={(msg) => (
+                        <List.Item key={msg.id} style={{ padding: '8px 0' }}>
+                          <div style={{ width: '100%' }}>
+                            <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                              From: {msg.senderName}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                              {msg.subject || 'No subject'}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#999' }}>
+                              {dayjs(msg.timestamp).fromNow()}
+                            </div>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                      <MessageOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
+                      <div>No messages yet</div>
+                      <div style={{ fontSize: '12px' }}>Adopters will contact you here</div>
+                    </div>
+                  )}
+                  <div style={{ marginTop: '16px' }}>
+                    <Link href="/dashboard/messages">
+                      <Button 
+                        type="primary" 
+                        icon={<MessageOutlined />}
+                        style={{ background: '#13C2C2', borderColor: '#13C2C2' }}
+                      >
+                        View All Messages
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <div style={{ 
+                  background: '#fff1f0', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #ffccc7'
+                }}>
+                  <Title level={4} style={{ marginBottom: '16px', color: '#ff4d4f' }}>
+                    Share Updates
+                  </Title>
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text type="secondary">
+                      Keep your followers updated about your breeding program, new litters, and available puppies.
+                    </Text>
+                  </div>
+                  <div>
+                    <Button 
+                      type="primary" 
+                      icon={<NotificationOutlined />}
+                      onClick={() => setAnnouncementModalVisible(true)}
+                      style={{ background: '#ff4d4f', borderColor: '#ff4d4f' }}
+                    >
+                      Create Announcement
+                    </Button>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+        </div>
+      ) : (
+        <div>
+          {/* Find Your Perfect Pet */}
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <HeartOutlined style={{ color: '#08979C', fontSize: '20px' }} />
+                <span>Find Your Perfect Pet</span>
+              </div>
+            }
+            style={{ ...cardStyle, marginBottom: '24px' }}
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={8}>
+                <div style={{ 
+                  background: '#f0f9ff', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #bae7ff',
+                  textAlign: 'center',
+                  height: '100%'
+                }}>
+                  <EyeOutlined style={{ fontSize: '32px', color: '#08979C', marginBottom: '12px' }} />
+                  <Title level={4} style={{ marginBottom: '12px', color: '#08979C' }}>
+                    Browse Puppies
+                  </Title>
+                  <Text type="secondary" style={{ marginBottom: '16px', display: 'block' }}>
+                    Discover available puppies from reputable breeders
+                  </Text>
+                  <Link href="/browse">
+                    <Button 
+                      type="primary" 
+                      icon={<EyeOutlined />}
+                      style={{ background: '#08979C', borderColor: '#08979C' }}
+                    >
+                      Start Browsing
+                    </Button>
+                  </Link>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={8}>
+                <div style={{ 
+                  background: '#fff7e6', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #ffd591',
+                  textAlign: 'center',
+                  height: '100%'
+                }}>
+                  <UserOutlined style={{ fontSize: '32px', color: '#FA8072', marginBottom: '12px' }} />
+                  <Title level={4} style={{ marginBottom: '12px', color: '#FA8072' }}>
+                    Find Breeders
+                  </Title>
+                  <Text type="secondary" style={{ marginBottom: '16px', display: 'block' }}>
+                    Connect with trusted breeders in your area
+                  </Text>
+                  <Link href="/breeders">
+                    <Button 
+                      type="primary" 
+                      icon={<UserOutlined />}
+                      style={{ background: '#FA8072', borderColor: '#FA8072' }}
+                    >
+                      Find Breeders
+                    </Button>
+                  </Link>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={8}>
+                <div style={{ 
+                  background: '#f0f9ff', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #bae7ff',
+                  textAlign: 'center',
+                  height: '100%'
+                }}>
+                  <HeartOutlined style={{ fontSize: '32px', color: '#13C2C2', marginBottom: '12px' }} />
+                  <Title level={4} style={{ marginBottom: '12px', color: '#13C2C2' }}>
+                    Explore Breeds
+                  </Title>
+                  <Text type="secondary" style={{ marginBottom: '16px', display: 'block' }}>
+                    Learn about different dog breeds and their characteristics
+                  </Text>
+                  <Link href="/breeds">
+                    <Button 
+                      type="primary" 
+                      icon={<HeartOutlined />}
+                      style={{ background: '#13C2C2', borderColor: '#13C2C2' }}
+                    >
+                      Explore Breeds
+                    </Button>
+                  </Link>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Stay Connected */}
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <MessageOutlined style={{ color: '#13C2C2', fontSize: '20px' }} />
+                <span>Stay Connected</span>
+                {unreadCount > 0 && (
+                  <Badge count={unreadCount} style={{ backgroundColor: '#ff4d4f' }} />
+                )}
+              </div>
+            }
+            style={{ ...cardStyle, marginBottom: '24px' }}
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <div style={{ 
+                  background: '#f0f9ff', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #bae7ff'
+                }}>
+                  <Title level={4} style={{ marginBottom: '16px', color: '#13C2C2' }}>
+                    Your Messages ({messages.length})
+                  </Title>
+                  {messages.length > 0 ? (
+                    <List
+                      dataSource={messages.slice(0, 3)}
+                      renderItem={(msg) => (
+                        <List.Item key={msg.id} style={{ padding: '8px 0' }}>
+                          <div style={{ width: '100%' }}>
+                            <div style={{ fontWeight: '500', marginBottom: '4px' }}>
+                              From: {msg.senderName}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                              {msg.subject || 'No subject'}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#999' }}>
+                              {dayjs(msg.timestamp).fromNow()}
+                            </div>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                      <MessageOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
+                      <div>No messages yet</div>
+                      <div style={{ fontSize: '12px' }}>Start conversations with breeders</div>
+                    </div>
+                  )}
+                  <div style={{ marginTop: '16px' }}>
+                    <Link href="/dashboard/messages">
+                      <Button 
+                        type="primary" 
+                        icon={<MessageOutlined />}
+                        style={{ background: '#13C2C2', borderColor: '#13C2C2' }}
+                      >
+                        View All Messages
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <div style={{ 
+                  background: '#fff1f0', 
+                  padding: '20px', 
+                  borderRadius: '8px',
+                  border: '1px solid #ffccc7'
+                }}>
+                  <Title level={4} style={{ marginBottom: '16px', color: '#ff4d4f' }}>
+                    Manage Your Search
+                  </Title>
+                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                    <Link href={`/users/${user?.userId}/edit`}>
+                      <Button 
+                        icon={<EditOutlined />} 
+                        style={{ width: '100%' }}
+                      >
+                        Update Preferences
+                      </Button>
+                    </Link>
+                    <Link href="/adoption-guide">
+                      <Button 
+                        icon={<EyeOutlined />} 
+                        style={{ width: '100%' }}
+                      >
+                        Read Adoption Guide
+                      </Button>
+                    </Link>
+                    <Link href="/users">
+                      <Button 
+                        icon={<UserOutlined />} 
+                        style={{ width: '100%' }}
+                      >
+                        Find Other Adopters
+                      </Button>
+                    </Link>
+                  </Space>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+        </div>
+      )}
 
       {/* My Galleries */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
