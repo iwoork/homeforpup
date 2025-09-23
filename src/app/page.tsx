@@ -12,8 +12,9 @@ const { Title, Paragraph } = Typography;
 const heroStyle: React.CSSProperties = {
   background: 'linear-gradient(135deg, #08979C 0%, #FA8072 100%)',
   color: 'white',
-  padding: '80px 24px',
+  padding: '80px 0',
   textAlign: 'center',
+  width: '100%',
 };
 
 const cardStyle: React.CSSProperties = {
@@ -81,7 +82,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', width: '100%' }}>
       <style jsx global>{`
         @media (max-width: 767px) {
           .hero-buttons .ant-col {
@@ -105,7 +106,7 @@ const HomePage: React.FC = () => {
 
       {/* Hero Section */}
       <section style={heroStyle}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
             Creating Paw-some Families, One Match at a Time
           </Title>
@@ -150,8 +151,8 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section style={{ padding: '64px 24px', background: 'white' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
             What Makes Our Community Special?
           </Title>
@@ -188,8 +189,8 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section style={{ padding: '64px 24px', background: '#F5F5F5' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+      <section style={{ padding: '64px 0', background: '#F5F5F5', width: '100%' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <Title level={2} style={{ marginBottom: '48px' }}>Your Journey to Finding Your Paw-fect Match</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
@@ -212,8 +213,8 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* AI Matching Section */}
-      <section style={{ padding: '64px 24px', background: 'white' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <Title level={2}>Smart Matching with AI Technology</Title>
             <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
@@ -328,8 +329,8 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section style={{ padding: '64px 24px', background: 'white' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
           <Title level={2} style={{ marginBottom: '48px' }}>Stories from Our Community</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
@@ -355,8 +356,8 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section style={{ padding: '64px 24px', background: '#E6F7F7', textAlign: 'center' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <section style={{ padding: '64px 0', background: '#E6F7F7', textAlign: 'center', width: '100%' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 24px' }}>
           <Title level={2} style={{ marginBottom: '24px' }}>Stay Connected with Our Community</Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
             Join our newsletter to hear heartwarming puppy stories, get expert care tips, and be the first to meet new additions to our community family.
@@ -402,8 +403,8 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section style={{ padding: '64px 24px', background: '#fdf6e3', textAlign: 'center' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <section style={{ padding: '64px 0', background: '#fdf6e3', textAlign: 'center', width: '100%' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
           <Title level={2} style={{ marginBottom: '24px' }}>
             Ready to Meet Your New Best Friend?
           </Title>

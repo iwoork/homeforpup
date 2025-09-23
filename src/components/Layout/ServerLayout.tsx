@@ -1,9 +1,6 @@
 import React from 'react';
-import { Layout as AntLayout } from 'antd';
 import ClientHeader from './ClientHeader';
 import Footer from './Footer';
-
-const { Content } = AntLayout;
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,13 +8,13 @@ interface LayoutProps {
 
 const ServerLayout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <AntLayout style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ClientHeader />
-      <Content style={{ padding: '0 50px', marginTop: 64 }}>
+      <main style={{ flex: 1, padding: '0 50px', marginTop: 64 }}>
         {children}
-      </Content>
+      </main>
       <Footer />
-    </AntLayout>
+    </div>
   );
 };
 

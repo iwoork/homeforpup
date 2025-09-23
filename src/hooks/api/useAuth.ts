@@ -13,7 +13,7 @@ interface UseAuthReturn {
   error: string | null;
   isAuthenticated: boolean;
   getToken: () => string | null;
-  syncUser: (userData?: Partial<User>) => Promise<User | null>;
+  syncUser: (userData?: Partial<User>, providedToken?: string) => Promise<User | null>;
   updateUser: (updates: Partial<User>) => Promise<User | null>;
 }
 
@@ -49,8 +49,8 @@ export const useAuth = (): UseAuthReturn => {
   }, [oidcAuth]);
 
   // Method to sync user data with DynamoDB
-  const syncUser = useCallback(async (userData?: Partial<User>): Promise<User | null> => {
-    const token = getToken();
+  const syncUser = useCallback(async (userData?: Partial<User>, providedToken?: string): Promise<User | null> => {
+    const token = providedToken || getToken();
     if (!token) {
       console.warn('No token available for user sync');
       return null;
@@ -119,6 +119,18 @@ export const useAuth = (): UseAuthReturn => {
   // Update user state when OIDC auth state changes
   useEffect(() => {
     const updateUserState = async () => {
+      console.log('useAuth effect running with OIDC state:', {
+        isAuthenticated: oidcAuth?.isAuthenticated,
+        hasUser: !!oidcAuth?.user,
+        isLoading: oidcAuth?.isLoading,
+        error: oidcAuth?.error?.message,
+        userProfile: oidcAuth?.user?.profile ? {
+          sub: oidcAuth.user.profile.sub?.substring(0, 10) + '...',
+          email: oidcAuth.user.profile.email,
+          name: oidcAuth.user.profile.name
+        } : null
+      });
+
       if (!oidcAuth) {
         setError('Authentication context not available');
         return;
@@ -130,21 +142,29 @@ export const useAuth = (): UseAuthReturn => {
         const email = profile.email || '';
         const name = profile.name || profile.email?.split('@')[0] || 'User';
 
-        console.log('OIDC authentication successful, syncing user data...');
+        console.log('OIDC authentication successful, syncing user data...', {
+          userId: userId.substring(0, 10) + '...',
+          email,
+          name
+        });
 
         // Sync user data with DynamoDB
-        await syncUser({
+        const syncedUser = await syncUser({
           userId,
           email,
           name
         });
 
+        console.log('Sync result:', syncedUser ? 'Success' : 'Failed');
+
       } else if (!oidcAuth.isLoading) {
+        console.log('OIDC not authenticated, clearing user state');
         setUser(null);
       }
 
       // Handle auth errors
       if (oidcAuth.error) {
+        console.error('OIDC error:', oidcAuth.error.message);
         setError(oidcAuth.error.message);
       } else if (!error || error === 'Authentication context not available') {
         setError(null);
@@ -155,18 +175,22 @@ export const useAuth = (): UseAuthReturn => {
   }, [oidcAuth, syncUser, error]);
 
   const signIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
+    console.log('signIn function called with action:', action, 'userType:', userType);
+    
     if (!oidcAuth) {
+      console.error('OIDC Auth not initialized');
       setError('Authentication not initialized');
       return;
     }
 
     try {
       setError(null);
+      console.log('Starting sign in process...');
       
       // Get environment variables
       const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
       const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-      const redirectUri = encodeURIComponent(window.location.origin + '/callback');
+      const redirectUri = encodeURIComponent(window.location.origin + '/auth/callback');
       
       if (action === 'signup' && cognitoDomain && clientId) {
         // Store user type for after signup completion
@@ -176,9 +200,26 @@ export const useAuth = (): UseAuthReturn => {
         
         // Direct redirect to Cognito signup page
         const signupUrl = `${cognitoDomain}/signup?client_id=${clientId}&response_type=code&scope=email+openid+profile&redirect_uri=${redirectUri}`;
+        console.log('Redirecting to signup URL:', signupUrl);
         window.location.href = signupUrl;
       } else {
         // Use OIDC signin redirect for login (default behavior)
+        console.log('Using OIDC signin redirect with config:', {
+          authority: oidcAuth.settings?.authority,
+          client_id: oidcAuth.settings?.client_id,
+          redirect_uri: oidcAuth.settings?.redirect_uri,
+          response_type: oidcAuth.settings?.response_type
+        });
+        
+        // Generate the OIDC redirect URL manually to see what it looks like
+        const oidcRedirectUrl = oidcAuth.settings?.authority + 
+          '/oauth2/authorize?client_id=' + oidcAuth.settings?.client_id +
+          '&response_type=' + oidcAuth.settings?.response_type +
+          '&scope=email+openid+profile' +
+          '&redirect_uri=' + encodeURIComponent(oidcAuth.settings?.redirect_uri || '');
+        
+        console.log('Generated OIDC redirect URL:', oidcRedirectUrl);
+        
         await oidcAuth.signinRedirect();
       }
     } catch (error) {

@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { ConfigProvider } from 'antd';
-import { AuthProvider as OidcAuthProvider } from 'react-oidc-context';
-import { cognitoAuthConfig } from '@/lib';
-import { Alert, Spin } from 'antd';
+import { SimpleAuthProvider } from '@/components/auth/SimpleAuthProvider';
+import { Spin } from 'antd';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -36,25 +35,10 @@ const theme = {
 
 export const Providers: React.FC<ProvidersProps> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
-  const [configError, setConfigError] = useState<string | null>(null);
 
   useEffect(() => {
     // Ensure we're on the client side
     setMounted(true);
-    
-    // Validate auth configuration
-    if (!cognitoAuthConfig.authority || !cognitoAuthConfig.client_id) {
-      setConfigError('Missing required authentication configuration.');
-      return;
-    }
-    
-    console.log('Auth config:', {
-      authority: cognitoAuthConfig.authority,
-      client_id: cognitoAuthConfig.client_id ? 'Set' : 'Not set',
-      redirect_uri: cognitoAuthConfig.redirect_uri
-    });
-    
-    setConfigError(null);
   }, []);
 
   if (!mounted) {
@@ -73,27 +57,11 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
     );
   }
 
-  if (configError) {
-    return (
-      <ConfigProvider theme={theme}>
-        <div style={{ padding: '20px' }}>
-          <Alert
-            message="Configuration Error"
-            description={configError}
-            type="error"
-            showIcon
-          />
-          {children}
-        </div>
-      </ConfigProvider>
-    );
-  }
-
   return (
     <ConfigProvider theme={theme}>
-      <OidcAuthProvider {...cognitoAuthConfig}>
+      <SimpleAuthProvider>
         {children}
-      </OidcAuthProvider>
+      </SimpleAuthProvider>
     </ConfigProvider>
   );
 };

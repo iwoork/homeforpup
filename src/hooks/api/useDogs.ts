@@ -2,11 +2,12 @@
 import useSWR from 'swr';
 import { Dog } from '@/types';
 import { message } from 'antd';
+import { getAccessToken } from '@/lib/auth/cognito-hosted-ui';
 
 // Fetcher function that includes auth token
 const fetcher = async (url: string) => {
-  // Get the auth token from your auth context or localStorage
-  const token = localStorage.getItem('authToken') || '';
+  // Get the auth token from the new authentication system
+  const token = getAccessToken();
   
   const response = await fetch(url, {
     headers: {
@@ -32,7 +33,7 @@ export const useDogs = () => {
 
   const deleteDog = async (dogId: string) => {
     try {
-      const token = localStorage.getItem('authToken') || '';
+      const token = getAccessToken();
       
       const response = await fetch(`/api/dogs/${dogId}`, {
         method: 'DELETE',

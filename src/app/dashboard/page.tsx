@@ -107,7 +107,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshAuth } = useAuth();
   const { dogs, refreshDogs } = useDogs();
   const [litters, setLitters] = useState<Litter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +124,12 @@ const DashboardPage: React.FC = () => {
   const [announcementForm] = Form.useForm<AnnouncementFormValues>();
   const [unreadCount, setUnreadCount] = useState(0);
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+
+  // Refresh authentication state when dashboard loads
+  useEffect(() => {
+    console.log('🔄 Dashboard loaded, refreshing auth state...');
+    refreshAuth();
+  }, [refreshAuth]);
 
   // Initialize gallery photos from user data
   useEffect(() => {

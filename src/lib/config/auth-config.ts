@@ -9,6 +9,14 @@ export interface CognitoConfig {
     scope: string;
     automaticSilentRenew: boolean;
     loadUserInfo: boolean;
+    metadata?: {
+      issuer: string;
+      authorization_endpoint: string;
+      token_endpoint: string;
+      userinfo_endpoint: string;
+      jwks_uri: string;
+      end_session_endpoint: string;
+    };
   }
   
   // Get environment variables - these should be available on client side with NEXT_PUBLIC_ prefix
@@ -29,8 +37,15 @@ export interface CognitoConfig {
     throw new Error('NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID environment variable is required');
   }
   
-  // Construct the authority URL from your user pool
-  const authority = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
+  // Get the Cognito User Pool domain from environment variables
+  const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+  
+  if (!cognitoDomain) {
+    throw new Error('NEXT_PUBLIC_COGNITO_DOMAIN environment variable is required');
+  }
+  
+  // Use the Cognito User Pool domain as the authority (not the IDP domain)
+  const authority = cognitoDomain;
   
   // Base URL for redirects
   const baseUrl = typeof window !== 'undefined' 
@@ -46,4 +61,13 @@ export interface CognitoConfig {
     scope: 'email openid profile',
     automaticSilentRenew: true,
     loadUserInfo: true,
+    // Skip automatic discovery to avoid CORS issues
+    metadata: {
+      issuer: authority,
+      authorization_endpoint: `${authority}/oauth2/authorize`,
+      token_endpoint: `${authority}/oauth2/token`,
+      userinfo_endpoint: `${authority}/oauth2/userInfo`,
+      jwks_uri: `${authority}/.well-known/jwks.json`,
+      end_session_endpoint: `${authority}/logout`,
+    },
   };

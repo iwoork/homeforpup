@@ -10,7 +10,6 @@ export { default as ImageCropperModal } from './forms/Upload/ImageCropperModal';
 export { default as DocumentUpload } from './forms/Upload/DocumentUpload';
 
 // Core components
-export { AuthProvider } from './AuthProvider';
 export { Providers } from './Providers';
 export { default as GoogleAnalytics } from './GoogleAnalytics';
 

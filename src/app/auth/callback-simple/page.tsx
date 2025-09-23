@@ -1,16 +1,15 @@
-// app/auth/callback/page.tsx
+// app/auth/callback-simple/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, Spin, Alert, Button, Progress } from 'antd';
+import { Card, Spin, Alert, Button } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useHostedAuth } from '@/hooks/auth/useHostedAuth';
 
 export default function AuthCallbackPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Processing authentication...');
-  const [progress, setProgress] = useState(0);
   const { handleCallback, error } = useHostedAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,12 +34,9 @@ export default function AuthCallbackPage() {
         }
 
         setMessage('Exchanging code for tokens...');
-        setProgress(25);
-
         const success = await handleCallback(code);
 
         if (success) {
-          setProgress(100);
           setStatus('success');
           setMessage('Authentication successful! Redirecting...');
           
@@ -124,15 +120,6 @@ export default function AuthCallbackPage() {
         }}>
           {message}
         </p>
-
-        {status === 'loading' && (
-          <Progress 
-            percent={progress} 
-            strokeColor={getStatusColor()}
-            showInfo={false}
-            style={{ marginBottom: '16px' }}
-          />
-        )}
 
         {error && (
           <Alert

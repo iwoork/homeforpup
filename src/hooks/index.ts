@@ -1,7 +1,7 @@
 // Hook exports organized by type
 
 // API hooks
-export { useAuth } from './api/useAuth';
+export { useAuth } from './auth/useHostedAuth';
 export { useAvailableUsers } from './api/useAvailableUsers';
 export { useDogs } from './api/useDogs';
 export { useMessages } from './api/useMessages';
