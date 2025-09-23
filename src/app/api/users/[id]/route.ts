@@ -29,6 +29,8 @@ interface DatabaseUserItem {
   location?: string;
   bio?: string;
   profileImage?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[];
   verified: boolean;
   userType: 'adopter' | 'breeder' | 'both';
   accountStatus: 'active' | 'inactive' | 'pending'; // Required in database
@@ -232,6 +234,8 @@ interface UserUpdateRequest {
   location?: string;
   bio?: string;
   profileImage?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[];
   preferences?: DatabaseUserItem['preferences'];
   adopterInfo?: DatabaseUserItem['adopterInfo'];
   breederInfo?: DatabaseUserItem['breederInfo'];
@@ -291,7 +295,9 @@ export async function PUT(
       'phone',
       'location',
       'bio',
-      'profileImage'
+      'profileImage',
+      'coverPhoto',
+      'galleryPhotos'
     ];
 
     // Handle simple field updates with type safety

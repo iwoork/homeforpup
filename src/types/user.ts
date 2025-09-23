@@ -14,6 +14,8 @@ export interface User {
     longitude: number;
   };
   profileImage?: string; // Optional: Profile picture URL
+  coverPhoto?: string; // Optional: Cover photo URL
+  galleryPhotos?: string[]; // Optional: Array of gallery photo URLs
   bio?: string; // Optional: Biography
   verified: boolean; // Email/phone verification status
   accountStatus: 'active' | 'suspended' | 'pending'; // Account status

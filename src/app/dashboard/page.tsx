@@ -46,6 +46,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDogs } from '@/hooks/useDogs';
 import { Litter, Dog } from '@/types';
 import AddDogForm from '@/components/AddDogForm';
+import PhotoUpload from '@/components/Upload/PhotoUpload';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -131,6 +132,14 @@ const DashboardPage: React.FC = () => {
   const [messageForm] = Form.useForm<MessageFormValues>();
   const [announcementForm] = Form.useForm<AnnouncementFormValues>();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
+
+  // Initialize gallery photos from user data
+  useEffect(() => {
+    if (user?.galleryPhotos) {
+      setGalleryPhotos(user.galleryPhotos);
+    }
+  }, [user?.galleryPhotos]);
 
   const fetchDashboardData = useCallback(async () => {
     // Fixed: Changed user?.id to user?.userId
@@ -504,142 +513,6 @@ const DashboardPage: React.FC = () => {
         </Row>
       )}
 
-      {/* Community Feed & Messages */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24}>
-          <Card 
-            title="Community Feed & Recent Messages" 
-            style={cardStyle}
-            extra={
-              <Space>
-                <Badge count={unreadCount}>
-                  <Button 
-                    icon={<MessageOutlined />}
-                    onClick={() => setMessageModalVisible(true)}
-                  >
-                    All Messages
-                  </Button>
-                </Badge>
-              </Space>
-            }
-          >
-            <Tabs 
-              defaultActiveKey="announcements"
-              items={[
-                {
-                  key: 'announcements',
-                  label: 'Announcements',
-                  children: (
-                    <List
-                      dataSource={announcements.slice(0, 3)}
-                      renderItem={(announcement) => (
-                        <List.Item key={announcement.id}>
-                          <List.Item.Meta
-                            avatar={
-                              <Avatar 
-                                style={{ 
-                                  backgroundColor: getAnnouncementTypeColor(announcement.type) 
-                                }}
-                                icon={
-                                  announcement.type === 'litter' ? <HeartOutlined /> :
-                                  announcement.type === 'health' ? <BellOutlined /> :
-                                  <FileTextOutlined />
-                                }
-                              />
-                            }
-                            title={
-                              <Space>
-                                <strong>{announcement.title}</strong>
-                                <Tag color={getAnnouncementTypeColor(announcement.type)}>
-                                  {announcement.type}
-                                </Tag>
-                              </Space>
-                            }
-                            description={
-                              <Space direction="vertical" style={{ width: '100%' }}>
-                                <Text>{announcement.content}</Text>
-                                {announcement.litterInfo && (
-                                  <div style={{ 
-                                    background: '#f5f5f5', 
-                                    padding: '8px', 
-                                    borderRadius: '6px',
-                                    fontSize: '12px'
-                                  }}>
-                                    <strong>Litter Details:</strong> {announcement.litterInfo.sireName} x {announcement.litterInfo.damName} | 
-                                    Expected: {dayjs(announcement.litterInfo.expectedDate).format('MMM DD, YYYY')} | 
-                                    {announcement.litterInfo.expectedPuppies} expected puppies
-                                  </div>
-                                )}
-                                <Space>
-                                  <Text type="secondary">
-                                    by {announcement.breederName} • {dayjs(announcement.timestamp).fromNow()}
-                                  </Text>
-                                  <Text type="secondary">
-                                    {announcement.likes} likes • {announcement.comments} comments
-                                  </Text>
-                                </Space>
-                              </Space>
-                            }
-                          />
-                        </List.Item>
-                      )}
-                    />
-                  )
-                },
-                {
-                  key: 'messages',
-                  label: <Badge count={unreadCount} size="small">Recent Messages</Badge>,
-                  children: (
-                    <List
-                      dataSource={messages.slice(0, 3)}
-                      renderItem={(msg) => (
-                        <List.Item 
-                          key={msg.id}
-                          style={{ 
-                            backgroundColor: !msg.read ? '#f6ffed' : 'transparent',
-                            border: !msg.read ? '1px solid #b7eb8f' : 'none',
-                            borderRadius: '6px',
-                            padding: '12px'
-                          }}
-                          actions={[
-                            !msg.read && (
-                              <Button 
-                                size="small" 
-                                onClick={() => handleMarkAsRead(msg.id)}
-                              >
-                                Mark as Read
-                              </Button>
-                            )
-                          ]}
-                        >
-                          <List.Item.Meta
-                            avatar={<Avatar icon={<UserOutlined />} />}
-                            title={
-                              <Space>
-                                <strong>{msg.senderName}</strong>
-                                {!msg.read && <Tag color="green">New</Tag>}
-                              </Space>
-                            }
-                            description={
-                              <Space direction="vertical" style={{ width: '100%' }}>
-                                <Text strong>{msg.subject}</Text>
-                                <Text>{msg.content}</Text>
-                                <Text type="secondary" style={{ fontSize: '12px' }}>
-                                  {dayjs(msg.timestamp).fromNow()}
-                                </Text>
-                              </Space>
-                            }
-                          />
-                        </List.Item>
-                      )}
-                    />
-                  )
-                }
-              ]}
-            />
-          </Card>
-        </Col>
-      </Row>
 
       <Row gutter={[16, 16]}>
         {/* Recent Litters or Recommendations */}
@@ -805,6 +678,160 @@ const DashboardPage: React.FC = () => {
                 )}
               />
             )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* My Galleries */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={24}>
+          <Card 
+            title="My Photo Galleries" 
+            style={cardStyle}
+            extra={
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={() => {/* Could open a modal for managing galleries */}}
+              >
+                Manage Photos
+              </Button>
+            }
+          >
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <div>
+                  <Title level={5}>Profile & Cover Photos</Title>
+                  <Text type="secondary" style={{ marginBottom: '16px', display: 'block' }}>
+                    Manage your profile picture and cover photo
+                  </Text>
+                  <Space direction="vertical" size="middle">
+                    <div>
+                      <Text strong>Profile Photo:</Text>
+                      <div style={{ marginTop: '8px' }}>
+                        {user?.profileImage ? (
+                          <img 
+                            src={user.profileImage} 
+                            alt="Profile" 
+                            style={{ 
+                              width: 80, 
+                              height: 80, 
+                              borderRadius: '50%', 
+                              objectFit: 'cover' 
+                            }} 
+                          />
+                        ) : (
+                          <div style={{ 
+                            width: 80, 
+                            height: 80, 
+                            borderRadius: '50%', 
+                            background: '#f0f0f0', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
+                            <UserOutlined style={{ fontSize: '24px', color: '#999' }} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Text strong>Cover Photo:</Text>
+                      <div style={{ marginTop: '8px' }}>
+                        {user?.coverPhoto ? (
+                          <img 
+                            src={user.coverPhoto} 
+                            alt="Cover" 
+                            style={{ 
+                              width: 200, 
+                              height: 67, 
+                              borderRadius: '8px', 
+                              objectFit: 'cover' 
+                            }} 
+                          />
+                        ) : (
+                          <div style={{ 
+                            width: 200, 
+                            height: 67, 
+                            borderRadius: '8px', 
+                            background: '#f0f0f0', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
+                            <Text type="secondary">No cover photo</Text>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Link href={`/users/${user?.userId}/edit?tab=photos`}>
+                      <Button type="link" icon={<EditOutlined />}>
+                        Edit Profile & Cover Photos
+                      </Button>
+                    </Link>
+                  </Space>
+                </div>
+              </Col>
+              
+              <Col xs={24} md={12}>
+                <div>
+                  <Title level={5}>Photo Gallery</Title>
+                  <Text type="secondary" style={{ marginBottom: '16px', display: 'block' }}>
+                    Share photos of your pets, home, or experiences
+                  </Text>
+                  {galleryPhotos.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                      {galleryPhotos.slice(0, 6).map((photo, index) => (
+                        <img 
+                          key={index}
+                          src={photo} 
+                          alt={`Gallery ${index + 1}`} 
+                          style={{ 
+                            width: '100%', 
+                            height: 80, 
+                            borderRadius: '8px', 
+                            objectFit: 'cover' 
+                          }} 
+                        />
+                      ))}
+                      {galleryPhotos.length > 6 && (
+                        <div style={{ 
+                          width: '100%', 
+                          height: 80, 
+                          borderRadius: '8px', 
+                          background: '#f0f0f0', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center' 
+                        }}>
+                          <Text type="secondary">+{galleryPhotos.length - 6} more</Text>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '40px 20px', 
+                      background: '#fafafa', 
+                      borderRadius: '8px' 
+                    }}>
+                      <Text type="secondary">No photos in gallery yet</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        Add photos to showcase your pet ownership experience
+                      </Text>
+                    </div>
+                  )}
+                  <div style={{ marginTop: '12px' }}>
+                    <Link href={`/users/${user?.userId}/edit?tab=photos`}>
+                      <Button type="link" icon={<EditOutlined />}>
+                        {galleryPhotos.length > 0 ? 'Manage Gallery' : 'Add Photos to Gallery'}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Col>
+            </Row>
           </Card>
         </Col>
       </Row>

@@ -6,6 +6,7 @@ import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { s3Operations } from '@/lib/s3';
 import { v4 as uuidv4 } from 'uuid';
 import type { RcFile } from 'antd/es/upload';
+import ImageCropperModal from './ImageCropperModal';
 
 interface PhotoUploadProps {
   photos: string[];
@@ -19,6 +20,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
   maxPhotos = 10 
 }) => {
   const [uploading, setUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
 
   const handleUpload = useCallback(async (file: RcFile): Promise<boolean> => {
     if (photos.length >= maxPhotos) {
@@ -26,22 +29,10 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
       return false;
     }
 
-    setUploading(true);
-    try {
-      const fileExtension = file.name.split('.').pop() || 'jpg';
-      const key = `photos/${uuidv4()}.${fileExtension}`;
-      const url = await s3Operations.uploadFile(file, key);
-      
-      onPhotosChange([...photos, url]);
-      message.success('Photo uploaded successfully');
-    } catch (error) {
-      message.error('Failed to upload photo');
-      console.error('Upload error:', error);
-    } finally {
-      setUploading(false);
-    }
-    
-    return false; // Prevent default upload
+    // Open cropper first
+    setPendingFile(file);
+    setCropOpen(true);
+    return false;
   }, [photos, onPhotosChange, maxPhotos]);
 
   const handleRemove = useCallback((photoUrl: string) => {
@@ -64,6 +55,32 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({
           Upload Photos ({photos.length}/{maxPhotos})
         </Button>
       </Upload>
+
+      <ImageCropperModal
+        open={cropOpen}
+        file={pendingFile}
+        onCancel={() => { setCropOpen(false); setPendingFile(null); }}
+        onCropped={async (blob) => {
+          if (!pendingFile) return;
+          setCropOpen(false);
+          setUploading(true);
+          try {
+            // Create a File from the blob to preserve type
+            const fileExtension = (pendingFile.name.split('.').pop() || 'jpg').toLowerCase();
+            const croppedFile = new File([blob], `cropped.${fileExtension}`, { type: 'image/jpeg' });
+            const key = `photos/${uuidv4()}.jpg`;
+            const url = await s3Operations.uploadFile(croppedFile, key);
+            onPhotosChange([...photos, url]);
+            message.success('Photo uploaded successfully');
+          } catch (error) {
+            message.error('Failed to upload photo');
+            console.error('Upload error:', error);
+          } finally {
+            setUploading(false);
+            setPendingFile(null);
+          }
+        }}
+      />
 
       {photos.length > 0 && (
         <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>

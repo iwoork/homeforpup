@@ -15,6 +15,9 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
+import ProfilePhotoUpload from '@/components/Upload/ProfilePhotoUpload';
+import CoverPhotoUpload from '@/components/Upload/CoverPhotoUpload';
+import PhotoUpload from '@/components/Upload/PhotoUpload';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -32,6 +35,8 @@ interface UserProfile {
   location?: string;
   bio?: string;
   profileImage?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[];
   verified: boolean;
   userType: 'adopter' | 'breeder' | 'both';
   preferences: {
@@ -92,9 +97,65 @@ const EditProfilePage: React.FC = () => {
   const [newPreviousPet, setNewPreviousPet] = useState('');
   const [newDealBreaker, setNewDealBreaker] = useState('');
   const [newSpecialRequirement, setNewSpecialRequirement] = useState('');
+  const [profileImage, setProfileImage] = useState<string | undefined>();
+  const [coverPhoto, setCoverPhoto] = useState<string | undefined>();
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
 
   // Get message API from Ant Design App context
   const { message } = App.useApp();
+
+  // Auto-save function for photo updates
+  const autoSavePhoto = async (photoType: 'profileImage' | 'coverPhoto' | 'galleryPhotos', value: string | string[]) => {
+    if (!profile) return;
+
+    try {
+      const token = getToken();
+      if (!token) {
+        message.error('No authentication token available');
+        return;
+      }
+
+      const updateData: any = {};
+      updateData[photoType] = value;
+
+      const response = await fetch(`/api/users/${profile.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save photo');
+      }
+
+      // Update the SWR cache to reflect the change
+      mutate(`/api/users/${profile.userId}`);
+      message.success(`${photoType === 'profileImage' ? 'Profile photo' : photoType === 'coverPhoto' ? 'Cover photo' : 'Gallery photos'} saved successfully!`);
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      message.error(error instanceof Error ? error.message : 'Failed to save photo');
+    }
+  };
+
+  // Wrapper functions that update local state and auto-save
+  const handleProfileImageChange = async (url: string) => {
+    setProfileImage(url);
+    await autoSavePhoto('profileImage', url);
+  };
+
+  const handleCoverPhotoChange = async (url: string) => {
+    setCoverPhoto(url);
+    await autoSavePhoto('coverPhoto', url);
+  };
+
+  const handleGalleryPhotosChange = async (photos: string[]) => {
+    setGalleryPhotos(photos);
+    await autoSavePhoto('galleryPhotos', photos);
+  };
 
   // Handle logout - replace with your auth method
   const handleLogout = useCallback(() => {
@@ -186,6 +247,11 @@ const EditProfilePage: React.FC = () => {
         breederExperience: profile.breederInfo?.experience,
         website: profile.breederInfo?.website,
       });
+      
+      // Set photo states
+      setProfileImage(profile.profileImage);
+      setCoverPhoto(profile.coverPhoto);
+      setGalleryPhotos(profile.galleryPhotos || []);
     }
   }, [profile, form]);
 
@@ -200,7 +266,7 @@ const EditProfilePage: React.FC = () => {
         throw new Error('No authentication token available');
       }
       
-      // Prepare update payload
+      // Prepare update payload (photos are auto-saved, so don't include them here)
       const updateData: any = {
         displayName: values.displayName,
         phone: values.phone,
@@ -528,8 +594,9 @@ const EditProfilePage: React.FC = () => {
             <Space size="large">
               <Avatar 
                 size={80} 
-                src={profile.profileImage}
+                src={profileImage || profile.profileImage}
                 icon={<UserOutlined />}
+                key={profileImage || profile.profileImage}
               />
               <div>
                 <Title level={3} style={{ margin: 0 }}>
@@ -1168,6 +1235,60 @@ const EditProfilePage: React.FC = () => {
               </Row>
             </TabPane>
           )}
+
+          {/* Photos Tab */}
+          <TabPane tab="Photos" key="photos">
+            <Row gutter={[16, 16]}>
+              <Col span={24}>
+                <Card title="Profile Photo" style={cardStyle}>
+                  <Paragraph type="secondary">
+                    Upload a clear photo of yourself. This will be your main profile picture.
+                    <br />
+                    <Text type="success" style={{ fontSize: '12px' }}>
+                      ✓ Photos are automatically saved when uploaded
+                    </Text>
+                  </Paragraph>
+                  <ProfilePhotoUpload
+                    value={profileImage}
+                    onChange={handleProfileImageChange}
+                  />
+                </Card>
+              </Col>
+
+              <Col span={24}>
+                <Card title="Cover Photo" style={cardStyle}>
+                  <Paragraph type="secondary">
+                    Add a cover photo to showcase your personality or interests. Recommended size: 3:1 ratio.
+                    <br />
+                    <Text type="success" style={{ fontSize: '12px' }}>
+                      ✓ Photos are automatically saved when uploaded
+                    </Text>
+                  </Paragraph>
+                  <CoverPhotoUpload
+                    value={coverPhoto}
+                    onChange={handleCoverPhotoChange}
+                  />
+                </Card>
+              </Col>
+
+              <Col span={24}>
+                <Card title="Photo Gallery" style={cardStyle}>
+                  <Paragraph type="secondary">
+                    Share photos of your pets, home, or anything that represents you as a pet owner.
+                    <br />
+                    <Text type="success" style={{ fontSize: '12px' }}>
+                      ✓ Photos are automatically saved when uploaded
+                    </Text>
+                  </Paragraph>
+                  <PhotoUpload
+                    photos={galleryPhotos}
+                    onPhotosChange={handleGalleryPhotosChange}
+                    maxPhotos={10}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          </TabPane>
         </Tabs>
 
         {/* Save Actions */}
@@ -1233,9 +1354,10 @@ const EditProfilePage: React.FC = () => {
             <div style={{ textAlign: 'center' }}>
               <Avatar 
                 size={64} 
-                src={profile.profileImage}
+                src={profileImage || profile.profileImage}
                 icon={<UserOutlined />}
                 style={{ marginBottom: '8px' }}
+                key={profileImage || profile.profileImage}
               />
               <div>
                 <Text strong>{form.getFieldValue('displayName') || profile.displayName}</Text>

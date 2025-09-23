@@ -18,6 +18,13 @@ interface BasicUser {
   profileImage?: string;
 }
 
+interface UsersResponse {
+  users: BasicUser[];
+  total: number;
+  hasMore: boolean;
+  nextKey?: string | null;
+}
+
 const makeFetcher = (token: string | null) => async (url: string): Promise<{ users: BasicUser[] }> => {
   const res = await fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -42,13 +49,24 @@ export default function UsersIndexPage() {
     return `/api/users/available?${params.toString()}`;
   }, [type, query, location]);
 
-  const { data, error, isLoading } = useSWR<{ users: BasicUser[] }>(
+  const { data, error, isLoading, mutate } = useSWR<UsersResponse>(
     token ? url : null,
     makeFetcher(token || null),
     { revalidateOnFocus: false }
   );
 
-  const users = (data?.users || []).filter(u => {
+  const [items, setItems] = useState<BasicUser[]>([]);
+  const [nextKey, setNextKey] = useState<string | null | undefined>(null);
+
+  React.useEffect(() => {
+    if (data) {
+      // Reset list on new query
+      setItems(data.users);
+      setNextKey(data.nextKey);
+    }
+  }, [data]);
+
+  const users = (items || []).filter(u => {
     const matchesType = type === 'all' ? true : u.userType === type;
     const q = query.trim().toLowerCase();
     const matchesQuery = q.length === 0 ||
@@ -134,6 +152,22 @@ export default function UsersIndexPage() {
           />
         )}
       </Card>
+
+      {!isLoading && users.length > 0 && nextKey && (
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <Button
+            onClick={async () => {
+              if (!token) return;
+              const moreUrl = `${url}&startKey=${encodeURIComponent(nextKey)}`;
+              const res = await makeFetcher(token)(moreUrl);
+              setItems(prev => [...prev, ...res.users]);
+              setNextKey(res.nextKey);
+            }}
+          >
+            Load more
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

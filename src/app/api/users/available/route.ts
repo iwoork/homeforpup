@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const location = searchParams.get('location');
     const limit = parseInt(searchParams.get('limit') || '50');
+    const startKeyParam = searchParams.get('startKey');
 
     // Build scan parameters
     const scanParams: any = {
@@ -91,6 +92,18 @@ export async function GET(request: NextRequest) {
     });
 
     // Execute scan
+    if (startKeyParam) {
+      try {
+        const decoded = Buffer.from(startKeyParam, 'base64').toString('utf-8');
+        const exclusiveStartKey = JSON.parse(decoded);
+        if (exclusiveStartKey && typeof exclusiveStartKey === 'object') {
+          (scanParams as any).ExclusiveStartKey = exclusiveStartKey;
+        }
+      } catch (e) {
+        console.warn('Invalid startKey provided, ignoring.');
+      }
+    }
+
     const result = await dynamodb.send(new ScanCommand(scanParams));
     const users = result.Items || [];
 
@@ -118,10 +131,15 @@ export async function GET(request: NextRequest) {
       return a.name.localeCompare(b.name);
     });
 
+    const nextKey = result.LastEvaluatedKey 
+      ? Buffer.from(JSON.stringify(result.LastEvaluatedKey), 'utf-8').toString('base64')
+      : null;
+
     return NextResponse.json({ 
       users: availableUsers,
       total: availableUsers.length,
-      hasMore: result.LastEvaluatedKey ? true : false
+      hasMore: Boolean(result.LastEvaluatedKey),
+      nextKey
     });
 
   } catch (error) {

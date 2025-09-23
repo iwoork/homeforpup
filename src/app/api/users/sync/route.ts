@@ -71,6 +71,9 @@ export async function POST(request: NextRequest) {
       phone,
       location,
       bio,
+      profileImage,
+      coverPhoto,
+      galleryPhotos,
       preferences,
       breederInfo,
       adopterInfo 
@@ -100,6 +103,9 @@ export async function POST(request: NextRequest) {
       phone: phone || existingUser?.phone || undefined,
       location: location || existingUser?.location || undefined,
       bio: bio || existingUser?.bio || undefined,
+      profileImage: profileImage || existingUser?.profileImage || undefined,
+      coverPhoto: coverPhoto || existingUser?.coverPhoto || undefined,
+      galleryPhotos: galleryPhotos || existingUser?.galleryPhotos || [],
       verified: true, // User came from Cognito, so email is verified
       accountStatus: existingUser?.accountStatus || 'active',
       
