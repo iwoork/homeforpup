@@ -2,8 +2,6 @@
 
 // Layout components
 export { default as Layout } from './layout/ServerLayout';
-export { default as Header } from './layout/Header';
-export { default as Footer } from './layout/Footer';
 
 // Form components
 export { default as AddDogForm } from './forms/AddDogForm';
