@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { Layout, Row, Col, Typography, Space } from 'antd';
 import { HeartOutlined } from '@ant-design/icons';
