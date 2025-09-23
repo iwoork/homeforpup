@@ -20,7 +20,7 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
     convertClassInstanceToMap: false,
   },
 });
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
+const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'homeforpup-message-threads';
 
 // Thread interface matching DynamoDB structure
 interface ThreadItem {

@@ -29,9 +29,6 @@ const Footer: React.FC = () => {
     transition: 'color 0.2s ease',
   };
 
-  const linkHoverStyle: React.CSSProperties = {
-    color: '#08979C',
-  };
 
   const socialIconStyle: React.CSSProperties = {
     fontSize: '20px',

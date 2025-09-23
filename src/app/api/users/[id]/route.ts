@@ -15,7 +15,7 @@ const client = new DynamoDBClient({
 });
 
 const dynamodb = DynamoDBDocumentClient.from(client);
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
+const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 // Base user interface for database storage (all required fields)
 interface DatabaseUserItem {

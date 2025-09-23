@@ -26,7 +26,7 @@ const s3Client = new S3Client({
   },
 });
 
-const DOGS_TABLE_NAME = process.env.DOGS_TABLE_NAME || 'dogs';
+const DOGS_TABLE_NAME = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'breeding-app-photos';
 
 interface DogData {

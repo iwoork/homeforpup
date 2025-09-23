@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/SimpleAuthProvider';
 
@@ -99,6 +99,11 @@ const Header: React.FC = () => {
   }, []);
 
   const userMenuItems = [
+    {
+      key: 'dashboard',
+      icon: <DashboardOutlined />,
+      label: <Link href="/dashboard">Dashboard</Link>,
+    },
     {
       key: 'profile',
       icon: <UserOutlined />,

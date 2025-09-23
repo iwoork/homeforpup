@@ -45,10 +45,13 @@ export async function verifyJWT(token: string): Promise<{ userId: string; name: 
       console.warn('Unexpected issuer:', payload.iss);
     }
 
-    // Check audience (should match your client ID)
+    // Check audience (only for ID tokens, not access tokens)
     const expectedClientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
-    if (expectedClientId && payload.aud !== expectedClientId) {
+    if (payload.aud && expectedClientId && payload.aud !== expectedClientId) {
       console.warn('Audience mismatch. Expected:', expectedClientId, 'Got:', payload.aud);
+    } else if (!payload.aud) {
+      // This is likely an access token, which is fine for API calls
+      console.log('Using access token (no audience field)');
     }
 
     const userId = payload.sub;

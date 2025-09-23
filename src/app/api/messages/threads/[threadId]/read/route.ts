@@ -20,8 +20,8 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
     convertClassInstanceToMap: false,
   },
 });
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
+const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'homeforpup-messages';
+const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'homeforpup-message-threads';
 
 export async function PATCH(
   request: NextRequest,

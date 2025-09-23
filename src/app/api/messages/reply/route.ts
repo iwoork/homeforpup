@@ -21,9 +21,9 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
     convertClassInstanceToMap: false,
   },
 });
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
+const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'homeforpup-messages';
+const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'homeforpup-message-threads';
+const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 // Helper function to get user info from users table
 async function getUserInfo(userId: string) {

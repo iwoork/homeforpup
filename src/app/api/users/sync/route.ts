@@ -18,7 +18,7 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
     removeUndefinedValues: true // Remove undefined values automatically
   }
 });
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
+const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 // Helper function to remove undefined values from objects
 function removeUndefinedValues(obj: any): any {
