@@ -83,9 +83,10 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({ open, file, aspec
     const container = containerRef.current;
     const ratio = aspectToRatio(currentAspect);
 
-    // Output dimensions
-    const outWidth = 1200; // reasonable canvas width
-    const outHeight = Math.round(outWidth / ratio);
+    // Output dimensions - ensure square for profile photos
+    const outSize = 800; // Fixed size for consistent results
+    const outWidth = outSize;
+    const outHeight = Math.round(outSize / ratio);
 
     const canvas = document.createElement('canvas');
     canvas.width = outWidth;
@@ -93,40 +94,45 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({ open, file, aspec
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Compute image draw size based on zoom to cover container
-    const naturalW = image.naturalWidth;
-    const naturalH = image.naturalHeight;
+    // Get container dimensions
+    const containerWidth = container.clientWidth;
+    const containerHeight = Math.min(360, Math.max(200, Math.floor(containerWidth / ratio)));
 
-    // Fit image to container's crop box height first
-    const cropBoxWidth = container.clientWidth;
-    const cropBoxHeight = Math.min(360, Math.max(200, Math.floor(container.clientWidth / ratio)));
+    // Calculate the scale to fill the container
+    const scaleX = containerWidth / image.naturalWidth;
+    const scaleY = containerHeight / image.naturalHeight;
+    const scale = Math.max(scaleX, scaleY) * zoom;
 
-    const scaleToCover = Math.max(cropBoxWidth / naturalW, cropBoxHeight / naturalH);
-    const scale = scaleToCover * zoom;
+    // Calculate the actual image size in the container
+    const imageWidth = image.naturalWidth * scale;
+    const imageHeight = image.naturalHeight * scale;
 
-    const drawW = naturalW * scale;
-    const drawH = naturalH * scale;
+    // Calculate the offset from the center
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
+    const imageX = centerX - imageWidth / 2 + offset.x;
+    const imageY = centerY - imageHeight / 2 + offset.y;
 
-    // Offset center baseline to top-left baseline in output coords
-    // Map container offsets to output canvas scale
-    const scaleX = outWidth / cropBoxWidth;
-    const scaleY = outHeight / cropBoxHeight;
+    // Calculate the crop area in the original image coordinates
+    const cropX = Math.max(0, -imageX / scale);
+    const cropY = Math.max(0, -imageY / scale);
+    const cropWidth = Math.min(image.naturalWidth - cropX, containerWidth / scale);
+    const cropHeight = Math.min(image.naturalHeight - cropY, containerHeight / scale);
 
-    const dx = offset.x * scaleX + (outWidth - drawW * (outWidth / cropBoxWidth)) / 2;
-    const dy = offset.y * scaleY + (outHeight - drawH * (outHeight / cropBoxHeight)) / 2;
+    // Calculate the destination size in the output canvas
+    const destWidth = (cropWidth / image.naturalWidth) * outWidth;
+    const destHeight = (cropHeight / image.naturalHeight) * outHeight;
 
-    // Simpler approach: draw image centered plus offset proportional to zoom
+    // Fill with white background
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, outWidth, outHeight);
 
-    // Compute image top-left in crop box coordinates
-    const centerX = outWidth / 2 + offset.x * scaleX;
-    const centerY = outHeight / 2 + offset.y * scaleY;
-    const x = centerX - drawW * (outWidth / cropBoxWidth) / 2;
-    const y = centerY - drawH * (outHeight / cropBoxHeight) / 2;
-
-    // Use drawImage scaling
-    ctx.drawImage(image, x, y, drawW * (outWidth / cropBoxWidth), drawH * (outHeight / cropBoxHeight));
+    // Draw the cropped image
+    ctx.drawImage(
+      image,
+      cropX, cropY, cropWidth, cropHeight, // Source rectangle
+      0, 0, destWidth, destHeight // Destination rectangle
+    );
 
     canvas.toBlob((blob) => {
       if (blob) onCropped(blob);

@@ -106,9 +106,13 @@ const EditProfilePage: React.FC = () => {
 
   // Auto-save function for photo updates
   const autoSavePhoto = async (photoType: 'profileImage' | 'coverPhoto' | 'galleryPhotos', value: string | string[]) => {
-    if (!profile) return;
+    if (!profile) {
+      console.log('No profile available for auto-save');
+      return;
+    }
 
     try {
+      console.log(`Auto-saving ${photoType}:`, value);
       const token = getToken();
       if (!token) {
         message.error('No authentication token available');
@@ -117,6 +121,8 @@ const EditProfilePage: React.FC = () => {
 
       const updateData: any = {};
       updateData[photoType] = value;
+
+      console.log('Sending update data:', updateData);
 
       const response = await fetch(`/api/users/${profile.userId}`, {
         method: 'PUT',
@@ -129,9 +135,11 @@ const EditProfilePage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('API error:', errorData);
         throw new Error(errorData.message || 'Failed to save photo');
       }
 
+      console.log('Photo saved successfully, updating cache');
       // Update the SWR cache to reflect the change
       mutate(`/api/users/${profile.userId}`);
       message.success(`${photoType === 'profileImage' ? 'Profile photo' : photoType === 'coverPhoto' ? 'Cover photo' : 'Gallery photos'} saved successfully!`);
@@ -143,7 +151,9 @@ const EditProfilePage: React.FC = () => {
 
   // Wrapper functions that update local state and auto-save
   const handleProfileImageChange = async (url: string) => {
+    console.log('handleProfileImageChange called with URL:', url);
     setProfileImage(url);
+    console.log('profileImage state set to:', url);
     await autoSavePhoto('profileImage', url);
   };
 
@@ -597,7 +607,16 @@ const EditProfilePage: React.FC = () => {
                 src={profileImage || profile.profileImage}
                 icon={<UserOutlined />}
                 key={profileImage || profile.profileImage}
+                style={{ 
+                  objectFit: 'cover',
+                  borderRadius: '50%',
+                  flexShrink: 0
+                }}
               />
+              {/* Debug info */}
+              <div style={{ fontSize: '10px', color: '#999', marginTop: '8px' }}>
+                State: {profileImage || 'null'} | Profile: {profile?.profileImage || 'null'}
+              </div>
               <div>
                 <Title level={3} style={{ margin: 0 }}>
                   Edit Your Profile
@@ -1356,7 +1375,11 @@ const EditProfilePage: React.FC = () => {
                 size={64} 
                 src={profileImage || profile.profileImage}
                 icon={<UserOutlined />}
-                style={{ marginBottom: '8px' }}
+                style={{ 
+                  marginBottom: '8px',
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }}
                 key={profileImage || profile.profileImage}
               />
               <div>
