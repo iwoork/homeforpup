@@ -82,17 +82,33 @@ const Dashboard: React.FC = () => {
       padding: '32px 16px' 
     }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-          <Title level={1} style={{ color: '#08979C', marginBottom: '8px' }}>
-          Welcome back, {user?.name || 'User'}!
+      <div style={{ 
+        marginBottom: '32px',
+        background: 'linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%)',
+        padding: '24px',
+        borderRadius: '12px',
+        border: '1px solid #e6f7ff'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+          <Avatar 
+            size={48} 
+            src={user?.profileImage} 
+            icon={<UserOutlined />}
+            style={{ marginRight: '16px' }}
+          />
+        <div>
+            <Title level={1} style={{ color: '#08979C', margin: 0, fontSize: '28px' }}>
+              Welcome back, {user?.name || 'User'}!
           </Title>
           <Text style={{ color: '#595959', fontSize: '16px' }}>
-          {isBreeder && isAdopter 
-            ? "Manage your breeding program and discover new puppies."
-            : isBreeder 
-            ? "Manage your breeding program and connect with adopters."
-            : "Discover new puppies and connect with breeders."}
+              {isBreeder && isAdopter 
+                ? "Manage your breeding program and discover new puppies."
+                : isBreeder 
+                ? "Manage your breeding program and connect with adopters."
+                : "Discover new puppies and connect with breeders."}
           </Text>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -162,9 +178,9 @@ const Dashboard: React.FC = () => {
         <Col xs={24} lg={16}>
           {/* Matched Puppies (for adopters) */}
           {isAdopter && (
-            <Card 
+          <Card 
               title={`Puppies Matched for You (${Array.isArray(matchedPuppies) ? matchedPuppies.length : 0})`}
-              extra={
+            extra={
                 <Link href="/browse">
                   <Button type="link" icon={<ArrowRightOutlined />}>
                     View All
@@ -192,7 +208,7 @@ const Dashboard: React.FC = () => {
                   </Link>
                 </Empty>
               ) : (
-                <List
+                    <List
                   dataSource={Array.isArray(matchedPuppies) ? matchedPuppies.slice(0, 6) : []}
                   grid={{ gutter: 16, xs: 1, sm: 2, md: 2, lg: 2, xl: 3 }}
                   renderItem={(puppy) => (
@@ -211,7 +227,7 @@ const Dashboard: React.FC = () => {
                                 }}
                               />
                             ) : (
-                              <div style={{ 
+                                  <div style={{ 
                                 height: '100%', 
                                 display: 'flex', 
                                 alignItems: 'center', 
@@ -219,11 +235,11 @@ const Dashboard: React.FC = () => {
                                 background: '#f5f5f5'
                               }}>
                                 <UserOutlined style={{ fontSize: '48px', color: '#ccc' }} />
-                              </div>
-                            )}
+                                  </div>
+                                )}
                           </div>
                         }
-                        actions={[
+                          actions={[
                           <Link href={`/dogs/${puppy.id}`} key="view">
                             <Button type="link" icon={<EyeOutlined />}>
                               View Details
@@ -232,7 +248,7 @@ const Dashboard: React.FC = () => {
                           <Link href={`/breeders/${puppy.breederId}`} key="breeder">
                             <Button type="link" icon={<TeamOutlined />}>
                               View Breeder
-                            </Button>
+                              </Button>
                           </Link>
                         ]}
                       >
@@ -251,23 +267,23 @@ const Dashboard: React.FC = () => {
                                   ? `${puppy.description.substring(0, 100)}...` 
                                   : puppy.description
                                 }
-                              </Text>
-                            </Space>
-                          }
-                        />
+                                </Text>
+                              </Space>
+                            }
+                          />
                       </Card>
-                    </List.Item>
-                  )}
-                />
+                        </List.Item>
+                      )}
+                    />
               )}
-            </Card>
+          </Card>
           )}
 
           {/* My Dogs (for breeders) */}
           {isBreeder && (
-            <Card 
+          <Card 
               title="My Dogs" 
-              extra={
+            extra={
                 <Button 
                   type="link" 
                   icon={<ArrowRightOutlined />}
@@ -283,20 +299,20 @@ const Dashboard: React.FC = () => {
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description="No dogs added yet"
                 >
-                  <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />}
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
                     onClick={() => setAddDogModalVisible(true)}
-                  >
+              >
                     Add Your First Dog
-                  </Button>
+              </Button>
                 </Empty>
               ) : (
-                <List
+              <List
                   dataSource={dogs.slice(0, 3)}
-                  renderItem={(dog) => (
-                    <List.Item
-                      actions={[
+                renderItem={(dog) => (
+                  <List.Item
+                    actions={[
                         <Link href={`/dogs/${dog.id}`} key="view">
                           <Button type="link" icon={<EyeOutlined />}>
                             View
@@ -305,18 +321,18 @@ const Dashboard: React.FC = () => {
                         <Button type="link" icon={<EditOutlined />} key="edit">
                           Edit
                         </Button>
-                      ]}
-                    >
-                      <List.Item.Meta
-                        avatar={
-                          <Avatar 
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar 
                             size={48} 
-                            src={dog.photoUrl} 
-                            icon={<UserOutlined />}
+                          src={dog.photoUrl} 
+                          icon={<UserOutlined />}
                           />
                         }
                         title={dog.name}
-                        description={
+                      description={
                           <Space>
                             <Tag color="blue">{dog.breed}</Tag>
                             <Tag color={dog.gender === 'male' ? 'blue' : 'pink'}>
@@ -325,26 +341,26 @@ const Dashboard: React.FC = () => {
                             <Tag color={dog.breedingStatus === 'available' ? 'green' : 'orange'}>
                               {dog.breedingStatus}
                             </Tag>
-                          </Space>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
               )}
-            </Card>
+          </Card>
           )}
 
-          {/* Quick Actions */}
+      {/* Quick Actions */}
           <Card title="Quick Actions">
-            <Row gutter={[16, 16]}>
+        <Row gutter={[16, 16]}>
               {isBreeder && (
                 <Col xs={24} sm={12}>
-                  <Button 
+              <Button 
                     type="primary" 
                     icon={<PlusOutlined />} 
                     block
-                    size="large"
+                size="large" 
                     onClick={() => setAddDogModalVisible(true)}
                     style={{ height: '60px', fontSize: '16px' }}
                   >
@@ -356,44 +372,74 @@ const Dashboard: React.FC = () => {
                 <Link href="/browse">
                   <Button 
                     icon={<EyeOutlined />} 
-                    block
+                block 
                     size="large"
                     style={{ height: '60px', fontSize: '16px' }}
                   >
                     Browse Puppies
-                  </Button>
-                </Link>
-              </Col>
+              </Button>
+            </Link>
+          </Col>
               <Col xs={24} sm={12}>
                 <Link href="/dashboard/messages">
-                  <Button 
+            <Button 
                     icon={<MessageOutlined />} 
                     block
-                    size="large"
+              size="large" 
                     style={{ height: '60px', fontSize: '16px' }}
                   >
                     View Messages
-                  </Button>
+            </Button>
                 </Link>
-              </Col>
+          </Col>
               <Col xs={24} sm={12}>
                 <Link href={`/users/${user?.userId}/edit`}>
-                  <Button 
+              <Button 
                     icon={<SettingOutlined />} 
                     block
-                    size="large"
+                size="large" 
                     style={{ height: '60px', fontSize: '16px' }}
                   >
                     Edit Profile
-                  </Button>
-                </Link>
-              </Col>
-            </Row>
-          </Card>
+              </Button>
+            </Link>
+          </Col>
+        </Row>
+      </Card>
         </Col>
 
         {/* Right Column - Sidebar */}
         <Col xs={24} lg={8}>
+          {/* Quick Profile Actions */}
+          <Card title="Quick Actions" style={{ marginBottom: '24px' }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Link href={`/users/${user?.userId}/edit`}>
+                <Button type="primary" block icon={<EditOutlined />}>
+                  Edit Profile
+                </Button>
+              </Link>
+              <Link href={`/users/${user?.userId}`}>
+                <Button block icon={<EyeOutlined />}>
+                  View Profile
+                </Button>
+              </Link>
+              <div style={{ 
+                padding: '12px', 
+                background: '#f6f8fa', 
+                borderRadius: '6px',
+                marginTop: '8px'
+              }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  <strong>Member since:</strong> {user?.createdAt ? dayjs(user.createdAt).format('MMM YYYY') : 'Recently joined'}
+                </Text>
+                <br />
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  <strong>Location:</strong> {user?.location || 'Not specified'}
+                </Text>
+              </div>
+            </Space>
+          </Card>
+
           {/* Messages (for adopters) */}
           {isAdopter && (
             <Card 
@@ -428,20 +474,20 @@ const Dashboard: React.FC = () => {
                   </Link>
                 </Empty>
               ) : (
-                <List
+            <List
                   dataSource={threads.slice(0, 3)}
                   renderItem={(thread) => (
-                    <List.Item
+                <List.Item 
                       style={{ padding: '8px 0' }}
-                      actions={[
+                  actions={[
                         <Link href={`/dashboard/messages?thread=${thread.id}`} key="view">
                           <Button type="link" size="small">
                             View
-                          </Button>
+                      </Button>
                         </Link>
-                      ]}
-                    >
-                      <List.Item.Meta
+                  ]}
+                >
+                  <List.Item.Meta
                         avatar={
                           <Avatar 
                             size={32} 
@@ -449,7 +495,7 @@ const Dashboard: React.FC = () => {
                             icon={<UserOutlined />}
                           />
                         }
-                        title={
+                    title={
                           <Text 
                             strong={(thread.unreadCount[user?.userId || ''] || 0) > 0}
                             style={{ 
@@ -460,9 +506,9 @@ const Dashboard: React.FC = () => {
                             {thread.participantInfo?.[thread.participants.find(p => p !== user?.userId) || '']?.name || 
                              thread.participantNames?.[thread.participants.find(p => p !== user?.userId) || ''] || 
                              'Unknown'}
-                          </Text>
-                        }
-                        description={
+                        </Text>
+                    }
+                    description={
                           <Space direction="vertical" size="small">
                             <Text 
                               type="secondary" 
@@ -479,12 +525,12 @@ const Dashboard: React.FC = () => {
                                 : 'No messages'
                               }
                             </Text>
-                          </Space>
-                        }
-                      />
-                    </List.Item>
-                  )}
-                />
+                      </Space>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
               )}
             </Card>
           )}
@@ -535,50 +581,12 @@ const Dashboard: React.FC = () => {
                   <Link href={`/users/${user?.userId}/edit`}>
                     <Button type="primary" size="small">
                       Set Preferences
-                    </Button>
+                </Button>
                   </Link>
                 </div>
               )}
             </Card>
           )}
-
-          {/* Profile Summary */}
-          <Card title="Profile Summary" style={{ marginBottom: '24px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <Avatar 
-                size={64} 
-                src={user?.profileImage} 
-                icon={<UserOutlined />}
-                style={{ marginBottom: '12px' }}
-              />
-              <Title level={4} style={{ margin: 0 }}>
-                {user?.name}
-              </Title>
-              <Text type="secondary">
-                {user?.userType === 'breeder' ? 'Breeder' : 
-                 user?.userType === 'adopter' ? 'Adopter' : 'Both'}
-              </Text>
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong>Member since:</Text>
-              <br />
-              <Text type="secondary">
-                {user?.createdAt ? dayjs(user.createdAt).format('MMMM YYYY') : 'Recently joined'}
-              </Text>
-            </div>
-            <div style={{ marginBottom: '16px' }}>
-              <Text strong>Location:</Text>
-              <br />
-              <Text type="secondary">
-                {user?.location || 'Not specified'}
-              </Text>
-            </div>
-            <Link href={`/users/${user?.userId}/edit`}>
-              <Button type="primary" block>
-                Complete Profile
-              </Button>
-            </Link>
-          </Card>
 
           {/* Recent Activity */}
           <Card title="Recent Activity">
@@ -588,7 +596,7 @@ const Dashboard: React.FC = () => {
               style={{ padding: '20px 0' }}
             />
           </Card>
-        </Col>
+                    </Col>
                   </Row>
 
       {/* Add Dog Modal */}

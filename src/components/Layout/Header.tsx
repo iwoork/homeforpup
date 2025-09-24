@@ -172,7 +172,7 @@ const Header: React.FC = () => {
           <span style={{ 
             fontSize: isMobile ? '16px' : '20px', 
             fontWeight: 'bold', 
-            color: '#1890ff',
+            color: '#08979C',
             whiteSpace: 'nowrap'
           }}>
             Home for Pup
