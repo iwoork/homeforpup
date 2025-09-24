@@ -20,7 +20,7 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ClientHeader />
-      <main style={{ flex: 1, marginTop: 64 }}>
+      <main style={{ flex: 1 }}>
         {children}
       </main>
       <Footer />

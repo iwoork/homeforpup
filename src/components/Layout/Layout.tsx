@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
       <ClientHeader />
-      <Content style={{ marginTop: 64 }}>
+      <Content>
         {children}
       </Content>
       <Footer />

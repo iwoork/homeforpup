@@ -149,9 +149,9 @@ const Header: React.FC = () => {
   };
 
   const logoStyle = {
-    height: isMobile ? '32px' : '40px',
+    height: isMobile ? '32px' : '48px',
     width: 'auto',
-    marginRight: '16px',
+    marginRight: '8px',
   };
 
   const buttonStyle = {
