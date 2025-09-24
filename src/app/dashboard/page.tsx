@@ -30,7 +30,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth, useDogs, useAvailablePuppies, useMessages } from '@/hooks';
+import { useAuth, useDogs, useMatchedPuppies, useMessages } from '@/hooks';
 import { AddDogForm } from '@/components';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -41,9 +41,9 @@ dayjs.extend(relativeTime);
 const { Title, Text } = Typography;
 
 const Dashboard: React.FC = () => {
-  const { user, refreshAuth } = useAuth();
+  const { user } = useAuth();
   const { dogs, isLoading: dogsLoading, error: dogsError } = useDogs();
-  const { puppies, isLoading: puppiesLoading, error: puppiesError } = useAvailablePuppies();
+  const { matchedPuppies, isLoading: puppiesLoading, error: puppiesError } = useMatchedPuppies();
   const { threads, unreadCount, loading: messagesLoading } = useMessages({
     userId: user?.userId || '',
     userName: user?.name || '',
@@ -53,9 +53,8 @@ const Dashboard: React.FC = () => {
 
   // Force refresh auth state when dashboard mounts
   useEffect(() => {
-    console.log('🔄 Dashboard mounted, refreshing auth state...');
-    refreshAuth();
-  }, [refreshAuth]);
+    console.log('🔄 Dashboard mounted');
+  }, []);
 
   const isLoading = dogsLoading || puppiesLoading || messagesLoading;
   const error = dogsError || puppiesError;
@@ -161,10 +160,10 @@ const Dashboard: React.FC = () => {
       <Row gutter={[24, 24]}>
         {/* Left Column - Main Content */}
         <Col xs={24} lg={16}>
-          {/* Available Puppies (for adopters) */}
+          {/* Matched Puppies (for adopters) */}
           {isAdopter && (
             <Card 
-              title={`Available Puppies (${puppies.length})`}
+              title={`Puppies Matched for You (${Array.isArray(matchedPuppies) ? matchedPuppies.length : 0})`}
               extra={
                 <Link href="/browse">
                   <Button type="link" icon={<ArrowRightOutlined />}>
@@ -174,20 +173,27 @@ const Dashboard: React.FC = () => {
               }
               style={{ marginBottom: '24px' }}
             >
-              {puppies.length === 0 ? (
+              {!matchedPuppies || !Array.isArray(matchedPuppies) || matchedPuppies.length === 0 ? (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="No puppies available right now"
+                  description={
+                    user?.adopterInfo?.preferredBreeds?.length ? 
+                    "No puppies match your preferences right now" : 
+                    "Set your puppy preferences in your profile to see matched puppies"
+                  }
                 >
-                  <Link href="/browse">
-                    <Button type="primary" icon={<EyeOutlined />}>
-                      Browse All Puppies
+                  <Link href={`/users/${user?.userId}/edit`}>
+                    <Button type="primary" icon={<SettingOutlined />}>
+                      {user?.adopterInfo?.preferredBreeds?.length ? 
+                        'Update Preferences' : 
+                        'Set Preferences'
+                      }
                     </Button>
                   </Link>
                 </Empty>
               ) : (
                 <List
-                  dataSource={puppies.slice(0, 6)}
+                  dataSource={Array.isArray(matchedPuppies) ? matchedPuppies.slice(0, 6) : []}
                   grid={{ gutter: 16, xs: 1, sm: 2, md: 2, lg: 2, xl: 3 }}
                   renderItem={(puppy) => (
                     <List.Item>
@@ -479,6 +485,59 @@ const Dashboard: React.FC = () => {
                     </List.Item>
                   )}
                 />
+              )}
+            </Card>
+          )}
+
+          {/* Puppy Preferences (for adopters) */}
+          {isAdopter && (
+            <Card title="Your Puppy Preferences" style={{ marginBottom: '24px' }}>
+              {user?.adopterInfo?.preferredBreeds?.length ? (
+                <div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <Text strong>Preferred Breeds:</Text>
+                    <br />
+                    <Space wrap>
+                      {user.adopterInfo.preferredBreeds.map((breed: string) => (
+                        <Tag key={breed} color="blue">{breed}</Tag>
+                      ))}
+                    </Space>
+                  </div>
+                  {user.adopterInfo.experienceLevel && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <Text strong>Experience Level:</Text>
+                      <br />
+                      <Text type="secondary" style={{ textTransform: 'capitalize' }}>
+                        {user.adopterInfo.experienceLevel.replace('-', ' ')}
+                      </Text>
+                    </div>
+                  )}
+                  {user.adopterInfo.housingType && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <Text strong>Housing:</Text>
+                      <br />
+                      <Text type="secondary" style={{ textTransform: 'capitalize' }}>
+                        {user.adopterInfo.housingType}
+                      </Text>
+                    </div>
+                  )}
+                  <Link href={`/users/${user?.userId}/edit`}>
+                    <Button type="link" size="small" block>
+                      Update Preferences
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <Text type="secondary" style={{ display: 'block', marginBottom: '12px' }}>
+                    Set your puppy preferences to see personalized matches
+                  </Text>
+                  <Link href={`/users/${user?.userId}/edit`}>
+                    <Button type="primary" size="small">
+                      Set Preferences
+                    </Button>
+                  </Link>
+                </div>
               )}
             </Card>
           )}

@@ -108,7 +108,7 @@ const cardStyle: React.CSSProperties = {
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const { dogs, refreshDogs } = useDogs();
+  const { dogs, mutate: refreshDogs } = useDogs();
   const [litters, setLitters] = useState<Litter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

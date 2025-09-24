@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ConfigProvider } from 'antd';
-import { SimpleAuthProvider } from '@/components/auth/SimpleAuthProvider';
+import { NextAuthProvider } from './providers/NextAuthProvider';
 import { Spin } from 'antd';
 
 interface ProvidersProps {
@@ -59,9 +59,9 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
 
   return (
     <ConfigProvider theme={theme}>
-      <SimpleAuthProvider>
+      <NextAuthProvider>
         {children}
-      </SimpleAuthProvider>
+      </NextAuthProvider>
     </ConfigProvider>
   );
 };

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, Row, Col, Typography, Button, Form, Input, Select, Switch, 
   Spin, Alert, Tabs, Space, Divider, Tag, Avatar,
-  InputNumber, App
+  InputNumber, App, message
 } from 'antd';
 import { 
   UserOutlined, SaveOutlined, LoadingOutlined,

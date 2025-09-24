@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, Row, Col, Input, Select, List, Avatar, Tag, Button, Space, Spin, Alert, Switch } from 'antd';
 import Link from 'next/link';
 import useSWR from 'swr';
@@ -39,7 +39,17 @@ export default function UsersIndexPage() {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const token = getToken();
+  const [token, setToken] = useState<string | null>(null);
+  
+  // Get token asynchronously
+  useEffect(() => {
+    const fetchToken = async () => {
+      const tokenValue = await getToken();
+      setToken(tokenValue);
+    };
+    fetchToken();
+  }, [getToken]);
+  
   const url = useMemo(() => {
     const params = new URLSearchParams();
     if (type !== 'all') params.set('userType', type);

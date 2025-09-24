@@ -42,9 +42,9 @@ interface UseMessagesReturn {
 }
 
 // API fetcher function with authentication
-const createFetcher = (getToken: () => string | null) => {
+const createFetcher = (getToken: () => Promise<string | null>) => {
   return async (url: string) => {
-    const token = getToken();
+    const token = await getToken();
     if (!token) {
       throw new Error('No authentication token available');
     }
@@ -66,9 +66,9 @@ const createFetcher = (getToken: () => string | null) => {
 };
 
 // API request function with authentication
-const createApiRequest = (getToken: () => string | null) => {
+const createApiRequest = (getToken: () => Promise<string | null>) => {
   return async (url: string, options: RequestInit = {}) => {
-    const token = getToken();
+    const token = await getToken();
     if (!token) {
       throw new Error('No authentication token available');
     }

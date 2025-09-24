@@ -4,10 +4,10 @@ import React from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-import { useAuth } from '@/components/auth/SimpleAuthProvider';
+import { useAuth } from '@/hooks';
 
 const Header: React.FC = () => {
-  const { user, logout, login, isAuthenticated, loading, refreshAuth } = useAuth();
+  const { user, logout, login, isAuthenticated, loading, getToken } = useAuth();
   const [isMobile, setIsMobile] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
   
@@ -25,11 +25,9 @@ const Header: React.FC = () => {
     }
 
     try {
-      // Get the access token for authentication
-      const token = localStorage.getItem('cognito_tokens');
-      const accessToken = token ? JSON.parse(token).accessToken : null;
+      const token = await getToken();
       
-      if (!accessToken) {
+      if (!token) {
         console.log('No access token available for unread count fetch');
         setUnreadCount(0);
         return;
@@ -37,7 +35,7 @@ const Header: React.FC = () => {
 
       const response = await fetch('/api/messages/threads', {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -47,7 +45,6 @@ const Header: React.FC = () => {
         console.log('Threads data for unread count:', data);
         
         // Count unread messages across all threads
-        // unreadCount is a Record<string, number> where key is userId
         const unread = data.threads?.reduce((total: number, thread: any) => {
           const threadUnread = thread.unreadCount?.[user.userId] || 0;
           console.log(`Thread ${thread.id} unread for user ${user.userId}:`, threadUnread);
@@ -64,13 +61,12 @@ const Header: React.FC = () => {
       console.error('Error fetching unread count:', error);
       setUnreadCount(0);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, getToken]);
 
-  // Force refresh auth state when header mounts
+  // Header mounted
   React.useEffect(() => {
-    console.log('🔄 Header mounted, refreshing auth state...');
-    refreshAuth();
-  }, [refreshAuth]);
+    console.log('🔄 Header mounted');
+  }, []);
 
   // Fetch unread count when user changes
   React.useEffect(() => {
@@ -80,8 +76,9 @@ const Header: React.FC = () => {
     }
     
     fetchUnreadCount();
-    // Set up polling for unread count every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
+    
+    // Set up polling for unread count
+    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
     
     return () => clearInterval(interval);
   }, [isAuthenticated, user, fetchUnreadCount]);
@@ -107,23 +104,23 @@ const Header: React.FC = () => {
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: <Link href={`/users/${user?.userId}`}>My Profile</Link>,
+      label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
     },
     {
       key: 'messages',
       icon: <MessageOutlined />,
       label: (
         <Link href="/dashboard/messages">
-          <Badge count={unreadCount} size="small" offset={[8, 0]}>
+          <Badge count={unreadCount} size="small">
             Messages
           </Badge>
         </Link>
       ),
-    },
-    {
-      key: 'edit',
-      icon: <SettingOutlined />,
-      label: <Link href={`/users/${user?.userId}/edit`}>Edit Profile</Link>,
     },
     {
       type: 'divider' as const,
@@ -131,120 +128,97 @@ const Header: React.FC = () => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: 'Logout',
+      label: 'Sign Out',
       onClick: logout,
     },
   ];
 
+  const headerStyle = {
+    background: '#fff',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    padding: isMobile ? '0 16px' : '0 24px',
+    height: isMobile ? '60px' : '70px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'sticky' as const,
+    top: 0,
+    zIndex: 1000,
+    overflow: 'hidden',
+    boxSizing: 'border-box' as const,
+  };
+
+  const logoStyle = {
+    height: isMobile ? '32px' : '40px',
+    width: 'auto',
+    marginRight: '16px',
+  };
+
+  const buttonStyle = {
+    height: isMobile ? '36px' : '40px',
+    fontSize: isMobile ? '12px' : '14px',
+    padding: isMobile ? '4px 12px' : '6px 16px',
+  };
+
   return (
-    <Layout.Header style={{ 
-      position: 'fixed', 
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1000, 
-      width: '100vw',
-      height: isMobile ? '60px' : '70px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: isMobile ? '0 12px' : '0 16px',
-      background: '#fff',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      overflow: 'hidden',
-      boxSizing: 'border-box'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        flex: 1, 
-        minWidth: 0,
-        maxWidth: 'calc(100vw - 200px)'
-      }}>
-        <Link 
-          href="/" 
-          style={{ 
-            display: 'flex',
-            alignItems: 'center',
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}
-        >
+    <Layout.Header style={headerStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           <img 
             src="/logo.png" 
             alt="Home for Pup" 
-            style={{
-              height: isMobile ? '28px' : '48px',
-              width: 'auto',
-              marginRight: isMobile ? '6px' : '8px',
-              objectFit: 'contain'
-            }}
+            style={logoStyle}
           />
-          <span style={{
-            fontSize: isMobile ? '16px' : '20px',
-            fontWeight: 'bold',
-            color: '#08979C'
+          <span style={{ 
+            fontSize: isMobile ? '16px' : '20px', 
+            fontWeight: 'bold', 
+            color: '#1890ff',
+            whiteSpace: 'nowrap'
           }}>
-            home for pup
+            Home for Pup
           </span>
         </Link>
       </div>
-      
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        flexShrink: 0,
-        minWidth: isMobile ? '140px' : '180px',
-        justifyContent: 'flex-end',
-        gap: isMobile ? '4px' : '8px'
-      }}>
-        {loading ? (
-          <Button type="text" loading size={isMobile ? 'small' : 'middle'}>
-            {isMobile ? '' : 'Loading...'}
-          </Button>
-        ) : isAuthenticated && user ? (
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+        {isAuthenticated ? (
           <>
-            <Link href="/dashboard/messages">
-              <Badge count={unreadCount} size="small" offset={[-2, 2]}>
-                <Button 
-                  type="text" 
-                  size={isMobile ? 'small' : 'middle'}
-                  icon={<MessageOutlined />}
-                  style={{ 
-                    display: isMobile ? 'none' : 'flex',
-                    alignItems: 'center',
-                    height: isMobile ? '32px' : '36px',
-                    padding: isMobile ? '0 6px' : '0 8px'
-                  }}
-                >
-                  {isMobile ? '' : 'Messages'}
-                </Button>
-              </Badge>
-            </Link>
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <Button 
-                type="text" 
-                size={isMobile ? 'small' : 'middle'}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  height: isMobile ? '36px' : '40px',
-                  maxWidth: isMobile ? '120px' : '150px',
-                  padding: isMobile ? '0 6px' : '0 8px'
-                }}
-              >
-                <Avatar size={isMobile ? 'small' : 'default'} icon={<UserOutlined />} />
+            {/* Messages button - desktop only */}
+            {!isMobile && (
+              <Link href="/dashboard/messages">
+                <Badge count={unreadCount} size="small">
+                  <Button 
+                    type="text" 
+                    icon={<MessageOutlined />}
+                    style={buttonStyle}
+                  >
+                    Messages
+                  </Button>
+                </Badge>
+              </Link>
+            )}
+            
+            {/* User dropdown */}
+            <Dropdown
+              menu={{ items: userMenuItems }}
+              placement="bottomRight"
+              trigger={['click']}
+            >
+              <Button type="text" style={{ padding: '4px', height: 'auto' }}>
+                <Avatar 
+                  size={isMobile ? 'small' : 'default'}
+                  src={user?.profileImage}
+                  icon={<UserOutlined />}
+                  style={{ marginRight: '8px' }}
+                />
                 <span style={{ 
-                  marginLeft: isMobile ? 4 : 6, 
-                  maxWidth: isMobile ? '80px' : '100px', 
-                  overflow: 'hidden', 
-                  textOverflow: 'ellipsis', 
-                  whiteSpace: 'nowrap',
-                  fontSize: isMobile ? '12px' : '14px'
+                  fontSize: isMobile ? '12px' : '14px',
+                  maxWidth: isMobile ? '80px' : '120px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}>
-                  {user.name}
+                  {user?.name || 'User'}
                 </span>
               </Button>
             </Dropdown>
@@ -252,11 +226,9 @@ const Header: React.FC = () => {
         ) : (
           <Button 
             type="primary" 
-            size={isMobile ? 'small' : 'middle'}
-            onClick={() => {
-              console.log('Sign In button clicked');
-              login();
-            }}
+            onClick={login}
+            loading={loading}
+            style={buttonStyle}
           >
             Sign In
           </Button>

@@ -2,12 +2,12 @@
 import useSWR from 'swr';
 import { Dog } from '@/types';
 import { message } from 'antd';
-import { getAccessToken } from '@/lib/auth/cognito-hosted-ui';
+import { useAuth } from '@/hooks';
 
 // Fetcher function that includes auth token
-const fetcher = async (url: string) => {
+const fetcher = (getToken: () => Promise<string | null>) => async (url: string) => {
   // Get the auth token from the new authentication system
-  const token = getAccessToken();
+  const token = await getToken();
   
   const response = await fetch(url, {
     headers: {
@@ -25,7 +25,9 @@ const fetcher = async (url: string) => {
 
 // Custom hook for managing dogs with SWR
 export const useDogs = () => {
-  const { data, error, isLoading, mutate: mutateDogs } = useSWR<Dog[]>('/api/dogs', fetcher, {
+  const { getToken } = useAuth();
+  
+  const { data, error, isLoading, mutate: mutateDogs } = useSWR<Dog[]>('/api/dogs', fetcher(getToken), {
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
     dedupingInterval: 5000,
@@ -33,41 +35,27 @@ export const useDogs = () => {
 
   const deleteDog = async (dogId: string) => {
     try {
-      const token = getAccessToken();
+      const token = await getToken();
       
       const response = await fetch(`/api/dogs/${dogId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete dog');
+        throw new Error('Failed to delete dog');
       }
 
-      // Optimistically update the cache
-      if (data) {
-        const updatedDogs = data.filter(dog => dog.id !== dogId);
-        mutateDogs(updatedDogs, false);
-      }
-
-      message.success('Dog deleted successfully');
-      
-      // Revalidate to ensure consistency
+      // Revalidate the data after successful deletion
       mutateDogs();
-      
-      return true;
+      message.success('Dog deleted successfully');
     } catch (error) {
       console.error('Error deleting dog:', error);
-      message.error(error instanceof Error ? error.message : 'Failed to delete dog');
-      return false;
+      message.error('Failed to delete dog');
     }
-  };
-
-  const refreshDogs = () => {
-    mutateDogs();
   };
 
   return {
@@ -75,25 +63,6 @@ export const useDogs = () => {
     isLoading,
     error,
     deleteDog,
-    refreshDogs,
     mutate: mutateDogs,
   };
 };
-
-// Custom hook for a single dog
-export const useDog = (dogId: string | null) => {
-  const { data, error, isLoading } = useSWR<Dog>(
-    dogId ? `/api/dogs/${dogId}` : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-    }
-  );
-
-  return {
-    dog: data,
-    isLoading,
-    error,
-  };
-};  
