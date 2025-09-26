@@ -37,43 +37,63 @@ import {
   InstagramOutlined,
   TwitterOutlined,
   YoutubeOutlined,
+  SafetyOutlined,
+  UserOutlined,
+  SmileOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 
+// Style constants matching home page
+const heroStyle: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #08979C 0%, #FA8072 100%)',
+  color: 'white',
+  padding: '80px 0',
+  textAlign: 'center',
+  width: '100%',
+};
+
+const cardStyle: React.CSSProperties = {
+  borderRadius: '12px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  height: '100%',
+  textAlign: 'center',
+};
+
 const KennelManagementLandingPage: React.FC = () => {
   const { user } = useAuth();
 
   const features = [
     {
-      icon: <HomeOutlined style={{ fontSize: '24px', color: '#1890ff' }} />,
+      icon: <HomeOutlined style={{ fontSize: '36px', color: '#08979C' }} />,
       title: 'Multiple Kennel Management',
       description: 'Create and manage multiple kennels with complete business information, addresses, and contact details.',
     },
     {
-      icon: <TeamOutlined style={{ fontSize: '24px', color: '#52c41a' }} />,
+      icon: <TeamOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
       title: 'Parent Dog Management',
       description: 'Add and manage parent dogs within each kennel, track breeding status, health records, and pedigrees.',
     },
     {
-      icon: <MessageOutlined style={{ fontSize: '24px', color: '#fa8c16' }} />,
+      icon: <MessageOutlined style={{ fontSize: '36px', color: '#08979C' }} />,
       title: 'Announcement System',
       description: 'Post announcements about litters, updates, events, and blog posts to engage with potential puppy parents.',
     },
     {
-      icon: <CameraOutlined style={{ fontSize: '24px', color: '#722ed1' }} />,
+      icon: <CameraOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
       title: 'Photo & Media Management',
       description: 'Upload cover photos, gallery images, and media content to showcase your kennel and dogs.',
     },
     {
-      icon: <ShareAltOutlined style={{ fontSize: '24px', color: '#eb2f96' }} />,
+      icon: <ShareAltOutlined style={{ fontSize: '36px', color: '#08979C' }} />,
       title: 'Social Media Integration',
       description: 'Connect your social media accounts and share your kennel updates across platforms.',
     },
     {
-      icon: <TrophyOutlined style={{ fontSize: '24px', color: '#13c2c2' }} />,
+      icon: <TrophyOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
       title: 'Business Analytics',
       description: 'Track statistics, profile views, and engagement metrics to grow your breeding business.',
     },
@@ -114,197 +134,273 @@ const KennelManagementLandingPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+    <div style={{ minHeight: '100vh', width: '100%' }}>
       {/* Hero Section */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '16px',
-        padding: '60px 40px',
-        textAlign: 'center',
-        color: 'white',
-        marginBottom: '60px',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '-50px',
-          right: '-50px',
-          width: '200px',
-          height: '200px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '50%'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-30px',
-          left: '-30px',
-          width: '150px',
-          height: '150px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '50%'
-        }} />
-        
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <HomeOutlined style={{ fontSize: '64px', marginBottom: '24px' }} />
-          <Title level={1} style={{ color: 'white', marginBottom: '16px', fontSize: '48px' }}>
+      <section style={heroStyle}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <HomeOutlined style={{ fontSize: '64px', marginBottom: '24px', display: 'block' }} />
+          <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
             Professional Kennel Management
           </Title>
-          <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', marginBottom: '32px' }}>
-            Everything you need to manage your breeding business, connect with puppy parents, and grow your kennel.
+          <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
+            Everything you need to manage your breeding business, connect with puppy parents, and grow your kennel with professional tools and community support.
           </Paragraph>
-          <Space size="large">
-            {user ? (
-              <Link href="/dashboard/kennels">
+          <Row justify="center" gutter={[16, 12]}>
+            <Col xs={24} sm={12} md={8}>
+              {user ? (
+                <Link href="/dashboard/kennels">
+                  <Button 
+                    size="large" 
+                    block
+                    style={{ 
+                      height: '48px', 
+                      fontSize: '18px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Manage My Kennels
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/auth/signup">
+                  <Button 
+                    size="large" 
+                    block
+                    style={{ 
+                      height: '48px', 
+                      fontSize: '18px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Get Started Free
+                  </Button>
+                </Link>
+              )}
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Link href="/browse">
                 <Button 
-                  type="primary" 
                   size="large" 
-                  icon={<HomeOutlined />}
+                  block
                   style={{ 
-                    height: '50px', 
-                    fontSize: '18px',
-                    background: 'white',
-                    color: '#667eea',
+                    height: '48px', 
+                    fontSize: '18px', 
+                    background: 'white', 
+                    color: '#08979C', 
                     borderColor: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: '500'
                   }}
                 >
-                  Manage My Kennels
+                  Browse Kennels
                 </Button>
               </Link>
-            ) : (
-              <Link href="/auth/signup">
-                <Button 
-                  type="primary" 
-                  size="large" 
-                  icon={<PlusOutlined />}
-                  style={{ 
-                    height: '50px', 
-                    fontSize: '18px',
-                    background: 'white',
-                    color: '#667eea',
-                    borderColor: 'white',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Get Started Free
-                </Button>
-              </Link>
-            )}
-            <Link href="/browse">
-              <Button 
-                size="large" 
-                icon={<EyeOutlined />}
-                style={{ 
-                  height: '50px', 
-                  fontSize: '18px',
-                  background: 'transparent',
-                  color: 'white',
-                  borderColor: 'white',
-                  fontWeight: 'bold'
-                }}
-              >
-                Browse Kennels
-              </Button>
-            </Link>
-          </Space>
+            </Col>
+          </Row>
         </div>
-      </div>
+      </section>
 
       {/* Features Section */}
-      <div style={{ marginBottom: '60px' }}>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
-          Complete Kennel Management Solution
-        </Title>
-        <Row gutter={[32, 32]}>
-          {features.map((feature, index) => (
-            <Col xs={24} md={12} lg={8} key={index}>
-              <Card
-                hoverable
-                style={{
-                  height: '100%',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                  border: '1px solid #f0f0f0'
-                }}
-              >
-                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                  {feature.icon}
-                </div>
-                <Title level={4} style={{ textAlign: 'center', marginBottom: '12px' }}>
-                  {feature.title}
-                </Title>
-                <Paragraph style={{ textAlign: 'center', color: '#666' }}>
-                  {feature.description}
-                </Paragraph>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </div>
+      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
+            What Makes Our Kennel Management Special?
+          </Title>
+          <Row gutter={[32, 32]}>
+            {features.map((feature, index) => (
+              <Col xs={24} md={8} key={index}>
+                <Card style={cardStyle}>
+                  <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                    {feature.icon}
+                  </div>
+                  <Title level={3}>{feature.title}</Title>
+                  <Paragraph>
+                    {feature.description}
+                  </Paragraph>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      </section>
 
       {/* Announcement Types Section */}
-      <div style={{ marginBottom: '60px' }}>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
-          Powerful Announcement System
-        </Title>
-        <Row gutter={[24, 24]}>
-          {announcementTypes.map((announcement, index) => (
-            <Col xs={24} sm={12} lg={6} key={index}>
-              <Card
-                style={{
-                  textAlign: 'center',
-                  borderRadius: '12px',
-                  border: `2px solid ${announcement.color === 'green' ? '#52c41a' : 
-                    announcement.color === 'blue' ? '#1890ff' : 
-                    announcement.color === 'purple' ? '#722ed1' : '#fa8c16'}20`
-                }}
-              >
-                <Tag 
-                  color={announcement.color} 
-                  style={{ 
-                    fontSize: '14px', 
-                    padding: '4px 12px',
-                    marginBottom: '16px'
-                  }}
-                >
-                  {announcement.type}
-                </Tag>
-                <Paragraph style={{ margin: 0, color: '#666' }}>
-                  {announcement.description}
-                </Paragraph>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </div>
+      <section style={{ padding: '64px 0', background: '#F5F5F5', width: '100%' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
+          <Title level={2} style={{ marginBottom: '48px' }}>Powerful Announcement System</Title>
+          <Row gutter={[32, 32]}>
+            {announcementTypes.map((announcement, index) => (
+              <Col xs={24} md={8} key={index}>
+                <div style={{ textAlign: 'center' }}>
+                  <Tag 
+                    color={announcement.color} 
+                    style={{ 
+                      fontSize: '16px', 
+                      padding: '8px 16px',
+                      marginBottom: '16px',
+                      borderRadius: '20px'
+                    }}
+                  >
+                    {announcement.type}
+                  </Tag>
+                  <Paragraph style={{ margin: 0, color: '#666' }}>
+                    {announcement.description}
+                  </Paragraph>
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      </section>
 
       {/* Benefits Section */}
-      <div style={{ marginBottom: '60px' }}>
-        <Row gutter={[48, 48]} align="middle">
-          <Col xs={24} lg={12}>
-            <Title level={2} style={{ marginBottom: '24px' }}>
-              Why Choose Our Kennel Management?
-            </Title>
-            <List
-              dataSource={benefits}
-              renderItem={(benefit) => (
-                <List.Item style={{ border: 'none', padding: '8px 0' }}>
-                  <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '12px' }} />
-                  <Text style={{ fontSize: '16px' }}>{benefit}</Text>
-                </List.Item>
-              )}
-            />
-            <div style={{ marginTop: '32px' }}>
+      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <Title level={2}>Why Choose Our Platform?</Title>
+            <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
+              Join hundreds of dog professionals who trust our platform to manage their kennels and connect with puppy parents.
+            </Paragraph>
+          </div>
+          
+          <Row gutter={[32, 32]} align="middle">
+            <Col xs={24} lg={12}>
+              <div style={{ padding: '0 24px' }}>
+                <Title level={3} style={{ marginBottom: '24px' }}>
+                  Everything You Need to Succeed
+                </Title>
+                <List
+                  dataSource={benefits}
+                  renderItem={(benefit) => (
+                    <List.Item style={{ border: 'none', padding: '8px 0' }}>
+                      <CheckCircleOutlined style={{ color: '#08979C', marginRight: '12px', fontSize: '16px' }} />
+                      <Text style={{ fontSize: '16px' }}>{benefit}</Text>
+                    </List.Item>
+                  )}
+                />
+                <div style={{ marginTop: '32px' }}>
+                  {user ? (
+                    <Link href="/dashboard/kennels">
+                      <Button 
+                        type="primary" 
+                        size="large" 
+                        style={{ 
+                          height: '48px', 
+                          padding: '0 32px', 
+                          fontSize: '18px',
+                          background: '#08979C',
+                          borderColor: '#08979C',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Start Managing Your Kennels
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href="/auth/signup">
+                      <Button 
+                        type="primary" 
+                        size="large" 
+                        style={{ 
+                          height: '48px', 
+                          padding: '0 32px', 
+                          fontSize: '18px',
+                          background: '#08979C',
+                          borderColor: '#08979C',
+                          fontWeight: '500'
+                        }}
+                      >
+                        Get Started Today
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </Col>
+            
+            <Col xs={24} lg={12}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #E6F7F7 0%, #FFF5F5 100%)', 
+                borderRadius: '16px', 
+                padding: '32px',
+                textAlign: 'center'
+              }}>
+                <div style={{ 
+                  background: 'white', 
+                  borderRadius: '12px', 
+                  padding: '24px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  marginBottom: '24px'
+                }}>
+                  <Title level={4} style={{ color: '#08979C', marginBottom: '16px' }}>
+                    Kennel Management Features
+                  </Title>
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <Statistic
+                        title="Multiple Kennels"
+                        value="∞"
+                        prefix={<HomeOutlined />}
+                        valueStyle={{ color: '#08979C' }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Statistic
+                        title="Announcement Types"
+                        value="4"
+                        prefix={<MessageOutlined />}
+                        valueStyle={{ color: '#FA8072' }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Statistic
+                        title="Social Platforms"
+                        value="4"
+                        prefix={<ShareAltOutlined />}
+                        valueStyle={{ color: '#08979C' }}
+                      />
+                    </Col>
+                    <Col span={12}>
+                      <Statistic
+                        title="Free Forever"
+                        value="100%"
+                        prefix={<StarOutlined />}
+                        valueStyle={{ color: '#FA8072' }}
+                      />
+                    </Col>
+                  </Row>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section style={{ padding: '64px 0', background: '#fdf6e3', textAlign: 'center', width: '100%' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
+          <Title level={2} style={{ marginBottom: '24px' }}>
+            Ready to Take Your Kennel to the Next Level?
+          </Title>
+          <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
+            Join thousands of dog professionals who trust our platform to manage their kennels and connect with puppy parents.
+          </Paragraph>
+          <Row justify="center" gutter={16}>
+            <Col>
               {user ? (
                 <Link href="/dashboard/kennels">
                   <Button 
                     type="primary" 
                     size="large" 
-                    icon={<HomeOutlined />}
-                    style={{ height: '50px', fontSize: '18px' }}
+                    style={{ 
+                      height: '48px', 
+                      padding: '0 32px', 
+                      fontSize: '18px', 
+                      background: '#FA8072', 
+                      borderColor: '#FA8072',
+                      fontWeight: '500'
+                    }}
                   >
-                    Start Managing Your Kennels
+                    Go to Kennel Management
                   </Button>
                 </Link>
               ) : (
@@ -312,139 +408,38 @@ const KennelManagementLandingPage: React.FC = () => {
                   <Button 
                     type="primary" 
                     size="large" 
-                    icon={<PlusOutlined />}
-                    style={{ height: '50px', fontSize: '18px' }}
+                    style={{ 
+                      height: '48px', 
+                      padding: '0 32px', 
+                      fontSize: '18px', 
+                      background: '#FA8072', 
+                      borderColor: '#FA8072',
+                      fontWeight: '500'
+                    }}
                   >
-                    Get Started Today
+                    Create Free Account
                   </Button>
                 </Link>
               )}
-            </div>
-          </Col>
-          <Col xs={24} lg={12}>
-            <Card
-              style={{
-                background: 'linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%)',
-                border: '1px solid #b7eb8f',
-                borderRadius: '16px',
-                padding: '40px'
-              }}
-            >
-              <Title level={3} style={{ textAlign: 'center', marginBottom: '24px' }}>
-                Kennel Management Features
-              </Title>
-              <Row gutter={[16, 16]}>
-                <Col span={12}>
-                  <Statistic
-                    title="Multiple Kennels"
-                    value="∞"
-                    prefix={<HomeOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="Announcement Types"
-                    value="4"
-                    prefix={<MessageOutlined />}
-                    valueStyle={{ color: '#1890ff' }}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="Social Platforms"
-                    value="4"
-                    prefix={<ShareAltOutlined />}
-                    valueStyle={{ color: '#722ed1' }}
-                  />
-                </Col>
-                <Col span={12}>
-                  <Statistic
-                    title="Free Forever"
-                    value="100%"
-                    prefix={<StarOutlined />}
-                    valueStyle={{ color: '#fa8c16' }}
-                  />
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      {/* Call to Action Section */}
-      <Card
-        style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          border: 'none',
-          borderRadius: '16px',
-          textAlign: 'center',
-          color: 'white',
-          padding: '60px 40px'
-        }}
-      >
-        <Title level={2} style={{ color: 'white', marginBottom: '16px' }}>
-          Ready to Take Your Kennel to the Next Level?
-        </Title>
-        <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: '18px', marginBottom: '32px' }}>
-          Join thousands of dog professionals who trust our platform to manage their kennels and connect with puppy parents.
-        </Paragraph>
-        <Space size="large">
-          {user ? (
-            <Link href="/dashboard/kennels">
-              <Button 
-                type="primary" 
-                size="large" 
-                icon={<ArrowRightOutlined />}
-                style={{ 
-                  height: '50px', 
-                  fontSize: '18px',
-                  background: 'white',
-                  color: '#667eea',
-                  borderColor: 'white',
-                  fontWeight: 'bold'
-                }}
-              >
-                Go to Kennel Management
-              </Button>
-            </Link>
-          ) : (
-            <Link href="/auth/signup">
-              <Button 
-                type="primary" 
-                size="large" 
-                icon={<PlusOutlined />}
-                style={{ 
-                  height: '50px', 
-                  fontSize: '18px',
-                  background: 'white',
-                  color: '#667eea',
-                  borderColor: 'white',
-                  fontWeight: 'bold'
-                }}
-              >
-                Create Free Account
-              </Button>
-            </Link>
-          )}
-          <Link href="/browse">
-            <Button 
-              size="large" 
-              icon={<EyeOutlined />}
-              style={{ 
-                height: '50px', 
-                fontSize: '18px',
-                background: 'transparent',
-                color: 'white',
-                borderColor: 'white',
-                fontWeight: 'bold'
-              }}
-            >
-              Explore Kennels
-            </Button>
-          </Link>
-        </Space>
-      </Card>
+            </Col>
+            <Col>
+              <Link href="/browse">
+                <Button 
+                  size="large" 
+                  style={{ 
+                    height: '48px', 
+                    padding: '0 32px', 
+                    fontSize: '18px',
+                    fontWeight: '500'
+                  }}
+                >
+                  Explore Kennels
+                </Button>
+              </Link>
+            </Col>
+          </Row>
+        </div>
+      </section>
     </div>
   );
 };
