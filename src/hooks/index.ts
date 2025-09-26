@@ -8,3 +8,5 @@ export { useAvailablePuppies } from './api/useAvailablePuppies';
 export { useMatchedPuppies } from './api/useMatchedPuppies';
 export { useMessages } from './api/useMessages';
 export { useMessaging } from './api/useMessaging';
+export { useKennels } from './useKennels';
+export { useUserData } from './useUserData';

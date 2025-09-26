@@ -4,7 +4,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import jwt from 'jsonwebtoken';
+import { verifyJWTEnhanced } from '@/lib';
 
 const dynamoClient = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -28,7 +28,7 @@ const DOGS_TABLE_NAME = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'breeding-app-photos';
 
 // Helper function to extract user ID from Cognito JWT token
-function getUserIdFromToken(request: NextRequest): string | null {
+async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -36,9 +36,9 @@ function getUserIdFromToken(request: NextRequest): string | null {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.decode(token) as any;
+    const decoded = await verifyJWTEnhanced(token);
     
-    return decoded?.sub || null;
+    return decoded.userId || null;
   } catch (error) {
     console.error('Error extracting user ID from token:', error);
     return null;
@@ -52,7 +52,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -85,7 +85,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await context.params;
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -185,7 +185,12 @@ export async function PUT(
         };
 
         await s3Client.send(new PutObjectCommand(uploadParams));
-        const photoUrl = `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
+        
+        // Use custom domain if available, otherwise fallback to S3 URL
+        const customDomain = process.env.NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN;
+        const photoUrl = customDomain 
+          ? `https://${customDomain}/${fileName}`
+          : `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
         addUpdate('photoUrl', photoUrl);
       } catch (uploadError) {
         console.error('Error uploading photo:', uploadError);
@@ -228,7 +233,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

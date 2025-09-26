@@ -21,8 +21,8 @@ import { ComposeMessage } from '@/features/messaging';
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
 
-// Adopter interface based on your user table structure
-interface AdopterUser {
+// Puppy Parent interface based on your user table structure
+interface PuppyParentUser {
   userId: string;
   name: string;
   displayName: string;
@@ -34,7 +34,7 @@ interface AdopterUser {
   bio?: string;
   profileImage?: string;
   verified: boolean;
-  userType: 'adopter' | 'both';
+  userType: 'puppy-parent' | 'both';
   accountStatus: 'active' | 'inactive' | 'pending';
   preferences: {
     notifications: {
@@ -48,7 +48,7 @@ interface AdopterUser {
       showLocation: boolean;
     };
   };
-  adopterInfo: {
+  puppyParentInfo: {
     housingType?: 'house' | 'apartment' | 'condo' | 'townhouse' | 'farm';
     yardSize?: 'none' | 'small' | 'medium' | 'large' | 'acreage';
     hasOtherPets: boolean;
@@ -70,24 +70,24 @@ interface AdopterUser {
 
 
 // SWR fetchers
-const fetcher = async (url: string): Promise<{ user: AdopterUser }> => {
+const fetcher = async (url: string): Promise<{ user: PuppyParentUser }> => {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Failed to fetch adopter profile');
+    throw new Error('Failed to fetch puppy parent profile');
   }
   return response.json();
 };
 
 
-const AdopterProfilePage: React.FC = () => {
+const PuppyParentProfilePage: React.FC = () => {
   const params = useParams();
-  const adopterId = params?.id as string;
+  const puppyParentId = params?.id as string;
   const [activeTab, setActiveTab] = useState("about");
   const [composeVisible, setComposeVisible] = useState(false);
 
-  // Fetch adopter data
-  const { data, error, isLoading } = useSWR<{ user: AdopterUser }>(
-    adopterId ? `/api/users/${adopterId}` : null,
+  // Fetch puppy parent data
+  const { data, error, isLoading } = useSWR<{ user: PuppyParentUser }>(
+    puppyParentId ? `/api/users/${puppyParentId}` : null,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -98,22 +98,27 @@ const AdopterProfilePage: React.FC = () => {
   // Use global auth for current user
   const { user: authUser, getToken } = useAuth();
 
-  const adopter = data?.user;
-  const isOwnProfile = authUser && adopter && authUser.userId === adopter.userId;
+  const puppyParent = data?.user;
+  const isOwnProfile = authUser && puppyParent && authUser.userId === puppyParent.userId;
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-    marginBottom: '16px'
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    marginBottom: '16px',
+    border: '1px solid #f1f5f9'
+  };
+
+  const getCardStyleWithPattern = (patternType: string): React.CSSProperties => {
+    return cardStyle;
   };
 
   // Helper functions
   const getExperienceBadgeColor = (level: string) => {
     switch (level) {
-      case 'first-time': return 'blue';
-      case 'some-experience': return 'orange';
-      case 'very-experienced': return 'green';
-      default: return 'default';
+      case 'first-time': return { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' };
+      case 'some-experience': return { backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' };
+      case 'very-experienced': return { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' };
+      default: return { backgroundColor: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' };
     }
   };
 
@@ -137,7 +142,8 @@ const AdopterProfilePage: React.FC = () => {
         margin: '0 auto', 
         padding: '16px',
         textAlign: 'center',
-        paddingTop: '100px'
+        paddingTop: '100px',
+        background: 'transparent'
       }}>
         <Spin 
           indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} 
@@ -147,18 +153,18 @@ const AdopterProfilePage: React.FC = () => {
   }
 
   // Error state
-  if (error || !adopter) {
+  if (error || !puppyParent) {
     return (
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px', background: 'transparent' }}>
         <Alert
           message="Profile Not Found"
-          description="The adopter profile you're looking for doesn't exist or couldn't be loaded."
+          description="The puppy parent profile you're looking for doesn't exist or couldn't be loaded."
           type="error"
           showIcon
           style={{ marginTop: '50px' }}
           action={
-            <Link href="/adopters">
-              <Button type="primary">Browse All Adopters</Button>
+            <Link href="/users">
+              <Button type="primary">Browse All Puppy Parents</Button>
             </Link>
           }
         />
@@ -167,19 +173,19 @@ const AdopterProfilePage: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '10px auto', padding: '16px' }}>
+    <div style={{ maxWidth: '1200px', margin: '10px auto', padding: '16px', background: 'transparent' }}>
       {/* Profile Header */}
       <ProfileHeader 
         user={{
-          userId: adopter.userId,
-          displayName: adopter.displayName,
-          name: adopter.name,
-          verified: adopter.verified,
-          profileImage: adopter.profileImage,
-          location: adopter.location,
-          lastActiveAt: adopter.lastActiveAt,
-          adopterInfo: { experienceLevel: adopter.adopterInfo.experienceLevel },
-          preferences: adopter.preferences,
+          userId: puppyParent.userId,
+          displayName: puppyParent.displayName,
+          name: puppyParent.name,
+          verified: puppyParent.verified,
+          profileImage: puppyParent.profileImage,
+          location: puppyParent.location,
+          lastActiveAt: puppyParent.lastActiveAt,
+          puppyParentInfo: { experienceLevel: puppyParent.puppyParentInfo.experienceLevel },
+          preferences: puppyParent.preferences,
         }}
         isOwnProfile={Boolean(isOwnProfile)}
         onMessageClick={() => setComposeVisible(true)}
@@ -189,42 +195,42 @@ const AdopterProfilePage: React.FC = () => {
         {/* Left Sidebar - Adopter Info */}
         <Col xs={24} lg={8}>
           {/* Quick Info */}
-          <Card title="At a Glance" style={cardStyle}>
+          <Card title="At a Glance" style={getCardStyleWithPattern('dots')}>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              {adopter.preferences?.privacy?.showLocation && adopter.location && (
+              {puppyParent.preferences?.privacy?.showLocation && puppyParent.location && (
                 <div>
                   <Space>
-                    <EnvironmentOutlined style={{ color: '#08979C' }} />
-                    <Text strong>{adopter.location}</Text>
+                    <EnvironmentOutlined style={{ color: '#7dd3fc' }} />
+                    <Text strong>{puppyParent.location}</Text>
                   </Space>
                 </div>
               )}
               
               <div>
                 <Space>
-                  <UserOutlined style={{ color: '#667eea' }} />
+                  <UserOutlined style={{ color: '#a5b4fc' }} />
                   <Text strong>
-                    {adopter.adopterInfo.experienceLevel?.replace('-', ' ')} owner
+                    {puppyParent.puppyParentInfo.experienceLevel?.replace('-', ' ')} owner
                   </Text>
                 </Space>
               </div>
 
               <div>
                 <Space>
-                  <HomeOutlined style={{ color: '#52c41a' }} />
+                  <HomeOutlined style={{ color: '#86efac' }} />
                   <Text strong>
-                    {adopter.adopterInfo.housingType} 
-                    {adopter.adopterInfo.yardSize && adopter.adopterInfo.yardSize !== 'none' && 
-                      ` with ${adopter.adopterInfo.yardSize} yard`
+                    {puppyParent.puppyParentInfo.housingType} 
+                    {puppyParent.puppyParentInfo.yardSize && puppyParent.puppyParentInfo.yardSize !== 'none' && 
+                      ` with ${puppyParent.puppyParentInfo.yardSize} yard`
                     }
                   </Text>
                 </Space>
               </div>
 
-              {adopter.adopterInfo.hasOtherPets && (
+              {puppyParent.puppyParentInfo.hasOtherPets && (
                 <div>
                   <Space>
-                    <TeamOutlined style={{ color: '#fa8c16' }} />
+                    <TeamOutlined style={{ color: '#fbbf24' }} />
                     <Text strong>Has other pets</Text>
                   </Space>
                 </div>
@@ -232,26 +238,26 @@ const AdopterProfilePage: React.FC = () => {
 
               <div>
                 <Space>
-                  <CalendarOutlined style={{ color: '#722ed1' }} />
-                  <Text strong>Member since {new Date(adopter.createdAt).getFullYear()}</Text>
+                  <CalendarOutlined style={{ color: '#c4b5fd' }} />
+                  <Text strong>Member since {new Date(puppyParent.createdAt).getFullYear()}</Text>
                 </Space>
               </div>
             </Space>
           </Card>
 
           {/* About */}
-          {adopter.bio && (
-            <Card title="About Me" style={cardStyle}>
-              <Paragraph style={{ fontSize: '14px' }}>{adopter.bio}</Paragraph>
+          {puppyParent.bio && (
+            <Card title="About Me" style={getCardStyleWithPattern('waves')}>
+              <Paragraph style={{ fontSize: '14px' }}>{puppyParent.bio}</Paragraph>
             </Card>
           )}
 
           {/* Contact Information */}
           <Card 
             title="Contact Information" 
-            style={cardStyle}
+            style={getCardStyleWithPattern('lines')}
             extra={isOwnProfile && (
-              <Link href={`/users/${adopter.userId}/edit`}>
+              <Link href={`/users/${puppyParent.userId}/edit`}>
                 <Button 
                   type="text" 
                   size="small" 
@@ -264,20 +270,20 @@ const AdopterProfilePage: React.FC = () => {
             )}
           >
             <Space direction="vertical" style={{ width: '100%' }}>
-              {adopter.preferences?.privacy?.showEmail && (
+              {puppyParent.preferences?.privacy?.showEmail && (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <MailOutlined style={{ color: '#08979C', marginRight: '8px' }} />
-                  <a href={`mailto:${adopter.email}`} style={{ textDecoration: 'none' }}>
-                    <Text>{adopter.email}</Text>
+                  <MailOutlined style={{ color: '#7dd3fc', marginRight: '8px' }} />
+                  <a href={`mailto:${puppyParent.email}`} style={{ textDecoration: 'none' }}>
+                    <Text>{puppyParent.email}</Text>
                   </a>
                 </div>
               )}
               
-              {adopter.preferences?.privacy?.showPhone && adopter.phone && (
+              {puppyParent.preferences?.privacy?.showPhone && puppyParent.phone && (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <PhoneOutlined style={{ color: '#08979C', marginRight: '8px' }} />
-                  <a href={`tel:${adopter.phone}`} style={{ textDecoration: 'none' }}>
-                    <Text>{adopter.phone}</Text>
+                  <PhoneOutlined style={{ color: '#7dd3fc', marginRight: '8px' }} />
+                  <a href={`tel:${puppyParent.phone}`} style={{ textDecoration: 'none' }}>
+                    <Text>{puppyParent.phone}</Text>
                   </a>
                 </div>
               )}
@@ -291,9 +297,9 @@ const AdopterProfilePage: React.FC = () => {
           {/* Living Situation */}
           <Card 
             title="Living Situation" 
-            style={cardStyle}
+            style={getCardStyleWithPattern('grid')}
             extra={isOwnProfile && (
-              <Link href={`/users/${adopter.userId}/edit`}>
+              <Link href={`/users/${puppyParent.userId}/edit`}>
                 <Button 
                   type="text" 
                   size="small" 
@@ -308,55 +314,59 @@ const AdopterProfilePage: React.FC = () => {
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <div>
                 <Text strong>Housing: </Text>
-                <Tag color="blue">
-                  {getHousingSizeIcon(adopter.adopterInfo.yardSize)} {adopter.adopterInfo.housingType}
+                <Tag style={{ backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>
+                  {getHousingSizeIcon(puppyParent.puppyParentInfo.yardSize)} {puppyParent.puppyParentInfo.housingType}
                 </Tag>
               </div>
               
               <div>
                 <Text strong>Yard Size: </Text>
-                <Tag color="green">{adopter.adopterInfo.yardSize || 'Not specified'}</Tag>
+                <Tag style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>{puppyParent.puppyParentInfo.yardSize || 'Not specified'}</Tag>
               </div>
               
               <div>
                 <Text strong>Other Pets: </Text>
-                <Tag color={adopter.adopterInfo.hasOtherPets ? 'orange' : 'default'}>
-                  {adopter.adopterInfo.hasOtherPets ? 'Yes' : 'No'}
+                <Tag style={{ 
+                  backgroundColor: puppyParent.puppyParentInfo.hasOtherPets ? '#fef3c7' : '#f3f4f6', 
+                  color: puppyParent.puppyParentInfo.hasOtherPets ? '#92400e' : '#6b7280',
+                  borderColor: puppyParent.puppyParentInfo.hasOtherPets ? '#fde68a' : '#e5e7eb'
+                }}>
+                  {puppyParent.puppyParentInfo.hasOtherPets ? 'Yes' : 'No'}
                 </Tag>
               </div>
 
               <div>
                 <Text strong>Experience Level: </Text>
-                <Tag color={getExperienceBadgeColor(adopter.adopterInfo.experienceLevel)}>
-                  {adopter.adopterInfo.experienceLevel?.replace('-', ' ')}
+                <Tag style={getExperienceBadgeColor(puppyParent.puppyParentInfo.experienceLevel)}>
+                  {puppyParent.puppyParentInfo.experienceLevel?.replace('-', ' ')}
                 </Tag>
               </div>
 
-              {adopter.adopterInfo.familySituation && (
+              {puppyParent.puppyParentInfo.familySituation && (
                 <div style={{ marginTop: '8px' }}>
                   <Text strong>Family Situation: </Text>
                   <br />
-                  <Text style={{ fontSize: '13px' }}>{adopter.adopterInfo.familySituation}</Text>
+                  <Text style={{ fontSize: '13px' }}>{puppyParent.puppyParentInfo.familySituation}</Text>
                 </div>
               )}
 
-              {adopter.adopterInfo.workSchedule && (
+              {puppyParent.puppyParentInfo.workSchedule && (
                 <div style={{ marginTop: '8px' }}>
                   <Text strong>Work Schedule: </Text>
                   <br />
-                  <Text style={{ fontSize: '13px' }}>{adopter.adopterInfo.workSchedule}</Text>
+                  <Text style={{ fontSize: '13px' }}>{puppyParent.puppyParentInfo.workSchedule}</Text>
                 </div>
               )}
             </Space>
           </Card>
 
           {/* Preferred Breeds */}
-          {adopter.adopterInfo.preferredBreeds && adopter.adopterInfo.preferredBreeds.length > 0 && (
+          {puppyParent.puppyParentInfo.preferredBreeds && puppyParent.puppyParentInfo.preferredBreeds.length > 0 && (
             <Card 
               title="Interested Breeds" 
-              style={cardStyle}
+              style={getCardStyleWithPattern('diagonal')}
               extra={isOwnProfile && (
-                <Link href={`/users/${adopter.userId}/edit`}>
+                <Link href={`/users/${puppyParent.userId}/edit`}>
                   <Button 
                     type="text" 
                     size="small" 
@@ -369,8 +379,13 @@ const AdopterProfilePage: React.FC = () => {
               )}
             >
               <Space wrap>
-                {adopter.adopterInfo.preferredBreeds.map(breed => (
-                  <Tag key={breed} color="purple" style={{ marginBottom: '4px' }}>
+                {puppyParent.puppyParentInfo.preferredBreeds.map(breed => (
+                  <Tag key={breed} style={{ 
+                    marginBottom: '4px', 
+                    backgroundColor: '#e6d7ff', 
+                    color: '#6b46c1', 
+                    borderColor: '#d1c4e9' 
+                  }}>
                     {breed}
                   </Tag>
                 ))}
@@ -381,9 +396,9 @@ const AdopterProfilePage: React.FC = () => {
           {/* Preferences */}
           <Card 
             title="Dog Preferences" 
-            style={cardStyle}
+            style={getCardStyleWithPattern('subtle')}
             extra={isOwnProfile && (
-              <Link href={`/users/${adopter.userId}/edit`}>
+              <Link href={`/users/${puppyParent.userId}/edit`}>
                 <Button 
                   type="text" 
                   size="small" 
@@ -396,24 +411,24 @@ const AdopterProfilePage: React.FC = () => {
             )}
           >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
-              {adopter.adopterInfo.agePreference && (
+              {puppyParent.puppyParentInfo.agePreference && (
                 <div>
                   <Text strong>Age Preference: </Text>
-                  <Tag color="blue">{adopter.adopterInfo.agePreference}</Tag>
+                  <Tag style={{ backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>{puppyParent.puppyParentInfo.agePreference}</Tag>
                 </div>
               )}
               
-              {adopter.adopterInfo.sizePreference && (
+              {puppyParent.puppyParentInfo.sizePreference && (
                 <div>
                   <Text strong>Size Preference: </Text>
-                  <Tag color="green">{adopter.adopterInfo.sizePreference}</Tag>
+                  <Tag style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>{puppyParent.puppyParentInfo.sizePreference}</Tag>
                 </div>
               )}
               
-              {adopter.adopterInfo.activityLevel && (
+              {puppyParent.puppyParentInfo.activityLevel && (
                 <div>
                   <Text strong>Activity Level: </Text>
-                  <Tag color="orange">{adopter.adopterInfo.activityLevel}</Tag>
+                  <Tag style={{ backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>{puppyParent.puppyParentInfo.activityLevel}</Tag>
                 </div>
               )}
             </Space>
@@ -430,11 +445,11 @@ const AdopterProfilePage: React.FC = () => {
             <TabPane tab="About & Preferences" key="about">
               <Row gutter={[16, 16]}>
                 {/* Previous Pet Experience */}
-                {adopter.adopterInfo.previousPets && adopter.adopterInfo.previousPets.length > 0 && (
+                {puppyParent.puppyParentInfo.previousPets && puppyParent.puppyParentInfo.previousPets.length > 0 && (
                   <Col span={24}>
-                    <Card title="Previous Pet Experience" style={cardStyle}>
+                    <Card title="Previous Pet Experience" style={getCardStyleWithPattern('dots')}>
                       <List
-                        dataSource={adopter.adopterInfo.previousPets}
+                        dataSource={puppyParent.puppyParentInfo.previousPets}
                         renderItem={(pet) => (
                           <List.Item>
                             <Text>• {pet}</Text>
@@ -447,12 +462,12 @@ const AdopterProfilePage: React.FC = () => {
                 )}
 
                 {/* Special Requirements */}
-                {adopter.adopterInfo.specialRequirements && adopter.adopterInfo.specialRequirements.length > 0 && (
+                {puppyParent.puppyParentInfo.specialRequirements && puppyParent.puppyParentInfo.specialRequirements.length > 0 && (
                   <Col span={24}>
-                    <Card title="Special Requirements" style={cardStyle}>
+                    <Card title="Special Requirements" style={getCardStyleWithPattern('lines')}>
                       <Space wrap>
-                        {adopter.adopterInfo.specialRequirements.map((req, index) => (
-                          <Tag key={index} color="cyan" icon={<SafetyOutlined />}>
+                        {puppyParent.puppyParentInfo.specialRequirements.map((req, index) => (
+                          <Tag key={index} style={{ backgroundColor: '#cffafe', color: '#0e7490', borderColor: '#a5f3fc' }} icon={<SafetyOutlined />}>
                             {req}
                           </Tag>
                         ))}
@@ -462,14 +477,14 @@ const AdopterProfilePage: React.FC = () => {
                 )}
 
                 {/* Deal Breakers */}
-                {adopter.adopterInfo.dealBreakers && adopter.adopterInfo.dealBreakers.length > 0 && (
+                {puppyParent.puppyParentInfo.dealBreakers && puppyParent.puppyParentInfo.dealBreakers.length > 0 && (
                   <Col span={24}>
-                    <Card title="Important Considerations" style={cardStyle}>
+                    <Card title="Important Considerations" style={getCardStyleWithPattern('waves')}>
                       <Alert
                         message="Things to Note"
                         description={
                           <List
-                            dataSource={adopter.adopterInfo.dealBreakers}
+                            dataSource={puppyParent.puppyParentInfo.dealBreakers}
                             renderItem={(item) => (
                               <List.Item style={{ padding: '4px 0' }}>
                                 <Text>• {item}</Text>
@@ -487,16 +502,16 @@ const AdopterProfilePage: React.FC = () => {
 
                 {/* Adoption Readiness */}
                 <Col span={24}>
-                  <Card title="Adoption Readiness" style={cardStyle}>
+                  <Card title="Adoption Readiness" style={getCardStyleWithPattern('grid')}>
                     <Row gutter={16}>
                       <Col xs={24} sm={8}>
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={adopter.adopterInfo.experienceLevel === 'very-experienced' ? 100 : 
-                                   adopter.adopterInfo.experienceLevel === 'some-experience' ? 75 : 50}
-                            strokeColor={adopter.adopterInfo.experienceLevel === 'very-experienced' ? '#52c41a' : 
-                                       adopter.adopterInfo.experienceLevel === 'some-experience' ? '#fa8c16' : '#1890ff'}
+                            percent={puppyParent.puppyParentInfo.experienceLevel === 'very-experienced' ? 100 : 
+                                   puppyParent.puppyParentInfo.experienceLevel === 'some-experience' ? 75 : 50}
+                            strokeColor={puppyParent.puppyParentInfo.experienceLevel === 'very-experienced' ? '#86efac' : 
+                                       puppyParent.puppyParentInfo.experienceLevel === 'some-experience' ? '#fbbf24' : '#a5b4fc'}
                             size={80}
                           />
                           <div style={{ marginTop: '8px' }}>
@@ -509,11 +524,11 @@ const AdopterProfilePage: React.FC = () => {
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={adopter.adopterInfo.yardSize === 'acreage' ? 100 :
-                                   adopter.adopterInfo.yardSize === 'large' ? 85 :
-                                   adopter.adopterInfo.yardSize === 'medium' ? 70 :
-                                   adopter.adopterInfo.yardSize === 'small' ? 50 : 25}
-                            strokeColor="#52c41a"
+                            percent={puppyParent.puppyParentInfo.yardSize === 'acreage' ? 100 :
+                                   puppyParent.puppyParentInfo.yardSize === 'large' ? 85 :
+                                   puppyParent.puppyParentInfo.yardSize === 'medium' ? 70 :
+                                   puppyParent.puppyParentInfo.yardSize === 'small' ? 50 : 25}
+                            strokeColor="#86efac"
                             size={80}
                           />
                           <div style={{ marginTop: '8px' }}>
@@ -526,8 +541,8 @@ const AdopterProfilePage: React.FC = () => {
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={adopter.verified ? 100 : 50}
-                            strokeColor={adopter.verified ? '#52c41a' : '#fa8c16'}
+                            percent={puppyParent.verified ? 100 : 50}
+                            strokeColor={puppyParent.verified ? '#86efac' : '#fbbf24'}
                             size={80}
                           />
                           <div style={{ marginTop: '8px' }}>
@@ -542,11 +557,11 @@ const AdopterProfilePage: React.FC = () => {
             </TabPane>
             
             <TabPane tab="Photos & Updates" key="photos">
-              <Card style={cardStyle}>
+              <Card style={getCardStyleWithPattern('diagonal')}>
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <Title level={4}>Photo Gallery</Title>
                   <Paragraph>
-                    Photos and updates from this adopter&apos;s journey will appear here.
+                    Photos and updates from this puppyParent&apos;s journey will appear here.
                   </Paragraph>
                   <Button type="primary" icon={<EyeOutlined />}>
                     View Gallery
@@ -556,11 +571,11 @@ const AdopterProfilePage: React.FC = () => {
             </TabPane>
 
             <TabPane tab="Adoption Journey" key="journey">
-              <Card style={cardStyle}>
+              <Card style={getCardStyleWithPattern('subtle')}>
                 <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <Title level={4}>Adoption Journey</Title>
                   <Paragraph>
-                    Track this adopter&apos;s progress and milestones in finding their perfect companion.
+                    Track this puppyParent&apos;s progress and milestones in finding their perfect companion.
                   </Paragraph>
                   <Space>
                     <Button type="primary">View Timeline</Button>
@@ -574,19 +589,19 @@ const AdopterProfilePage: React.FC = () => {
       </Row>
 
       {/* Quick Actions */}
-      <Card style={{ marginTop: '24px', ...cardStyle }}>
+      <Card style={{ marginTop: '24px', ...getCardStyleWithPattern('waves') }}>
         <Row gutter={[16, 16]} justify="center">
           {isOwnProfile ? (
             // Show profile management actions for own profile
             <>
               <Col xs={24} sm={8}>
-                <Link href={`/users/${adopter.userId}/edit`}>
+                <Link href={`/users/${puppyParent.userId}/edit`}>
                   <Button 
                     type="primary" 
                     block 
                     size="large"
                     icon={<EditOutlined />}
-                    style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                    style={{ background: '#86efac', borderColor: '#86efac', color: '#166534' }}
                   >
                     Edit Profile
                   </Button>
@@ -624,7 +639,7 @@ const AdopterProfilePage: React.FC = () => {
                   block 
                   size="large"
                   icon={<MessageOutlined />}
-                  style={{ background: '#667eea', borderColor: '#667eea' }}
+                  style={{ background: '#a5b4fc', borderColor: '#a5b4fc', color: '#3730a3' }}
                   onClick={() => setComposeVisible(true)}
                 >
                   Send Message
@@ -657,7 +672,7 @@ const AdopterProfilePage: React.FC = () => {
         visible={composeVisible}
         onClose={() => setComposeVisible(false)}
         loading={false}
-        defaultRecipientId={adopter.userId}
+        defaultRecipientId={puppyParent.userId}
         onSend={async (values, recipientName) => {
           const token = getToken();
           if (!token) return;
@@ -682,4 +697,4 @@ const AdopterProfilePage: React.FC = () => {
   );
 };
 
-export default AdopterProfilePage;
+export default PuppyParentProfilePage;

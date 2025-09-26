@@ -1,5 +1,5 @@
 // utils/enhanced-auth.ts
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 
 interface DecodedJWT {
@@ -107,10 +107,10 @@ export async function verifyJWTEnhanced(token: string): Promise<{ userId: string
 
         // Extract user information
         const userId = payload.sub;
-        const email = payload.email;
-        const name = payload.name || payload.email?.split('@')[0] || 'User';
+        const email = payload.email || payload.username || 'user@example.com'; // Fallback for email
+        const name = payload.name || payload.username || payload.email?.split('@')[0] || 'User';
 
-        if (!userId || !email) {
+        if (!userId) {
           reject(new Error('Token missing required user information'));
           return;
         }

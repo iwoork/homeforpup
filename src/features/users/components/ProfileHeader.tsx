@@ -15,7 +15,7 @@ export interface ProfileHeaderUser {
   profileImage?: string;
   location?: string;
   lastActiveAt?: string;
-  adopterInfo?: {
+  puppyParentInfo?: {
     experienceLevel?: 'first-time' | 'some-experience' | 'very-experienced';
   };
   preferences?: {
@@ -53,7 +53,7 @@ const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessag
       <div 
         style={{
           height: '250px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'transparent',
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -79,38 +79,36 @@ const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessag
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Title level={2} style={{ 
                       margin: 0, 
-                      color: 'white', 
-                      textShadow: '0 2px 4px rgba(0,0,0,0.5)' 
+                      color: '#1e293b'
                     }}>
                       {user.displayName || user.name}
                     </Title>
                     {user.verified && (
                       <Tooltip title="Verified User">
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '24px' }} />
+                        <CheckCircleOutlined style={{ color: '#8fbc8f', fontSize: '24px' }} />
                       </Tooltip>
                     )}
                   </div>
                   <Text style={{ 
-                    color: 'white', 
-                    textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                    color: '#64748b',
                     fontSize: '16px'
                   }}>
                     Looking for the perfect furry companion
                   </Text>
                   <br />
                   <Space style={{ marginTop: '8px' }}>
-                    {user.adopterInfo?.experienceLevel && (
-                      <Tag color="purple" style={{ fontSize: '12px' }}>
-                        {user.adopterInfo.experienceLevel.replace('-', ' ').toUpperCase()}
+                    {user.puppyParentInfo?.experienceLevel && (
+                      <Tag style={{ fontSize: '12px', backgroundColor: '#e6d7ff', color: '#6b46c1', borderColor: '#d1c4e9' }}>
+                        {user.puppyParentInfo.experienceLevel.replace('-', ' ').toUpperCase()}
                       </Tag>
                     )}
                     {user.preferences?.privacy?.showLocation && user.location && (
-                      <Tag icon={<EnvironmentOutlined />} style={{ fontSize: '12px' }}>
+                      <Tag icon={<EnvironmentOutlined />} style={{ fontSize: '12px', backgroundColor: '#e0f2fe', color: '#0369a1', borderColor: '#bae6fd' }}>
                         {user.location}
                       </Tag>
                     )}
                     {user.lastActiveAt && (
-                      <Tag style={{ fontSize: '12px' }}>
+                      <Tag style={{ fontSize: '12px', backgroundColor: '#f3f4f6', color: '#6b7280', borderColor: '#e5e7eb' }}>
                         {formatLastActive(user.lastActiveAt)}
                       </Tag>
                     )}
@@ -125,7 +123,7 @@ const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessag
                     <Button 
                       type="primary" 
                       size="large" 
-                      style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                      style={{ background: '#86efac', borderColor: '#86efac', color: '#166534' }}
                       icon={<EditOutlined />}
                     >
                       Edit Profile
@@ -136,7 +134,7 @@ const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessag
                     <Button 
                       type="primary" 
                       size="large" 
-                      style={{ background: '#667eea', borderColor: '#667eea' }}
+                      style={{ background: '#a5b4fc', borderColor: '#a5b4fc', color: '#3730a3' }}
                       icon={<MessageOutlined />}
                       onClick={onMessageClick}
                     >

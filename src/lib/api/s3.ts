@@ -9,6 +9,14 @@ const s3Client = new S3Client({
   } : undefined,
 });
 
+// Helper function to generate URLs with custom domain
+export const getS3Url = (key: string): string => {
+  const customDomain = process.env.NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN;
+  return customDomain 
+    ? `https://${customDomain}/${key}`
+    : `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.amazonaws.com/${key}`;
+};
+
 
 export const s3Operations = {
   async uploadFile(file: File, key: string): Promise<string> {
@@ -26,8 +34,8 @@ export const s3Operations = {
       });
 
       await s3Client.send(command);
-      const url = `https://${process.env.NEXT_PUBLIC_AWS_S3_BUCKET}.s3.amazonaws.com/${key}`;
-      return url;
+      
+      return getS3Url(key);
     } catch (error) {
       console.error('Error uploading file to S3:', error);
       throw error;

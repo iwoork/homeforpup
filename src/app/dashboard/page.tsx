@@ -15,7 +15,9 @@ import {
   message,
   Statistic,
   Empty,
-  Badge
+  Badge,
+  Progress,
+  Divider
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -26,12 +28,23 @@ import {
   MessageOutlined,
   TeamOutlined,
   SettingOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  TrophyOutlined,
+  StarOutlined,
+  CalendarOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  HomeOutlined,
+  // PawPrintOutlined, // This icon doesn't exist in antd, we'll use a different one
+  CrownOutlined,
+  GiftOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth, useDogs, useMatchedPuppies, useMessages } from '@/hooks';
+import { useAuth, useDogs, useMatchedPuppies, useMessages, useKennels } from '@/hooks';
 import { AddDogForm } from '@/components';
+import DogManagement from '@/components/dogs/DogManagement';
+import ProfileSwitchingOverlay from '@/components/ProfileSwitchingOverlay';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -40,10 +53,33 @@ dayjs.extend(relativeTime);
 
 const { Title, Text } = Typography;
 
+// Color schemes for different personas
+const PUPPY_PARENT_COLORS = {
+  primary: '#08979C', // Brand teal
+  secondary: '#52C41A', // Green for growth/nature
+  accent: '#FA8C16', // Orange for warmth/energy
+  background: '#F6FFED', // Light green background
+  card: '#FFFFFF',
+  text: '#262626',
+  textSecondary: '#8C8C8C'
+};
+
+const DOG_PROFESSIONAL_COLORS = {
+  primary: '#08979C', // Brand teal
+  secondary: '#722ED1', // Purple for premium/royalty
+  accent: '#EB2F96', // Pink for care/love
+  background: '#F9F0FF', // Light purple background
+  card: '#FFFFFF',
+  text: '#262626',
+  textSecondary: '#8C8C8C'
+};
+
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, effectiveUserType, canSwitchProfiles, activeProfileType, isSwitchingProfile, clearAllAuthData, getToken, refreshUserData } = useAuth();
+
   const { dogs, isLoading: dogsLoading, error: dogsError } = useDogs();
   const { matchedPuppies, isLoading: puppiesLoading, error: puppiesError } = useMatchedPuppies();
+  const { kennels, isLoading: kennelsLoading } = useKennels();
   const { threads, unreadCount, loading: messagesLoading } = useMessages({
     userId: user?.userId || '',
     userName: user?.name || '',
@@ -53,10 +89,10 @@ const Dashboard: React.FC = () => {
 
   // Force refresh auth state when dashboard mounts
   useEffect(() => {
-    console.log('🔄 Dashboard mounted');
+    // Dashboard mounted
   }, []);
 
-  const isLoading = dogsLoading || puppiesLoading || messagesLoading;
+  const isLoading = dogsLoading || puppiesLoading || messagesLoading || kennelsLoading;
   const error = dogsError || puppiesError;
 
   if (isLoading) {
@@ -72,41 +108,112 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const isBreeder = user?.userType === 'breeder' || user?.userType === 'both';
-  const isAdopter = user?.userType === 'adopter' || user?.userType === 'both';
+  // Determine user type for conditional rendering based on active profile
+  const isDogProfessional = effectiveUserType === 'dog-professional';
+  const isPuppyParent = effectiveUserType === 'puppy-parent';
+  
+  // Get color scheme based on user type
+  const colors = isDogProfessional ? DOG_PROFESSIONAL_COLORS : PUPPY_PARENT_COLORS;
+  
+  // Dashboard profile switching state
 
   return (
-    <div style={{ 
+    <div 
+      key={`dashboard-${effectiveUserType}-${activeProfileType}`}
+      style={{ 
       maxWidth: '1200px', 
       margin: '0 auto', 
-      padding: '32px 16px' 
-    }}>
-      {/* Header */}
+        padding: '32px 16px',
+        position: 'relative',
+        minHeight: '100vh'
+      }}>
+      {/* Profile Switching Overlay */}
+      <ProfileSwitchingOverlay 
+        isSwitching={isSwitchingProfile} 
+        targetProfile={activeProfileType} 
+      />
+      
+      {/* Hero Header */}
       <div style={{ 
         marginBottom: '32px',
-        background: 'linear-gradient(135deg, #f6ffed 0%, #f0f9ff 100%)',
-        padding: '24px',
-        borderRadius: '12px',
-        border: '1px solid #e6f7ff'
+        background: `linear-gradient(135deg, ${colors.background} 0%, ${colors.card} 100%)`,
+        padding: '32px',
+        borderRadius: '16px',
+        border: `2px solid ${colors.primary}20`,
+        boxShadow: `0 8px 32px ${colors.primary}15`,
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+        {/* Background Pattern */}
+        <div style={{
+          position: 'absolute',
+          top: '-50px',
+          right: '-50px',
+          width: '200px',
+          height: '200px',
+          background: `radial-gradient(circle, ${colors.primary}10 0%, transparent 70%)`,
+          borderRadius: '50%'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-30px',
+          left: '-30px',
+          width: '150px',
+          height: '150px',
+          background: `radial-gradient(circle, ${colors.secondary}10 0%, transparent 70%)`,
+          borderRadius: '50%'
+        }} />
+        
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
           <Avatar 
-            size={48} 
-            src={user?.profileImage} 
+            size={64} 
+            src={user?.profileImage || undefined} 
             icon={<UserOutlined />}
-            style={{ marginRight: '16px' }}
+            style={{ 
+              marginRight: '20px',
+              border: `3px solid ${colors.primary}`,
+              boxShadow: `0 4px 12px ${colors.primary}30`
+            }}
           />
         <div>
-            <Title level={1} style={{ color: '#08979C', margin: 0, fontSize: '28px' }}>
-              Welcome back, {user?.name || 'User'}!
+            <Title level={1} style={{ 
+              color: colors.primary, 
+              margin: 0, 
+              fontSize: '32px',
+              fontWeight: 'bold',
+              textShadow: `0 2px 4px ${colors.primary}20`
+            }}>
+              {isDogProfessional ? '🐕‍🦺' : '🐾'} Welcome back, {user?.name || 'User'}!
           </Title>
-          <Text style={{ color: '#595959', fontSize: '16px' }}>
-              {isBreeder && isAdopter 
-                ? "Manage your breeding program and discover new puppies."
-                : isBreeder 
-                ? "Manage your breeding program and connect with adopters."
-                : "Discover new puppies and connect with breeders."}
+            <Text style={{ 
+              color: colors.textSecondary, 
+              fontSize: '18px',
+              fontWeight: '500'
+            }}>
+              {canSwitchProfiles 
+                ? `Currently viewing as ${activeProfileType}. Switch profiles in the user menu to change your view.`
+                : isDogProfessional 
+                ? "Manage your dog care program and connect with puppy parents."
+                : "Discover new puppies and connect with dog professionals."}
           </Text>
+            
+            {/* Profile Type Badge */}
+            <div style={{ marginTop: '12px' }}>
+              <Tag 
+                color={isDogProfessional ? 'purple' : 'green'} 
+                style={{ 
+                  fontSize: '14px', 
+                  padding: '4px 12px',
+                  borderRadius: '20px',
+                  fontWeight: '600'
+                }}
+                icon={isDogProfessional ? <CrownOutlined /> : <HeartOutlined />}
+              >
+                {isDogProfessional ? 'Dog Professional' : 'Puppy Parent'}
+              </Tag>
+        </div>
+        
+            {/* Debug section removed */}
           </div>
         </div>
       </div>
@@ -126,68 +233,228 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Stats */}
       <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-        {isBreeder && (
-        <Col xs={24} sm={12} lg={6}>
-            <Card>
-            <Statistic
-                title="My Dogs"
-                value={dogs.length}
-                prefix={<TeamOutlined style={{ color: '#08979C' }} />}
-                valueStyle={{ color: '#08979C' }}
-            />
-          </Card>
-        </Col>
+        {isDogProfessional ? (
+          <>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
+                  border: `1px solid ${colors.primary}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.primary}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Dogs</span>}
+                  value={dogs.length}
+                  prefix={<TeamOutlined style={{ color: colors.primary }} />}
+                  valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Total registered dogs
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.secondary}05 100%)`,
+                  border: `1px solid ${colors.secondary}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.secondary}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Active Litters</span>}
+                  value={dogs.filter(dog => dog.breedingStatus === 'available').length}
+                  prefix={<HeartOutlined style={{ color: colors.secondary }} />}
+                  valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Currently breeding
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
+                  border: `1px solid ${colors.accent}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.accent}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Messages</span>}
+                  value={unreadCount}
+                  prefix={<MessageOutlined style={{ color: colors.accent }} />}
+                  valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Unread conversations
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
+                  border: `1px solid ${colors.accent}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.accent}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Kennels</span>}
+                  value={kennels?.length || 0}
+                  prefix={<HomeOutlined style={{ color: colors.accent }} />}
+                  valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Total kennels
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+          </>
+        ) : (
+          <>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
+                  border: `1px solid ${colors.primary}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.primary}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Matched Puppies</span>}
+                  value={Array.isArray(matchedPuppies) ? matchedPuppies.length : 0}
+                  prefix={<HeartOutlined style={{ color: colors.primary }} />}
+                  valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Based on your preferences
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.secondary}05 100%)`,
+                  border: `1px solid ${colors.secondary}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.secondary}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Favorites</span>}
+                  value={0}
+                  prefix={<HeartOutlined style={{ color: colors.secondary }} />}
+                  valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Saved puppies
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
+                  border: `1px solid ${colors.accent}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.accent}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Messages</span>}
+                  value={unreadCount}
+                  prefix={<MessageOutlined style={{ color: colors.accent }} />}
+                  valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Unread conversations
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <Card 
+                style={{ 
+                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
+                  border: `1px solid ${colors.primary}20`,
+                  borderRadius: '12px',
+                  boxShadow: `0 4px 16px ${colors.primary}10`
+                }}
+              >
+                <Statistic
+                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Profile Views</span>}
+                  value={0}
+                  prefix={<EyeOutlined style={{ color: colors.primary }} />}
+                  valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
+                />
+                <div style={{ marginTop: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    This month
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+          </>
         )}
-        {isBreeder && (
-        <Col xs={24} sm={12} lg={6}>
-            <Card>
-            <Statistic
-                title="Active Litters"
-                value={dogs.filter(dog => dog.breedingStatus === 'available').length}
-                prefix={<HeartOutlined style={{ color: '#FA8072' }} />}
-                valueStyle={{ color: '#FA8072' }}
-            />
-          </Card>
-        </Col>
-        )}
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Messages"
-              value={0}
-              prefix={<MessageOutlined style={{ color: '#52c41a' }} />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Profile Views"
-              value={0}
-              prefix={<EyeOutlined style={{ color: '#722ed1' }} />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
       </Row>
 
       {/* Main Content */}
       <Row gutter={[24, 24]}>
         {/* Left Column - Main Content */}
         <Col xs={24} lg={16}>
-          {/* Matched Puppies (for adopters) */}
-          {isAdopter && (
+          {/* Matched Puppies (for puppy parents) */}
+          {isPuppyParent && (
           <Card 
-              title={`Puppies Matched for You (${Array.isArray(matchedPuppies) ? matchedPuppies.length : 0})`}
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <HeartOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    Puppies Matched for You ({Array.isArray(matchedPuppies) ? matchedPuppies.length : 0})
+                  </span>
+                </div>
+              }
             extra={
                 <Link href="/browse">
-                  <Button type="link" icon={<ArrowRightOutlined />}>
+                  <Button 
+                    type="primary" 
+                    icon={<ArrowRightOutlined />}
+                    style={{ 
+                      background: colors.primary,
+                      borderColor: colors.primary,
+                      borderRadius: '8px'
+                    }}
+                  >
                     View All
                   </Button>
                 </Link>
               }
-              style={{ marginBottom: '24px' }}
+              style={{ 
+                marginBottom: '24px',
+                background: colors.card,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
             >
               {!matchedPuppies || !Array.isArray(matchedPuppies) || matchedPuppies.length === 0 ? (
                 <Empty
@@ -243,9 +510,9 @@ const Dashboard: React.FC = () => {
                           <Link href={`/dogs/${puppy.id}`} key="view">
                             <Button type="link" icon={<EyeOutlined />}>
                               View Details
-                            </Button>
+                              </Button>
                           </Link>,
-                          <Link href={`/breeders/${puppy.breederId}`} key="breeder">
+                          <Link href={`/breeders/${puppy.ownerId}`} key="breeder">
                             <Button type="link" icon={<TeamOutlined />}>
                               View Breeder
                               </Button>
@@ -262,7 +529,7 @@ const Dashboard: React.FC = () => {
                                   {puppy.gender}
                                 </Tag>
                               </Space>
-                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                                <Text type="secondary" style={{ fontSize: '12px' }}>
                                 {puppy.description.length > 100 
                                   ? `${puppy.description.substring(0, 100)}...` 
                                   : puppy.description
@@ -279,94 +546,201 @@ const Dashboard: React.FC = () => {
           </Card>
           )}
 
-          {/* My Dogs (for breeders) */}
-          {isBreeder && (
-          <Card 
-              title="My Dogs" 
-            extra={
-                <Button 
-                  type="link" 
-                  icon={<ArrowRightOutlined />}
-                  onClick={() => setAddDogModalVisible(true)}
-                >
-                  Add Dog
-                </Button>
+          {/* Dog Management (for breeders) */}
+          {isDogProfessional && user?.userId && (
+            <DogManagement userId={user.userId} />
+          )}
+
+          {/* Kennel Overview (for breeders) */}
+          {isDogProfessional && (
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <HomeOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    My Kennels ({kennels?.length || 0})
+                  </span>
+                </div>
               }
-              style={{ marginBottom: '24px' }}
+              extra={
+                <Link href="/dashboard/kennels">
+                  <Button 
+                    type="primary" 
+                    icon={<ArrowRightOutlined />}
+                    style={{ 
+                      background: colors.primary,
+                      borderColor: colors.primary,
+                      borderRadius: '8px'
+                    }}
+                  >
+                    Manage All
+                  </Button>
+                </Link>
+              }
+              style={{ 
+                marginBottom: '24px',
+                background: colors.card,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
             >
-              {dogs.length === 0 ? (
+              {!kennels || kennels.length === 0 ? (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="No dogs added yet"
+                  description="No kennels created yet"
                 >
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                    onClick={() => setAddDogModalVisible(true)}
-              >
-                    Add Your First Dog
-              </Button>
+                  <Link href="/dashboard/kennels">
+                    <Button type="primary" icon={<PlusOutlined />}>
+                      Create Your First Kennel
+                    </Button>
+                  </Link>
                 </Empty>
               ) : (
-              <List
-                  dataSource={dogs.slice(0, 3)}
-                renderItem={(dog) => (
-                  <List.Item
-                    actions={[
-                        <Link href={`/dogs/${dog.id}`} key="view">
-                          <Button type="link" icon={<EyeOutlined />}>
-                            View
-                          </Button>
-                        </Link>,
-                        <Button type="link" icon={<EditOutlined />} key="edit">
-                          Edit
-                        </Button>
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={
-                        <Avatar 
-                            size={48} 
-                          src={dog.photoUrl} 
-                          icon={<UserOutlined />}
-                          />
+                <Row gutter={[16, 16]}>
+                  {kennels.slice(0, 3).map((kennel) => (
+                    <Col xs={24} sm={12} md={8} key={kennel.id}>
+                      <Card
+                        hoverable
+                        size="small"
+                        cover={
+                          kennel.coverPhoto ? (
+                            <img
+                              alt={kennel.name}
+                              src={kennel.coverPhoto}
+                              style={{ height: '120px', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                height: '120px',
+                                background: `linear-gradient(135deg, ${colors.primary}20 0%, ${colors.secondary}20 100%)`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: colors.primary,
+                                fontSize: '24px',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              {kennel.name.charAt(0).toUpperCase()}
+                            </div>
+                          )
                         }
-                        title={dog.name}
-                      description={
-                          <Space>
-                            <Tag color="blue">{dog.breed}</Tag>
-                            <Tag color={dog.gender === 'male' ? 'blue' : 'pink'}>
-                              {dog.gender}
-                            </Tag>
-                            <Tag color={dog.breedingStatus === 'available' ? 'green' : 'orange'}>
-                              {dog.breedingStatus}
-                            </Tag>
-                        </Space>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+                        actions={[
+                          <Link href={`/kennels/${kennel.id}`} key="view">
+                            <Button type="link" icon={<EyeOutlined />} size="small">
+                              View
+                            </Button>
+                          </Link>,
+                          <Link href="/dashboard/kennels" key="manage">
+                            <Button type="link" icon={<SettingOutlined />} size="small">
+                              Manage
+                            </Button>
+                          </Link>
+                        ]}
+                      >
+                        <Card.Meta
+                          title={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Text strong style={{ fontSize: '14px' }}>{kennel.name}</Text>
+                              <Tag 
+                                color={kennel.isActive ? 'green' : 'red'}
+                              >
+                                {kennel.isActive ? 'Active' : 'Inactive'}
+                              </Tag>
+                            </div>
+                          }
+                          description={
+                            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                                {kennel.description?.substring(0, 60)}...
+                              </Text>
+                              {kennel.specialties && kennel.specialties.length > 0 && (
+                                <Space wrap>
+                                  {kennel.specialties.slice(0, 2).map((specialty, index) => (
+                                    <Tag key={index} color="blue">
+                                      {specialty}
+                                    </Tag>
+                                  ))}
+                                  {kennel.specialties.length > 2 && (
+                                    <Tag color="default">
+                                      +{kennel.specialties.length - 2} more
+                                    </Tag>
+                                  )}
+                                </Space>
+                              )}
+                            </Space>
+                          }
+                        />
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
               )}
-          </Card>
+            </Card>
           )}
 
       {/* Quick Actions */}
-          <Card title="Quick Actions">
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <GiftOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                <span style={{ color: colors.text, fontWeight: '600' }}>
+                  {isDogProfessional ? 'Breeder Actions' : 'Quick Actions'}
+                </span>
+              </div>
+            }
+            style={{ 
+              background: colors.card,
+              border: `1px solid ${colors.primary}20`,
+              borderRadius: '12px',
+              boxShadow: `0 4px 16px ${colors.primary}10`
+            }}
+          >
         <Row gutter={[16, 16]}>
-              {isBreeder && (
-                <Col xs={24} sm={12}>
-              <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />} 
-                    block
-                size="large" 
-                    onClick={() => setAddDogModalVisible(true)}
-                    style={{ height: '60px', fontSize: '16px' }}
-                  >
-                    Add New Dog
-                  </Button>
-                </Col>
+              {isDogProfessional && (
+                <>
+                  <Col xs={24} sm={12}>
+                    <Button 
+                      type="primary" 
+                      icon={<PlusOutlined />} 
+                      block
+                      size="large" 
+                      onClick={() => setAddDogModalVisible(true)}
+                      style={{ 
+                        height: '60px', 
+                        fontSize: '16px',
+                        background: colors.primary,
+                        borderColor: colors.primary,
+                        borderRadius: '8px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      Add New Dog
+                    </Button>
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    <Link href="/dashboard/kennels">
+                      <Button 
+                        icon={<HomeOutlined />} 
+                        block 
+                        size="large"
+                        style={{ 
+                          height: '60px', 
+                          fontSize: '16px',
+                          background: colors.secondary,
+                          borderColor: colors.secondary,
+                          color: 'white',
+                          borderRadius: '8px',
+                          fontWeight: '600'
+                        }}
+                      >
+                        Manage Kennels
+                      </Button>
+                    </Link>
+                  </Col>
+                </>
               )}
               <Col xs={24} sm={12}>
                 <Link href="/browse">
@@ -374,7 +748,15 @@ const Dashboard: React.FC = () => {
                     icon={<EyeOutlined />} 
                 block 
                     size="large"
-                    style={{ height: '60px', fontSize: '16px' }}
+                    style={{ 
+                      height: '60px', 
+                      fontSize: '16px',
+                      background: colors.secondary,
+                      borderColor: colors.secondary,
+                      color: 'white',
+                      borderRadius: '8px',
+                      fontWeight: '600'
+                    }}
                   >
                     Browse Puppies
               </Button>
@@ -386,7 +768,15 @@ const Dashboard: React.FC = () => {
                     icon={<MessageOutlined />} 
                     block
               size="large" 
-                    style={{ height: '60px', fontSize: '16px' }}
+                    style={{ 
+                      height: '60px', 
+                      fontSize: '16px',
+                      background: colors.accent,
+                      borderColor: colors.accent,
+                      color: 'white',
+                      borderRadius: '8px',
+                      fontWeight: '600'
+                    }}
                   >
                     View Messages
             </Button>
@@ -398,7 +788,15 @@ const Dashboard: React.FC = () => {
                     icon={<SettingOutlined />} 
                     block
                 size="large" 
-                    style={{ height: '60px', fontSize: '16px' }}
+                    style={{ 
+                      height: '60px', 
+                      fontSize: '16px',
+                      background: colors.primary,
+                      borderColor: colors.primary,
+                      color: 'white',
+                      borderRadius: '8px',
+                      fontWeight: '600'
+                    }}
                   >
                     Edit Profile
               </Button>
@@ -410,56 +808,160 @@ const Dashboard: React.FC = () => {
 
         {/* Right Column - Sidebar */}
         <Col xs={24} lg={8}>
-          {/* Quick Profile Actions */}
-          <Card title="Quick Actions" style={{ marginBottom: '24px' }}>
+          {/* Profile Summary */}
+          <Card 
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                <span style={{ color: colors.text, fontWeight: '600' }}>
+                  Profile Summary
+                </span>
+              </div>
+            }
+            style={{ 
+              marginBottom: '24px',
+              background: colors.card,
+              border: `1px solid ${colors.primary}20`,
+              borderRadius: '12px',
+              boxShadow: `0 4px 16px ${colors.primary}10`
+            }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <Avatar 
+                size={80} 
+                src={user?.profileImage || undefined} 
+                icon={<UserOutlined />}
+                style={{ 
+                  border: `3px solid ${colors.primary}`,
+                  boxShadow: `0 4px 12px ${colors.primary}30`
+                }}
+              />
+              <div style={{ marginTop: '12px' }}>
+                <Title level={4} style={{ color: colors.text, margin: 0 }}>
+                  {user?.name || 'User'}
+                </Title>
+                <Tag 
+                  color={isDogProfessional ? 'purple' : 'green'} 
+                  style={{ 
+                    fontSize: '12px', 
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontWeight: '600'
+                  }}
+                  icon={isDogProfessional ? <CrownOutlined /> : <HeartOutlined />}
+                >
+                  {isDogProfessional ? 'Dog Professional' : 'Puppy Parent'}
+                </Tag>
+              </div>
+            </div>
+            
             <Space direction="vertical" style={{ width: '100%' }}>
               <Link href={`/users/${user?.userId}/edit`}>
-                <Button type="primary" block icon={<EditOutlined />}>
+                <Button 
+                  type="primary" 
+                  block 
+                  icon={<EditOutlined />}
+                  style={{ 
+                    background: colors.primary,
+                    borderColor: colors.primary,
+                    borderRadius: '8px',
+                    fontWeight: '600'
+                  }}
+                >
                   Edit Profile
                 </Button>
               </Link>
               <Link href={`/users/${user?.userId}`}>
-                <Button block icon={<EyeOutlined />}>
+                <Button 
+                  block 
+                  icon={<EyeOutlined />}
+                  style={{ 
+                    background: colors.secondary,
+                    borderColor: colors.secondary,
+                    color: 'white',
+                    borderRadius: '8px',
+                    fontWeight: '600'
+                  }}
+                >
                   View Profile
                 </Button>
               </Link>
+              
+              <Divider style={{ margin: '16px 0' }} />
+              
               <div style={{ 
-                padding: '12px', 
-                background: '#f6f8fa', 
-                borderRadius: '6px',
-                marginTop: '8px'
+                padding: '16px', 
+                background: `${colors.primary}05`, 
+                borderRadius: '8px',
+                border: `1px solid ${colors.primary}20`
               }}>
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  <strong>Member since:</strong> {user?.createdAt ? dayjs(user.createdAt).format('MMM YYYY') : 'Recently joined'}
-                </Text>
-                <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  <strong>Location:</strong> {user?.location || 'Not specified'}
-                </Text>
+                <div style={{ marginBottom: '8px' }}>
+                  <Text type="secondary" style={{ fontSize: '12px', fontWeight: '600' }}>
+                    <CalendarOutlined style={{ marginRight: '4px' }} />
+                    Member since:
+                  </Text>
+                  <br />
+                  <Text style={{ fontSize: '14px', color: colors.text }}>
+                    {user?.createdAt ? dayjs(user.createdAt).format('MMM YYYY') : 'Recently joined'}
+                  </Text>
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: '12px', fontWeight: '600' }}>
+                    <HomeOutlined style={{ marginRight: '4px' }} />
+                    Location:
+                  </Text>
+                  <br />
+                  <Text style={{ fontSize: '14px', color: colors.text }}>
+                    {user?.location || 'Not specified'}
+                  </Text>
+                </div>
               </div>
             </Space>
-          </Card>
+      </Card>
 
           {/* Messages (for adopters) */}
-          {isAdopter && (
+          {isPuppyParent && (
             <Card 
               title={
-                <Space>
-                  <MessageOutlined />
-                  Messages
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MessageOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    Messages
+                  </span>
                   {unreadCount > 0 && (
-                    <Badge count={unreadCount} size="small" />
+                    <Badge 
+                      count={unreadCount} 
+                      size="small" 
+                      style={{ 
+                        background: colors.accent,
+                        boxShadow: `0 2px 4px ${colors.accent}30`
+                      }}
+                    />
                   )}
-                </Space>
+                </div>
               }
               extra={
                 <Link href="/dashboard/messages">
-                  <Button type="link" size="small">
+                  <Button 
+                    type="primary" 
+                    size="small"
+                    style={{ 
+                      background: colors.primary,
+                      borderColor: colors.primary,
+                      borderRadius: '6px'
+                    }}
+                  >
                     View All
                   </Button>
                 </Link>
               }
-              style={{ marginBottom: '24px' }}
+              style={{ 
+                marginBottom: '24px',
+                background: colors.card,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
             >
               {threads.length === 0 ? (
                 <Empty
@@ -474,28 +976,28 @@ const Dashboard: React.FC = () => {
                   </Link>
                 </Empty>
               ) : (
-            <List
+              <List
                   dataSource={threads.slice(0, 3)}
                   renderItem={(thread) => (
-                <List.Item 
+                  <List.Item
                       style={{ padding: '8px 0' }}
-                  actions={[
+                    actions={[
                         <Link href={`/dashboard/messages?thread=${thread.id}`} key="view">
                           <Button type="link" size="small">
                             View
                       </Button>
                         </Link>
-                  ]}
-                >
-                  <List.Item.Meta
-                        avatar={
-                          <Avatar 
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar 
                             size={32} 
                             src={thread.participantInfo?.[thread.participants.find(p => p !== user?.userId) || '']?.profileImage}
-                            icon={<UserOutlined />}
-                          />
-                        }
-                    title={
+                          icon={<UserOutlined />}
+                        />
+                      }
+                      title={
                           <Text 
                             strong={(thread.unreadCount[user?.userId || ''] || 0) > 0}
                             style={{ 
@@ -507,8 +1009,8 @@ const Dashboard: React.FC = () => {
                              thread.participantNames?.[thread.participants.find(p => p !== user?.userId) || ''] || 
                              'Unknown'}
                         </Text>
-                    }
-                    description={
+                      }
+                      description={
                           <Space direction="vertical" size="small">
                             <Text 
                               type="secondary" 
@@ -518,84 +1020,236 @@ const Dashboard: React.FC = () => {
                               }}
                             >
                               {thread.lastMessage?.content?.substring(0, 50)}...
-                            </Text>
+                          </Text>
                             <Text type="secondary" style={{ fontSize: '11px' }}>
                               {thread.lastMessage?.timestamp 
                                 ? dayjs(thread.lastMessage.timestamp).fromNow()
                                 : 'No messages'
                               }
-                            </Text>
-                      </Space>
-                    }
-                  />
-                </List.Item>
+                              </Text>
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
               )}
-            />
-              )}
-            </Card>
+          </Card>
           )}
 
           {/* Puppy Preferences (for adopters) */}
-          {isAdopter && (
-            <Card title="Your Puppy Preferences" style={{ marginBottom: '24px' }}>
+          {isPuppyParent && (
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <HeartOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    Your Puppy Preferences
+                  </span>
+                </div>
+              }
+              style={{ 
+                marginBottom: '24px',
+                background: colors.card,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
+            >
               {user?.adopterInfo?.preferredBreeds?.length ? (
                 <div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <Text strong>Preferred Breeds:</Text>
+                  <div style={{ marginBottom: '16px' }}>
+                    <Text strong style={{ color: colors.text, fontSize: '14px' }}>
+                      Preferred Breeds:
+                    </Text>
                     <br />
-                    <Space wrap>
+                    <Space wrap style={{ marginTop: '8px' }}>
                       {user.adopterInfo.preferredBreeds.map((breed: string) => (
-                        <Tag key={breed} color="blue">{breed}</Tag>
+                        <Tag 
+                          key={breed} 
+                          color="blue"
+                          style={{ 
+                            borderRadius: '12px',
+                            padding: '2px 8px',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {breed}
+                        </Tag>
                       ))}
                     </Space>
                   </div>
                   {user.adopterInfo.experienceLevel && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <Text strong>Experience Level:</Text>
+                    <div style={{ marginBottom: '16px' }}>
+                      <Text strong style={{ color: colors.text, fontSize: '14px' }}>
+                        Experience Level:
+                      </Text>
                       <br />
-                      <Text type="secondary" style={{ textTransform: 'capitalize' }}>
+                      <Text 
+                        type="secondary" 
+                        style={{ 
+                          textTransform: 'capitalize',
+                          fontSize: '13px',
+                          color: colors.textSecondary
+                        }}
+                      >
                         {user.adopterInfo.experienceLevel.replace('-', ' ')}
                       </Text>
                     </div>
                   )}
                   {user.adopterInfo.housingType && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <Text strong>Housing:</Text>
+                    <div style={{ marginBottom: '16px' }}>
+                      <Text strong style={{ color: colors.text, fontSize: '14px' }}>
+                        Housing:
+                      </Text>
                       <br />
-                      <Text type="secondary" style={{ textTransform: 'capitalize' }}>
+                      <Text 
+                        type="secondary" 
+                        style={{ 
+                          textTransform: 'capitalize',
+                          fontSize: '13px',
+                          color: colors.textSecondary
+                        }}
+                      >
                         {user.adopterInfo.housingType}
                       </Text>
                     </div>
                   )}
                   <Link href={`/users/${user?.userId}/edit`}>
-                    <Button type="link" size="small" block>
+                    <Button 
+                      type="primary" 
+                      size="small" 
+                      block
+                      style={{ 
+                        background: colors.primary,
+                        borderColor: colors.primary,
+                        borderRadius: '6px',
+                        fontWeight: '600'
+                      }}
+                    >
                       Update Preferences
                     </Button>
                   </Link>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center' }}>
-                  <Text type="secondary" style={{ display: 'block', marginBottom: '12px' }}>
-                    Set your puppy preferences to see personalized matches
-                  </Text>
+                  <div style={{ 
+                    padding: '20px', 
+                    background: `${colors.primary}05`, 
+                    borderRadius: '8px',
+                    border: `1px solid ${colors.primary}20`,
+                    marginBottom: '16px'
+                  }}>
+                    <HeartOutlined style={{ fontSize: '32px', color: colors.primary, marginBottom: '8px' }} />
+                    <Text type="secondary" style={{ display: 'block', marginBottom: '12px', fontSize: '14px' }}>
+                      Set your puppy preferences to see personalized matches
+                    </Text>
+                  </div>
                   <Link href={`/users/${user?.userId}/edit`}>
-                    <Button type="primary" size="small">
+                    <Button 
+                      type="primary" 
+                      size="small"
+                      style={{ 
+                        background: colors.primary,
+                        borderColor: colors.primary,
+                        borderRadius: '6px',
+                        fontWeight: '600'
+                      }}
+                    >
                       Set Preferences
-                </Button>
+                    </Button>
                   </Link>
                 </div>
               )}
             </Card>
           )}
 
-          {/* Recent Activity */}
-          <Card title="Recent Activity">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No recent activity"
-              style={{ padding: '20px 0' }}
-            />
-          </Card>
+          {/* Recent Activity / Breeder Stats */}
+          {isDogProfessional ? (
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <TrophyOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    Breeding Statistics
+                  </span>
+                </div>
+              }
+              style={{ 
+                background: colors.card,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
+            >
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-around', 
+                  marginBottom: '20px' 
+                }}>
+                  <div>
+                    <div style={{ 
+                      fontSize: '24px', 
+                      fontWeight: 'bold', 
+                      color: colors.primary,
+                      marginBottom: '4px'
+                    }}>
+                      {dogs.length}
+                    </div>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      Total Dogs
+                    </Text>
+                  </div>
+                  <div>
+                    <div style={{ 
+                      fontSize: '24px', 
+                      fontWeight: 'bold', 
+                      color: colors.secondary,
+                      marginBottom: '4px'
+                    }}>
+                      {dogs.filter(dog => dog.breedingStatus === 'available').length}
+                    </div>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      Active Litters
+                    </Text>
+                  </div>
+                </div>
+                <Progress 
+                  percent={Math.min((dogs.length / 10) * 100, 100)} 
+                  strokeColor={colors.primary}
+                  trailColor={`${colors.primary}20`}
+                  style={{ marginBottom: '12px' }}
+                />
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {dogs.length < 10 ? `${10 - dogs.length} more dogs to reach 10` : 'Great! You have 10+ dogs'}
+                </Text>
+              </div>
+            </Card>
+          ) : (
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <StarOutlined style={{ color: colors.primary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    Recent Activity
+                  </span>
+                </div>
+              }
+              style={{ 
+                background: colors.card,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
+            >
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No recent activity"
+                style={{ padding: '20px 0' }}
+              />
+            </Card>
+          )}
                     </Col>
                   </Row>
 

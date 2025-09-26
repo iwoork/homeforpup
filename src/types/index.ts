@@ -11,7 +11,7 @@ export interface User {
   firstName?: string; // Optional: First name
   lastName?: string; // Optional: Last name
   displayName?: string; // Optional: Public display name
-  userType: 'breeder' | 'adopter' | 'both'; // User type
+  userType: 'dog-professional' | 'puppy-parent' | 'both'; // User type
   phone?: string; // Optional: Phone number
   location?: string; // Location string (city, state)
   coordinates?: {
@@ -36,14 +36,14 @@ export interface User {
       showLocation: boolean;
     };
   };
-  breederInfo?: {
+  dogProfessionalInfo?: {
     kennelName?: string;
     license?: string;
     specialties?: string[];
     experience?: number;
     website?: string;
   };
-  adopterInfo?: {
+  puppyParentInfo?: {
     housingType?: 'house' | 'apartment' | 'condo';
     yardSize?: 'none' | 'small' | 'medium' | 'large';
     hasOtherPets?: boolean;
@@ -60,9 +60,67 @@ export interface User {
   lastActiveAt?: string; // Last login/activity
 }
 
+// Kennel interface for breeders
+export interface Kennel {
+  id: string;
+  ownerId: string; // User ID of the breeder who owns this kennel
+  name: string;
+  description?: string;
+  
+  // Enhanced address information
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  
+  // Contact information
+  website?: string;
+  phone?: string;
+  email?: string;
+  
+  // Business details
+  specialties: string[]; // Breeds this kennel specializes in
+  establishedDate?: string;
+  licenseNumber?: string;
+  businessType?: 'hobby' | 'commercial' | 'show' | 'working';
+  
+  // Visual content
+  photoUrl?: string;
+  coverPhoto?: string;
+  galleryPhotos?: string[];
+  
+  // Status and metadata
+  isActive: boolean;
+  isPublic: boolean; // Whether kennel profile is visible to public
+  
+  // Social and marketing
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    youtube?: string;
+  };
+  
+  // Statistics
+  totalLitters?: number;
+  totalDogs?: number;
+  averageLitterSize?: number;
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Dog {
   id: string;
-  breederId: string;
+  ownerId: string; // User ID of the breeder (for backward compatibility)
+  kennelId?: string; // Kennel ID - optional for backward compatibility
   name: string;
   breed: string;
   gender: 'male' | 'female';
@@ -85,6 +143,9 @@ export interface Dog {
   // Litter information (if this dog is a puppy)
   litterId?: string;
   litterPosition?: number; // Position in litter (1st born, 2nd born, etc.)
+  
+  // Dog type - parent or puppy
+  dogType: 'parent' | 'puppy';
   
   createdAt: string;
   updatedAt: string;
@@ -126,12 +187,62 @@ export interface Litter {
   updatedAt: string;
 }
 
+// Kennel Announcement interface
+export interface KennelAnnouncement {
+  id: string;
+  kennelId: string;
+  authorId: string; // User ID of the person who created the announcement
+  title: string;
+  content: string;
+  type: 'litter_available' | 'update' | 'blog' | 'event' | 'general';
+  
+  // Media content
+  photos?: string[];
+  videos?: string[];
+  
+  // Litter-specific fields (when type is 'litter_available')
+  litterId?: string;
+  breed?: string;
+  availablePuppies?: number;
+  priceRange?: {
+    min: number;
+    max: number;
+  };
+  
+  // Event-specific fields (when type is 'event')
+  eventDate?: string;
+  eventLocation?: string;
+  
+  // Publishing and visibility
+  isPublished: boolean;
+  isPinned: boolean; // Whether this announcement is pinned to the top
+  publishedAt?: string;
+  
+  // Engagement metrics
+  views?: number;
+  likes?: number;
+  shares?: number;
+  
+  // Tags for categorization
+  tags?: string[];
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============================================================================
 // BREEDER SPECIFIC TYPES
 // ============================================================================
 
 export interface Breeder extends User {
-  // Extended breeder-specific properties
+  // Extended dog professional-specific properties
+  dogProfessionalInfo?: {
+    kennelName?: string;
+    license?: string;
+    specialties?: string[];
+    experience?: number;
+    website?: string;
+  };
   businessName: string;
   state: string;
   city: string;
@@ -471,7 +582,7 @@ export interface AnnouncementFilters {
 // UTILITY TYPES
 // ============================================================================
 
-export type UserType = 'breeder' | 'adopter' | 'both';
+export type UserType = 'dog-professional' | 'puppy-parent' | 'both';
 export type MessageType = 'inquiry' | 'general' | 'business' | 'urgent';
 export type AnnouncementType = 'litter' | 'general' | 'health' | 'achievement' | 'event' | 'available';
 export type LitterStatus = 'planned' | 'expecting' | 'born' | 'weaning' | 'ready' | 'sold_out';

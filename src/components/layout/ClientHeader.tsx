@@ -1,20 +1,36 @@
 'use client';
 
-import React from 'react';
-import { Layout, Button, Dropdown, Avatar, Badge } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 
 const ClientHeader: React.FC = () => {
-  const { user, logout, login, isAuthenticated, loading, getToken } = useAuth();
+  const { 
+    user, 
+    logout, 
+    login, 
+    isAuthenticated, 
+    loading, 
+    getToken,
+    canSwitchProfiles,
+    activeProfileType,
+    switchProfileType,
+    effectiveUserType,
+    isSwitchingProfile
+  } = useAuth();
   const [isMobile, setIsMobile] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
+
   
   console.log('Header render - Auth state:', {
     user: user ? { userId: user.userId?.substring(0, 10) + '...', name: user.name, userType: user.userType } : null,
     isAuthenticated,
-    loading
+    loading,
+    canSwitchProfiles,
+    activeProfileType,
+    effectiveUserType
   });
 
   // Fetch unread message count
@@ -95,7 +111,8 @@ const ClientHeader: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const userMenuItems = [
+  // Create menu items as a function to ensure they re-render when state changes
+  const getUserMenuItems = React.useMemo(() => [
     {
       key: 'dashboard',
       icon: <DashboardOutlined />,
@@ -122,6 +139,48 @@ const ClientHeader: React.FC = () => {
         </Link>
       ),
     },
+    ...(isAuthenticated ? [
+      {
+        type: 'divider' as const,
+      },
+      {
+        key: 'switch-profile',
+        icon: <SwapOutlined />,
+        label: 'Switch Profile',
+        children: [
+          {
+            key: 'switch-to-adopter',
+            label: (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Puppy Parent Profile</span>
+                {activeProfileType === 'puppy-parent' && <span style={{ color: '#08979C' }}>✓</span>}
+              </div>
+            ),
+            onClick: () => {
+              if (!isSwitchingProfile) {
+                console.log('Switching to puppy parent profile');
+                switchProfileType('puppy-parent');
+              }
+            },
+          },
+          {
+            key: 'switch-to-dog-professional',
+            label: (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Dog Professional Profile</span>
+                {activeProfileType === 'dog-professional' && <span style={{ color: '#08979C' }}>✓</span>}
+              </div>
+            ),
+            onClick: () => {
+              if (!isSwitchingProfile) {
+                console.log('Switching to dog professional profile');
+                switchProfileType('dog-professional');
+              }
+            },
+          },
+        ],
+      },
+    ] : []),
     {
       type: 'divider' as const,
     },
@@ -131,7 +190,18 @@ const ClientHeader: React.FC = () => {
       label: 'Sign Out',
       onClick: logout,
     },
-  ];
+  ], [user?.userId, unreadCount, isAuthenticated, activeProfileType, switchProfileType, logout]);
+
+  const userMenuItems = getUserMenuItems;
+
+  // Debug logging (reduced)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Header state:', { 
+      menuItems: userMenuItems.length, 
+      isSwitchingProfile, 
+      disabledItems: 0 
+    });
+  }
 
   const headerStyle = {
     background: '#fff',
@@ -207,19 +277,34 @@ const ClientHeader: React.FC = () => {
               <Button type="text" style={{ padding: '4px', height: 'auto' }}>
                 <Avatar 
                   size={isMobile ? 'small' : 'default'}
-                  src={user?.profileImage}
+                  src={user?.profileImage || undefined}
                   icon={<UserOutlined />}
                   style={{ marginRight: '8px' }}
                 />
-                <span style={{ 
-                  fontSize: isMobile ? '12px' : '14px',
-                  maxWidth: isMobile ? '80px' : '120px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {user?.name || 'User'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span style={{ 
+                    fontSize: isMobile ? '12px' : '14px',
+                    maxWidth: isMobile ? '80px' : '120px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    {user?.name || 'User'}
+                  </span>
+                  {canSwitchProfiles && (
+                    <span style={{ 
+                      fontSize: '10px',
+                      color: '#08979C',
+                      textTransform: 'capitalize',
+                      fontWeight: '500'
+                    }}>
+                      {activeProfileType}
+                    </span>
+                  )}
+                </div>
               </Button>
             </Dropdown>
           </>

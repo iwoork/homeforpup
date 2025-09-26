@@ -46,6 +46,7 @@ const Footer: React.FC = () => {
               <Link href="/browse" style={linkStyle}>Browse Puppies</Link>
               <Link href="/breeders" style={linkStyle}>Find Breeders</Link>
               <Link href="/breeds" style={linkStyle}>Dog Breeds</Link>
+              <Link href="/kennel-management" style={{...linkStyle, color: '#1890ff', fontWeight: '500'}}>Kennel Management</Link>
               <Link href="/about" style={linkStyle}>About Us</Link>
             </Space>
           </Col>
@@ -57,6 +58,7 @@ const Footer: React.FC = () => {
               <Link href="/dashboard" style={linkStyle}>Dashboard</Link>
               <Link href="/dashboard/messages" style={linkStyle}>Messages</Link>
               <Link href="/users" style={linkStyle}>Find Users</Link>
+              <Link href="/kennel-management" style={linkStyle}>Kennel Management</Link>
             </Space>
           </Col>
         </Row>

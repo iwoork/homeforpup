@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 import { ProfilePhotoUpload, CoverPhotoUpload, PhotoUpload } from '@/components';
+import ProfileSwitchingOverlay from '@/components/ProfileSwitchingOverlay';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -36,7 +37,7 @@ interface UserProfile {
   coverPhoto?: string;
   galleryPhotos?: string[];
   verified: boolean;
-  userType: 'adopter' | 'breeder' | 'both';
+  userType: 'puppy-parent' | 'dog-professional' | 'both';
   preferences: {
     notifications: {
       email: boolean;
@@ -49,7 +50,7 @@ interface UserProfile {
       showLocation: boolean;
     };
   };
-  adopterInfo?: {
+  puppyParentInfo?: {
     housingType?: 'house' | 'apartment' | 'condo' | 'townhouse' | 'farm';
     yardSize?: 'none' | 'small' | 'medium' | 'large' | 'acreage';
     hasOtherPets: boolean;
@@ -64,7 +65,7 @@ interface UserProfile {
     dealBreakers?: string[];
     specialRequirements?: string[];
   };
-  breederInfo?: {
+  dogProfessionalInfo?: {
     kennelName?: string;
     license?: string;
     specialties: string[];
@@ -83,7 +84,7 @@ const COMMON_BREEDS = [
 
 // Component that uses the App context
 const EditProfilePage: React.FC = () => {
-  const { user, getToken } = useAuth();
+  const { user, getToken, effectiveUserType, canSwitchProfiles, activeProfileType, isSwitchingProfile } = useAuth();
   const router = useRouter();
   const params = useParams();
   const routeUserId = (params?.id as string) || '';
@@ -238,20 +239,20 @@ const EditProfilePage: React.FC = () => {
         privacyShowPhone: profile.preferences?.privacy?.showPhone,
         privacyShowLocation: profile.preferences?.privacy?.showLocation,
         // Adopter Info
-        housingType: profile.adopterInfo?.housingType,
-        yardSize: profile.adopterInfo?.yardSize,
-        hasOtherPets: profile.adopterInfo?.hasOtherPets,
-        experienceLevel: profile.adopterInfo?.experienceLevel,
-        agePreference: profile.adopterInfo?.agePreference,
-        sizePreference: profile.adopterInfo?.sizePreference,
-        activityLevel: profile.adopterInfo?.activityLevel,
-        familySituation: profile.adopterInfo?.familySituation,
-        workSchedule: profile.adopterInfo?.workSchedule,
+        housingType: profile.puppyParentInfo?.housingType,
+        yardSize: profile.puppyParentInfo?.yardSize,
+        hasOtherPets: profile.puppyParentInfo?.hasOtherPets,
+        experienceLevel: profile.puppyParentInfo?.experienceLevel,
+        agePreference: profile.puppyParentInfo?.agePreference,
+        sizePreference: profile.puppyParentInfo?.sizePreference,
+        activityLevel: profile.puppyParentInfo?.activityLevel,
+        familySituation: profile.puppyParentInfo?.familySituation,
+        workSchedule: profile.puppyParentInfo?.workSchedule,
         // Breeder Info
-        kennelName: profile.breederInfo?.kennelName,
-        license: profile.breederInfo?.license,
-        breederExperience: profile.breederInfo?.experience,
-        website: profile.breederInfo?.website,
+        kennelName: profile.dogProfessionalInfo?.kennelName,
+        license: profile.dogProfessionalInfo?.license,
+        dogProfessionalExperience: profile.dogProfessionalInfo?.experience,
+        website: profile.dogProfessionalInfo?.website,
       });
       
       // Set photo states
@@ -292,33 +293,33 @@ const EditProfilePage: React.FC = () => {
         }
       };
 
-      // Add adopter-specific data if user is adopter or both
-      if (profile.userType === 'adopter' || profile.userType === 'both') {
-        updateData.adopterInfo = {
+      // Add puppy parent-specific data if user is puppy parent or both
+      if (profile.userType === 'puppy-parent' || profile.userType === 'both') {
+        updateData.puppyParentInfo = {
           housingType: values.housingType,
           yardSize: values.yardSize,
           hasOtherPets: values.hasOtherPets,
           experienceLevel: values.experienceLevel,
-          preferredBreeds: profile.adopterInfo?.preferredBreeds || [],
+          preferredBreeds: profile.puppyParentInfo?.preferredBreeds || [],
           agePreference: values.agePreference,
           sizePreference: values.sizePreference,
           activityLevel: values.activityLevel,
           familySituation: values.familySituation,
           workSchedule: values.workSchedule,
-          previousPets: profile.adopterInfo?.previousPets || [],
-          dealBreakers: profile.adopterInfo?.dealBreakers || [],
-          specialRequirements: profile.adopterInfo?.specialRequirements || [],
+          previousPets: profile.puppyParentInfo?.previousPets || [],
+          dealBreakers: profile.puppyParentInfo?.dealBreakers || [],
+          specialRequirements: profile.puppyParentInfo?.specialRequirements || [],
         };
       }
 
-      // Add breeder-specific data if user is breeder or both
-      if (profile.userType === 'breeder' || profile.userType === 'both') {
-        updateData.breederInfo = {
+      // Add dog professional-specific data if user is dog professional or both
+      if (profile.userType === 'dog-professional' || profile.userType === 'both') {
+        updateData.dogProfessionalInfo = {
           kennelName: values.kennelName,
           license: values.license,
-          experience: values.breederExperience,
+          experience: values.dogProfessionalExperience,
           website: values.website,
-          specialties: profile?.breederInfo?.specialties || [],
+          specialties: profile?.dogProfessionalInfo?.specialties || [],
         };
       }
 
@@ -362,22 +363,22 @@ const EditProfilePage: React.FC = () => {
     // Create a local state update for immediate UI feedback
     let currentArray: string[] = [];
     
-    if (field === 'specialties' && profile.breederInfo) {
-      currentArray = profile.breederInfo.specialties;
-    } else if (profile.adopterInfo) {
-      // Handle specific adopter info fields
+    if (field === 'specialties' && profile.dogProfessionalInfo) {
+      currentArray = profile.dogProfessionalInfo.specialties;
+    } else if (profile.puppyParentInfo) {
+      // Handle specific puppy parent info fields
       switch (field) {
         case 'preferredBreeds':
-          currentArray = profile.adopterInfo.preferredBreeds || [];
+          currentArray = profile.puppyParentInfo.preferredBreeds || [];
           break;
         case 'previousPets':
-          currentArray = profile.adopterInfo.previousPets || [];
+          currentArray = profile.puppyParentInfo.previousPets || [];
           break;
         case 'dealBreakers':
-          currentArray = profile.adopterInfo.dealBreakers || [];
+          currentArray = profile.puppyParentInfo.dealBreakers || [];
           break;
         case 'specialRequirements':
-          currentArray = profile.adopterInfo.specialRequirements || [];
+          currentArray = profile.puppyParentInfo.specialRequirements || [];
           break;
         default:
           currentArray = [];
@@ -397,19 +398,19 @@ const EditProfilePage: React.FC = () => {
       if (!currentData) return currentData;
       
       const updatedData = { ...currentData };
-      if (field === 'specialties' && updatedData.user.breederInfo) {
+      if (field === 'specialties' && updatedData.user.dogProfessionalInfo) {
         updatedData.user = {
           ...updatedData.user,
-          breederInfo: {
-            ...updatedData.user.breederInfo,
+          dogProfessionalInfo: {
+            ...updatedData.user.dogProfessionalInfo,
             specialties: newArray
           }
         };
-      } else if (updatedData.user.adopterInfo) {
+      } else if (updatedData.user.puppyParentInfo) {
         updatedData.user = {
           ...updatedData.user,
-          adopterInfo: {
-            ...updatedData.user.adopterInfo,
+          puppyParentInfo: {
+            ...updatedData.user.puppyParentInfo,
             [field]: newArray
           }
         };
@@ -427,22 +428,22 @@ const EditProfilePage: React.FC = () => {
     // Get current array
     let currentArray: string[] = [];
     
-    if (field === 'specialties' && profile.breederInfo) {
-      currentArray = profile.breederInfo.specialties;
-    } else if (profile.adopterInfo) {
-      // Handle specific adopter info fields
+    if (field === 'specialties' && profile.dogProfessionalInfo) {
+      currentArray = profile.dogProfessionalInfo.specialties;
+    } else if (profile.puppyParentInfo) {
+      // Handle specific puppy parent info fields
       switch (field) {
         case 'preferredBreeds':
-          currentArray = profile.adopterInfo.preferredBreeds || [];
+          currentArray = profile.puppyParentInfo.preferredBreeds || [];
           break;
         case 'previousPets':
-          currentArray = profile.adopterInfo.previousPets || [];
+          currentArray = profile.puppyParentInfo.previousPets || [];
           break;
         case 'dealBreakers':
-          currentArray = profile.adopterInfo.dealBreakers || [];
+          currentArray = profile.puppyParentInfo.dealBreakers || [];
           break;
         case 'specialRequirements':
-          currentArray = profile.adopterInfo.specialRequirements || [];
+          currentArray = profile.puppyParentInfo.specialRequirements || [];
           break;
         default:
           currentArray = [];
@@ -457,19 +458,19 @@ const EditProfilePage: React.FC = () => {
       if (!currentData) return currentData;
       
       const updatedData = { ...currentData };
-      if (field === 'specialties' && updatedData.user.breederInfo) {
+      if (field === 'specialties' && updatedData.user.dogProfessionalInfo) {
         updatedData.user = {
           ...updatedData.user,
-          breederInfo: {
-            ...updatedData.user.breederInfo,
+          dogProfessionalInfo: {
+            ...updatedData.user.dogProfessionalInfo,
             specialties: newArray
           }
         };
-      } else if (updatedData.user.adopterInfo) {
+      } else if (updatedData.user.puppyParentInfo) {
         updatedData.user = {
           ...updatedData.user,
-          adopterInfo: {
-            ...updatedData.user.adopterInfo,
+          puppyParentInfo: {
+            ...updatedData.user.puppyParentInfo,
             [field]: newArray
           }
         };
@@ -593,6 +594,11 @@ const EditProfilePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '16px' }}>
+      {/* Profile Switching Overlay */}
+      <ProfileSwitchingOverlay 
+        isSwitching={isSwitchingProfile} 
+        targetProfile={activeProfileType} 
+      />
       {/* Header */}
       <Card style={{ marginBottom: '24px', ...cardStyle }}>
         <Row align="middle" justify="space-between">
@@ -620,9 +626,19 @@ const EditProfilePage: React.FC = () => {
                 <Text type="secondary">
                   Keep your information up to date to connect with the right matches
                 </Text>
+                {canSwitchProfiles && (
+                  <div style={{ marginTop: '4px' }}>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      Currently editing: <strong>{activeProfileType}</strong> profile
+                    </Text>
+                  </div>
+                )}
                 <br />
                 <Space style={{ marginTop: '8px' }}>
-                  <Tag color="blue">{profile.userType}</Tag>
+                  <Tag color="blue">{effectiveUserType}</Tag>
+                  {canSwitchProfiles && (
+                    <Tag color="orange">Profile Switcher Active</Tag>
+                  )}
                   {profile.verified && (
                     <Tag color="green" icon={<SafetyOutlined />}>Verified</Tag>
                   )}
@@ -833,8 +849,8 @@ const EditProfilePage: React.FC = () => {
           </TabPane>
 
           {/* Adopter Information */}
-          {(profile.userType === 'adopter' || profile.userType === 'both') && (
-            <TabPane tab="Adoption Preferences" key="adopter">
+          {(effectiveUserType === 'puppy-parent') && (
+            <TabPane tab="Adoption Preferences" key="puppy parent">
               <Row gutter={[16, 16]}>
                 <Col span={24}>
                   <Card title="Living Situation" style={cardStyle}>
@@ -996,7 +1012,7 @@ const EditProfilePage: React.FC = () => {
                       </Space.Compact>
                     </div>
                     <div>
-                      {profile.adopterInfo?.preferredBreeds?.map((breed, index) => (
+                      {profile.puppyParentInfo?.preferredBreeds?.map((breed, index) => (
                         <Tag
                           key={index}
                           closable
@@ -1006,7 +1022,7 @@ const EditProfilePage: React.FC = () => {
                           {breed}
                         </Tag>
                       ))}
-                      {(!profile.adopterInfo?.preferredBreeds || profile.adopterInfo.preferredBreeds.length === 0) && (
+                      {(!profile.puppyParentInfo?.preferredBreeds || profile.puppyParentInfo.preferredBreeds.length === 0) && (
                         <Text type="secondary">No preferred breeds selected</Text>
                       )}
                     </div>
@@ -1017,8 +1033,8 @@ const EditProfilePage: React.FC = () => {
           )}
 
           {/* Breeder Information */}
-          {(profile.userType === 'breeder' || profile.userType === 'both') && (
-            <TabPane tab="Breeder Information" key="breeder">
+          {(effectiveUserType === 'dog professional') && (
+            <TabPane tab="Breeder Information" key="dog professional">
               <Card title="Professional Information" style={cardStyle}>
                 <Row gutter={[16, 16]}>
                   <Col xs={24} sm={12}>
@@ -1045,7 +1061,7 @@ const EditProfilePage: React.FC = () => {
                   <Col xs={24} sm={12}>
                     <Form.Item
                       label="Years of Experience"
-                      name="breederExperience"
+                      name="dog professionalExperience"
                       rules={[
                         { type: 'number', min: 0, max: 50, message: 'Please enter a valid number of years' }
                       ]}
@@ -1095,7 +1111,7 @@ const EditProfilePage: React.FC = () => {
                     </Space.Compact>
                   </div>
                   <div>
-                    {profile.breederInfo?.specialties?.map((specialty, index) => (
+                    {profile.dogProfessionalInfo?.specialties?.map((specialty, index) => (
                       <Tag
                         key={index}
                         closable
@@ -1105,7 +1121,7 @@ const EditProfilePage: React.FC = () => {
                         {specialty}
                       </Tag>
                     ))}
-                    {(!profile.breederInfo?.specialties || profile.breederInfo.specialties.length === 0) && (
+                    {(!profile.dogProfessionalInfo?.specialties || profile.dogProfessionalInfo.specialties.length === 0) && (
                       <Text type="secondary">No specialties added</Text>
                     )}
                   </div>
@@ -1115,14 +1131,14 @@ const EditProfilePage: React.FC = () => {
           )}
 
           {/* Additional Information for Adopters */}
-          {(profile.userType === 'adopter' || profile.userType === 'both') && (
+          {(profile.userType === 'puppy-parent' || profile.userType === 'both') && (
             <TabPane tab="Additional Info" key="additional">
               <Row gutter={[16, 16]}>
                 {/* Previous Pets */}
                 <Col span={24}>
                   <Card title="Previous Pet Experience" style={cardStyle}>
                     <Paragraph type="secondary">
-                      Share your experience with previous pets to help breeders understand your background
+                      Share your experience with previous pets to help dog professionals understand your background
                     </Paragraph>
                     <div style={{ marginBottom: '16px' }}>
                       <Space.Compact style={{ width: '100%' }}>
@@ -1143,7 +1159,7 @@ const EditProfilePage: React.FC = () => {
                       </Space.Compact>
                     </div>
                     <div>
-                      {profile.adopterInfo?.previousPets?.map((pet, index) => (
+                      {profile.puppyParentInfo?.previousPets?.map((pet, index) => (
                         <Tag
                           key={index}
                           closable
@@ -1154,7 +1170,7 @@ const EditProfilePage: React.FC = () => {
                           {pet}
                         </Tag>
                       ))}
-                      {(!profile.adopterInfo?.previousPets || profile.adopterInfo.previousPets.length === 0) && (
+                      {(!profile.puppyParentInfo?.previousPets || profile.puppyParentInfo.previousPets.length === 0) && (
                         <Text type="secondary">No previous pets listed</Text>
                       )}
                     </div>
@@ -1186,7 +1202,7 @@ const EditProfilePage: React.FC = () => {
                       </Space.Compact>
                     </div>
                     <div>
-                      {profile.adopterInfo?.specialRequirements?.map((requirement, index) => (
+                      {profile.puppyParentInfo?.specialRequirements?.map((requirement, index) => (
                         <Tag
                           key={index}
                           closable
@@ -1198,7 +1214,7 @@ const EditProfilePage: React.FC = () => {
                           {requirement}
                         </Tag>
                       ))}
-                      {(!profile.adopterInfo?.specialRequirements || profile.adopterInfo.specialRequirements.length === 0) && (
+                      {(!profile.puppyParentInfo?.specialRequirements || profile.puppyParentInfo.specialRequirements.length === 0) && (
                         <Text type="secondary">No special requirements listed</Text>
                       )}
                     </div>
@@ -1209,7 +1225,7 @@ const EditProfilePage: React.FC = () => {
                 <Col span={24}>
                   <Card title="Important Considerations" style={cardStyle}>
                     <Paragraph type="secondary">
-                      Things that are important for breeders to know about your situation or preferences
+                      Things that are important for dog professionals to know about your situation or preferences
                     </Paragraph>
                     <div style={{ marginBottom: '16px' }}>
                       <Space.Compact style={{ width: '100%' }}>
@@ -1230,7 +1246,7 @@ const EditProfilePage: React.FC = () => {
                       </Space.Compact>
                     </div>
                     <div>
-                      {profile.adopterInfo?.dealBreakers?.map((dealBreaker, index) => (
+                      {profile.puppyParentInfo?.dealBreakers?.map((dealBreaker, index) => (
                         <Tag
                           key={index}
                           closable
@@ -1241,7 +1257,7 @@ const EditProfilePage: React.FC = () => {
                           {dealBreaker}
                         </Tag>
                       ))}
-                      {(!profile.adopterInfo?.dealBreakers || profile.adopterInfo.dealBreakers.length === 0) && (
+                      {(!profile.puppyParentInfo?.dealBreakers || profile.puppyParentInfo.dealBreakers.length === 0) && (
                         <Text type="secondary">No important considerations listed</Text>
                       )}
                     </div>
@@ -1397,10 +1413,10 @@ const EditProfilePage: React.FC = () => {
               <Space wrap>
                 <Tag color="blue">{profile.userType}</Tag>
                 {profile.verified && <Tag color="green">Verified</Tag>}
-                {(profile.userType === 'adopter' || profile.userType === 'both') && (
+                {(profile.userType === 'puppy-parent' || profile.userType === 'both') && (
                   <Tag color="purple">
                     {form.getFieldValue('experienceLevel')?.replace('-', ' ') || 
-                     profile.adopterInfo?.experienceLevel?.replace('-', ' ') || 'Experience level not set'}
+                     profile.puppyParentInfo?.experienceLevel?.replace('-', ' ') || 'Experience level not set'}
                   </Tag>
                 )}
               </Space>

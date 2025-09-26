@@ -184,16 +184,16 @@ const BreederProfilePage: React.FC = () => {
                 </a>
               </div>
               
-              {breeder.breederInfo?.website && (
+              {breeder.dogProfessionalInfo?.website && (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <GlobalOutlined style={{ color: '#08979C', marginRight: '8px' }} />
                   <a 
-                    href={`https://${breeder.breederInfo?.website}`} 
+                    href={`https://${breeder.dogProfessionalInfo?.website}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     style={{ textDecoration: 'none' }}
                   >
-                    <Text>{breeder.breederInfo?.website}</Text>
+                    <Text>{breeder.dogProfessionalInfo?.website}</Text>
                   </a>
                 </div>
               )}

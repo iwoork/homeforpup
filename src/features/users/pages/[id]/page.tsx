@@ -48,7 +48,7 @@ interface AdopterUser {
       showLocation: boolean;
     };
   };
-  adopterInfo: {
+  puppyParentInfo: {
     housingType?: 'house' | 'apartment' | 'condo' | 'townhouse' | 'farm';
     yardSize?: 'none' | 'small' | 'medium' | 'large' | 'acreage';
     hasOtherPets: boolean;
@@ -178,7 +178,7 @@ const AdopterProfilePage: React.FC = () => {
           profileImage: adopter.profileImage,
           location: adopter.location,
           lastActiveAt: adopter.lastActiveAt,
-          adopterInfo: { experienceLevel: adopter.adopterInfo.experienceLevel },
+          puppyParentInfo: { experienceLevel: adopter.puppyParentInfo.experienceLevel },
           preferences: adopter.preferences,
         }}
         isOwnProfile={Boolean(isOwnProfile)}
@@ -204,7 +204,7 @@ const AdopterProfilePage: React.FC = () => {
                 <Space>
                   <UserOutlined style={{ color: '#667eea' }} />
                   <Text strong>
-                    {adopter.adopterInfo.experienceLevel?.replace('-', ' ')} owner
+                    {adopter.puppyParentInfo.experienceLevel?.replace('-', ' ')} owner
                   </Text>
                 </Space>
               </div>
@@ -213,15 +213,15 @@ const AdopterProfilePage: React.FC = () => {
                 <Space>
                   <HomeOutlined style={{ color: '#52c41a' }} />
                   <Text strong>
-                    {adopter.adopterInfo.housingType} 
-                    {adopter.adopterInfo.yardSize && adopter.adopterInfo.yardSize !== 'none' && 
-                      ` with ${adopter.adopterInfo.yardSize} yard`
+                    {adopter.puppyParentInfo.housingType} 
+                    {adopter.puppyParentInfo.yardSize && adopter.puppyParentInfo.yardSize !== 'none' && 
+                      ` with ${adopter.puppyParentInfo.yardSize} yard`
                     }
                   </Text>
                 </Space>
               </div>
 
-              {adopter.adopterInfo.hasOtherPets && (
+              {adopter.puppyParentInfo.hasOtherPets && (
                 <div>
                   <Space>
                     <TeamOutlined style={{ color: '#fa8c16' }} />
@@ -309,49 +309,49 @@ const AdopterProfilePage: React.FC = () => {
               <div>
                 <Text strong>Housing: </Text>
                 <Tag color="blue">
-                  {getHousingSizeIcon(adopter.adopterInfo.yardSize)} {adopter.adopterInfo.housingType}
+                  {getHousingSizeIcon(adopter.puppyParentInfo.yardSize)} {adopter.puppyParentInfo.housingType}
                 </Tag>
               </div>
               
               <div>
                 <Text strong>Yard Size: </Text>
-                <Tag color="green">{adopter.adopterInfo.yardSize || 'Not specified'}</Tag>
+                <Tag color="green">{adopter.puppyParentInfo.yardSize || 'Not specified'}</Tag>
               </div>
               
               <div>
                 <Text strong>Other Pets: </Text>
-                <Tag color={adopter.adopterInfo.hasOtherPets ? 'orange' : 'default'}>
-                  {adopter.adopterInfo.hasOtherPets ? 'Yes' : 'No'}
+                <Tag color={adopter.puppyParentInfo.hasOtherPets ? 'orange' : 'default'}>
+                  {adopter.puppyParentInfo.hasOtherPets ? 'Yes' : 'No'}
                 </Tag>
               </div>
 
               <div>
                 <Text strong>Experience Level: </Text>
-                <Tag color={getExperienceBadgeColor(adopter.adopterInfo.experienceLevel)}>
-                  {adopter.adopterInfo.experienceLevel?.replace('-', ' ')}
+                <Tag color={getExperienceBadgeColor(adopter.puppyParentInfo.experienceLevel)}>
+                  {adopter.puppyParentInfo.experienceLevel?.replace('-', ' ')}
                 </Tag>
               </div>
 
-              {adopter.adopterInfo.familySituation && (
+              {adopter.puppyParentInfo.familySituation && (
                 <div style={{ marginTop: '8px' }}>
                   <Text strong>Family Situation: </Text>
                   <br />
-                  <Text style={{ fontSize: '13px' }}>{adopter.adopterInfo.familySituation}</Text>
+                  <Text style={{ fontSize: '13px' }}>{adopter.puppyParentInfo.familySituation}</Text>
                 </div>
               )}
 
-              {adopter.adopterInfo.workSchedule && (
+              {adopter.puppyParentInfo.workSchedule && (
                 <div style={{ marginTop: '8px' }}>
                   <Text strong>Work Schedule: </Text>
                   <br />
-                  <Text style={{ fontSize: '13px' }}>{adopter.adopterInfo.workSchedule}</Text>
+                  <Text style={{ fontSize: '13px' }}>{adopter.puppyParentInfo.workSchedule}</Text>
                 </div>
               )}
             </Space>
           </Card>
 
           {/* Preferred Breeds */}
-          {adopter.adopterInfo.preferredBreeds && adopter.adopterInfo.preferredBreeds.length > 0 && (
+          {adopter.puppyParentInfo.preferredBreeds && adopter.puppyParentInfo.preferredBreeds.length > 0 && (
             <Card 
               title="Interested Breeds" 
               style={cardStyle}
@@ -369,7 +369,7 @@ const AdopterProfilePage: React.FC = () => {
               )}
             >
               <Space wrap>
-                {adopter.adopterInfo.preferredBreeds.map(breed => (
+                {adopter.puppyParentInfo.preferredBreeds.map(breed => (
                   <Tag key={breed} color="purple" style={{ marginBottom: '4px' }}>
                     {breed}
                   </Tag>
@@ -396,24 +396,24 @@ const AdopterProfilePage: React.FC = () => {
             )}
           >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
-              {adopter.adopterInfo.agePreference && (
+              {adopter.puppyParentInfo.agePreference && (
                 <div>
                   <Text strong>Age Preference: </Text>
-                  <Tag color="blue">{adopter.adopterInfo.agePreference}</Tag>
+                  <Tag color="blue">{adopter.puppyParentInfo.agePreference}</Tag>
                 </div>
               )}
               
-              {adopter.adopterInfo.sizePreference && (
+              {adopter.puppyParentInfo.sizePreference && (
                 <div>
                   <Text strong>Size Preference: </Text>
-                  <Tag color="green">{adopter.adopterInfo.sizePreference}</Tag>
+                  <Tag color="green">{adopter.puppyParentInfo.sizePreference}</Tag>
                 </div>
               )}
               
-              {adopter.adopterInfo.activityLevel && (
+              {adopter.puppyParentInfo.activityLevel && (
                 <div>
                   <Text strong>Activity Level: </Text>
-                  <Tag color="orange">{adopter.adopterInfo.activityLevel}</Tag>
+                  <Tag color="orange">{adopter.puppyParentInfo.activityLevel}</Tag>
                 </div>
               )}
             </Space>
@@ -430,11 +430,11 @@ const AdopterProfilePage: React.FC = () => {
             <TabPane tab="About & Preferences" key="about">
               <Row gutter={[16, 16]}>
                 {/* Previous Pet Experience */}
-                {adopter.adopterInfo.previousPets && adopter.adopterInfo.previousPets.length > 0 && (
+                {adopter.puppyParentInfo.previousPets && adopter.puppyParentInfo.previousPets.length > 0 && (
                   <Col span={24}>
                     <Card title="Previous Pet Experience" style={cardStyle}>
                       <List
-                        dataSource={adopter.adopterInfo.previousPets}
+                        dataSource={adopter.puppyParentInfo.previousPets}
                         renderItem={(pet) => (
                           <List.Item>
                             <Text>• {pet}</Text>
@@ -447,11 +447,11 @@ const AdopterProfilePage: React.FC = () => {
                 )}
 
                 {/* Special Requirements */}
-                {adopter.adopterInfo.specialRequirements && adopter.adopterInfo.specialRequirements.length > 0 && (
+                {adopter.puppyParentInfo.specialRequirements && adopter.puppyParentInfo.specialRequirements.length > 0 && (
                   <Col span={24}>
                     <Card title="Special Requirements" style={cardStyle}>
                       <Space wrap>
-                        {adopter.adopterInfo.specialRequirements.map((req, index) => (
+                        {adopter.puppyParentInfo.specialRequirements.map((req, index) => (
                           <Tag key={index} color="cyan" icon={<SafetyOutlined />}>
                             {req}
                           </Tag>
@@ -462,14 +462,14 @@ const AdopterProfilePage: React.FC = () => {
                 )}
 
                 {/* Deal Breakers */}
-                {adopter.adopterInfo.dealBreakers && adopter.adopterInfo.dealBreakers.length > 0 && (
+                {adopter.puppyParentInfo.dealBreakers && adopter.puppyParentInfo.dealBreakers.length > 0 && (
                   <Col span={24}>
                     <Card title="Important Considerations" style={cardStyle}>
                       <Alert
                         message="Things to Note"
                         description={
                           <List
-                            dataSource={adopter.adopterInfo.dealBreakers}
+                            dataSource={adopter.puppyParentInfo.dealBreakers}
                             renderItem={(item) => (
                               <List.Item style={{ padding: '4px 0' }}>
                                 <Text>• {item}</Text>
@@ -493,10 +493,10 @@ const AdopterProfilePage: React.FC = () => {
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={adopter.adopterInfo.experienceLevel === 'very-experienced' ? 100 : 
-                                   adopter.adopterInfo.experienceLevel === 'some-experience' ? 75 : 50}
-                            strokeColor={adopter.adopterInfo.experienceLevel === 'very-experienced' ? '#52c41a' : 
-                                       adopter.adopterInfo.experienceLevel === 'some-experience' ? '#fa8c16' : '#1890ff'}
+                            percent={adopter.puppyParentInfo.experienceLevel === 'very-experienced' ? 100 : 
+                                   adopter.puppyParentInfo.experienceLevel === 'some-experience' ? 75 : 50}
+                            strokeColor={adopter.puppyParentInfo.experienceLevel === 'very-experienced' ? '#52c41a' : 
+                                       adopter.puppyParentInfo.experienceLevel === 'some-experience' ? '#fa8c16' : '#1890ff'}
                             size={80}
                           />
                           <div style={{ marginTop: '8px' }}>
@@ -509,10 +509,10 @@ const AdopterProfilePage: React.FC = () => {
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={adopter.adopterInfo.yardSize === 'acreage' ? 100 :
-                                   adopter.adopterInfo.yardSize === 'large' ? 85 :
-                                   adopter.adopterInfo.yardSize === 'medium' ? 70 :
-                                   adopter.adopterInfo.yardSize === 'small' ? 50 : 25}
+                            percent={adopter.puppyParentInfo.yardSize === 'acreage' ? 100 :
+                                   adopter.puppyParentInfo.yardSize === 'large' ? 85 :
+                                   adopter.puppyParentInfo.yardSize === 'medium' ? 70 :
+                                   adopter.puppyParentInfo.yardSize === 'small' ? 50 : 25}
                             strokeColor="#52c41a"
                             size={80}
                           />

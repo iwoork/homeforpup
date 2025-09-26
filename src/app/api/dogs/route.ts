@@ -1,10 +1,10 @@
 // app/api/dogs/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import jwt from 'jsonwebtoken';
+import { verifyJWTEnhanced } from '@/lib';
 
 // Initialize DynamoDB client
 const dynamoClient = new DynamoDBClient({
@@ -32,6 +32,7 @@ const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'breeding-app-photos';
 interface DogData {
   id: string;
   ownerId: string;
+  kennelId?: string;
   name: string;
   breed: string;
   gender: 'male' | 'female';
@@ -40,6 +41,10 @@ interface DogData {
   color: string;
   breedingStatus: 'available' | 'retired' | 'not_ready';
   healthStatus: 'excellent' | 'good' | 'fair' | 'poor';
+  dogType: 'parent' | 'puppy';
+  sireId?: string;
+  damId?: string;
+  description?: string;
   registrationNumber?: string;
   microchipNumber?: string;
   notes?: string;
@@ -49,7 +54,7 @@ interface DogData {
 }
 
 // Helper function to extract user ID from Cognito JWT token
-function getUserIdFromToken(request: NextRequest): string | null {
+async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -57,10 +62,9 @@ function getUserIdFromToken(request: NextRequest): string | null {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.decode(token) as any;
+    const decoded = await verifyJWTEnhanced(token);
     
-    // Cognito tokens contain the user ID in the 'sub' field
-    return decoded?.sub || null;
+    return decoded.userId || null;
   } catch (error) {
     console.error('Error extracting user ID from token:', error);
     return null;
@@ -70,21 +74,20 @@ function getUserIdFromToken(request: NextRequest): string | null {
 // GET /api/dogs - Get all dogs for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const params = {
       TableName: DOGS_TABLE_NAME,
-      KeyConditionExpression: 'ownerId = :ownerId',
+      FilterExpression: 'ownerId = :ownerId',
       ExpressionAttributeValues: {
         ':ownerId': userId,
       },
-      ScanIndexForward: false, // Sort by sort key in descending order (newest first)
     };
 
-    const result = await docClient.send(new QueryCommand(params));
+    const result = await docClient.send(new ScanCommand(params));
     
     return NextResponse.json(result.Items || []);
   } catch (error) {
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
 // POST /api/dogs - Create a new dog
 export async function POST(request: NextRequest) {
   try {
-    const userId = getUserIdFromToken(request);
+    const userId = await getUserIdFromToken(request);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -129,6 +132,10 @@ export async function POST(request: NextRequest) {
       registrationNumber: (formData.get('registrationNumber') as string)?.trim() || undefined,
       microchipNumber: (formData.get('microchipNumber') as string)?.trim() || undefined,
       notes: (formData.get('notes') as string)?.trim() || undefined,
+      kennelId: (formData.get('kennelId') as string)?.trim() || undefined,
+      dogType: (formData.get('dogType') as 'parent' | 'puppy') || 'parent',
+      sireId: (formData.get('sireId') as string)?.trim() || undefined,
+      damId: (formData.get('damId') as string)?.trim() || undefined,
     };
 
     // Parse weight if provided
@@ -166,7 +173,12 @@ export async function POST(request: NextRequest) {
         };
 
         await s3Client.send(new PutObjectCommand(uploadParams));
-        photoUrl = `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
+        
+        // Use custom domain if available, otherwise fallback to S3 URL
+        const customDomain = process.env.NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN;
+        photoUrl = customDomain 
+          ? `https://${customDomain}/${fileName}`
+          : `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
       } catch (uploadError) {
         console.error('Error uploading photo:', uploadError);
         return NextResponse.json({ error: 'Failed to upload photo' }, { status: 500 });

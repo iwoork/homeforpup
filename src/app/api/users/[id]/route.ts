@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '@/lib';
+import { verifyJWTEnhanced } from '../../../../lib/utils/enhanced-auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -183,6 +183,15 @@ export async function GET(
 
     // Type assertion with runtime validation
     const userItem = result.Item as DatabaseUserItem;
+    
+    console.log('User data from database:', {
+      userId: userItem.userId,
+      userType: userItem.userType,
+      name: userItem.name
+    });
+    
+    // Also log the full user item to see what's actually in the database
+    console.log('Full user item from database:', JSON.stringify(userItem, null, 2));
     
     // Validate required fields exist
     if (!userItem.userId || !userItem.email || !userItem.accountStatus) {
