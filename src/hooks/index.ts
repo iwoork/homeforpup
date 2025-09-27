@@ -10,3 +10,5 @@ export { useMessages } from './api/useMessages';
 export { useMessaging } from './api/useMessaging';
 export { useKennels } from './useKennels';
 export { useUserData } from './useUserData';
+export { useWebSocket } from './useWebSocket';
+export { useWebSocketMessages } from './useWebSocketMessages';
