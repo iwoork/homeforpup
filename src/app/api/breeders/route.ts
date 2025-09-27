@@ -66,6 +66,7 @@ interface TransformedBreeder {
   name: string;
   businessName: string;
   location: string;
+  country: string;
   state: string;
   city: string;
   zipCode: string;
@@ -131,6 +132,7 @@ const transformBreeder = (item: BreederItem, userLat?: number, userLon?: number)
     name: item.name,
     businessName: item.business_name,
     location: item.location,
+    country: item.country,
     state: item.state,
     city: item.city,
     zipCode: item.zip_code,
@@ -185,6 +187,7 @@ export async function GET(request: NextRequest) {
     // Search and filter parameters
     const search = searchParams.get('search');
     const breed = searchParams.get('breed');
+    const country = searchParams.get('country') || 'Canada'; // Default to Canada
     const state = searchParams.get('state');
     const verified = searchParams.get('verified') === 'true';
     const shipping = searchParams.get('shipping') === 'true';
@@ -205,7 +208,7 @@ export async function GET(request: NextRequest) {
     const userLon = searchParams.get('userLon') ? parseFloat(searchParams.get('userLon')!) : undefined;
 
     console.log('Breeders API Request params:', { 
-      search, breed, state, verified, shipping, availablePuppies, 
+      search, breed, country, state, verified, shipping, availablePuppies, 
       minRating, minExperience, maxExperience, page, limit, sortBy 
     });
 
@@ -222,6 +225,13 @@ export async function GET(request: NextRequest) {
     filterExpressions.push('#active = :active');
     expressionAttributeNames['#active'] = 'active';
     expressionAttributeValues[':active'] = 'True';
+
+    // Country filter
+    if (country) {
+      filterExpressions.push('#country = :country');
+      expressionAttributeNames['#country'] = 'country';
+      expressionAttributeValues[':country'] = country;
+    }
 
     // State filter using GSI if available
     if (state) {
@@ -354,10 +364,15 @@ export async function GET(request: NextRequest) {
     });
 
     // Extract filter options from all breeders for frontend
-    const availableStates = [...new Set(allTransformedBreeders.map(b => b.state))].sort();
-    const availableBreeds = [...new Set(allTransformedBreeders.flatMap(b => b.breeds))].sort();
-    const availableCertifications = [...new Set(allTransformedBreeders.flatMap(b => b.certifications))].sort();
-    const availableSpecialties = [...new Set(allTransformedBreeders.flatMap(b => b.specialties))].sort();
+    // Filter by country first, then extract states
+    const countryFilteredBreeders = country ? 
+      allTransformedBreeders.filter(b => b.country === country) : 
+      allTransformedBreeders;
+    
+    const availableStates = [...new Set(countryFilteredBreeders.map(b => b.state))].sort();
+    const availableBreeds = [...new Set(countryFilteredBreeders.flatMap(b => b.breeds))].sort();
+    const availableCertifications = [...new Set(countryFilteredBreeders.flatMap(b => b.certifications))].sort();
+    const availableSpecialties = [...new Set(countryFilteredBreeders.flatMap(b => b.specialties))].sort();
 
     return NextResponse.json({
       breeders: paginatedBreeders,

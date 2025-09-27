@@ -33,6 +33,7 @@ interface Breeder {
   name: string;
   businessName: string;
   location: string;
+  country: string;
   state: string;
   city: string;
   zipCode: string;
@@ -125,6 +126,7 @@ const BreederDirectoryPage: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedBreed, setSelectedBreed] = useState('');
   const [filters, setFilters] = useState({
+    country: 'Canada', // Default to Canada
     states: [] as string[],
     verified: false,
     shipping: false,
@@ -169,6 +171,7 @@ const BreederDirectoryPage: React.FC = () => {
     
     if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
     if (selectedBreed) params.append('breed', selectedBreed);
+    if (filters.country) params.append('country', filters.country);
     if (filters.states.length > 0) params.append('state', filters.states[0]); // For simplicity, use first state
     if (filters.verified) params.append('verified', 'true');
     if (filters.shipping) params.append('shipping', 'true');
@@ -204,7 +207,7 @@ const BreederDirectoryPage: React.FC = () => {
 
   // Check if any filters are active
   const hasActiveFilters = debouncedSearchTerm !== '' || selectedBreed !== '' || 
-                          filters.states.length > 0 || filters.verified || 
+                          filters.country !== 'Canada' || filters.states.length > 0 || filters.verified || 
                           filters.shipping || filters.availablePuppies || 
                           filters.minRating > 0 || filters.experienceRange[0] > 0 || 
                           filters.experienceRange[1] < 25;
@@ -215,6 +218,7 @@ const BreederDirectoryPage: React.FC = () => {
     setDebouncedSearchTerm('');
     setSelectedBreed('');
     setFilters({
+      country: 'Canada', // Reset to Canada default
       states: [],
       verified: false,
       shipping: false,
@@ -352,7 +356,7 @@ const BreederDirectoryPage: React.FC = () => {
                 <div>
                   <EnvironmentOutlined style={{ color: '#08979C', marginRight: '6px' }} />
                   <Text style={{ fontSize: '13px' }}>
-                    {breeder.location}
+                    {breeder.city}, {breeder.state}, {breeder.country}
                     {breeder.distance && ` (${breeder.distance} mi)`}
                   </Text>
                 </div>
@@ -654,6 +658,20 @@ const BreederDirectoryPage: React.FC = () => {
                 allowClear
                 size="large"
               />
+            </div>
+
+            {/* Country Filter */}
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong>Country</Text>
+              <Select
+                style={{ width: '100%', marginTop: '8px' }}
+                placeholder="Select country"
+                value={filters.country}
+                onChange={(value) => setFilters(prev => ({ ...prev, country: value }))}
+              >
+                <Option value="Canada">🇨🇦 Canada</Option>
+                <Option value="USA">🇺🇸 United States</Option>
+              </Select>
             </div>
 
             {/* Breed Filter */}
