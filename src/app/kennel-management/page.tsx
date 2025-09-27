@@ -43,6 +43,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
+import StructuredData from '@/components/StructuredData';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -65,6 +66,34 @@ const cardStyle: React.CSSProperties = {
 
 const KennelManagementLandingPage: React.FC = () => {
   const { user } = useAuth();
+
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'HomeForPup Kennel Management',
+    description: 'Professional kennel management platform for dog professionals to manage kennels, track dogs, and connect with puppy parents.',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web Browser',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      description: 'Free kennel management platform'
+    },
+    featureList: [
+      'Multiple Kennel Management',
+      'Parent Dog Management', 
+      'Announcement System',
+      'Photo & Media Management',
+      'Social Media Integration',
+      'Professional Tools'
+    ],
+    provider: {
+      '@type': 'Organization',
+      name: 'HomeForPup',
+      url: 'https://homeforpup.com'
+    }
+  };
 
   const features = [
     {
@@ -135,6 +164,7 @@ const KennelManagementLandingPage: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', width: '100%' }}>
+      <StructuredData data={structuredData} />
       {/* Hero Section */}
       <section style={heroStyle}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
