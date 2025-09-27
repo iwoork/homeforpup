@@ -5,6 +5,7 @@ import { useState, useCallback, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Message, MessageThread, MessageFilters } from '@/types';
 import { useAuth } from '@/hooks';
+import { isTokenExpired } from '@/lib/utils/auth';
 
 // Type definition for compose message form
 interface ComposeMessageFormValues {
@@ -41,12 +42,17 @@ interface UseMessagesReturn {
   refreshThreads: () => void;
 }
 
-// API fetcher function with authentication
+// API fetcher function with authentication and token expiration check
 const createFetcher = (getToken: () => Promise<string | null>) => {
   return async (url: string) => {
     const token = await getToken();
     if (!token) {
       throw new Error('No authentication token available');
+    }
+
+    // Check if token is expired before making the request
+    if (isTokenExpired(token)) {
+      throw new Error('Authentication token has expired');
     }
 
     const response = await fetch(url, {
@@ -58,6 +64,12 @@ const createFetcher = (getToken: () => Promise<string | null>) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Handle token expiration from server
+      if (response.status === 401 && errorData.code === 'TOKEN_EXPIRED') {
+        throw new Error('Authentication token has expired');
+      }
+      
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
@@ -65,12 +77,17 @@ const createFetcher = (getToken: () => Promise<string | null>) => {
   };
 };
 
-// API request function with authentication
+// API request function with authentication and token expiration check
 const createApiRequest = (getToken: () => Promise<string | null>) => {
   return async (url: string, options: RequestInit = {}) => {
     const token = await getToken();
     if (!token) {
       throw new Error('No authentication token available');
+    }
+
+    // Check if token is expired before making the request
+    if (isTokenExpired(token)) {
+      throw new Error('Authentication token has expired');
     }
 
     const response = await fetch(url, {
@@ -84,6 +101,12 @@ const createApiRequest = (getToken: () => Promise<string | null>) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Handle token expiration from server
+      if (response.status === 401 && errorData.code === 'TOKEN_EXPIRED') {
+        throw new Error('Authentication token has expired');
+      }
+      
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 

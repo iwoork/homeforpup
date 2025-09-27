@@ -13,6 +13,7 @@ interface UseAuthReturn {
   error: string | null;
   isAuthenticated: boolean;
   getToken: () => string | null;
+  refreshToken: () => Promise<boolean>;
   syncUser: (userData?: Partial<User>, providedToken?: string) => Promise<User | null>;
   updateUser: (updates: Partial<User>) => Promise<User | null>;
 }
@@ -46,6 +47,24 @@ export const useAuth = (): UseAuthReturn => {
     }
 
     return null;
+  }, [oidcAuth]);
+
+  // Method to refresh the token if needed
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    if (!oidcAuth?.user) {
+      console.warn('No user to refresh token for');
+      return false;
+    }
+
+    try {
+      console.log('Attempting to refresh token...');
+      await oidcAuth.signinSilent();
+      console.log('Token refresh successful');
+      return true;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return false;
+    }
   }, [oidcAuth]);
 
   // Method to sync user data with DynamoDB
@@ -292,6 +311,7 @@ export const useAuth = (): UseAuthReturn => {
       error: error || 'Authentication context not available',
       isAuthenticated: false,
       getToken: () => null,
+      refreshToken: async () => false,
       syncUser: async () => null,
       updateUser: async () => null,
     };
@@ -305,6 +325,7 @@ export const useAuth = (): UseAuthReturn => {
     error,
     isAuthenticated: oidcAuth.isAuthenticated,
     getToken,
+    refreshToken,
     syncUser,
     updateUser,
   };

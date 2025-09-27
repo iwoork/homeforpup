@@ -37,6 +37,9 @@ export async function verifyJWT(token: string): Promise<{ userId: string; name: 
     // Check if token is expired
     const now = Math.floor(Date.now() / 1000);
     if (payload.exp && payload.exp <= now) {
+      const expiredTime = new Date(payload.exp * 1000).toISOString();
+      const currentTime = new Date().toISOString();
+      console.warn(`Token expired at ${expiredTime}, current time: ${currentTime}`);
       throw new Error('Token has expired');
     }
 
@@ -96,5 +99,36 @@ export function decodeJWTUnsafe(token: string): { userId: string; name: string; 
   } catch (error) {
     console.error('Token decode failed:', error);
     throw new Error('Failed to decode token');
+  }
+}
+
+// Check if token is expired without throwing
+export function isTokenExpired(token: string): boolean {
+  try {
+    const decoded = jwt.decode(token) as CognitoJWTPayload;
+    if (!decoded || !decoded.exp) {
+      return true; // Consider invalid tokens as expired
+    }
+    
+    const now = Math.floor(Date.now() / 1000);
+    return decoded.exp <= now;
+  } catch (error) {
+    console.error('Error checking token expiration:', error);
+    return true; // Consider error cases as expired
+  }
+}
+
+// Get token expiration time
+export function getTokenExpiration(token: string): Date | null {
+  try {
+    const decoded = jwt.decode(token) as CognitoJWTPayload;
+    if (!decoded || !decoded.exp) {
+      return null;
+    }
+    
+    return new Date(decoded.exp * 1000);
+  } catch (error) {
+    console.error('Error getting token expiration:', error);
+    return null;
   }
 }

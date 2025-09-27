@@ -81,8 +81,13 @@ export async function GET(request: NextRequest) {
       console.log('JWT verification successful for user:', userId.substring(0, 10) + '...');
     } catch (verificationError) {
       console.error('JWT verification failed:', verificationError);
+      
+      // Check if it's specifically an expiration error
+      const isExpired = verificationError instanceof Error && verificationError.message.includes('expired');
+      
       return NextResponse.json({ 
-        error: 'Invalid authentication token',
+        error: isExpired ? 'Authentication token has expired' : 'Invalid authentication token',
+        code: isExpired ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN',
         details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
       }, { status: 401 });
     }
