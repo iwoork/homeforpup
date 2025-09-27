@@ -6,12 +6,12 @@ interface User {
   userId: string;
   name: string;
   displayName?: string;
-  userType: 'dog-professional' | 'puppy-parent' | 'both';
+  userType: 'breeder' | 'puppy-parent' | 'both';
   puppyParentInfo?: {
     location?: string;
     bio?: string;
   };
-  dogProfessionalInfo?: {
+  breederInfo?: {
     businessName?: string;
     location?: string;
     bio?: string;
@@ -52,24 +52,24 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const displayName = user.displayName || user.name;
   const isPuppyParent = user.userType === 'puppy-parent' || user.userType === 'both';
-  const isDogProfessional = user.userType === 'dog-professional' || user.userType === 'both';
+  const isDogProfessional = user.userType === 'breeder' || user.userType === 'both';
   
   let title = `${displayName}`;
   let description = `View ${displayName}'s profile on HomeForPup.`;
   
   if (isPuppyParent && isDogProfessional) {
     title = `${displayName} - Puppy Parent & Dog Professional`;
-    description = `Connect with ${displayName}, both a puppy parent and dog professional. ${user.puppyParentInfo?.bio || user.dogProfessionalInfo?.bio || 'Active member of the HomeForPup community.'}`;
+    description = `Connect with ${displayName}, both a puppy parent and breeder. ${user.puppyParentInfo?.bio || user.breederInfo?.bio || 'Active member of the HomeForPup community.'}`;
   } else if (isDogProfessional) {
-    const businessName = user.dogProfessionalInfo?.businessName;
+    const businessName = user.breederInfo?.businessName;
     title = businessName ? `${displayName} - ${businessName}` : `${displayName} - Dog Professional`;
-    description = `Connect with ${displayName}, a trusted dog professional on HomeForPup. ${user.dogProfessionalInfo?.bio || 'Committed to ethical breeding and dog care.'}`;
+    description = `Connect with ${displayName}, a trusted breeder on HomeForPup. ${user.breederInfo?.bio || 'Committed to ethical breeding and dog care.'}`;
   } else if (isPuppyParent) {
     title = `${displayName} - Puppy Parent`;
     description = `Meet ${displayName}, a puppy parent in the HomeForPup community. ${user.puppyParentInfo?.bio || 'Passionate about dogs and responsible pet ownership.'}`;
   }
 
-  const location = user.puppyParentInfo?.location || user.dogProfessionalInfo?.location;
+  const location = user.puppyParentInfo?.location || user.breederInfo?.location;
   if (location) {
     description += ` Located in ${location}.`;
   }
@@ -80,7 +80,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     keywords: [
       'user profile',
       isPuppyParent ? 'puppy parent' : '',
-      isDogProfessional ? 'dog professional' : '',
+      isDogProfessional ? 'breeder' : '',
       location || '',
     ].filter(Boolean),
     image: user.profileImage,

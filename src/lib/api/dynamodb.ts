@@ -84,7 +84,7 @@ export const dbOperations = {
           ':phone': updates.phone,
           ':location': updates.location,
           ':description': updates.about,
-          ':website': updates.dogProfessionalInfo?.website,
+          ':website': updates.breederInfo?.website,
           ':updatedAt': new Date().toISOString(),
         },
       });

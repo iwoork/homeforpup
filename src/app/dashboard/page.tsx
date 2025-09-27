@@ -64,7 +64,7 @@ const PUPPY_PARENT_COLORS = {
   textSecondary: '#8C8C8C'
 };
 
-const DOG_PROFESSIONAL_COLORS = {
+const BREEDER_COLORS = {
   primary: '#08979C', // Brand teal
   secondary: '#722ED1', // Purple for premium/royalty
   accent: '#EB2F96', // Pink for care/love
@@ -109,11 +109,11 @@ const Dashboard: React.FC = () => {
   }
 
   // Determine user type for conditional rendering based on active profile
-  const isDogProfessional = effectiveUserType === 'dog-professional';
+  const isBreeder = effectiveUserType === 'breeder';
   const isPuppyParent = effectiveUserType === 'puppy-parent';
   
   // Get color scheme based on user type
-  const colors = isDogProfessional ? DOG_PROFESSIONAL_COLORS : PUPPY_PARENT_COLORS;
+  const colors = isBreeder ? BREEDER_COLORS : PUPPY_PARENT_COLORS;
   
   // Dashboard profile switching state
 
@@ -183,7 +183,7 @@ const Dashboard: React.FC = () => {
               fontWeight: 'bold',
               textShadow: `0 2px 4px ${colors.primary}20`
             }}>
-              {isDogProfessional ? '🐕‍🦺' : '🐾'} Welcome back, {user?.name || 'User'}!
+              {isBreeder ? '🐕‍🦺' : '🐾'} Welcome back, {user?.name || 'User'}!
           </Title>
             <Text style={{ 
               color: colors.textSecondary, 
@@ -192,24 +192,24 @@ const Dashboard: React.FC = () => {
             }}>
               {canSwitchProfiles 
                 ? `Currently viewing as ${activeProfileType}. Switch profiles in the user menu to change your view.`
-                : isDogProfessional 
-                ? "Manage your dog care program and connect with puppy parents."
-                : "Discover new puppies and connect with dog professionals."}
+                : isBreeder 
+                ? "Manage your breeding program and connect with puppy parents."
+                : "Discover new puppies and connect with breeders."}
           </Text>
             
             {/* Profile Type Badge */}
             <div style={{ marginTop: '12px' }}>
               <Tag 
-                color={isDogProfessional ? 'purple' : 'green'} 
+                color={isBreeder ? 'purple' : 'green'} 
                 style={{ 
                   fontSize: '14px', 
                   padding: '4px 12px',
                   borderRadius: '20px',
                   fontWeight: '600'
                 }}
-                icon={isDogProfessional ? <CrownOutlined /> : <HeartOutlined />}
+                icon={isBreeder ? <CrownOutlined /> : <HeartOutlined />}
               >
-                {isDogProfessional ? 'Dog Professional' : 'Puppy Parent'}
+                {isBreeder ? 'Breeder' : 'Puppy Parent'}
               </Tag>
         </div>
         
@@ -233,7 +233,7 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Stats */}
       <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-        {isDogProfessional ? (
+        {isBreeder ? (
           <>
             <Col xs={24} sm={12} lg={6}>
               <Card 
@@ -547,12 +547,12 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Dog Management (for breeders) */}
-          {isDogProfessional && user?.userId && (
+          {isBreeder && user?.userId && (
             <DogManagement userId={user.userId} />
           )}
 
           {/* Kennel Overview (for breeders) */}
-          {isDogProfessional && (
+          {isBreeder && (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -687,7 +687,7 @@ const Dashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <GiftOutlined style={{ color: colors.primary, fontSize: '20px' }} />
                 <span style={{ color: colors.text, fontWeight: '600' }}>
-                  {isDogProfessional ? 'Breeder Actions' : 'Quick Actions'}
+                  {isBreeder ? 'Breeder Actions' : 'Quick Actions'}
                 </span>
               </div>
             }
@@ -699,7 +699,7 @@ const Dashboard: React.FC = () => {
             }}
           >
         <Row gutter={[16, 16]}>
-              {isDogProfessional && (
+              {isBreeder && (
                 <>
                   <Col xs={24} sm={12}>
                     <Button 
@@ -841,16 +841,16 @@ const Dashboard: React.FC = () => {
                   {user?.name || 'User'}
                 </Title>
                 <Tag 
-                  color={isDogProfessional ? 'purple' : 'green'} 
+                  color={isBreeder ? 'purple' : 'green'} 
                   style={{ 
                     fontSize: '12px', 
                     padding: '2px 8px',
                     borderRadius: '12px',
                     fontWeight: '600'
                   }}
-                  icon={isDogProfessional ? <CrownOutlined /> : <HeartOutlined />}
+                  icon={isBreeder ? <CrownOutlined /> : <HeartOutlined />}
                 >
-                  {isDogProfessional ? 'Dog Professional' : 'Puppy Parent'}
+                  {isBreeder ? 'Breeder' : 'Puppy Parent'}
                 </Tag>
               </div>
             </div>
@@ -1165,7 +1165,7 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Recent Activity / Breeder Stats */}
-          {isDogProfessional ? (
+          {isBreeder ? (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

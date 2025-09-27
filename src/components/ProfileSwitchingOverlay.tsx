@@ -5,7 +5,7 @@ import { Spin } from 'antd';
 
 interface ProfileSwitchingOverlayProps {
   isSwitching: boolean;
-  targetProfile: 'dog-professional' | 'puppy-parent';
+  targetProfile: 'breeder' | 'puppy-parent';
 }
 
 const ProfileSwitchingOverlay: React.FC<ProfileSwitchingOverlayProps> = ({ 
@@ -37,7 +37,7 @@ const ProfileSwitchingOverlay: React.FC<ProfileSwitchingOverlayProps> = ({
         textAlign: 'center',
         fontWeight: '500'
       }}>
-        Switching to {targetProfile === 'dog-professional' ? 'Dog Professional' : 'Puppy Parent'} Profile...
+        Switching to {targetProfile === 'breeder' ? 'Breeder' : 'Puppy Parent'} Profile...
       </div>
       <div style={{ 
         marginTop: '8px', 

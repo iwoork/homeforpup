@@ -14,8 +14,8 @@ export const useNextAuth = (): {
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
   session: any;
-  activeProfileType: 'dog-professional' | 'puppy-parent';
-  switchProfileType: (profileType: 'dog-professional' | 'puppy-parent') => void;
+  activeProfileType: 'breeder' | 'puppy-parent';
+  switchProfileType: (profileType: 'breeder' | 'puppy-parent') => void;
   canSwitchProfiles: boolean;
   effectiveUserType: string | undefined;
   isSwitchingProfile: boolean;
@@ -27,7 +27,7 @@ export const useNextAuth = (): {
   const { userData, isLoading: userDataLoading, refreshUserData } = useUserData();
   
   // Profile switching state
-  const [activeProfileType, setActiveProfileType] = useState<'dog-professional' | 'puppy-parent'>('puppy-parent');
+  const [activeProfileType, setActiveProfileType] = useState<'breeder' | 'puppy-parent'>('puppy-parent');
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
 
   // Debug user data processing (only when data changes)
@@ -56,9 +56,9 @@ export const useNextAuth = (): {
     coverPhoto: userData?.coverPhoto || '',
     bio: userData?.bio || '',
     phone: userData?.phone || '',
-    website: userData?.dogProfessionalInfo?.website || '',
+    website: userData?.breederInfo?.website || '',
     socialMedia: userData?.socialLinks || {},
-    dogProfessionalInfo: userData?.dogProfessionalInfo || null,
+    breederInfo: userData?.breederInfo || null,
   } : null;
 
   // Initialize active profile type when user changes
@@ -72,20 +72,20 @@ export const useNextAuth = (): {
         source: userData ? 'database' : 'session'
       });
       
-      if (user.userType === 'dog-professional') {
-        setActiveProfileType('dog-professional');
+      if (user.userType === 'breeder') {
+        setActiveProfileType('breeder');
       } else if (user.userType === 'puppy-parent') {
         setActiveProfileType('puppy-parent');
       } else if (user.userType === 'both') {
         // Load from localStorage or default to 'adopter'
-        const savedProfileType = localStorage.getItem('activeProfileType') as 'dog-professional' | 'puppy-parent' | null;
+        const savedProfileType = localStorage.getItem('activeProfileType') as 'breeder' | 'puppy-parent' | null;
         setActiveProfileType(savedProfileType || 'puppy-parent');
       }
     }
   }, [user]);
 
   // Save profile type selection to localStorage
-  const switchProfileType = useCallback(async (profileType: 'dog-professional' | 'puppy-parent') => {
+  const switchProfileType = useCallback(async (profileType: 'breeder' | 'puppy-parent') => {
     const startTime = Date.now();
     // switchProfileType called
     

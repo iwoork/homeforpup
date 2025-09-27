@@ -164,17 +164,17 @@ const ClientHeader: React.FC = () => {
             },
           },
           {
-            key: 'switch-to-dog-professional',
+            key: 'switch-to-breeder',
             label: (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Dog Professional Profile</span>
-                {activeProfileType === 'dog-professional' && <span style={{ color: '#08979C' }}>✓</span>}
+                <span>Breeder Profile</span>
+                {activeProfileType === 'breeder' && <span style={{ color: '#08979C' }}>✓</span>}
               </div>
             ),
             onClick: () => {
               if (!isSwitchingProfile) {
                 console.log('Switching to dog professional profile');
-                switchProfileType('dog-professional');
+                switchProfileType('breeder');
               }
             },
           },

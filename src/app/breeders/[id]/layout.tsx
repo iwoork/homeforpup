@@ -68,8 +68,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   
   if (!breeder) {
     return createMetadata({
-      title: 'Dog Professional Not Found',
-      description: 'The dog professional profile you\'re looking for doesn\'t exist or has been removed.',
+      title: 'Breeder Not Found',
+      description: 'The breeder profile you\'re looking for doesn\'t exist or has been removed.',
       url: `/breeders/${id}`,
       noIndex: true,
     });
@@ -82,11 +82,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (businessName) {
     title = `${displayName} - ${businessName}`;
   } else {
-    title = `${displayName} - Dog Professional`;
+    title = `${displayName} - Breeder`;
   }
   
   let description = breeder.about || 
-    `Connect with ${displayName}, a trusted dog professional on HomeForPup.`;
+    `Connect with ${displayName}, a trusted breeder on HomeForPup.`;
   
   if (breeder.specialties && breeder.specialties.length > 0) {
     description += ` Specializing in ${breeder.specialties.join(', ')}.`;
@@ -102,7 +102,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 
   const keywords = [
-    'dog professional',
+    'breeder',
     'breeder',
     'ethical breeder',
     businessName || '',

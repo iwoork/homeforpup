@@ -12,7 +12,7 @@ export interface SEOProps {
 }
 
 const DEFAULT_TITLE = 'HomeForPup - Find Your Perfect Puppy from Trusted Dog Professionals';
-const DEFAULT_DESCRIPTION = 'Connect with ethical dog professionals and loving families. HomeForPup helps you find puppies and build lasting community connections through our trusted platform.';
+const DEFAULT_DESCRIPTION = 'Connect with ethical breeders and loving families. HomeForPup helps you find puppies and build lasting community connections through our trusted platform.';
 const DEFAULT_IMAGE = 'https://homeforpup.com/og-image.jpg';
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://homeforpup.com';
 
@@ -36,7 +36,7 @@ export function generateMetadata({
     keywords: [
       ...(Array.isArray(keywords) ? keywords : []),
       'puppies',
-      'dog professionals',
+      'breeders',
       'puppy parents',
       'ethical breeders',
       'family raised puppies',
@@ -105,12 +105,12 @@ export const PAGE_METADATA = {
   home: {
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
-    keywords: ['find puppies', 'dog professionals', 'puppy matching', 'ethical breeding'],
+    keywords: ['find puppies', 'breeders', 'puppy matching', 'ethical breeding'],
     url: '/',
   },
   browse: {
     title: 'Browse Available Puppies',
-    description: 'Discover adorable puppies from trusted dog professionals. Filter by breed, location, and preferences to find your perfect companion.',
+    description: 'Discover adorable puppies from trusted breeders. Filter by breed, location, and preferences to find your perfect companion.',
     keywords: ['browse puppies', 'available puppies', 'puppy search', 'find puppy'],
     url: '/browse',
   },
@@ -122,8 +122,8 @@ export const PAGE_METADATA = {
   },
   breeders: {
     title: 'Find Trusted Dog Professionals',
-    description: 'Connect with verified and trusted dog professionals in your area. Browse profiles, read reviews, and find the perfect match for your family.',
-    keywords: ['dog professionals', 'trusted breeders', 'professional breeders', 'breeder directory'],
+    description: 'Connect with verified and trusted breeders in your area. Browse profiles, read reviews, and find the perfect match for your family.',
+    keywords: ['breeders', 'trusted breeders', 'professional breeders', 'breeder directory'],
     url: '/breeders',
   },
   users: {
@@ -134,7 +134,7 @@ export const PAGE_METADATA = {
   },
   about: {
     title: 'About HomeForPup - Our Mission & Story',
-    description: 'Learn about HomeForPup\'s mission to connect loving families with ethical dog professionals. Discover our story, values, and commitment to responsible pet ownership.',
+    description: 'Learn about HomeForPup\'s mission to connect loving families with ethical breeders. Discover our story, values, and commitment to responsible pet ownership.',
     keywords: ['about homeforpup', 'our mission', 'pet platform', 'dog community'],
     url: '/about',
   },
@@ -146,8 +146,8 @@ export const PAGE_METADATA = {
   },
   kennelManagement: {
     title: 'Professional Kennel Management Platform',
-    description: 'Comprehensive kennel management tools for dog professionals. Manage multiple kennels, track dogs, post announcements, and connect with puppy parents.',
-    keywords: ['kennel management', 'breeding software', 'dog professional tools', 'kennel platform'],
+    description: 'Comprehensive kennel management tools for breeders. Manage multiple kennels, track dogs, post announcements, and connect with puppy parents.',
+    keywords: ['kennel management', 'breeding software', 'breeder tools', 'kennel platform'],
     url: '/kennel-management',
   },
   dashboard: {

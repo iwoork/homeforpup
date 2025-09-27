@@ -98,7 +98,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic breeder routes
   const breederRoutes = users
-    .filter((user: any) => user.userType === 'dog-professional' || user.userType === 'both')
+    .filter((user: any) => user.userType === 'breeder' || user.userType === 'both')
     .map((user: any) => ({
       url: `${baseUrl}/breeders/${user.userId}`,
       lastModified: new Date(user.updatedAt || user.createdAt),

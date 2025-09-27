@@ -11,7 +11,7 @@ export interface User {
   firstName?: string; // Optional: First name
   lastName?: string; // Optional: Last name
   displayName?: string; // Optional: Public display name
-  userType: 'dog-professional' | 'puppy-parent' | 'both'; // User type
+  userType: 'breeder' | 'puppy-parent' | 'both'; // User type
   phone?: string; // Optional: Phone number
   location?: string; // Location string (city, state)
   coordinates?: {
@@ -36,7 +36,7 @@ export interface User {
       showLocation: boolean;
     };
   };
-  dogProfessionalInfo?: {
+  breederInfo?: {
     kennelName?: string;
     license?: string;
     specialties?: string[];
@@ -235,8 +235,8 @@ export interface KennelAnnouncement {
 // ============================================================================
 
 export interface Breeder extends User {
-  // Extended dog professional-specific properties
-  dogProfessionalInfo?: {
+  // Extended breeder-specific properties
+  breederInfo?: {
     kennelName?: string;
     license?: string;
     specialties?: string[];
@@ -582,7 +582,7 @@ export interface AnnouncementFilters {
 // UTILITY TYPES
 // ============================================================================
 
-export type UserType = 'dog-professional' | 'puppy-parent' | 'both';
+export type UserType = 'breeder' | 'puppy-parent' | 'both';
 export type MessageType = 'inquiry' | 'general' | 'business' | 'urgent';
 export type AnnouncementType = 'litter' | 'general' | 'health' | 'achievement' | 'event' | 'available';
 export type LitterStatus = 'planned' | 'expecting' | 'born' | 'weaning' | 'ready' | 'sold_out';

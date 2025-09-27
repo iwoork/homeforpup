@@ -37,7 +37,7 @@ interface UserProfile {
   coverPhoto?: string;
   galleryPhotos?: string[];
   verified: boolean;
-  userType: 'puppy-parent' | 'dog-professional' | 'both';
+  userType: 'puppy-parent' | 'breeder' | 'both';
   preferences: {
     notifications: {
       email: boolean;
@@ -65,7 +65,7 @@ interface UserProfile {
     dealBreakers?: string[];
     specialRequirements?: string[];
   };
-  dogProfessionalInfo?: {
+  breederInfo?: {
     kennelName?: string;
     license?: string;
     specialties: string[];
@@ -249,10 +249,10 @@ const EditProfilePage: React.FC = () => {
         familySituation: profile.puppyParentInfo?.familySituation,
         workSchedule: profile.puppyParentInfo?.workSchedule,
         // Breeder Info
-        kennelName: profile.dogProfessionalInfo?.kennelName,
-        license: profile.dogProfessionalInfo?.license,
-        dogProfessionalExperience: profile.dogProfessionalInfo?.experience,
-        website: profile.dogProfessionalInfo?.website,
+        kennelName: profile.breederInfo?.kennelName,
+        license: profile.breederInfo?.license,
+        dogProfessionalExperience: profile.breederInfo?.experience,
+        website: profile.breederInfo?.website,
       });
       
       // Set photo states
@@ -312,14 +312,14 @@ const EditProfilePage: React.FC = () => {
         };
       }
 
-      // Add dog professional-specific data if user is dog professional or both
-      if (profile.userType === 'dog-professional' || profile.userType === 'both') {
-        updateData.dogProfessionalInfo = {
+      // Add breeder-specific data if user is breeder or both
+      if (profile.userType === 'breeder' || profile.userType === 'both') {
+        updateData.breederInfo = {
           kennelName: values.kennelName,
           license: values.license,
           experience: values.dogProfessionalExperience,
           website: values.website,
-          specialties: profile?.dogProfessionalInfo?.specialties || [],
+          specialties: profile?.breederInfo?.specialties || [],
         };
       }
 
@@ -363,8 +363,8 @@ const EditProfilePage: React.FC = () => {
     // Create a local state update for immediate UI feedback
     let currentArray: string[] = [];
     
-    if (field === 'specialties' && profile.dogProfessionalInfo) {
-      currentArray = profile.dogProfessionalInfo.specialties;
+    if (field === 'specialties' && profile.breederInfo) {
+      currentArray = profile.breederInfo.specialties;
     } else if (profile.puppyParentInfo) {
       // Handle specific puppy parent info fields
       switch (field) {
@@ -398,11 +398,11 @@ const EditProfilePage: React.FC = () => {
       if (!currentData) return currentData;
       
       const updatedData = { ...currentData };
-      if (field === 'specialties' && updatedData.user.dogProfessionalInfo) {
+      if (field === 'specialties' && updatedData.user.breederInfo) {
         updatedData.user = {
           ...updatedData.user,
-          dogProfessionalInfo: {
-            ...updatedData.user.dogProfessionalInfo,
+          breederInfo: {
+            ...updatedData.user.breederInfo,
             specialties: newArray
           }
         };
@@ -428,8 +428,8 @@ const EditProfilePage: React.FC = () => {
     // Get current array
     let currentArray: string[] = [];
     
-    if (field === 'specialties' && profile.dogProfessionalInfo) {
-      currentArray = profile.dogProfessionalInfo.specialties;
+    if (field === 'specialties' && profile.breederInfo) {
+      currentArray = profile.breederInfo.specialties;
     } else if (profile.puppyParentInfo) {
       // Handle specific puppy parent info fields
       switch (field) {
@@ -458,11 +458,11 @@ const EditProfilePage: React.FC = () => {
       if (!currentData) return currentData;
       
       const updatedData = { ...currentData };
-      if (field === 'specialties' && updatedData.user.dogProfessionalInfo) {
+      if (field === 'specialties' && updatedData.user.breederInfo) {
         updatedData.user = {
           ...updatedData.user,
-          dogProfessionalInfo: {
-            ...updatedData.user.dogProfessionalInfo,
+          breederInfo: {
+            ...updatedData.user.breederInfo,
             specialties: newArray
           }
         };
@@ -1033,8 +1033,8 @@ const EditProfilePage: React.FC = () => {
           )}
 
           {/* Breeder Information */}
-          {(effectiveUserType === 'dog professional') && (
-            <TabPane tab="Breeder Information" key="dog professional">
+          {(effectiveUserType === 'breeder') && (
+            <TabPane tab="Breeder Information" key="breeder">
               <Card title="Professional Information" style={cardStyle}>
                 <Row gutter={[16, 16]}>
                   <Col xs={24} sm={12}>
@@ -1061,7 +1061,7 @@ const EditProfilePage: React.FC = () => {
                   <Col xs={24} sm={12}>
                     <Form.Item
                       label="Years of Experience"
-                      name="dog professionalExperience"
+                      name="breederExperience"
                       rules={[
                         { type: 'number', min: 0, max: 50, message: 'Please enter a valid number of years' }
                       ]}
@@ -1111,7 +1111,7 @@ const EditProfilePage: React.FC = () => {
                     </Space.Compact>
                   </div>
                   <div>
-                    {profile.dogProfessionalInfo?.specialties?.map((specialty, index) => (
+                    {profile.breederInfo?.specialties?.map((specialty, index) => (
                       <Tag
                         key={index}
                         closable
@@ -1121,7 +1121,7 @@ const EditProfilePage: React.FC = () => {
                         {specialty}
                       </Tag>
                     ))}
-                    {(!profile.dogProfessionalInfo?.specialties || profile.dogProfessionalInfo.specialties.length === 0) && (
+                    {(!profile.breederInfo?.specialties || profile.breederInfo.specialties.length === 0) && (
                       <Text type="secondary">No specialties added</Text>
                     )}
                   </div>
@@ -1138,7 +1138,7 @@ const EditProfilePage: React.FC = () => {
                 <Col span={24}>
                   <Card title="Previous Pet Experience" style={cardStyle}>
                     <Paragraph type="secondary">
-                      Share your experience with previous pets to help dog professionals understand your background
+                      Share your experience with previous pets to help breeders understand your background
                     </Paragraph>
                     <div style={{ marginBottom: '16px' }}>
                       <Space.Compact style={{ width: '100%' }}>
@@ -1225,7 +1225,7 @@ const EditProfilePage: React.FC = () => {
                 <Col span={24}>
                   <Card title="Important Considerations" style={cardStyle}>
                     <Paragraph type="secondary">
-                      Things that are important for dog professionals to know about your situation or preferences
+                      Things that are important for breeders to know about your situation or preferences
                     </Paragraph>
                     <div style={{ marginBottom: '16px' }}>
                       <Space.Compact style={{ width: '100%' }}>

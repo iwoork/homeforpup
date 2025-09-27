@@ -71,7 +71,7 @@ const KennelManagementLandingPage: React.FC = () => {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'HomeForPup Kennel Management',
-    description: 'Professional kennel management platform for dog professionals to manage kennels, track dogs, and connect with puppy parents.',
+    description: 'Professional kennel management platform for breeders to manage kennels, track dogs, and connect with puppy parents.',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web Browser',
     offers: {
@@ -159,7 +159,7 @@ const KennelManagementLandingPage: React.FC = () => {
     'Business analytics and performance tracking',
     'Mobile-responsive design for on-the-go management',
     'Secure and reliable platform',
-    'Free to use for all dog professionals',
+    'Free to use for all breeders',
   ];
 
   return (
@@ -288,7 +288,7 @@ const KennelManagementLandingPage: React.FC = () => {
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
             <Title level={2}>Why Choose Our Platform?</Title>
             <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
-              Join hundreds of dog professionals who trust our platform to manage their kennels and connect with puppy parents.
+              Join hundreds of breeders who trust our platform to manage their kennels and connect with puppy parents.
             </Paragraph>
           </div>
           
@@ -412,7 +412,7 @@ const KennelManagementLandingPage: React.FC = () => {
             Ready to Take Your Kennel to the Next Level?
           </Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Join thousands of dog professionals who trust our platform to manage their kennels and connect with puppy parents.
+            Join thousands of breeders who trust our platform to manage their kennels and connect with puppy parents.
           </Paragraph>
           <Row justify="center" gutter={16}>
             <Col>
