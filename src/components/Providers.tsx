@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, message } from 'antd';
 import { NextAuthProvider } from './providers/NextAuthProvider';
 import { Spin } from 'antd';
 
@@ -39,6 +39,13 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
   useEffect(() => {
     // Ensure we're on the client side
     setMounted(true);
+    
+    // Configure message globally
+    message.config({
+      top: 100,
+      duration: 3,
+      maxCount: 3,
+    });
   }, []);
 
   if (!mounted) {

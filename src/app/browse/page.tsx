@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
+import ContactBreederModal from '@/components/ContactBreederModal';
+import { useAuth } from '@/hooks/api/useAuth';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -17,13 +19,19 @@ const PuppiesPage: React.FC = () => {
     state: [] as string[],
     breed: null as string | null,
     gender: null as string | null,
-    price: [1000, 4000] as [number, number],
     shipping: false,
     verified: false,
   });
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
+
+  // Get user data
+  const { user, loading: userLoading } = useAuth();
+
+  // Contact modal state
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [selectedPuppy, setSelectedPuppy] = useState<PuppyWithBreeder | null>(null);
 
   // Use the puppies API hook
   const {
@@ -41,8 +49,6 @@ const PuppiesPage: React.FC = () => {
     state: filters.state.length > 0 ? filters.state[0] : undefined,
     breed: filters.breed || undefined,
     gender: filters.gender || undefined,
-    minPrice: filters.price[0],
-    maxPrice: filters.price[1],
     shipping: filters.shipping,
     verified: filters.verified,
     page: currentPage,
@@ -55,11 +61,20 @@ const PuppiesPage: React.FC = () => {
       state: [],
       breed: null,
       gender: null,
-      price: [1000, 4000],
       shipping: false,
       verified: false,
     });
     setCurrentPage(1);
+  };
+
+  const handleContactBreeder = (puppy: PuppyWithBreeder) => {
+    setSelectedPuppy(puppy);
+    setContactModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setContactModalVisible(false);
+    setSelectedPuppy(null);
   };
 
   const handlePageChange = (page: number) => {
@@ -72,8 +87,6 @@ const PuppiesPage: React.FC = () => {
                           filters.state.length > 0 || 
                           filters.breed !== null || 
                           filters.gender !== null || 
-                          filters.price[0] !== 1000 || 
-                          filters.price[1] !== 4000 || 
                           filters.shipping || 
                           filters.verified;
 
@@ -87,7 +100,7 @@ const PuppiesPage: React.FC = () => {
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         marginBottom: '16px',
         overflow: 'visible',
-        height: '580px',
+        height: '590px',
         display: 'flex',
         flexDirection: 'column'
       }}
@@ -144,20 +157,13 @@ const PuppiesPage: React.FC = () => {
         padding: '0 4px' 
       }}>
         {/* Header Section */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-              <Title level={4} style={{ margin: 0, color: '#08979C' }}>
-                {puppy.name}
-              </Title>
-              <Text strong style={{ fontSize: '18px', color: '#52c41a' }}>
-                ${puppy.price.toLocaleString()}
-              </Text>
-            </div>
-            <Text type="secondary" style={{ fontSize: '14px' }}>
-              {puppy.breed} • {puppy.gender}
-            </Text>
-          </div>
+        <div style={{ marginBottom: '8px' }}>
+          <Title level={4} style={{ margin: 0, color: '#08979C', marginBottom: '4px' }}>
+            {puppy.name}
+          </Title>
+          <Text type="secondary" style={{ fontSize: '14px' }}>
+            {puppy.breed} • {puppy.gender}
+          </Text>
         </div>
 
         {/* Location Section */}
@@ -212,7 +218,11 @@ const PuppiesPage: React.FC = () => {
               Rate: {Math.round(puppy.breeder.responseRate * 100)}%
             </Text>
           </Space>
-          <Button type="primary" size="small">
+          <Button 
+            type="primary" 
+            size="small"
+            onClick={() => handleContactBreeder(puppy)}
+          >
             Contact Breeder
           </Button>
         </div>
@@ -393,25 +403,6 @@ const PuppiesPage: React.FC = () => {
                 </Select>
               </div>
               
-              {/* Price Range */}
-              <div>
-                <Text strong>Price Range</Text>
-                <Slider
-                  range
-                  min={1000}
-                  max={5000}
-                  step={100}
-                  value={filters.price}
-                  onChange={(value) => {
-                    setFilters(prev => ({ ...prev, price: value as [number, number] }));
-                    setCurrentPage(1);
-                  }}
-                  style={{ marginTop: '8px' }}
-                />
-                <div style={{ textAlign: 'center', fontSize: '12px', color: '#666' }}>
-                  ${filters.price[0].toLocaleString()} - ${filters.price[1].toLocaleString()}
-                </div>
-              </div>
 
               {/* Checkboxes */}
               <div>
@@ -435,7 +426,7 @@ const PuppiesPage: React.FC = () => {
                     Verified Breeders Only
                   </Checkbox>
                 </Space>
-            </div>
+                </div>
             </Space>
           </Card>
         </Col>
@@ -459,8 +450,8 @@ const PuppiesPage: React.FC = () => {
                 <Button type="link" onClick={resetFilters}>
                   Clear filters to see all puppies
                 </Button>
-              </div>
-            </Card>
+            </div>
+          </Card>
           ) : (
             <>
               <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -499,6 +490,18 @@ const PuppiesPage: React.FC = () => {
           )}
         </Col>
       </Row>
+
+      {/* Contact Breeder Modal */}
+      {selectedPuppy && (
+        <ContactBreederModal
+          visible={contactModalVisible}
+          onCancel={handleCloseModal}
+          puppyName={selectedPuppy.name}
+          breederName={selectedPuppy.breeder.businessName}
+          senderName={user?.name || user?.displayName || 'Guest User'}
+          senderEmail={user?.email || 'support@homeforpup.com'}
+        />
+      )}
     </div>
   );
 };
