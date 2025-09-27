@@ -37,7 +37,7 @@ export const useWebSocketMessages = ({
   userId, 
   userName 
 }: UseWebSocketMessagesProps): UseWebSocketMessagesReturn => {
-  const { getToken } = useAuth();
+  const { getToken, refreshToken } = useAuth();
   const { isConnected, isConnecting, error: connectionError, lastMessage, sendMessage: sendWebSocketMessage, reconnect } = useWebSocket();
   
   const [threads, setThreads] = useState<MessageThread[]>([]);
@@ -174,7 +174,41 @@ export const useWebSocketMessages = ({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch threads');
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Handle token expiration
+        if (response.status === 401 && errorData.code === 'TOKEN_EXPIRED') {
+          console.log('Token expired, attempting refresh...');
+          
+          // Try to refresh the token
+          const refreshSuccess = await refreshToken();
+          
+          if (refreshSuccess) {
+            // Retry the request with the new token
+            const newToken = await getToken();
+            if (newToken) {
+              const retryResponse = await fetch('/api/messages/threads', {
+                headers: {
+                  'Authorization': `Bearer ${newToken}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+              
+              if (retryResponse.ok) {
+                const data = await retryResponse.json();
+                setThreads(data.threads || []);
+                setUnreadCount(data.unreadCount || 0);
+                return;
+              }
+            }
+          }
+          
+          // If refresh failed, show user-friendly error
+          setError('Your session has expired. Please refresh the page to continue.');
+          return;
+        }
+        
+        throw new Error(errorData.error || 'Failed to fetch threads');
       }
 
       const data = await response.json();
@@ -186,7 +220,7 @@ export const useWebSocketMessages = ({
     } finally {
       setLoading(false);
     }
-  }, [userId, getToken]);
+  }, [userId, getToken, refreshToken]);
 
   // Fetch messages for selected thread
   const fetchMessages = useCallback(async (threadId: string) => {

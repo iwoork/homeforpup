@@ -8,7 +8,7 @@ import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
 import ContactBreederModal from '@/components/ContactBreederModal';
-import { useAuth } from '@/hooks/api/useAuth';
+import { useAuth } from '@/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;

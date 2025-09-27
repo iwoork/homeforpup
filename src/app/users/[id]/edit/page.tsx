@@ -595,10 +595,12 @@ const EditProfilePage: React.FC = () => {
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '16px' }}>
       {/* Profile Switching Overlay */}
-      <ProfileSwitchingOverlay 
-        isSwitching={isSwitchingProfile} 
-        targetProfile={activeProfileType} 
-      />
+      {activeProfileType && (
+        <ProfileSwitchingOverlay 
+          isSwitching={isSwitchingProfile} 
+          targetProfile={activeProfileType} 
+        />
+      )}
       {/* Header */}
       <Card style={{ marginBottom: '24px', ...cardStyle }}>
         <Row align="middle" justify="space-between">

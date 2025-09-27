@@ -1,71 +1,56 @@
 // hooks/useAuth.ts
 'use client';
 
-import { useAuth as useOidcAuth } from 'react-oidc-context';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { User } from '@/types';
 
 interface UseAuthReturn {
   user: User | null;
   loading: boolean;
-  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
+  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'puppy-parent') => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
-  getToken: () => string | null;
+  getToken: () => Promise<string | null>;
   refreshToken: () => Promise<boolean>;
   syncUser: (userData?: Partial<User>, providedToken?: string) => Promise<User | null>;
   updateUser: (updates: Partial<User>) => Promise<User | null>;
+  // Legacy properties for backward compatibility
+  login: (action?: 'login' | 'signup', userType?: 'breeder' | 'puppy-parent') => Promise<void>;
+  effectiveUserType: 'breeder' | 'puppy-parent' | null;
+  canSwitchProfiles: boolean;
+  activeProfileType: 'breeder' | 'puppy-parent' | null;
+  isSwitchingProfile: boolean;
+  clearAllAuthData: () => void;
+  refreshUserData: () => Promise<void>;
 }
 
 export const useAuth = (): UseAuthReturn => {
-  const oidcAuth = useOidcAuth();
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Method to get the current JWT token
-  const getToken = useCallback((): string | null => {
-    if (oidcAuth?.user?.id_token) {
-      return oidcAuth.user.id_token;
-    }
-
-    if (oidcAuth?.user?.access_token) {
-      return oidcAuth.user.access_token;
-    }
-
-    // Fallback: try to get from localStorage
-    try {
-      const storageKey = `oidc.user:${process.env.NEXT_PUBLIC_COGNITO_AUTHORITY}:${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}`;
-      const userData = localStorage.getItem(storageKey);
-      
-      if (userData) {
-        const parsedData = JSON.parse(userData);
-        return parsedData.access_token || parsedData.id_token || null;
-      }
-    } catch (error) {
-      console.warn('Failed to get token from localStorage:', error);
-    }
-
-    return null;
-  }, [oidcAuth]);
+  const getToken = useCallback(async (): Promise<string | null> => {
+    return (session as any)?.accessToken || null;
+  }, [session]);
 
   // Method to refresh the token if needed
   const refreshToken = useCallback(async (): Promise<boolean> => {
-    if (!oidcAuth?.user) {
-      console.warn('No user to refresh token for');
-      return false;
-    }
-
     try {
       console.log('Attempting to refresh token...');
-      await oidcAuth.signinSilent();
+      // NextAuth handles token refresh automatically
+      // We can trigger a session update
+      await fetch('/api/auth/session?update');
       console.log('Token refresh successful');
       return true;
     } catch (error) {
       console.error('Token refresh failed:', error);
       return false;
     }
-  }, [oidcAuth]);
+  }, []);
 
   // Method to sync user data with DynamoDB
   const syncUser = useCallback(async (userData?: Partial<User>, providedToken?: string): Promise<User | null> => {
@@ -76,26 +61,17 @@ export const useAuth = (): UseAuthReturn => {
     }
 
     try {
-      // Check if there's a pending user type from registration
-      const pendingUserType = localStorage.getItem('pendingUserType') as 'breeder' | 'adopter' | null;
-      if (pendingUserType) {
-        localStorage.removeItem('pendingUserType');
-      }
-
       const response = await fetch('/api/users/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          userType: pendingUserType || userData?.userType || 'adopter',
-          ...userData
-        }),
+        body: JSON.stringify(userData || {}),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json();
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -126,207 +102,232 @@ export const useAuth = (): UseAuthReturn => {
     }
 
     try {
-      const updatedUser = await syncUser({ ...user, ...updates });
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`/api/users/${user.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const updatedUser = await response.json();
+      setUser(updatedUser);
       return updatedUser;
+
     } catch (error) {
       console.error('Failed to update user:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update user');
+      setError(error instanceof Error ? error.message : 'Failed to update user data');
       return null;
     }
-  }, [user, syncUser]);
+  }, [user, getToken]);
 
-  // Update user state when OIDC auth state changes
+  // Update user state when NextAuth session changes
   useEffect(() => {
     const updateUserState = async () => {
-      console.log('useAuth effect running with OIDC state:', {
-        isAuthenticated: oidcAuth?.isAuthenticated,
-        hasUser: !!oidcAuth?.user,
-        isLoading: oidcAuth?.isLoading,
-        error: oidcAuth?.error?.message,
-        userProfile: oidcAuth?.user?.profile ? {
-          sub: oidcAuth.user.profile.sub?.substring(0, 10) + '...',
-          email: oidcAuth.user.profile.email,
-          name: oidcAuth.user.profile.name
+      console.log('useAuth effect running with NextAuth state:', {
+        status,
+        hasSession: !!session,
+        user: session?.user ? {
+          id: (session.user as any).id?.substring(0, 10) + '...',
+          email: session.user.email,
+          name: session.user.name,
+          userType: (session.user as any).userType
         } : null
       });
 
-      if (!oidcAuth) {
-        setError('Authentication context not available');
+      if (status === 'loading') {
+        setIsInitializing(true);
         return;
       }
 
-      if (oidcAuth.isAuthenticated && oidcAuth.user) {
-        const profile = oidcAuth.user.profile;
-        const userId = profile.sub || '';
+      if (status === 'authenticated' && session?.user) {
+        const profile = session.user as any;
+        const userId = profile.id || '';
         const email = profile.email || '';
         const name = profile.name || profile.email?.split('@')[0] || 'User';
+        const userType = profile.userType || 'puppy-parent';
 
-        console.log('OIDC authentication successful, syncing user data...', {
+        console.log('NextAuth authentication successful, syncing user data...', {
           userId: userId.substring(0, 10) + '...',
           email,
-          name
+          name,
+          userType
         });
 
         // Sync user data with DynamoDB
         const syncedUser = await syncUser({
           userId,
           email,
-          name
+          name,
+          userType
         });
 
         console.log('Sync result:', syncedUser ? 'Success' : 'Failed');
+        
+        // If sync failed, create a basic user object from NextAuth data
+        if (!syncedUser) {
+          console.log('Creating basic user from NextAuth data');
+          const basicUser: User = {
+            userId,
+            email,
+            name,
+            userType: userType as 'breeder' | 'puppy-parent' | 'both',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            verified: false,
+            accountStatus: 'active',
+            lastActiveAt: new Date().toISOString(),
+            preferences: {
+              privacy: {
+                showEmail: false,
+                showPhone: true,
+                showLocation: true
+              },
+              notifications: {
+                sms: false,
+                email: true,
+                push: true
+              }
+            },
+            galleryPhotos: [],
+            ...(userType === 'breeder' ? {
+              breederInfo: {
+                kennelName: '',
+                license: '',
+                specialties: [],
+                experience: 0,
+                website: ''
+              }
+            } : {
+              puppyParentInfo: {
+                housingType: 'house',
+                yardSize: 'medium',
+                hasOtherPets: false,
+                experienceLevel: 'first-time',
+                preferredBreeds: []
+              }
+            })
+          };
+          setUser(basicUser);
+        }
 
-      } else if (!oidcAuth.isLoading) {
-        console.log('OIDC not authenticated, clearing user state');
+      } else if (status === 'unauthenticated') {
+        console.log('NextAuth not authenticated, clearing user state');
         setUser(null);
       }
 
-      // Handle auth errors
-      if (oidcAuth.error) {
-        console.error('OIDC error:', oidcAuth.error.message);
-        setError(oidcAuth.error.message);
-      } else if (!error || error === 'Authentication context not available') {
-        setError(null);
-      }
+      setIsInitializing(false);
     };
 
     updateUserState();
-  }, [oidcAuth, syncUser, error]);
+  }, [status, session, syncUser]);
 
-  const signIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
+  // Handle initialization timeout to prevent infinite loading
+  useEffect(() => {
+    const initTimeout = setTimeout(() => {
+      if (isInitializing) {
+        console.log('Auth initialization timeout, setting loading to false');
+        setIsInitializing(false);
+      }
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(initTimeout);
+  }, [isInitializing]);
+
+  const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'puppy-parent') => {
     console.log('signIn function called with action:', action, 'userType:', userType);
     
-    if (!oidcAuth) {
-      console.error('OIDC Auth not initialized');
-      setError('Authentication not initialized');
-      return;
-    }
-
     try {
       setError(null);
       console.log('Starting sign in process...');
       
-      // Get environment variables
-      const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
-      const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-      const redirectUri = encodeURIComponent(window.location.origin + '/auth/callback');
-      
-      if (action === 'signup' && cognitoDomain && clientId) {
-        // Store user type for after signup completion
-        if (userType) {
-          localStorage.setItem('pendingUserType', userType);
-        }
-        
-        // Direct redirect to Cognito signup page
-        const signupUrl = `${cognitoDomain}/signup?client_id=${clientId}&response_type=code&scope=email+openid+profile&redirect_uri=${redirectUri}`;
-        console.log('Redirecting to signup URL:', signupUrl);
-        window.location.href = signupUrl;
-      } else {
-        // Use OIDC signin redirect for login (default behavior)
-        console.log('Using OIDC signin redirect with config:', {
-          authority: oidcAuth.settings?.authority,
-          client_id: oidcAuth.settings?.client_id,
-          redirect_uri: oidcAuth.settings?.redirect_uri,
-          response_type: oidcAuth.settings?.response_type
-        });
-        
-        // Generate the OIDC redirect URL manually to see what it looks like
-        const oidcRedirectUrl = oidcAuth.settings?.authority + 
-          '/oauth2/authorize?client_id=' + oidcAuth.settings?.client_id +
-          '&response_type=' + oidcAuth.settings?.response_type +
-          '&scope=email+openid+profile' +
-          '&redirect_uri=' + encodeURIComponent(oidcAuth.settings?.redirect_uri || '');
-        
-        console.log('Generated OIDC redirect URL:', oidcRedirectUrl);
-        
-        await oidcAuth.signinRedirect();
+      // Store user type for after signup completion
+      if (action === 'signup' && userType) {
+        localStorage.setItem('pendingUserType', userType);
       }
+      
+      // Use NextAuth signIn
+      await signIn('cognito', { 
+        callbackUrl: '/dashboard',
+        redirect: true 
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to sign in';
       setError(errorMessage);
       console.error('Sign in error:', error);
     }
-  }, [oidcAuth]);
+  }, []);
 
-  const signOut = useCallback(async () => {
-    if (!oidcAuth) {
-      setError('Authentication not initialized');
-      return;
-    }
-
+  const handleSignOut = useCallback(async () => {
     try {
-      setError(null);
-      
-      // Clear local user state immediately
-      setUser(null);
-      
-      // First, remove the OIDC user from local storage/session
-      await oidcAuth.removeUser();
-      
-      // Get environment variables
-      const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
-      const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-      const logoutUri = encodeURIComponent(window.location.origin);
-      
-      if (cognitoDomain && clientId) {
-        // Clear any additional browser storage
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Redirect to Cognito logout with proper parameters
-        const logoutUrl = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}&response_type=code`;
-        window.location.href = logoutUrl;
-      } else {
-        // Fallback: try OIDC logout first, then manual cleanup
-        try {
-          await oidcAuth.signoutRedirect();
-        } catch (oidcError) {
-          console.warn('OIDC signout failed, clearing manually:', oidcError);
-          // Manual cleanup
-          localStorage.clear();
-          sessionStorage.clear();
-          window.location.href = '/';
-        }
-      }
+      console.log('Signing out...');
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to sign out';
-      setError(errorMessage);
       console.error('Sign out error:', error);
-      
-      // Fallback: force logout by clearing everything and redirecting
-      setUser(null);
-      localStorage.clear();
-      sessionStorage.clear();
+      // Force redirect even if signOut fails
       window.location.href = '/';
     }
-  }, [oidcAuth]);
+  }, []);
 
-  // Handle the case where oidcAuth is not available
-  if (!oidcAuth) {
-    return {
-      user: null,
-      loading: true,
-      signIn,
-      signOut,
-      error: error || 'Authentication context not available',
-      isAuthenticated: false,
-      getToken: () => null,
-      refreshToken: async () => false,
-      syncUser: async () => null,
-      updateUser: async () => null,
-    };
-  }
+  const loading = status === 'loading' || isInitializing;
+  const isAuthenticated = status === 'authenticated' && !!user;
+
+  // Legacy properties for backward compatibility
+  const effectiveUserType = user?.userType === 'both' ? 'breeder' : (user?.userType as 'breeder' | 'puppy-parent' | null) || null;
+  const canSwitchProfiles = user?.userType === 'both';
+  const activeProfileType = effectiveUserType;
+  const isSwitchingProfile = false; // Not implemented in current version
+  const clearAllAuthData = () => {
+    setUser(null);
+    setError(null);
+  };
+  const refreshUserData = async () => {
+    // Re-fetch user data
+    if (user?.userId) {
+      try {
+        const response = await fetch(`/api/users/${user.userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to refresh user data:', error);
+      }
+    }
+  };
 
   return {
     user,
-    loading: oidcAuth.isLoading,
-    signIn,
-    signOut,
+    loading,
+    signIn: handleSignIn,
+    signOut: handleSignOut,
     error,
-    isAuthenticated: oidcAuth.isAuthenticated,
+    isAuthenticated,
     getToken,
     refreshToken,
     syncUser,
     updateUser,
+    // Legacy properties
+    login: handleSignIn,
+    effectiveUserType,
+    canSwitchProfiles,
+    activeProfileType,
+    isSwitchingProfile,
+    clearAllAuthData,
+    refreshUserData,
   };
 };

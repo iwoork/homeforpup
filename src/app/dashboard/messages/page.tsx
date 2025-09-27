@@ -82,6 +82,35 @@ export default function MessagesPage() {
         @media (max-width: 991px) {
           .threads-desktop { display: none !important; }
           .mobile-actions { display: block !important; }
+          .mobile-message-view { 
+            height: calc(100vh - 120px) !important;
+            min-height: 400px !important;
+          }
+          .mobile-thread-item {
+            padding: 16px !important;
+            min-height: 80px !important;
+          }
+          .mobile-thread-avatar {
+            width: 48px !important;
+            height: 48px !important;
+          }
+          .mobile-thread-content {
+            margin-left: 12px !important;
+          }
+          .mobile-thread-title {
+            font-size: 16px !important;
+            line-height: 1.4 !important;
+            margin-bottom: 4px !important;
+          }
+          .mobile-thread-preview {
+            font-size: 14px !important;
+            line-height: 1.3 !important;
+            margin-bottom: 6px !important;
+          }
+          .mobile-thread-meta {
+            font-size: 12px !important;
+            margin-top: 4px !important;
+          }
         }
         @media (min-width: 992px) {
           .threads-desktop { display: block !important; }
@@ -178,6 +207,7 @@ export default function MessagesPage() {
             <Card 
               bodyStyle={{ padding: 0 }}
               style={{ display: 'flex', flexDirection: 'column' }}
+              className="mobile-message-view"
             >
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <MessageView

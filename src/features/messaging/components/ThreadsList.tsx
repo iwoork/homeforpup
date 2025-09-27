@@ -179,6 +179,7 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
           return (
             <List.Item
               key={thread.id}
+              className="mobile-thread-item"
               style={{
                 padding: '12px 16px',
                 backgroundColor: selectedThreadId === thread.id ? '#e6f7ff' : 'transparent',
@@ -206,15 +207,16 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
                 avatar={
                   <Badge count={unreadCount} size="small">
                     <Avatar 
+                      className="mobile-thread-avatar"
                       src={otherParticipantInfo.avatar}
                       icon={!otherParticipantInfo.avatar ? <UserOutlined /> : undefined}
                     />
                   </Badge>
                 }
                 title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="mobile-thread-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Text strong={unreadCount > 0} style={{ fontSize: '14px' }}>
+                      <Text strong={unreadCount > 0} className="mobile-thread-title" style={{ fontSize: '14px' }}>
                         {otherParticipantInfo.name}
                       </Text>
                       {otherParticipantInfo.userType && (
@@ -226,18 +228,19 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
                         </Tag>
                       )}
                     </div>
-                    <Text type="secondary" style={{ fontSize: '11px' }}>
+                    <Text type="secondary" className="mobile-thread-meta" style={{ fontSize: '11px' }}>
                       {dayjs(thread.updatedAt).fromNow()}
                     </Text>
                   </div>
                 }
                 description={
                   <div>
-                    <Text strong style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
+                    <Text strong className="mobile-thread-preview" style={{ fontSize: '12px', display: 'block', marginBottom: '2px' }}>
                       {thread.subject}
                     </Text>
                     <Text 
                       type="secondary" 
+                      className="mobile-thread-preview"
                       style={{ 
                         fontSize: '12px',
                         fontWeight: unreadCount > 0 ? 500 : 'normal'
@@ -248,7 +251,7 @@ const ThreadsList: React.FC<ThreadsListProps> = ({
                         : thread.lastMessage.content
                       }
                     </Text>
-                    <div style={{ marginTop: '4px' }}>
+                    <div className="mobile-thread-meta" style={{ marginTop: '4px' }}>
                       <Tag 
                         color={getMessageTypeColor(thread.lastMessage.messageType)}
                         style={{ fontSize: '11px', padding: '0 6px', height: '18px', lineHeight: '18px' }}

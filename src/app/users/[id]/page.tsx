@@ -48,7 +48,7 @@ interface PuppyParentUser {
       showLocation: boolean;
     };
   };
-  puppyParentInfo: {
+  puppyParentInfo?: {
     housingType?: 'house' | 'apartment' | 'condo' | 'townhouse' | 'farm';
     yardSize?: 'none' | 'small' | 'medium' | 'large' | 'acreage';
     hasOtherPets: boolean;
@@ -63,11 +63,62 @@ interface PuppyParentUser {
     dealBreakers?: string[];
     specialRequirements?: string[];
   };
+  // Legacy field for backward compatibility
+  adopterInfo?: {
+    experienceLevel: 'first-time' | 'some-experience' | 'very-experienced';
+    dealBreakers: string[];
+    previousPets: string[];
+    hasOtherPets: boolean;
+    preferredBreeds: string[];
+    specialRequirements?: string[];
+  };
   createdAt: string;
   updatedAt: string;
   lastActiveAt: string;
 }
 
+
+// Helper function to safely get puppy parent info with fallback to adopterInfo
+const getPuppyParentInfo = (user: PuppyParentUser | undefined) => {
+  if (!user) {
+    return {
+      housingType: 'house' as const,
+      yardSize: 'medium' as const,
+      hasOtherPets: false,
+      experienceLevel: 'first-time' as const,
+      preferredBreeds: [],
+      agePreference: 'any' as const,
+      sizePreference: 'any' as const,
+      activityLevel: 'moderate' as const,
+      familySituation: '',
+      workSchedule: '',
+      previousPets: [],
+      dealBreakers: [],
+      specialRequirements: []
+    };
+  }
+
+  const baseInfo = user.puppyParentInfo || user.adopterInfo || {
+    experienceLevel: 'first-time' as const,
+    hasOtherPets: false,
+    preferredBreeds: [],
+    dealBreakers: [],
+    previousPets: [],
+    specialRequirements: []
+  };
+
+  // Ensure all properties exist with safe defaults
+  return {
+    housingType: 'house' as const,
+    yardSize: 'medium' as const,
+    agePreference: 'any' as const,
+    sizePreference: 'any' as const,
+    activityLevel: 'moderate' as const,
+    familySituation: '',
+    workSchedule: '',
+    ...baseInfo // Override with actual values where they exist
+  };
+};
 
 // SWR fetchers
 const fetcher = async (url: string): Promise<{ user: PuppyParentUser }> => {
@@ -99,6 +150,7 @@ const PuppyParentProfilePage: React.FC = () => {
   const { user: authUser, getToken } = useAuth();
 
   const puppyParent = data?.user;
+  const puppyParentInfo = puppyParent ? getPuppyParentInfo(puppyParent) : getPuppyParentInfo(undefined);
   const isOwnProfile = authUser && puppyParent && authUser.userId === puppyParent.userId;
 
   const cardStyle: React.CSSProperties = {
@@ -184,7 +236,7 @@ const PuppyParentProfilePage: React.FC = () => {
           profileImage: puppyParent.profileImage,
           location: puppyParent.location,
           lastActiveAt: puppyParent.lastActiveAt,
-          puppyParentInfo: { experienceLevel: puppyParent.puppyParentInfo.experienceLevel },
+          puppyParentInfo: puppyParentInfo,
           preferences: puppyParent.preferences,
         }}
         isOwnProfile={Boolean(isOwnProfile)}
@@ -210,7 +262,7 @@ const PuppyParentProfilePage: React.FC = () => {
                 <Space>
                   <UserOutlined style={{ color: '#a5b4fc' }} />
                   <Text strong>
-                    {puppyParent.puppyParentInfo.experienceLevel?.replace('-', ' ')} owner
+                    {puppyParentInfo.experienceLevel?.replace('-', ' ')} owner
                   </Text>
                 </Space>
               </div>
@@ -219,15 +271,15 @@ const PuppyParentProfilePage: React.FC = () => {
                 <Space>
                   <HomeOutlined style={{ color: '#86efac' }} />
                   <Text strong>
-                    {puppyParent.puppyParentInfo.housingType} 
-                    {puppyParent.puppyParentInfo.yardSize && puppyParent.puppyParentInfo.yardSize !== 'none' && 
-                      ` with ${puppyParent.puppyParentInfo.yardSize} yard`
+                    {puppyParentInfo.housingType} 
+                    {puppyParentInfo.yardSize && puppyParentInfo.yardSize !== 'none' && 
+                      ` with ${puppyParentInfo.yardSize} yard`
                     }
                   </Text>
                 </Space>
               </div>
 
-              {puppyParent.puppyParentInfo.hasOtherPets && (
+              {puppyParentInfo.hasOtherPets && (
                 <div>
                   <Space>
                     <TeamOutlined style={{ color: '#fbbf24' }} />
@@ -315,53 +367,53 @@ const PuppyParentProfilePage: React.FC = () => {
               <div>
                 <Text strong>Housing: </Text>
                 <Tag style={{ backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>
-                  {getHousingSizeIcon(puppyParent.puppyParentInfo.yardSize)} {puppyParent.puppyParentInfo.housingType}
+                  {getHousingSizeIcon(puppyParentInfo.yardSize)} {puppyParentInfo.housingType}
                 </Tag>
               </div>
               
               <div>
                 <Text strong>Yard Size: </Text>
-                <Tag style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>{puppyParent.puppyParentInfo.yardSize || 'Not specified'}</Tag>
+                <Tag style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>{puppyParentInfo.yardSize || 'Not specified'}</Tag>
               </div>
               
               <div>
                 <Text strong>Other Pets: </Text>
                 <Tag style={{ 
-                  backgroundColor: puppyParent.puppyParentInfo.hasOtherPets ? '#fef3c7' : '#f3f4f6', 
-                  color: puppyParent.puppyParentInfo.hasOtherPets ? '#92400e' : '#6b7280',
-                  borderColor: puppyParent.puppyParentInfo.hasOtherPets ? '#fde68a' : '#e5e7eb'
+                  backgroundColor: puppyParentInfo.hasOtherPets ? '#fef3c7' : '#f3f4f6', 
+                  color: puppyParentInfo.hasOtherPets ? '#92400e' : '#6b7280',
+                  borderColor: puppyParentInfo.hasOtherPets ? '#fde68a' : '#e5e7eb'
                 }}>
-                  {puppyParent.puppyParentInfo.hasOtherPets ? 'Yes' : 'No'}
+                  {puppyParentInfo.hasOtherPets ? 'Yes' : 'No'}
                 </Tag>
               </div>
 
               <div>
                 <Text strong>Experience Level: </Text>
-                <Tag style={getExperienceBadgeColor(puppyParent.puppyParentInfo.experienceLevel)}>
-                  {puppyParent.puppyParentInfo.experienceLevel?.replace('-', ' ')}
+                <Tag style={getExperienceBadgeColor(puppyParentInfo.experienceLevel)}>
+                  {puppyParentInfo.experienceLevel?.replace('-', ' ')}
                 </Tag>
               </div>
 
-              {puppyParent.puppyParentInfo.familySituation && (
+              {puppyParentInfo.familySituation && (
                 <div style={{ marginTop: '8px' }}>
                   <Text strong>Family Situation: </Text>
                   <br />
-                  <Text style={{ fontSize: '13px' }}>{puppyParent.puppyParentInfo.familySituation}</Text>
+                  <Text style={{ fontSize: '13px' }}>{puppyParentInfo.familySituation}</Text>
                 </div>
               )}
 
-              {puppyParent.puppyParentInfo.workSchedule && (
+              {puppyParentInfo.workSchedule && (
                 <div style={{ marginTop: '8px' }}>
                   <Text strong>Work Schedule: </Text>
                   <br />
-                  <Text style={{ fontSize: '13px' }}>{puppyParent.puppyParentInfo.workSchedule}</Text>
+                  <Text style={{ fontSize: '13px' }}>{puppyParentInfo.workSchedule}</Text>
                 </div>
               )}
             </Space>
           </Card>
 
           {/* Preferred Breeds */}
-          {puppyParent.puppyParentInfo.preferredBreeds && puppyParent.puppyParentInfo.preferredBreeds.length > 0 && (
+          {puppyParentInfo.preferredBreeds && puppyParentInfo.preferredBreeds.length > 0 && (
             <Card 
               title="Interested Breeds" 
               style={getCardStyleWithPattern('diagonal')}
@@ -379,7 +431,7 @@ const PuppyParentProfilePage: React.FC = () => {
               )}
             >
               <Space wrap>
-                {puppyParent.puppyParentInfo.preferredBreeds.map(breed => (
+                {puppyParentInfo.preferredBreeds.map(breed => (
                   <Tag key={breed} style={{ 
                     marginBottom: '4px', 
                     backgroundColor: '#e6d7ff', 
@@ -411,24 +463,24 @@ const PuppyParentProfilePage: React.FC = () => {
             )}
           >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
-              {puppyParent.puppyParentInfo.agePreference && (
+              {puppyParentInfo.agePreference && (
                 <div>
                   <Text strong>Age Preference: </Text>
-                  <Tag style={{ backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>{puppyParent.puppyParentInfo.agePreference}</Tag>
+                  <Tag style={{ backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>{puppyParentInfo.agePreference}</Tag>
                 </div>
               )}
               
-              {puppyParent.puppyParentInfo.sizePreference && (
+              {puppyParentInfo.sizePreference && (
                 <div>
                   <Text strong>Size Preference: </Text>
-                  <Tag style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>{puppyParent.puppyParentInfo.sizePreference}</Tag>
+                  <Tag style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>{puppyParentInfo.sizePreference}</Tag>
                 </div>
               )}
               
-              {puppyParent.puppyParentInfo.activityLevel && (
+              {puppyParentInfo.activityLevel && (
                 <div>
                   <Text strong>Activity Level: </Text>
-                  <Tag style={{ backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>{puppyParent.puppyParentInfo.activityLevel}</Tag>
+                  <Tag style={{ backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>{puppyParentInfo.activityLevel}</Tag>
                 </div>
               )}
             </Space>
@@ -445,11 +497,11 @@ const PuppyParentProfilePage: React.FC = () => {
             <TabPane tab="About & Preferences" key="about">
               <Row gutter={[16, 16]}>
                 {/* Previous Pet Experience */}
-                {puppyParent.puppyParentInfo.previousPets && puppyParent.puppyParentInfo.previousPets.length > 0 && (
+                {puppyParent && (puppyParentInfo?.previousPets?.length || 0) > 0 && (
                   <Col span={24}>
                     <Card title="Previous Pet Experience" style={getCardStyleWithPattern('dots')}>
                       <List
-                        dataSource={puppyParent.puppyParentInfo.previousPets}
+                        dataSource={puppyParentInfo?.previousPets || []}
                         renderItem={(pet) => (
                           <List.Item>
                             <Text>• {pet}</Text>
@@ -462,11 +514,11 @@ const PuppyParentProfilePage: React.FC = () => {
                 )}
 
                 {/* Special Requirements */}
-                {puppyParent.puppyParentInfo.specialRequirements && puppyParent.puppyParentInfo.specialRequirements.length > 0 && (
+                {puppyParent && (puppyParentInfo?.specialRequirements?.length || 0) > 0 && (
                   <Col span={24}>
                     <Card title="Special Requirements" style={getCardStyleWithPattern('lines')}>
                       <Space wrap>
-                        {puppyParent.puppyParentInfo.specialRequirements.map((req, index) => (
+                        {(puppyParentInfo?.specialRequirements || []).map((req, index) => (
                           <Tag key={index} style={{ backgroundColor: '#cffafe', color: '#0e7490', borderColor: '#a5f3fc' }} icon={<SafetyOutlined />}>
                             {req}
                           </Tag>
@@ -477,14 +529,14 @@ const PuppyParentProfilePage: React.FC = () => {
                 )}
 
                 {/* Deal Breakers */}
-                {puppyParent.puppyParentInfo.dealBreakers && puppyParent.puppyParentInfo.dealBreakers.length > 0 && (
+                {puppyParent && (puppyParentInfo?.dealBreakers?.length || 0) > 0 && (
                   <Col span={24}>
                     <Card title="Important Considerations" style={getCardStyleWithPattern('waves')}>
                       <Alert
                         message="Things to Note"
                         description={
                           <List
-                            dataSource={puppyParent.puppyParentInfo.dealBreakers}
+                            dataSource={puppyParentInfo.dealBreakers}
                             renderItem={(item) => (
                               <List.Item style={{ padding: '4px 0' }}>
                                 <Text>• {item}</Text>
@@ -508,10 +560,10 @@ const PuppyParentProfilePage: React.FC = () => {
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={puppyParent.puppyParentInfo.experienceLevel === 'very-experienced' ? 100 : 
-                                   puppyParent.puppyParentInfo.experienceLevel === 'some-experience' ? 75 : 50}
-                            strokeColor={puppyParent.puppyParentInfo.experienceLevel === 'very-experienced' ? '#86efac' : 
-                                       puppyParent.puppyParentInfo.experienceLevel === 'some-experience' ? '#fbbf24' : '#a5b4fc'}
+                            percent={puppyParentInfo.experienceLevel === 'very-experienced' ? 100 : 
+                                   puppyParentInfo.experienceLevel === 'some-experience' ? 75 : 50}
+                            strokeColor={puppyParentInfo.experienceLevel === 'very-experienced' ? '#86efac' : 
+                                       puppyParentInfo.experienceLevel === 'some-experience' ? '#fbbf24' : '#a5b4fc'}
                             size={80}
                           />
                           <div style={{ marginTop: '8px' }}>
@@ -524,10 +576,10 @@ const PuppyParentProfilePage: React.FC = () => {
                         <div style={{ textAlign: 'center', padding: '16px' }}>
                           <Progress
                             type="circle"
-                            percent={puppyParent.puppyParentInfo.yardSize === 'acreage' ? 100 :
-                                   puppyParent.puppyParentInfo.yardSize === 'large' ? 85 :
-                                   puppyParent.puppyParentInfo.yardSize === 'medium' ? 70 :
-                                   puppyParent.puppyParentInfo.yardSize === 'small' ? 50 : 25}
+                            percent={puppyParentInfo.yardSize === 'acreage' ? 100 :
+                                   puppyParentInfo.yardSize === 'large' ? 85 :
+                                   puppyParentInfo.yardSize === 'medium' ? 70 :
+                                   puppyParentInfo.yardSize === 'small' ? 50 : 25}
                             strokeColor="#86efac"
                             size={80}
                           />

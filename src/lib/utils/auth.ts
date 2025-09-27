@@ -1,4 +1,4 @@
-// utils/auth.ts - Simplified version for debugging
+// utils/auth.ts - Enhanced version with token refresh support
 import jwt from 'jsonwebtoken';
 
 interface CognitoJWTPayload {
@@ -13,7 +13,7 @@ interface CognitoJWTPayload {
   iat: number;
 }
 
-// Simplified JWT verification for debugging
+// Enhanced JWT verification with graceful expiration handling
 export async function verifyJWT(token: string): Promise<{ userId: string; name: string; email: string }> {
   try {
     console.log('Verifying JWT token...');
@@ -40,6 +40,39 @@ export async function verifyJWT(token: string): Promise<{ userId: string; name: 
       const expiredTime = new Date(payload.exp * 1000).toISOString();
       const currentTime = new Date().toISOString();
       console.warn(`Token expired at ${expiredTime}, current time: ${currentTime}`);
+      
+      // Instead of throwing immediately, try to refresh the token
+      console.log('Attempting to refresh expired token...');
+      
+      // Check if we're in a browser environment and can attempt refresh
+      if (typeof window !== 'undefined') {
+        try {
+          // Try to trigger a token refresh by calling the auth hook
+          const refreshEvent = new CustomEvent('tokenRefreshRequested');
+          window.dispatchEvent(refreshEvent);
+          
+          // Wait a bit for the refresh to complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Try to get a fresh token from localStorage
+          const storageKey = `oidc.user:${process.env.NEXT_PUBLIC_COGNITO_AUTHORITY}:${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID}`;
+          const userData = localStorage.getItem(storageKey);
+          
+          if (userData) {
+            const parsedData = JSON.parse(userData);
+            const freshToken = parsedData.access_token || parsedData.id_token;
+            
+            if (freshToken && freshToken !== token) {
+              console.log('Found fresh token, retrying verification...');
+              return await verifyJWT(freshToken);
+            }
+          }
+        } catch (refreshError) {
+          console.warn('Token refresh attempt failed:', refreshError);
+        }
+      }
+      
+      // If refresh failed or we're on server side, throw the expiration error
       throw new Error('Token has expired');
     }
 

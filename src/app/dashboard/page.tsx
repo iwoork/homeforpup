@@ -128,10 +128,12 @@ const Dashboard: React.FC = () => {
         minHeight: '100vh'
       }}>
       {/* Profile Switching Overlay */}
-      <ProfileSwitchingOverlay 
-        isSwitching={isSwitchingProfile} 
-        targetProfile={activeProfileType} 
-      />
+      {activeProfileType && (
+        <ProfileSwitchingOverlay 
+          isSwitching={isSwitchingProfile} 
+          targetProfile={activeProfileType} 
+        />
+      )}
       
       {/* Hero Header */}
       <div style={{ 
@@ -460,14 +462,14 @@ const Dashboard: React.FC = () => {
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description={
-                    user?.adopterInfo?.preferredBreeds?.length ? 
+                    user?.puppyParentInfo?.preferredBreeds?.length ? 
                     "No puppies match your preferences right now" : 
                     "Set your puppy preferences in your profile to see matched puppies"
                   }
                 >
                   <Link href={`/users/${user?.userId}/edit`}>
                     <Button type="primary" icon={<SettingOutlined />}>
-                      {user?.adopterInfo?.preferredBreeds?.length ? 
+                      {user?.puppyParentInfo?.preferredBreeds?.length ? 
                         'Update Preferences' : 
                         'Set Preferences'
                       }
@@ -1056,7 +1058,7 @@ const Dashboard: React.FC = () => {
                 boxShadow: `0 4px 16px ${colors.primary}10`
               }}
             >
-              {user?.adopterInfo?.preferredBreeds?.length ? (
+              {user?.puppyParentInfo?.preferredBreeds?.length ? (
                 <div>
                   <div style={{ marginBottom: '16px' }}>
                     <Text strong style={{ color: colors.text, fontSize: '14px' }}>
@@ -1064,7 +1066,7 @@ const Dashboard: React.FC = () => {
                     </Text>
                     <br />
                     <Space wrap style={{ marginTop: '8px' }}>
-                      {user.adopterInfo.preferredBreeds.map((breed: string) => (
+                      {user.puppyParentInfo.preferredBreeds.map((breed: string) => (
                         <Tag 
                           key={breed} 
                           color="blue"
@@ -1079,7 +1081,7 @@ const Dashboard: React.FC = () => {
                       ))}
                     </Space>
                   </div>
-                  {user.adopterInfo.experienceLevel && (
+                  {user.puppyParentInfo.experienceLevel && (
                     <div style={{ marginBottom: '16px' }}>
                       <Text strong style={{ color: colors.text, fontSize: '14px' }}>
                         Experience Level:
@@ -1093,11 +1095,11 @@ const Dashboard: React.FC = () => {
                           color: colors.textSecondary
                         }}
                       >
-                        {user.adopterInfo.experienceLevel.replace('-', ' ')}
+                        {user.puppyParentInfo.experienceLevel.replace('-', ' ')}
                       </Text>
                     </div>
                   )}
-                  {user.adopterInfo.housingType && (
+                  {user.puppyParentInfo.housingType && (
                     <div style={{ marginBottom: '16px' }}>
                       <Text strong style={{ color: colors.text, fontSize: '14px' }}>
                         Housing:
@@ -1111,7 +1113,7 @@ const Dashboard: React.FC = () => {
                           color: colors.textSecondary
                         }}
                       >
-                        {user.adopterInfo.housingType}
+                        {user.puppyParentInfo.housingType}
                       </Text>
                     </div>
                   )}

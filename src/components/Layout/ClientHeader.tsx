@@ -9,28 +9,21 @@ import { useAuth } from '@/hooks';
 const ClientHeader: React.FC = () => {
   const { 
     user, 
-    logout, 
-    login, 
+    signOut: logout, 
+    signIn: login, 
     isAuthenticated, 
     loading, 
-    getToken,
-    canSwitchProfiles,
-    activeProfileType,
-    switchProfileType,
-    effectiveUserType,
-    isSwitchingProfile
+    getToken
   } = useAuth();
   const [isMobile, setIsMobile] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [forceLoading, setForceLoading] = React.useState(true);
 
   
   console.log('Header render - Auth state:', {
     user: user ? { userId: user.userId?.substring(0, 10) + '...', name: user.name, userType: user.userType } : null,
     isAuthenticated,
-    loading,
-    canSwitchProfiles,
-    activeProfileType,
-    effectiveUserType
+    loading
   });
 
   // Fetch unread message count
@@ -83,6 +76,25 @@ const ClientHeader: React.FC = () => {
   React.useEffect(() => {
     console.log('🔄 Header mounted');
   }, []);
+
+  // Force loading to false after timeout to prevent stuck spinner
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (forceLoading) {
+        console.log('Header: Force setting loading to false after timeout');
+        setForceLoading(false);
+      }
+    }, 3000); // 3 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [forceLoading]);
+
+  // Update force loading when auth loading changes
+  React.useEffect(() => {
+    if (!loading) {
+      setForceLoading(false);
+    }
+  }, [loading]);
 
   // Fetch unread count when user changes
   React.useEffect(() => {
@@ -139,48 +151,6 @@ const ClientHeader: React.FC = () => {
         </Link>
       ),
     },
-    ...(isAuthenticated ? [
-      {
-        type: 'divider' as const,
-      },
-      {
-        key: 'switch-profile',
-        icon: <SwapOutlined />,
-        label: 'Switch Profile',
-        children: [
-          {
-            key: 'switch-to-adopter',
-            label: (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Puppy Parent Profile</span>
-                {activeProfileType === 'puppy-parent' && <span style={{ color: '#08979C' }}>✓</span>}
-              </div>
-            ),
-            onClick: () => {
-              if (!isSwitchingProfile) {
-                console.log('Switching to puppy parent profile');
-                switchProfileType('puppy-parent');
-              }
-            },
-          },
-          {
-            key: 'switch-to-breeder',
-            label: (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span>Breeder Profile</span>
-                {activeProfileType === 'breeder' && <span style={{ color: '#08979C' }}>✓</span>}
-              </div>
-            ),
-            onClick: () => {
-              if (!isSwitchingProfile) {
-                console.log('Switching to dog professional profile');
-                switchProfileType('breeder');
-              }
-            },
-          },
-        ],
-      },
-    ] : []),
     {
       type: 'divider' as const,
     },
@@ -190,16 +160,14 @@ const ClientHeader: React.FC = () => {
       label: 'Sign Out',
       onClick: logout,
     },
-  ], [user?.userId, unreadCount, isAuthenticated, activeProfileType, switchProfileType, logout]);
+  ], [user?.userId, unreadCount, logout]);
 
   const userMenuItems = getUserMenuItems;
 
   // Debug logging (reduced)
   if (process.env.NODE_ENV === 'development') {
     console.log('Header state:', { 
-      menuItems: userMenuItems.length, 
-      isSwitchingProfile, 
-      disabledItems: 0 
+      menuItems: userMenuItems.length
     });
   }
 
@@ -294,16 +262,6 @@ const ClientHeader: React.FC = () => {
                   }}>
                     {user?.name || 'User'}
                   </span>
-                  {canSwitchProfiles && (
-                    <span style={{ 
-                      fontSize: '10px',
-                      color: '#08979C',
-                      textTransform: 'capitalize',
-                      fontWeight: '500'
-                    }}>
-                      {activeProfileType}
-                    </span>
-                  )}
                 </div>
               </Button>
             </Dropdown>
@@ -311,8 +269,8 @@ const ClientHeader: React.FC = () => {
         ) : (
           <Button 
             type="primary" 
-            onClick={login}
-            loading={loading}
+            onClick={() => login()}
+            loading={loading && forceLoading}
             style={buttonStyle}
           >
             Sign In

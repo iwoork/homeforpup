@@ -85,9 +85,19 @@ export async function GET(request: NextRequest) {
       // Check if it's specifically an expiration error
       const isExpired = verificationError instanceof Error && verificationError.message.includes('expired');
       
+      // For expired tokens, return a more specific error that the client can handle
+      if (isExpired) {
+        return NextResponse.json({ 
+          error: 'Authentication token has expired. Please refresh your session.',
+          code: 'TOKEN_EXPIRED',
+          action: 'REFRESH_TOKEN',
+          details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+        }, { status: 401 });
+      }
+      
       return NextResponse.json({ 
-        error: isExpired ? 'Authentication token has expired' : 'Invalid authentication token',
-        code: isExpired ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN',
+        error: 'Invalid authentication token',
+        code: 'INVALID_TOKEN',
         details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
       }, { status: 401 });
     }

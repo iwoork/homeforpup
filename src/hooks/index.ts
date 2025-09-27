@@ -1,7 +1,8 @@
 // Hook exports organized by type
 
 // API hooks
-export { useNextAuth as useAuth } from './useNextAuth';
+export { useAuth } from './api/useAuth';
+export { useNextAuth } from './useNextAuth';
 export { useAvailableUsers } from './api/useAvailableUsers';
 export { useDogs } from './api/useDogs';
 export { useAvailablePuppies } from './api/useAvailablePuppies';
