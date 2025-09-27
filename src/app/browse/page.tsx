@@ -1,56 +1,262 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button } from 'antd';
-import { HeartOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Statistic, Tooltip, Badge, Divider } from 'antd';
+import { HeartOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
 import Image from 'next/image';
+import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
+import CountryFilter from '@/components/filters/CountryFilter';
+import StateFilter from '@/components/filters/StateFilter';
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
-
-// Dummy puppy data - expanded to 12 examples
-const puppies = [
-  { id: 1, name: 'Bella', breed: 'Cavapoo', gender: 'Female', ageWeeks: 10, price: 2000, location: 'Seattle, WA', breeder: 'Happy Tails', rating: 5, shipping: true, image: '/puppy1.jpg' },
-  { id: 2, name: 'Max', breed: 'Golden Retriever', gender: 'Male', ageWeeks: 12, price: 1800, location: 'Portland, OR', breeder: 'Golden Dreams', rating: 4, shipping: false, image: '/puppy2.jpg' },
-  { id: 3, name: 'Luna', breed: 'French Bulldog', gender: 'Female', ageWeeks: 9, price: 3000, location: 'San Francisco, CA', breeder: 'Frenchie Love', rating: 5, shipping: true, image: '/puppy3.jpg' },
-  { id: 4, name: 'Charlie', breed: 'Cavapoo', gender: 'Male', ageWeeks: 11, price: 2200, location: 'Los Angeles, CA', breeder: 'Cali Pups', rating: 4, shipping: false, image: '/puppy4.jpg' },
-  { id: 5, name: 'Ruby', breed: 'Goldendoodle', gender: 'Female', ageWeeks: 8, price: 2500, location: 'Denver, CO', breeder: 'Mountain Pups', rating: 5, shipping: true, image: '/puppy5.jpg' },
-  { id: 6, name: 'Cooper', breed: 'Labrador Retriever', gender: 'Male', ageWeeks: 10, price: 1600, location: 'Austin, TX', breeder: 'Lone Star Labs', rating: 4, shipping: true, image: '/puppy6.jpg' },
-  { id: 7, name: 'Daisy', breed: 'Bernedoodle', gender: 'Female', ageWeeks: 11, price: 2800, location: 'Nashville, TN', breeder: 'Music City Doodles', rating: 5, shipping: false, image: '/puppy7.jpg' },
-  { id: 8, name: 'Tucker', breed: 'Golden Retriever', gender: 'Male', ageWeeks: 9, price: 1900, location: 'Phoenix, AZ', breeder: 'Desert Goldens', rating: 4, shipping: true, image: '/puppy8.jpg' },
-  { id: 9, name: 'Mia', breed: 'French Bulldog', gender: 'Female', ageWeeks: 12, price: 3200, location: 'Miami, FL', breeder: 'Sunshine Frenchies', rating: 5, shipping: true, image: '/puppy9.jpg' },
-  { id: 10, name: 'Buddy', breed: 'Cavapoo', gender: 'Male', ageWeeks: 10, price: 2100, location: 'Boston, MA', breeder: 'New England Pups', rating: 4, shipping: false, image: '/puppy10.jpg' },
-  { id: 11, name: 'Zoe', breed: 'Maltipoo', gender: 'Female', ageWeeks: 8, price: 2400, location: 'Chicago, IL', breeder: 'Windy City Poodles', rating: 5, shipping: true, image: '/puppy11.jpg' },
-  { id: 12, name: 'Oscar', breed: 'Bernedoodle', gender: 'Male', ageWeeks: 11, price: 2700, location: 'Atlanta, GA', breeder: 'Peach State Doodles', rating: 4, shipping: true, image: '/puppy12.jpg' },
-];
-
-// Extract unique filter values
-const breeds = Array.from(new Set(puppies.map(p => p.breed)));
-const locations = Array.from(new Set(puppies.map(p => p.location)));
 
 const PuppiesPage: React.FC = () => {
   const [filters, setFilters] = useState({
+    country: 'Canada', // Default to Canada
+    state: [] as string[],
     breed: null as string | null,
     gender: null as string | null,
-    location: null as string | null,
-    price: [1000, 4000],
+    price: [1000, 4000] as [number, number],
     shipping: false,
+    verified: false,
   });
 
-  const filteredPuppies = puppies.filter(p => {
-    return (
-      (!filters.breed || p.breed === filters.breed) &&
-      (!filters.gender || p.gender === filters.gender) &&
-      (!filters.location || p.location === filters.location) &&
-      (!filters.shipping || p.shipping === true) &&
-      p.price >= filters.price[0] &&
-      p.price <= filters.price[1]
-    );
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
+
+  // Use the puppies API hook
+  const {
+    puppies,
+    totalCount,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    filters: availableFilters,
+    stats,
+    isLoading,
+    error,
+  } = usePuppies({
+    country: filters.country,
+    state: filters.state.length > 0 ? filters.state[0] : undefined,
+    breed: filters.breed || undefined,
+    gender: filters.gender || undefined,
+    minPrice: filters.price[0],
+    maxPrice: filters.price[1],
+    shipping: filters.shipping,
+    verified: filters.verified,
+    page: currentPage,
+    limit: pageSize,
   });
 
   const resetFilters = () => {
-    setFilters({ breed: null, gender: null, location: null, price: [1000, 4000], shipping: false });
+    setFilters({
+      country: 'Canada',
+      state: [],
+      breed: null,
+      gender: null,
+      price: [1000, 4000],
+      shipping: false,
+      verified: false,
+    });
+    setCurrentPage(1);
   };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = filters.country !== 'Canada' || 
+                          filters.state.length > 0 || 
+                          filters.breed !== null || 
+                          filters.gender !== null || 
+                          filters.price[0] !== 1000 || 
+                          filters.price[1] !== 4000 || 
+                          filters.shipping || 
+                          filters.verified;
+
+  // Render puppy card
+  const renderPuppyCard = (puppy: PuppyWithBreeder) => (
+    <Card
+      key={puppy.id}
+      hoverable
+      style={{
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        marginBottom: '16px',
+        overflow: 'visible',
+        height: '580px',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+      bodyStyle={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '16px',
+        overflow: 'visible'
+      }}
+      cover={
+        <div style={{ position: 'relative', height: '200px' }}>
+          <Image
+            src={puppy.image}
+            alt={puppy.name}
+            fill
+            style={{ objectFit: 'cover' }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            display: 'flex',
+            gap: '8px',
+            flexWrap: 'wrap'
+          }}>
+            {puppy.breeder.verified && (
+              <Tag color="green" icon={<CheckCircleOutlined />}>
+                Verified
+              </Tag>
+            )}
+            <Tag color="blue">
+              {puppy.ageWeeks} weeks
+            </Tag>
+            {puppy.breeder.shipping && (
+              <Tag color="orange" icon={<TruckOutlined />}>
+                Ships
+              </Tag>
+            )}
+            {puppy.breeder.pickupAvailable && (
+              <Tag color="purple" icon={<HomeOutlined />}>
+                Pickup
+              </Tag>
+            )}
+          </div>
+        </div>
+      }
+    >
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100%',
+        padding: '0 4px' 
+      }}>
+        {/* Header Section */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+              <Title level={4} style={{ margin: 0, color: '#08979C' }}>
+                {puppy.name}
+              </Title>
+              <Text strong style={{ fontSize: '18px', color: '#52c41a' }}>
+                ${puppy.price.toLocaleString()}
+              </Text>
+            </div>
+            <Text type="secondary" style={{ fontSize: '14px' }}>
+              {puppy.breed} • {puppy.gender}
+            </Text>
+          </div>
+        </div>
+
+        {/* Location Section */}
+        <div style={{ marginBottom: '8px' }}>
+          <Space wrap>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              <EnvironmentOutlined style={{ marginRight: '4px' }} />
+              {puppy.location}, {puppy.country}
+            </Text>
+          </Space>
+        </div>
+
+        {/* Breeder Section */}
+        <div style={{ marginBottom: '8px' }}>
+          <Text strong style={{ fontSize: '13px' }}>
+            Breeder: {puppy.breeder.businessName}
+          </Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+            <Rate disabled value={puppy.breeder.rating} style={{ fontSize: '12px' }} />
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              ({puppy.breeder.reviewCount} reviews)
+            </Text>
+          </div>
+        </div>
+
+        {/* Description Section - Flexible */}
+        <div style={{ flex: 1, marginBottom: '8px' }}>
+          <Paragraph 
+            ellipsis={{ rows: 3, expandable: true, symbol: 'more' }} 
+            style={{ margin: '8px 0', fontSize: '13px', color: '#666' }}
+          >
+            {puppy.description}
+          </Paragraph>
+        </div>
+
+        <Divider style={{ margin: '8px 0' }} />
+        
+        {/* Footer Section - Fixed at bottom */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginTop: 'auto',
+          paddingTop: '8px',
+          minHeight: '40px'
+        }}>
+          <Space size="small">
+            <Text style={{ fontSize: '12px', color: '#666' }}>
+              Response: {puppy.breeder.avgResponseTime}
+            </Text>
+            <Text style={{ fontSize: '12px', color: '#666' }}>
+              Rate: {Math.round(puppy.breeder.responseRate * 100)}%
+            </Text>
+          </Space>
+          <Button type="primary" size="small">
+            Contact Breeder
+          </Button>
+        </div>
+
+        {/* Action Buttons Section */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          marginTop: '12px',
+          paddingTop: '8px',
+          borderTop: '1px solid #f0f0f0'
+        }}>
+          <Space size="middle">
+            <Tooltip title="Save to favorites">
+              <Button type="text" icon={<HeartOutlined />} size="small" />
+            </Tooltip>
+            <Tooltip title={puppy.breeder.phone}>
+              <Button type="text" icon={<PhoneOutlined />} size="small" />
+            </Tooltip>
+            <Tooltip title={puppy.breeder.email}>
+              <Button type="text" icon={<MailOutlined />} size="small" />
+            </Tooltip>
+            <Tooltip title={puppy.breeder.website}>
+              <Button type="text" icon={<GlobalOutlined />} size="small" />
+            </Tooltip>
+          </Space>
+        </div>
+      </div>
+    </Card>
+  );
+
+  if (error) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
+        <Alert
+          message="Error Loading Puppies"
+          description="There was an error loading the available puppies. Please try again later."
+          type="error"
+          showIcon
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
@@ -58,194 +264,240 @@ const PuppiesPage: React.FC = () => {
         Available Puppies
       </Title>
 
-      {/* Responsive Filters */}
-      <Card
-        style={{
-          marginBottom: '24px',
-          borderRadius: '12px',
-        }}
-        bodyStyle={{ 
-          padding: window.innerWidth < 768 ? '12px' : '24px' 
-        }}
-      >
-        <Row gutter={[16, 16]} align="middle">
-          {/* Breed */}
-          <Col xs={8} sm={12} md={6}>
-            <Select
-              style={{ width: '100%' }}
-              placeholder="Breed"
-              value={filters.breed}
-              onChange={value => setFilters(prev => ({ ...prev, breed: value }))}
-              allowClear
-              size={window.innerWidth < 768 ? "small" : "middle"}
-            >
-              {breeds.map(breed => (
-                <Option key={breed} value={breed}>{breed}</Option>
-              ))}
-            </Select>
+      {/* Stats */}
+      {stats && (
+        <Row gutter={16} style={{ marginBottom: '24px' }}>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Total Puppies"
+                value={stats.totalPuppies}
+                prefix="🐕"
+              />
+            </Card>
           </Col>
-
-          {/* Gender */}
-          <Col xs={8} sm={12} md={4}>
-            <Select
-              style={{ width: '100%' }}
-              placeholder="Gender"
-              value={filters.gender}
-              onChange={value => setFilters(prev => ({ ...prev, gender: value }))}
-              allowClear
-              size={window.innerWidth < 768 ? "small" : "middle"}
-            >
-              <Option value="Male">Male</Option>
-              <Option value="Female">Female</Option>
-            </Select>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Average Age"
+                value={stats.averageAge}
+                suffix="weeks"
+                prefix="📅"
+              />
+            </Card>
           </Col>
-
-          {/* Location */}
-          <Col xs={8} sm={12} md={6}>
-            <Select
-              style={{ width: '100%' }}
-              placeholder="Location"
-              value={filters.location}
-              onChange={value => setFilters(prev => ({ ...prev, location: value }))}
-              allowClear
-              size={window.innerWidth < 768 ? "small" : "middle"}
-            >
-              {locations.map(loc => (
-                <Option key={loc} value={loc}>{loc}</Option>
-              ))}
-            </Select>
-          </Col>
-
-          {/* Price */}
-          <Col xs={12} md={6}>
-            <Paragraph style={{ 
-              marginBottom: window.innerWidth < 768 ? 2 : 4, 
-              fontSize: window.innerWidth < 768 ? '11px' : '12px',
-              color: '#666'
-            }}>
-              Price: ${filters.price[0]} - ${filters.price[1]}
-            </Paragraph>
-            <Slider
-              range
-              min={500}
-              max={5000}
-              step={100}
-              value={filters.price}
-              onChange={value => setFilters(prev => ({ ...prev, price: value as [number, number] }))}
-            />
-          </Col>
-
-          {/* Shipping */}
-          <Col xs={6} sm={12} md={2}>
-            <Checkbox
-              checked={filters.shipping}
-              onChange={e => setFilters(prev => ({ ...prev, shipping: e.target.checked }))}
-              style={{ fontSize: window.innerWidth < 768 ? '12px' : '14px' }}
-            >
-              {window.innerWidth < 768 ? 'Ship' : 'Shipping'}
-            </Checkbox>
-          </Col>
-
-          {/* Reset Button */}
-          <Col xs={6} sm={12} md={24} style={{ textAlign: 'right' }}>
-            <Button
-              type="primary"
-              size={window.innerWidth < 768 ? "small" : "middle"}
-              style={{ 
-                background: '#FA8072', 
-                borderColor: '#FA8072',
-                fontSize: window.innerWidth < 768 ? '11px' : '14px',
-                width: window.innerWidth < 768 ? '100%' : 'auto'
-              }}
-              onClick={resetFilters}
-            >
-              {window.innerWidth < 768 ? 'Reset' : 'Reset Filters'}
-            </Button>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Verified Breeders"
+                value={stats.verifiedBreeders}
+                prefix="✅"
+              />
+            </Card>
           </Col>
         </Row>
-      </Card>
+      )}
 
-      {/* Puppy Listings */}  
-      <Row gutter={[16, 16]}>
-      {filteredPuppies.map((puppy) => (
-        <Col xs={24} sm={12} md={6} key={puppy.id}>
+      <Row gutter={24}>
+        {/* Filters Sidebar */}
+        <Col xs={24} lg={6}>
           <Card
-            hoverable
-            style={{
-              borderRadius: '12px',
-              height: '430px', // Fixed height for consistency
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-            }}
-            styles={{
-              actions: {
-                borderTop: '1px solid #f0f0f0',
-              }
-            }}
-            cover={
-              <Image
-                src={`https://placedog.net/500/300?id=${puppy.id}&random`}
-                alt={puppy.name}
-                width={500}
-                height={180}
-                style={{
-                  height: '180px',
-                  objectFit: 'cover',
-                  borderTopLeftRadius: '12px',
-                  borderTopRightRadius: '12px',
-                }}
-              />
+            title={
+              <Space>
+                <FilterOutlined />
+                Filters
+                {hasActiveFilters && (
+                  <Badge count={Object.values(filters).filter(v => 
+                    Array.isArray(v) ? v.length > 0 : v !== null && v !== false && v !== 'Canada'
+                  ).length} />
+                )}
+              </Space>
             }
-            actions={[
-              <HeartOutlined key="like" style={{ color: '#FA8072' }} />,
-            ]}
-            bodyStyle={{ 
-              flex: 1, 
-              display: 'flex', 
-              flexDirection: 'column',
-              padding: '16px'
-            }}
+            extra={
+              hasActiveFilters && (
+                <Button type="link" onClick={resetFilters} size="small">
+                  Clear All
+                </Button>
+              )
+            }
+            style={{ marginBottom: '24px' }}
           >
-            <div
-              style={{
-                height: '140px', // Fixed content area height
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}
-            >
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              {/* Country Filter */}
               <div>
-                <Title level={4} style={{ marginBottom: '4px', lineHeight: '1.2' }}>
-                  {puppy.name}
-                </Title>
-                <Paragraph style={{ margin: 0, fontSize: '13px', color: '#595959', lineHeight: '1.3' }}>
-                  {puppy.breed} • {puppy.gender}, {puppy.ageWeeks} wks
-                </Paragraph>
-                <Paragraph style={{ margin: '2px 0', fontSize: '13px', lineHeight: '1.3' }}>
-                  📍 {puppy.location}
-                </Paragraph>
+                <Text strong>Country</Text>
+                <CountryFilter
+                  value={filters.country}
+                  onChange={(value) => {
+                    setFilters(prev => ({ ...prev, country: value, state: [] }));
+                    setCurrentPage(1);
+                  }}
+                  style={{ width: '100%', marginTop: '8px' }}
+                />
+              </div>
+
+              {/* State Filter */}
+              <div>
+                <Text strong>Location</Text>
+                <StateFilter
+                  value={filters.state}
+                  onChange={(value) => {
+                    setFilters(prev => ({ ...prev, state: value }));
+                    setCurrentPage(1);
+                  }}
+                  availableStates={availableFilters?.availableStates || []}
+                  style={{ width: '100%', marginTop: '8px' }}
+                />
+              </div>
+
+              {/* Breed Filter */}
+              <div>
+                <Text strong>Breed</Text>
+                <Select
+                  style={{ width: '100%', marginTop: '8px' }}
+                  placeholder="Select breed"
+                  value={filters.breed}
+                  onChange={(value) => {
+                    setFilters(prev => ({ ...prev, breed: value }));
+                    setCurrentPage(1);
+                  }}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) => {
+                    const label = option?.label || option?.children;
+                    const searchText = String(label || '');
+                    return searchText.toLowerCase().includes(input.toLowerCase());
+                  }}
+                >
+                  {availableFilters?.availableBreeds.map((breed: string) => (
+                    <Option key={breed} value={breed}>{breed}</Option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* Gender Filter */}
+              <div>
+                <Text strong>Gender</Text>
+                <Select
+                  style={{ width: '100%', marginTop: '8px' }}
+                  placeholder="Select gender"
+                  value={filters.gender}
+                  onChange={(value) => {
+                    setFilters(prev => ({ ...prev, gender: value }));
+                    setCurrentPage(1);
+                  }}
+                  allowClear
+                >
+                  <Option value="male">Male</Option>
+                  <Option value="female">Female</Option>
+                </Select>
               </div>
               
+              {/* Price Range */}
               <div>
-                <Paragraph style={{ margin: '4px 0', fontWeight: 'bold', color: '#08979C', lineHeight: '1.3' }}>
-                  ${puppy.price.toLocaleString()}
-                </Paragraph>
-                <Paragraph style={{ margin: 0, fontSize: '12px', color: '#595959', lineHeight: '1.3' }}>
-                  {puppy.breeder} ⭐ {puppy.rating}
-                </Paragraph>
-                <div style={{ height: '16px', marginTop: '2px' }}>
-                  {puppy.shipping && (
-                    <Paragraph style={{ margin: 0, fontSize: '12px', color: '#08979C', lineHeight: '1.3' }}>
-                      🚚 Shipping Available
-                    </Paragraph>
-                  )}
+                <Text strong>Price Range</Text>
+                <Slider
+                  range
+                  min={1000}
+                  max={5000}
+                  step={100}
+                  value={filters.price}
+                  onChange={(value) => {
+                    setFilters(prev => ({ ...prev, price: value as [number, number] }));
+                    setCurrentPage(1);
+                  }}
+                  style={{ marginTop: '8px' }}
+                />
+                <div style={{ textAlign: 'center', fontSize: '12px', color: '#666' }}>
+                  ${filters.price[0].toLocaleString()} - ${filters.price[1].toLocaleString()}
                 </div>
               </div>
+
+              {/* Checkboxes */}
+              <div>
+                <Space direction="vertical">
+                  <Checkbox
+                    checked={filters.shipping}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, shipping: e.target.checked }));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Shipping Available
+                  </Checkbox>
+                  <Checkbox
+                    checked={filters.verified}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, verified: e.target.checked }));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    Verified Breeders Only
+                  </Checkbox>
+                </Space>
             </div>
+            </Space>
           </Card>
         </Col>
+
+        {/* Puppies Grid */}
+        <Col xs={24} lg={18}>
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Spin size="large" />
+              <div style={{ marginTop: '16px' }}>
+                <Text>Loading adorable puppies...</Text>
+              </div>
+            </div>
+          ) : puppies.length === 0 ? (
+            <Card>
+              <div style={{ textAlign: 'center', padding: '50px' }}>
+                <Text type="secondary" style={{ fontSize: '16px' }}>
+                  No puppies found matching your criteria.
+                </Text>
+                <br />
+                <Button type="link" onClick={resetFilters}>
+                  Clear filters to see all puppies
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <>
+              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text>
+                  Showing {puppies.length} of {totalCount} puppies
+                </Text>
+                <Text type="secondary">
+                  Page {currentPage} of {totalPages}
+                </Text>
+              </div>
+
+              <Row gutter={[16, 16]}>
+                {puppies.map((puppy, index) => (
+                  <Col xs={24} sm={12} lg={8} key={puppy.id}>
+                    {renderPuppyCard(puppy)}
+        </Col>
       ))}
+              </Row>
+
+              {totalPages > 1 && (
+                <div style={{ textAlign: 'center', marginTop: '32px' }}>
+                  <Pagination
+                    current={currentPage}
+                    total={totalCount}
+                    pageSize={pageSize}
+                    onChange={handlePageChange}
+                    showSizeChanger={false}
+                    showQuickJumper
+                    showTotal={(total, range) =>
+                      `${range[0]}-${range[1]} of ${total} puppies`
+                    }
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </Col>
       </Row>
     </div>
   );

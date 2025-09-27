@@ -23,6 +23,8 @@ import {
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useMemo } from 'react';
+import CountryFilter from '@/components/filters/CountryFilter';
+import StateFilter from '@/components/filters/StateFilter';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -663,15 +665,11 @@ const BreederDirectoryPage: React.FC = () => {
             {/* Country Filter */}
             <div style={{ marginBottom: '16px' }}>
               <Text strong>Country</Text>
-              <Select
-                style={{ width: '100%', marginTop: '8px' }}
-                placeholder="Select country"
+              <CountryFilter
                 value={filters.country}
-                onChange={(value) => setFilters(prev => ({ ...prev, country: value }))}
-              >
-                <Option value="Canada">🇨🇦 Canada</Option>
-                <Option value="USA">🇺🇸 United States</Option>
-              </Select>
+                onChange={(value) => setFilters(prev => ({ ...prev, country: value, states: [] }))}
+                style={{ width: '100%', marginTop: '8px' }}
+              />
             </div>
 
             {/* Breed Filter */}
@@ -700,18 +698,12 @@ const BreederDirectoryPage: React.FC = () => {
             {/* State Filter */}
             <div style={{ marginBottom: '16px' }}>
               <Text strong>Location</Text>
-              <Select
-                mode="multiple"
-                style={{ width: '100%', marginTop: '8px' }}
-                placeholder="Select states"
+              <StateFilter
                 value={filters.states}
                 onChange={(value) => setFilters(prev => ({ ...prev, states: value }))}
-                maxTagCount={2}
-              >
-                {breederFilters?.availableStates.map(state => (
-                  <Option key={state} value={state}>{state}</Option>
-                ))}
-              </Select>
+                availableStates={breederFilters?.availableStates || []}
+                style={{ width: '100%', marginTop: '8px' }}
+              />
             </div>
 
             {/* Experience Range */}
