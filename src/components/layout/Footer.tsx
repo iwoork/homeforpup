@@ -74,6 +74,10 @@ const Footer: React.FC = () => {
                 <Text style={{ color: '#999', fontSize: '12px' }}>
                   Made with <HeartOutlined style={{ color: '#FA8072' }} /> for dog lovers
                 </Text>
+                <br />
+                <Text style={{ color: '#999', fontSize: '12px' }}>
+                  🇨🇦 Proudly made in Canada
+                </Text>
               </div>
             </Col>
           </Row>
