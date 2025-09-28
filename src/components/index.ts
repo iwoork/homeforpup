@@ -12,6 +12,7 @@ export { default as DocumentUpload } from './forms/Upload/DocumentUpload';
 // Core components
 export { Providers } from './Providers';
 export { default as GoogleAnalytics } from './GoogleAnalytics';
+export { default as PuppyList } from './PuppyList';
 
 // Note: Feature-specific components are now exported from their respective features
 // Import them like: import { ProfileHeader } from '@/features/users';

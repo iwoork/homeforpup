@@ -14,8 +14,8 @@ export const useNextAuth = (): {
   logout: () => Promise<void>;
   getToken: () => Promise<string | null>;
   session: any;
-  activeProfileType: 'breeder' | 'puppy-parent';
-  switchProfileType: (profileType: 'breeder' | 'puppy-parent') => void;
+  activeProfileType: 'breeder' | 'adopter';
+  switchProfileType: (profileType: 'breeder' | 'adopter') => void;
   canSwitchProfiles: boolean;
   effectiveUserType: string | undefined;
   isSwitchingProfile: boolean;
@@ -27,7 +27,7 @@ export const useNextAuth = (): {
   const { userData, isLoading: userDataLoading, refreshUserData } = useUserData();
   
   // Profile switching state
-  const [activeProfileType, setActiveProfileType] = useState<'breeder' | 'puppy-parent'>('puppy-parent');
+  const [activeProfileType, setActiveProfileType] = useState<'breeder' | 'adopter'>('adopter');
   const [isSwitchingProfile, setIsSwitchingProfile] = useState(false);
 
   // Debug user data processing (only when data changes)
@@ -74,18 +74,18 @@ export const useNextAuth = (): {
       
       if (user.userType === 'breeder') {
         setActiveProfileType('breeder');
-      } else if (user.userType === 'puppy-parent') {
-        setActiveProfileType('puppy-parent');
+      } else if (user.userType === 'adopter') {
+        setActiveProfileType('adopter');
       } else if (user.userType === 'both') {
         // Load from localStorage or default to 'adopter'
-        const savedProfileType = localStorage.getItem('activeProfileType') as 'breeder' | 'puppy-parent' | null;
-        setActiveProfileType(savedProfileType || 'puppy-parent');
+        const savedProfileType = localStorage.getItem('activeProfileType') as 'breeder' | 'adopter' | null;
+        setActiveProfileType(savedProfileType || 'adopter');
       }
     }
   }, [user]);
 
   // Save profile type selection to localStorage
-  const switchProfileType = useCallback(async (profileType: 'breeder' | 'puppy-parent') => {
+  const switchProfileType = useCallback(async (profileType: 'breeder' | 'adopter') => {
     const startTime = Date.now();
     // switchProfileType called
     

@@ -11,7 +11,7 @@ export interface User {
   firstName?: string; // Optional: First name
   lastName?: string; // Optional: Last name
   displayName?: string; // Optional: Public display name
-  userType: 'breeder' | 'puppy-parent' | 'both'; // User type
+  userType: 'breeder' | 'adopter' | 'both'; // User type
   phone?: string; // Optional: Phone number
   location?: string; // Location string (city, state)
   coordinates?: {
@@ -582,7 +582,7 @@ export interface AnnouncementFilters {
 // UTILITY TYPES
 // ============================================================================
 
-export type UserType = 'breeder' | 'puppy-parent' | 'both';
+export type UserType = 'breeder' | 'adopter' | 'both';
 export type MessageType = 'inquiry' | 'general' | 'business' | 'urgent';
 export type AnnouncementType = 'litter' | 'general' | 'health' | 'achievement' | 'event' | 'available';
 export type LitterStatus = 'planned' | 'expecting' | 'born' | 'weaning' | 'ready' | 'sold_out';

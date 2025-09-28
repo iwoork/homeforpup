@@ -8,7 +8,7 @@ import { User } from '@/types';
 interface UseAuthReturn {
   user: User | null;
   loading: boolean;
-  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'puppy-parent') => Promise<void>;
+  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
@@ -17,10 +17,10 @@ interface UseAuthReturn {
   syncUser: (userData?: Partial<User>, providedToken?: string) => Promise<User | null>;
   updateUser: (updates: Partial<User>) => Promise<User | null>;
   // Legacy properties for backward compatibility
-  login: (action?: 'login' | 'signup', userType?: 'breeder' | 'puppy-parent') => Promise<void>;
-  effectiveUserType: 'breeder' | 'puppy-parent' | null;
+  login: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
+  effectiveUserType: 'breeder' | 'adopter' | null;
   canSwitchProfiles: boolean;
-  activeProfileType: 'breeder' | 'puppy-parent' | null;
+  activeProfileType: 'breeder' | 'adopter' | null;
   isSwitchingProfile: boolean;
   clearAllAuthData: () => void;
   refreshUserData: () => Promise<void>;
@@ -156,7 +156,7 @@ export const useAuth = (): UseAuthReturn => {
         const userId = profile.id || '';
         const email = profile.email || '';
         const name = profile.name || profile.email?.split('@')[0] || 'User';
-        const userType = profile.userType || 'puppy-parent';
+        const userType = profile.userType || 'adopter';
 
         console.log('NextAuth authentication successful, syncing user data...', {
           userId: userId.substring(0, 10) + '...',
@@ -182,7 +182,7 @@ export const useAuth = (): UseAuthReturn => {
             userId,
             email,
             name,
-            userType: userType as 'breeder' | 'puppy-parent' | 'both',
+            userType: userType as 'breeder' | 'adopter' | 'both',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             verified: false,
@@ -245,7 +245,7 @@ export const useAuth = (): UseAuthReturn => {
     return () => clearTimeout(initTimeout);
   }, [isInitializing]);
 
-  const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'puppy-parent') => {
+  const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
     console.log('signIn function called with action:', action, 'userType:', userType);
     
     try {
@@ -287,7 +287,7 @@ export const useAuth = (): UseAuthReturn => {
   const isAuthenticated = status === 'authenticated' && !!user;
 
   // Legacy properties for backward compatibility
-  const effectiveUserType = user?.userType === 'both' ? 'breeder' : (user?.userType as 'breeder' | 'puppy-parent' | null) || null;
+  const effectiveUserType = user?.userType === 'both' ? 'breeder' : (user?.userType as 'breeder' | 'adopter' | null) || null;
   const canSwitchProfiles = user?.userType === 'both';
   const activeProfileType = effectiveUserType;
   const isSwitchingProfile = false; // Not implemented in current version

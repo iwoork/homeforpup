@@ -111,7 +111,7 @@ const Dashboard: React.FC = () => {
 
   // Determine user type for conditional rendering based on active profile
   const isBreeder = effectiveUserType === 'breeder';
-  const isPuppyParent = effectiveUserType === 'puppy-parent';
+  const isAdopter = effectiveUserType === 'adopter';
   
   // Get color scheme based on user type
   const colors = isBreeder ? BREEDER_COLORS : PUPPY_PARENT_COLORS;
@@ -196,7 +196,7 @@ const Dashboard: React.FC = () => {
               {canSwitchProfiles 
                 ? `Currently viewing as ${activeProfileType}. Switch profiles in the user menu to change your view.`
                 : isBreeder 
-                ? "Manage your breeding program and connect with puppy parents."
+                ? "Manage your breeding program and connect with adopters."
                 : "Discover new puppies and connect with breeders."}
           </Text>
             
@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
                 }}
                 icon={isBreeder ? <CrownOutlined /> : <HeartOutlined />}
               >
-                {isBreeder ? 'Breeder' : 'Puppy Parent'}
+                {isBreeder ? 'Breeder' : 'Adopter'}
               </Tag>
         </div>
         
@@ -425,8 +425,8 @@ const Dashboard: React.FC = () => {
       <Row gutter={[24, 24]}>
         {/* Left Column - Main Content */}
         <Col xs={24} lg={16}>
-          {/* Matched Puppies (for puppy parents) */}
-          {isPuppyParent && (
+          {/* Matched Puppies (for adopters) */}
+          {isAdopter && (
           <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -549,8 +549,8 @@ const Dashboard: React.FC = () => {
           </Card>
           )}
 
-          {/* Favorites (for puppy parents) */}
-          {isPuppyParent && (
+          {/* Favorites (for adopters) */}
+          {isAdopter && (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -561,7 +561,21 @@ const Dashboard: React.FC = () => {
                 </div>
               }
               extra={
-                favoritesCount > 0 ? (
+                <Space>
+                  {favoritesCount > 0 && (
+                    <Link href="/favorites">
+                      <Button 
+                        icon={<HeartOutlined />}
+                        style={{ 
+                          background: colors.secondary,
+                          borderColor: colors.secondary,
+                          borderRadius: '8px'
+                        }}
+                      >
+                        View All ({favoritesCount})
+                      </Button>
+                    </Link>
+                  )}
                   <Link href="/browse">
                     <Button 
                       type="primary" 
@@ -575,7 +589,7 @@ const Dashboard: React.FC = () => {
                       Browse More
                     </Button>
                   </Link>
-                ) : null
+                </Space>
               }
               style={{ 
                 marginBottom: '24px',
@@ -901,6 +915,28 @@ const Dashboard: React.FC = () => {
               </Button>
             </Link>
           </Col>
+              {isAdopter && favoritesCount > 0 && (
+                <Col xs={24} sm={12}>
+                  <Link href="/favorites">
+                    <Button 
+                      icon={<HeartOutlined />} 
+                      block 
+                      size="large"
+                      style={{ 
+                        height: '60px', 
+                        fontSize: '16px',
+                        background: '#ff4d4f',
+                        borderColor: '#ff4d4f',
+                        color: 'white',
+                        borderRadius: '8px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      My Favorites ({favoritesCount})
+                    </Button>
+                  </Link>
+                </Col>
+              )}
               <Col xs={24} sm={12}>
                 <Link href="/dashboard/messages">
             <Button 
@@ -989,7 +1025,7 @@ const Dashboard: React.FC = () => {
                   }}
                   icon={isBreeder ? <CrownOutlined /> : <HeartOutlined />}
                 >
-                  {isBreeder ? 'Breeder' : 'Puppy Parent'}
+                  {isBreeder ? 'Breeder' : 'Adopter'}
                 </Tag>
               </div>
             </div>
@@ -1059,7 +1095,7 @@ const Dashboard: React.FC = () => {
       </Card>
 
           {/* Messages (for adopters) */}
-          {isPuppyParent && (
+          {isAdopter && (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1177,7 +1213,7 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Puppy Preferences (for adopters) */}
-          {isPuppyParent && (
+          {isAdopter && (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

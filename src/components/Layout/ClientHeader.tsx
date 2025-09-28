@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 
@@ -123,44 +123,114 @@ const ClientHeader: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Generate profile-specific navigation items
+  const getProfileNavigationItems = React.useMemo(() => {
+    if (!user) return [];
+
+    const baseItems = [
+      {
+        key: 'browse',
+        icon: <HeartOutlined />,
+        label: <Link href="/browse">Browse Puppies</Link>,
+      },
+    ];
+
+    // Add profile-specific items based on user type
+    if (user.userType === 'adopter' || user.userType === 'both') {
+      baseItems.push(
+        {
+          key: 'breeds',
+          icon: <TeamOutlined />,
+          label: <Link href="/breeds">Dog Breeds</Link>,
+        },
+        {
+          key: 'adoption-guide',
+          icon: <HomeOutlined />,
+          label: <Link href="/adoption-guide">Adoption Guide</Link>,
+        }
+      );
+    }
+
+    if (user.userType === 'breeder' || user.userType === 'both') {
+      baseItems.push(
+        {
+          key: 'breeders',
+          icon: <ShopOutlined />,
+          label: <Link href="/breeders">Find Breeders</Link>,
+        },
+        {
+          key: 'kennel-management',
+          icon: <TeamOutlined />,
+          label: <Link href="/kennel-management">Kennel Management</Link>,
+        }
+      );
+    }
+
+    return baseItems;
+  }, [user]);
+
   // Create menu items as a function to ensure they re-render when state changes
-  const getUserMenuItems = React.useMemo(() => [
-    {
-      key: 'dashboard',
-      icon: <DashboardOutlined />,
-      label: <Link href="/dashboard">Dashboard</Link>,
-    },
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
-    },
-    {
-      key: 'messages',
-      icon: <MessageOutlined />,
-      label: (
-        <Link href="/dashboard/messages">
-          <Badge count={unreadCount} size="small">
-            Messages
-          </Badge>
-        </Link>
-      ),
-    },
-    {
-      type: 'divider' as const,
-    },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Sign Out',
-      onClick: logout,
-    },
-  ], [user?.userId, unreadCount, logout]);
+  const getUserMenuItems = React.useMemo(() => {
+    const menuItems: any[] = [
+      {
+        key: 'dashboard',
+        icon: <DashboardOutlined />,
+        label: <Link href="/dashboard">Dashboard</Link>,
+      },
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
+      },
+      {
+        key: 'settings',
+        icon: <SettingOutlined />,
+        label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
+      },
+      {
+        key: 'messages',
+        icon: <MessageOutlined />,
+        label: (
+          <Link href="/dashboard/messages">
+            <Badge count={unreadCount} size="small">
+              Messages
+            </Badge>
+          </Link>
+        ),
+      },
+    ];
+
+    // Add profile-specific navigation items to the dropdown menu
+    if (getProfileNavigationItems.length > 0) {
+      menuItems.push({
+        type: 'divider',
+      });
+      
+      // Add profile-specific items
+      getProfileNavigationItems.forEach((item) => {
+        menuItems.push({
+          key: item.key,
+          icon: item.icon,
+          label: item.label,
+        });
+      });
+    }
+
+    // Add logout at the end
+    menuItems.push(
+      {
+        type: 'divider',
+      },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: 'Sign Out',
+        onClick: logout,
+      }
+    );
+
+    return menuItems;
+  }, [user?.userId, unreadCount, logout, getProfileNavigationItems]);
 
   const userMenuItems = getUserMenuItems;
 
@@ -218,7 +288,31 @@ const ClientHeader: React.FC = () => {
         </Link>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px' }}>
+        {/* Profile-specific navigation - desktop only */}
+        {isAuthenticated && !isMobile && getProfileNavigationItems.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
+            {getProfileNavigationItems.map((item) => (
+              <Link key={item.key} href={item.label.props.href}>
+                <Button 
+                  type="text" 
+                  icon={item.icon}
+                  style={{
+                    ...buttonStyle,
+                    height: '36px',
+                    fontSize: '13px',
+                    padding: '4px 8px',
+                    color: '#666',
+                    border: 'none'
+                  }}
+                >
+                  {item.label.props.children}
+                </Button>
+              </Link>
+            ))}
+          </div>
+        )}
+
         {isAuthenticated ? (
           <>
             {/* Messages button - desktop only */}
