@@ -67,14 +67,32 @@ const ContactPage: React.FC = () => {
       if (response.ok) {
         setSubmitStatus('success');
         form.resetFields();
+        
+        // Scroll to top after successful submission
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
       } else {
         const errorData = await response.json();
         setSubmitStatus('error');
         setErrorMessage(errorData.message || 'Failed to send message. Please try again.');
+        
+        // Scroll to top to show error message
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
       }
     } catch (error) {
       setSubmitStatus('error');
       setErrorMessage('Network error. Please check your connection and try again.');
+      
+      // Scroll to top to show error message
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     } finally {
       setIsSubmitting(false);
     }

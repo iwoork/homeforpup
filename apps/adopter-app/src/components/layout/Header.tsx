@@ -60,33 +60,9 @@ const Header: React.FC<HeaderProps> = ({
         label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
       },
       {
-        key: 'messages',
-        icon: <MessageOutlined />,
-        label: (
-          <Link href="/dashboard/messages">
-            <Badge count={unreadCount} size="small">
-              Messages
-            </Badge>
-          </Link>
-        ),
-      },
-      {
-        type: 'divider',
-      },
-      {
-        key: 'browse',
+        key: 'favorites',
         icon: <HeartOutlined />,
-        label: <Link href="/browse">Browse Puppies</Link>,
-      },
-      {
-        key: 'breeds',
-        icon: <TeamOutlined />,
-        label: <Link href="/breeds">Dog Breeds</Link>,
-      },
-      {
-        key: 'adoption-guide',
-        icon: <HomeOutlined />,
-        label: <Link href="/adoption-guide">Adoption Guide</Link>,
+        label: <Link href="/dashboard/favorites">My Favorites</Link>,
       },
       {
         type: 'divider',

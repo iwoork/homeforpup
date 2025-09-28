@@ -194,36 +194,10 @@ const ClientHeader: React.FC = () => {
         label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
       },
       {
-        key: 'messages',
-        icon: <MessageOutlined />,
-        label: (
-          <Link href="/dashboard/messages">
-            <Badge count={unreadCount} size="small">
-              Messages
-            </Badge>
-          </Link>
-        ),
+        key: 'favorites',
+        icon: <HeartOutlined />,
+        label: <Link href="/dashboard/favorites">My Favorites</Link>,
       },
-    ];
-
-    // Add profile-specific navigation items to the dropdown menu
-    if (getProfileNavigationItems.length > 0) {
-      menuItems.push({
-        type: 'divider',
-      });
-      
-      // Add profile-specific items
-      getProfileNavigationItems.forEach((item) => {
-        menuItems.push({
-          key: item.key,
-          icon: item.icon,
-          label: item.label,
-        });
-      });
-    }
-
-    // Add logout at the end
-    menuItems.push(
       {
         type: 'divider',
       },
@@ -233,10 +207,10 @@ const ClientHeader: React.FC = () => {
         label: 'Sign Out',
         onClick: logout,
       }
-    );
+    ];
 
     return menuItems;
-  }, [user?.userId, unreadCount, logout, getProfileNavigationItems]);
+  }, [user?.userId, logout]);
 
   const userMenuItems = getUserMenuItems;
 
