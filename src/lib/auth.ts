@@ -10,6 +10,7 @@ export const authOptions: NextAuthOptions = {
       client: {
         token_endpoint_auth_method: "none"
       },
+      checks: ["pkce", "state"],
       profile(profile: any) {
         return {
           id: profile.sub,
@@ -23,6 +24,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   debug: process.env.NODE_ENV === 'development',
+  trustHost: true, // Allow any host in development
   callbacks: {
     async jwt({ token, account, profile }: any) {
       // Persist the OAuth access_token and or the user id to the token right after signin
