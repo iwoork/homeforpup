@@ -131,7 +131,7 @@ const Footer: React.FC = () => {
                 <Link href="/breeder-resources" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Breeder Resources
                 </Link>
-                <Link href="/breeder-guidelines" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
+                <Link href="/ethical-guidelines" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Ethical Guidelines
                 </Link>
                 <Link href="/breeder-support" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>

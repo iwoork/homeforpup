@@ -19,30 +19,70 @@ const EthicalGuidelines: React.FC<EthicalGuidelinesProps> = ({
 }) => {
   return (
     <div className={className} style={{ width: '100%' }}>
-      {showHeader && (
-        <div style={{ 
-          textAlign: 'center', 
-          marginBottom: '3rem',
-          padding: '2rem 0',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '8px',
-          margin: '0 0 3rem 0'
-        }}>
-          <HeartOutlined style={{ fontSize: '3rem', color: '#ff4d4f', marginBottom: '1rem' }} />
-          <Title level={1} style={{ color: '#1890ff', marginBottom: '0.5rem' }}>
-            Ethical Guidelines
-          </Title>
-          <Paragraph style={{ 
-            fontSize: '1.1rem', 
-            color: '#666', 
-            maxWidth: '600px', 
-            margin: '0 auto',
-            lineHeight: '1.6'
-          }}>
-            Our commitment to responsible pet adoption and ethical breeding practices
-          </Paragraph>
-        </div>
-      )}
+              {showHeader && (
+                <div style={{
+                  textAlign: 'center',
+                  marginBottom: '3rem',
+                  padding: '3rem 2rem',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  borderRadius: '12px',
+                  margin: '0 0 3rem 0',
+                  boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Decorative background elements */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50px',
+                    right: '-50px',
+                    width: '200px',
+                    height: '200px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '50%',
+                    zIndex: 1
+                  }} />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-30px',
+                    left: '-30px',
+                    width: '150px',
+                    height: '150px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    borderRadius: '50%',
+                    zIndex: 1
+                  }} />
+                  
+                  <div style={{ position: 'relative', zIndex: 2 }}>
+                    <HeartOutlined style={{ 
+                      fontSize: '4rem', 
+                      color: '#ffffff', 
+                      marginBottom: '1.5rem',
+                      filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+                    }} />
+                    <Title level={1} style={{ 
+                      color: '#ffffff', 
+                      marginBottom: '1rem',
+                      fontSize: '2.5rem',
+                      fontWeight: '700',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}>
+                      Ethical Guidelines
+                    </Title>
+                    <Paragraph style={{
+                      fontSize: '1.2rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      maxWidth: '700px',
+                      margin: '0 auto',
+                      lineHeight: '1.7',
+                      fontWeight: '400',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                    }}>
+                      Our commitment to responsible pet adoption and ethical breeding practices
+                    </Paragraph>
+                  </div>
+                </div>
+              )}
 
       {showTitle && (
         <Title level={2} style={{ 
@@ -249,12 +289,16 @@ const EthicalGuidelines: React.FC<EthicalGuidelinesProps> = ({
         {/* Our Commitment */}
         <Card 
           title="Our Platform's Commitment" 
-          style={{ 
+          style={{
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             borderRadius: '8px',
-            marginBottom: '1rem',
-            extAlign: 'left'
-
+            marginBottom: '1rem'
+          }}
+          headStyle={{
+            backgroundColor: '#fff7e6',
+            borderRadius: '8px 8px 0 0',
+            borderBottom: '1px solid #ffd591',
+            textAlign: 'left'
           }}
         >
           <List
@@ -269,9 +313,25 @@ const EthicalGuidelines: React.FC<EthicalGuidelinesProps> = ({
               "Regularly audit and monitor platform activity for compliance"
             ]}
             renderItem={(item) => (
-              <List.Item>
-                <CheckCircleOutlined style={{ color: '#1890ff', marginRight: '0.5rem' }} />
-                <Text style={{ fontSize: '1rem' }}>{item}</Text>
+              <List.Item style={{ 
+                alignItems: 'flex-start',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'row'
+              }}>
+                <CheckCircleOutlined style={{ 
+                  color: '#52c41a', 
+                  fontSize: '1.2rem', 
+                  marginRight: '0.5rem',
+                  marginTop: '4px',
+                  flexShrink: 0
+                }} />
+                <Text style={{ 
+                  fontSize: '1rem',
+                  lineHeight: '1.6',
+                  textAlign: 'left',
+                  flex: 1
+                }}>{item}</Text>
               </List.Item>
             )}
           />
