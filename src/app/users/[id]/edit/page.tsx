@@ -37,7 +37,7 @@ interface UserProfile {
   coverPhoto?: string;
   galleryPhotos?: string[];
   verified: boolean;
-  userType: 'puppy-parent' | 'breeder' | 'both';
+  userType: 'adopter' | 'breeder' | 'both';
   preferences: {
     notifications: {
       email: boolean;
@@ -294,7 +294,7 @@ const EditProfilePage: React.FC = () => {
       };
 
       // Add puppy parent-specific data if user is puppy parent or both
-      if (profile.userType === 'puppy-parent' || profile.userType === 'both') {
+      if (profile.userType === 'adopter' || profile.userType === 'both') {
         updateData.puppyParentInfo = {
           housingType: values.housingType,
           yardSize: values.yardSize,
@@ -851,7 +851,7 @@ const EditProfilePage: React.FC = () => {
           </TabPane>
 
           {/* Adopter Information */}
-          {(effectiveUserType === 'puppy-parent') && (
+          {(effectiveUserType === 'adopter') && (
             <TabPane tab="Adoption Preferences" key="puppy parent">
               <Row gutter={[16, 16]}>
                 <Col span={24}>
@@ -1133,7 +1133,7 @@ const EditProfilePage: React.FC = () => {
           )}
 
           {/* Additional Information for Adopters */}
-          {(profile.userType === 'puppy-parent' || profile.userType === 'both') && (
+          {(profile.userType === 'adopter' || profile.userType === 'both') && (
             <TabPane tab="Additional Info" key="additional">
               <Row gutter={[16, 16]}>
                 {/* Previous Pets */}
@@ -1415,7 +1415,7 @@ const EditProfilePage: React.FC = () => {
               <Space wrap>
                 <Tag color="blue">{profile.userType}</Tag>
                 {profile.verified && <Tag color="green">Verified</Tag>}
-                {(profile.userType === 'puppy-parent' || profile.userType === 'both') && (
+                {(profile.userType === 'adopter' || profile.userType === 'both') && (
                   <Tag color="purple">
                     {form.getFieldValue('experienceLevel')?.replace('-', ' ') || 
                      profile.puppyParentInfo?.experienceLevel?.replace('-', ' ') || 'Experience level not set'}
