@@ -72,22 +72,22 @@ const KennelManagementLandingPage: React.FC = () => {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
     name: 'HomeForPup Kennel Management',
-    description: 'Professional kennel management platform for breeders to manage kennels, track dogs, and connect with puppy parents.',
-    applicationCategory: 'BusinessApplication',
+    description: 'A caring platform for responsible breeders to manage their kennels, nurture healthy dogs, and connect with loving families seeking their perfect companion.',
+    applicationCategory: 'LifestyleApplication',
     operatingSystem: 'Web Browser',
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'USD',
-      description: 'Free kennel management platform'
+      description: 'Free platform for responsible breeding and family connections'
     },
     featureList: [
-      'Multiple Kennel Management',
-      'Parent Dog Management', 
-      'Announcement System',
-      'Photo & Media Management',
-      'Social Media Integration',
-      'Professional Tools'
+      'Family-Focused Kennel Management',
+      'Parent Dog Care & Health Tracking', 
+      'Heartwarming Announcement System',
+      'Memory & Photo Sharing',
+      'Community Building Tools',
+      'Trust & Transparency Features'
     ],
     provider: {
       '@type': 'Organization',
@@ -99,68 +99,68 @@ const KennelManagementLandingPage: React.FC = () => {
   const features = [
     {
       icon: <HomeOutlined style={{ fontSize: '36px', color: '#08979C' }} />,
-      title: 'Multiple Kennel Management',
-      description: 'Create and manage multiple kennels with complete business information, addresses, and contact details.',
+      title: 'Caring Kennel Management',
+      description: 'Create warm, welcoming spaces for your dogs with complete information that helps families understand your commitment to their wellbeing.',
     },
     {
       icon: <TeamOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
-      title: 'Parent Dog Management',
-      description: 'Add and manage parent dogs within each kennel, track breeding status, health records, and pedigrees.',
+      title: 'Parent Dog Care & Health',
+      description: 'Track the health, happiness, and lineage of your parent dogs, ensuring every puppy comes from healthy, well-cared-for parents.',
     },
     {
       icon: <MessageOutlined style={{ fontSize: '36px', color: '#08979C' }} />,
-      title: 'Announcement System',
-      description: 'Post announcements about litters, updates, events, and blog posts to engage with potential puppy parents.',
+      title: 'Heartwarming Announcements',
+      description: 'Share the joy of new litters, heartwarming updates, and educational content that helps families prepare for their new companion.',
     },
     {
       icon: <CameraOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
-      title: 'Photo & Media Management',
-      description: 'Upload cover photos, gallery images, and media content to showcase your kennel and dogs.',
+      title: 'Memory & Photo Sharing',
+      description: 'Capture and share precious moments of your dogs growing up, helping families see the love and care in your kennel.',
     },
     {
       icon: <ShareAltOutlined style={{ fontSize: '36px', color: '#08979C' }} />,
-      title: 'Social Media Integration',
-      description: 'Connect your social media accounts and share your kennel updates across platforms.',
+      title: 'Community Building',
+      description: 'Connect with other responsible breeders and share your journey of helping families find their perfect furry companion.',
     },
     {
-      icon: <TrophyOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
-      title: 'Business Analytics',
-      description: 'Track statistics, profile views, and engagement metrics to grow your breeding business.',
+      icon: <HeartOutlined style={{ fontSize: '36px', color: '#FA8072' }} />,
+      title: 'Trust & Transparency',
+      description: 'Build lasting relationships with families through open communication, health records, and ongoing support.',
     },
   ];
 
   const announcementTypes = [
     {
-      type: 'Litter Available',
+      type: 'New Litters',
       color: 'green',
-      description: 'Announce new litters with breed information, available puppies, and pricing.',
+      description: 'Share the joy of new arrivals with families, including breed information and how to connect with you.',
     },
     {
-      type: 'Kennel Updates',
+      type: 'Kennel Stories',
       color: 'blue',
-      description: 'Share news, achievements, and updates about your breeding program.',
+      description: 'Share heartwarming stories about your dogs, their personalities, and the love they bring to families.',
     },
     {
-      type: 'Blog Posts',
+      type: 'Care Guides',
       color: 'purple',
-      description: 'Write educational content about dog care, breeding, and training.',
+      description: 'Write helpful content about puppy care, training tips, and preparing families for their new companion.',
     },
     {
-      type: 'Events',
+      type: 'Meet & Greets',
       color: 'orange',
-      description: 'Promote shows, meetups, and special events at your kennel.',
+      description: 'Invite families to meet your dogs and learn about responsible breeding practices.',
     },
   ];
 
   const benefits = [
-    'Professional kennel profiles that attract serious puppy parents',
-    'Comprehensive dog and litter management system',
-    'Direct communication with potential puppy parents',
-    'Social media integration for marketing',
-    'Business analytics and performance tracking',
-    'Mobile-responsive design for on-the-go management',
-    'Secure and reliable platform',
-    'Free to use for all breeders',
+    'Warm, welcoming kennel profiles that help families connect with you',
+    'Comprehensive care tracking for your dogs and their health',
+    'Open, honest communication with families seeking companions',
+    'Community sharing to build trust and relationships',
+    'Transparent health records and breeding information',
+    'Mobile-friendly design for staying connected anywhere',
+    'Secure platform that protects your family\'s privacy',
+    'Free platform dedicated to responsible breeding and family connections',
   ];
 
   return (
@@ -171,15 +171,15 @@ const KennelManagementLandingPage: React.FC = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <HomeOutlined style={{ fontSize: '64px', marginBottom: '24px', display: 'block' }} />
           <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
-            Professional Kennel Management
+            Caring Kennel Management
           </Title>
           <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
-            Everything you need to manage your breeding business, connect with puppy parents, and grow your kennel with professional tools and community support.
+            Everything you need to care for your dogs, connect with loving families, and help grow happy homes through responsible breeding and open communication.
           </Paragraph>
           <Row justify="center" gutter={[16, 12]}>
             <Col xs={24} sm={12} md={8}>
               {user ? (
-                <Link href="/dashboard/kennels">
+                <Link href="http://localhost:3001/dashboard/kennels">
                   <Button 
                     size="large" 
                     block
@@ -189,11 +189,11 @@ const KennelManagementLandingPage: React.FC = () => {
                       fontWeight: '500'
                     }}
                   >
-                    Manage My Kennels
+                    Care for My Kennels
                   </Button>
                 </Link>
               ) : (
-                <Link href="/auth/signup">
+                <Link href="http://localhost:3001/auth/signup">
                   <Button 
                     size="large" 
                     block
@@ -203,7 +203,7 @@ const KennelManagementLandingPage: React.FC = () => {
                       fontWeight: '500'
                     }}
                   >
-                    Get Started Free
+                    Start Caring Today
                   </Button>
                 </Link>
               )}
@@ -222,7 +222,7 @@ const KennelManagementLandingPage: React.FC = () => {
                     fontWeight: '500'
                   }}
                 >
-                  Browse Kennels
+                  Find Caring Kennels
                 </Button>
               </Link>
             </Col>
@@ -234,7 +234,7 @@ const KennelManagementLandingPage: React.FC = () => {
       <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
-            What Makes Our Kennel Management Special?
+            How We Help You Care for Families
           </Title>
           <Row gutter={[32, 32]}>
             {features.map((feature, index) => (
@@ -257,7 +257,7 @@ const KennelManagementLandingPage: React.FC = () => {
       {/* Announcement Types Section */}
       <section style={{ padding: '64px 0', background: '#F5F5F5', width: '100%' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>Powerful Announcement System</Title>
+          <Title level={2} style={{ marginBottom: '48px' }}>Share Your Heartwarming Stories</Title>
           <Row gutter={[32, 32]}>
             {announcementTypes.map((announcement, index) => (
               <Col xs={24} md={8} key={index}>
@@ -287,9 +287,9 @@ const KennelManagementLandingPage: React.FC = () => {
       <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <Title level={2}>Why Choose Our Platform?</Title>
+            <Title level={2}>Why Families Trust Our Platform?</Title>
             <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
-              Join hundreds of breeders who trust our platform to manage their kennels and connect with puppy parents.
+              Join hundreds of caring breeders who use our platform to nurture healthy dogs and help families find their perfect companion.
             </Paragraph>
           </div>
           
@@ -297,7 +297,7 @@ const KennelManagementLandingPage: React.FC = () => {
             <Col xs={24} lg={12}>
               <div style={{ padding: '0 24px' }}>
                 <Title level={3} style={{ marginBottom: '24px' }}>
-                  Everything You Need to Succeed
+                  Everything You Need to Care for Families
                 </Title>
                 <List
                   dataSource={benefits}
@@ -310,7 +310,7 @@ const KennelManagementLandingPage: React.FC = () => {
                 />
                 <div style={{ marginTop: '32px' }}>
                   {user ? (
-                    <Link href="/dashboard/kennels">
+                    <Link href="http://localhost:3001/dashboard/kennels">
                       <Button 
                         type="primary" 
                         size="large" 
@@ -323,11 +323,11 @@ const KennelManagementLandingPage: React.FC = () => {
                           fontWeight: '500'
                         }}
                       >
-                        Start Managing Your Kennels
+                        Start Caring for Families
                       </Button>
                     </Link>
                   ) : (
-                    <Link href="/auth/signup">
+                    <Link href="http://localhost:3001/auth/signup">
                       <Button 
                         type="primary" 
                         size="large" 
@@ -340,7 +340,7 @@ const KennelManagementLandingPage: React.FC = () => {
                           fontWeight: '500'
                         }}
                       >
-                        Get Started Today
+                        Begin Your Journey
                       </Button>
                     </Link>
                   )}
@@ -363,7 +363,7 @@ const KennelManagementLandingPage: React.FC = () => {
                   marginBottom: '24px'
                 }}>
                   <Title level={4} style={{ color: '#08979C', marginBottom: '16px' }}>
-                    Kennel Management Features
+                    Caring Kennel Features
                   </Title>
                   <Row gutter={[16, 16]}>
                     <Col span={12}>
@@ -376,7 +376,7 @@ const KennelManagementLandingPage: React.FC = () => {
                     </Col>
                     <Col span={12}>
                       <Statistic
-                        title="Announcement Types"
+                        title="Story Types"
                         value="4"
                         prefix={<MessageOutlined />}
                         valueStyle={{ color: '#FA8072' }}
@@ -384,7 +384,7 @@ const KennelManagementLandingPage: React.FC = () => {
                     </Col>
                     <Col span={12}>
                       <Statistic
-                        title="Social Platforms"
+                        title="Community Tools"
                         value="4"
                         prefix={<ShareAltOutlined />}
                         valueStyle={{ color: '#08979C' }}
@@ -410,15 +410,15 @@ const KennelManagementLandingPage: React.FC = () => {
       <section style={{ padding: '64px 0', background: '#fdf6e3', textAlign: 'center', width: '100%' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
           <Title level={2} style={{ marginBottom: '24px' }}>
-            Ready to Take Your Kennel to the Next Level?
+            Ready to Help More Families Find Love?
           </Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Join thousands of breeders who trust our platform to manage their kennels and connect with puppy parents.
+            Join hundreds of caring breeders who use our platform to nurture healthy dogs and help families find their perfect companion.
           </Paragraph>
           <Row justify="center" gutter={16}>
             <Col>
               {user ? (
-                <Link href="/dashboard/kennels">
+                <Link href="http://localhost:3001/dashboard/kennels">
                   <Button 
                     type="primary" 
                     size="large" 
@@ -431,11 +431,11 @@ const KennelManagementLandingPage: React.FC = () => {
                       fontWeight: '500'
                     }}
                   >
-                    Go to Kennel Management
+                    Care for My Kennels
                   </Button>
                 </Link>
               ) : (
-                <Link href="/auth/signup">
+                <Link href="http://localhost:3001/auth/signup">
                   <Button 
                     type="primary" 
                     size="large" 
@@ -448,7 +448,7 @@ const KennelManagementLandingPage: React.FC = () => {
                       fontWeight: '500'
                     }}
                   >
-                    Create Free Account
+                    Start Your Journey
                   </Button>
                 </Link>
               )}
@@ -464,7 +464,7 @@ const KennelManagementLandingPage: React.FC = () => {
                     fontWeight: '500'
                   }}
                 >
-                  Explore Kennels
+                  Find Caring Kennels
                 </Button>
               </Link>
             </Col>
