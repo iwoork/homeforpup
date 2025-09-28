@@ -175,7 +175,7 @@ export const useMessages = ({
       threadsCount: threads.length,
       userId,
       userIdType: typeof userId,
-      threads: threads.map(t => ({ id: t.id, unreadCount: t.unreadCount }))
+      threads: threads.map((t: MessageThread) => ({ id: t.id, unreadCount: t.unreadCount }))
     });
     
     const total = threads.reduce((sum: number, thread: MessageThread) => sum + getUnreadCount(thread, userId), 0);
