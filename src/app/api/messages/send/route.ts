@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWT } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 // Configure AWS SDK v3 with removeUndefinedValues option
@@ -87,28 +88,20 @@ function cleanUndefinedValues(obj: any): any {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get and verify JWT token - this ensures sender identity
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
-    }
-
-    // Verify the JWT token and extract user info
-    let authenticatedUserId: string;
-    let authenticatedUserNameFromJWT: string;
+    // Get the session using NextAuth (consistent with threads API)
+    const session = await getServerSession(authOptions);
     
-    try {
-      const { userId, name } = await verifyJWT(token);
-      authenticatedUserId = userId;
-      authenticatedUserNameFromJWT = name;
-      console.log('JWT verification successful for send message, user:', authenticatedUserId.substring(0, 10) + '...', 'name from JWT:', authenticatedUserNameFromJWT);
-    } catch (verificationError) {
-      console.error('JWT verification failed:', verificationError);
+    if (!session?.user || !(session.user as any).id) {
+      console.log('No valid session found for send message request');
       return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+        error: 'Your session has expired. Please refresh the page to continue.',
+        code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
+
+    const authenticatedUserId = (session.user as any).id;
+    const authenticatedUserNameFromSession = (session.user as any).name || 'User';
+    console.log('Session verification successful for send message, user:', authenticatedUserId.substring(0, 10) + '...', 'name from session:', authenticatedUserNameFromSession);
     
     const body = await request.json();
     const { recipientId, recipientName, subject, content, messageType } = body;

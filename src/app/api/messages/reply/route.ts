@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWT } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 // Configure AWS SDK v3
@@ -61,27 +62,20 @@ async function getUserInfo(userId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get and verify JWT token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
-    }
-
-    let userId: string;
-    let senderNameFromJWT: string;
+    // Get the session using NextAuth (consistent with threads API)
+    const session = await getServerSession(authOptions);
     
-    try {
-      const { userId: verifiedUserId, name: verifiedName } = await verifyJWT(token);
-      userId = verifiedUserId;
-      senderNameFromJWT = verifiedName;
-      console.log('JWT verification successful for reply, user:', userId.substring(0, 10) + '...', 'name from JWT:', senderNameFromJWT);
-    } catch (verificationError) {
-      console.error('JWT verification failed:', verificationError);
+    if (!session?.user || !(session.user as any).id) {
+      console.log('No valid session found for reply request');
       return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+        error: 'Your session has expired. Please refresh the page to continue.',
+        code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
+
+    const userId = (session.user as any).id;
+    const senderNameFromSession = (session.user as any).name || 'User';
+    console.log('Session verification successful for reply, user:', userId.substring(0, 10) + '...', 'name from session:', senderNameFromSession);
 
     const body = await request.json();
     const { threadId, content, receiverId, receiverName, subject } = body;

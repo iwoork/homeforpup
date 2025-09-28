@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWT } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -31,24 +32,19 @@ export async function PATCH(
     const routeParams = await params;
     const { threadId } = routeParams;
     
-    // Get and verify JWT token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
-    }
-
-    let userId: string;
-    try {
-      const { userId: verifiedUserId } = await verifyJWT(token);
-      userId = verifiedUserId;
-      console.log('JWT verification successful for mark as read, user:', userId.substring(0, 10) + '...');
-    } catch (verificationError) {
-      console.error('JWT verification failed:', verificationError);
+    // Get the session using NextAuth (consistent with threads API)
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user || !(session.user as any).id) {
+      console.log('No valid session found for mark as read request');
       return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+        error: 'Your session has expired. Please refresh the page to continue.',
+        code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
+
+    const userId = (session.user as any).id;
+    console.log('Session verification successful for mark as read, user:', userId.substring(0, 10) + '...');
 
     console.log('Marking thread as read:', threadId, 'for user:', userId.substring(0, 10) + '...');
 
