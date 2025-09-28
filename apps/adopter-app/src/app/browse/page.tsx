@@ -1,173 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Row, Col, Card, Typography, Select, Button, Space, Spin, Alert, Pagination, Statistic, Tag, Tooltip, Badge, Divider } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Statistic, Tooltip, Badge, Divider } from 'antd';
 import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
 import Image from 'next/image';
-import { useAuth } from '@homeforpup/shared-auth';
+import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
+import CountryFilter from '@/components/filters/CountryFilter';
+import StateFilter from '@/components/filters/StateFilter';
+import ContactBreederModal from '@/components/ContactBreederModal';
+import { BreedSelector } from '@/components';
+import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
 import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
-// Mock data for demonstration
-const mockPuppies = [
-  {
-    id: '1',
-    name: 'Bella',
-    breed: 'Golden Retriever',
-    gender: 'Female',
-    ageWeeks: 12,
-    location: 'Toronto',
-    country: 'Canada',
-    price: 1200,
-    image: '/api/placeholder/300/200',
-    description: 'Bella is a sweet and playful Golden Retriever puppy. She loves to play fetch and is great with children. She has been socialized with other dogs and cats.',
-    breeder: {
-      businessName: 'Golden Dreams Kennel',
-      verified: true,
-      rating: 4.8,
-      reviewCount: 24,
-      phone: '+1 (416) 555-0123',
-      email: 'info@goldendreams.com',
-      website: 'www.goldendreams.com',
-      shipping: true,
-      pickupAvailable: true,
-      avgResponseTime: '2 hours',
-      responseRate: 0.95
-    }
-  },
-  {
-    id: '2',
-    name: 'Max',
-    breed: 'Labrador Retriever',
-    gender: 'Male',
-    ageWeeks: 10,
-    location: 'Vancouver',
-    country: 'Canada',
-    price: 1100,
-    image: '/api/placeholder/300/200',
-    description: 'Max is an energetic and friendly Labrador puppy. He loves water and is perfect for an active family. He has been crate trained and is housebroken.',
-    breeder: {
-      businessName: 'Vancouver Labs',
-      verified: true,
-      rating: 4.9,
-      reviewCount: 18,
-      phone: '+1 (604) 555-0456',
-      email: 'contact@vancouverlabs.com',
-      website: 'www.vancouverlabs.com',
-      shipping: false,
-      pickupAvailable: true,
-      avgResponseTime: '1 hour',
-      responseRate: 0.98
-    }
-  },
-  {
-    id: '3',
-    name: 'Luna',
-    breed: 'French Bulldog',
-    gender: 'Female',
-    ageWeeks: 14,
-    location: 'Montreal',
-    country: 'Canada',
-    price: 2500,
-    image: '/api/placeholder/300/200',
-    description: 'Luna is a charming French Bulldog with a gentle personality. She is perfect for apartment living and gets along well with other pets.',
-    breeder: {
-      businessName: 'Montreal Frenchies',
-      verified: true,
-      rating: 4.7,
-      reviewCount: 32,
-      phone: '+1 (514) 555-0789',
-      email: 'hello@montrealfrenchies.com',
-      website: 'www.montrealfrenchies.com',
-      shipping: true,
-      pickupAvailable: true,
-      avgResponseTime: '3 hours',
-      responseRate: 0.92
-    }
-  },
-  {
-    id: '4',
-    name: 'Charlie',
-    breed: 'Border Collie',
-    gender: 'Male',
-    ageWeeks: 16,
-    location: 'Calgary',
-    country: 'Canada',
-    price: 900,
-    image: '/api/placeholder/300/200',
-    description: 'Charlie is an intelligent and active Border Collie puppy. He would be perfect for someone who enjoys outdoor activities and has experience with high-energy dogs.',
-    breeder: {
-      businessName: 'Prairie Collies',
-      verified: false,
-      rating: 4.5,
-      reviewCount: 12,
-      phone: '+1 (403) 555-0321',
-      email: 'info@prairiecollies.com',
-      website: 'www.prairiecollies.com',
-      shipping: true,
-      pickupAvailable: true,
-      avgResponseTime: '4 hours',
-      responseRate: 0.88
-    }
-  },
-  {
-    id: '5',
-    name: 'Daisy',
-    breed: 'Cocker Spaniel',
-    gender: 'Female',
-    ageWeeks: 11,
-    location: 'Ottawa',
-    country: 'Canada',
-    price: 1300,
-    image: '/api/placeholder/300/200',
-    description: 'Daisy is a gentle and loving Cocker Spaniel puppy. She has a beautiful coat and loves to cuddle. She is great with children and other pets.',
-    breeder: {
-      businessName: 'Capital Spaniels',
-      verified: true,
-      rating: 4.6,
-      reviewCount: 21,
-      phone: '+1 (613) 555-0654',
-      email: 'contact@capitalspaniels.com',
-      website: 'www.capitalspaniels.com',
-      shipping: false,
-      pickupAvailable: true,
-      avgResponseTime: '2 hours',
-      responseRate: 0.94
-    }
-  },
-  {
-    id: '6',
-    name: 'Rocky',
-    breed: 'German Shepherd',
-    gender: 'Male',
-    ageWeeks: 13,
-    location: 'Edmonton',
-    country: 'Canada',
-    price: 1500,
-    image: '/api/placeholder/300/200',
-    description: 'Rocky is a confident and loyal German Shepherd puppy. He shows great potential for training and would make an excellent family protector.',
-    breeder: {
-      businessName: 'Alberta Shepherds',
-      verified: true,
-      rating: 4.8,
-      reviewCount: 28,
-      phone: '+1 (780) 555-0987',
-      email: 'info@albertashepherds.com',
-      website: 'www.albertashepherds.com',
-      shipping: true,
-      pickupAvailable: true,
-      avgResponseTime: '1 hour',
-      responseRate: 0.96
-    }
-  }
-];
-
 const PuppiesPage: React.FC = () => {
   const [filters, setFilters] = useState({
-    country: 'Canada',
+    country: 'Canada', // Default to Canada
     state: [] as string[],
     breed: null as string | null,
     gender: null as string | null,
@@ -176,26 +27,68 @@ const PuppiesPage: React.FC = () => {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 6;
+  const pageSize = 12;
 
   // Get user data
   const { user, loading: userLoading } = useAuth();
 
-  // Filter puppies based on current filters
-  const filteredPuppies = mockPuppies.filter(puppy => {
-    if (filters.country && puppy.country !== filters.country) return false;
-    if (filters.breed && puppy.breed !== filters.breed) return false;
-    if (filters.gender && puppy.gender !== filters.gender) return false;
-    if (filters.shipping && !puppy.breeder.shipping) return false;
-    if (filters.verified && !puppy.breeder.verified) return false;
-    return true;
+  // Contact modal state
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [selectedPuppy, setSelectedPuppy] = useState<PuppyWithBreeder | null>(null);
+
+  // Use the puppies API hook
+  const {
+    puppies,
+    totalCount,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    filters: availableFilters,
+    stats,
+    isLoading,
+    error,
+  } = usePuppies({
+    country: filters.country,
+    state: filters.state.length > 0 ? filters.state[0] : undefined,
+    breed: filters.breed || undefined,
+    gender: filters.gender || undefined,
+    shipping: filters.shipping,
+    verified: filters.verified,
+    page: currentPage,
+    limit: pageSize,
   });
 
-  // Pagination
-  const totalCount = filteredPuppies.length;
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const currentPuppies = filteredPuppies.slice(startIndex, startIndex + pageSize);
+  // Favorites functionality
+  const { toggleFavorite } = useFavorites();
+  const puppyIds = puppies.map(puppy => puppy.id);
+  const { favoriteStatus, isLoading: favoritesLoading } = useBulkFavoriteStatus(puppyIds);
+  
+  // Local state for optimistic updates
+  const [optimisticFavorites, setOptimisticFavorites] = useState<Record<string, boolean>>({});
+  
+  // Combined favorite status that merges server data with optimistic updates
+  const combinedFavoriteStatus = React.useMemo(() => {
+    return {
+      ...favoriteStatus,
+      ...optimisticFavorites
+    };
+  }, [favoriteStatus, optimisticFavorites]);
+  
+  // Helper function to get current favorite status
+  const getCurrentFavoriteStatus = (puppyId: string): boolean => {
+    const status = combinedFavoriteStatus[puppyId] || false;
+    console.log('Getting favorite status for', puppyId, ':', status, {
+      serverStatus: favoriteStatus[puppyId],
+      optimisticStatus: optimisticFavorites[puppyId],
+      combined: combinedFavoriteStatus[puppyId]
+    });
+    return status;
+  };
+
+  // Clear optimistic updates when page changes or filters change
+  useEffect(() => {
+    setOptimisticFavorites({});
+  }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verified]);
 
   const resetFilters = () => {
     setFilters({
@@ -207,6 +100,70 @@ const PuppiesPage: React.FC = () => {
       verified: false,
     });
     setCurrentPage(1);
+  };
+
+  const handleContactBreeder = (puppy: PuppyWithBreeder) => {
+    setSelectedPuppy(puppy);
+    setContactModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setContactModalVisible(false);
+    setSelectedPuppy(null);
+  };
+
+  const handleToggleFavorite = async (puppy: PuppyWithBreeder) => {
+    if (!user) {
+      console.log('No user, cannot toggle favorite');
+      return;
+    }
+    
+    const currentStatus = getCurrentFavoriteStatus(puppy.id);
+    const newStatus = !currentStatus;
+    
+    console.log('Toggling favorite:', {
+      puppyId: puppy.id,
+      puppyName: puppy.name,
+      currentStatus,
+      newStatus
+    });
+    
+    // Optimistically update the UI immediately
+    setOptimisticFavorites(prev => ({
+      ...prev,
+      [puppy.id]: newStatus
+    }));
+    
+    try {
+      await toggleFavorite(puppy.id, {
+        name: puppy.name,
+        breed: puppy.breed,
+        image: puppy.image,
+        location: puppy.location,
+        country: puppy.country,
+        ageWeeks: puppy.ageWeeks,
+        gender: puppy.gender,
+        price: puppy.price,
+        breederName: puppy.breeder.businessName
+      });
+      
+      console.log('Successfully toggled favorite for:', puppy.name);
+      
+      // Clear optimistic update after successful server update
+      setOptimisticFavorites(prev => {
+        const newState = { ...prev };
+        delete newState[puppy.id];
+        return newState;
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // Revert optimistic update on error
+      setOptimisticFavorites(prev => {
+        const newState = { ...prev };
+        delete newState[puppy.id];
+        return newState;
+      });
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -222,11 +179,8 @@ const PuppiesPage: React.FC = () => {
                           filters.shipping || 
                           filters.verified;
 
-  // Get unique breeds for filter
-  const availableBreeds = [...new Set(mockPuppies.map(p => p.breed))];
-
   // Render puppy card
-  const renderPuppyCard = (puppy: typeof mockPuppies[0]) => (
+  const renderPuppyCard = (puppy: PuppyWithBreeder) => (
     <Card
       key={puppy.id}
       hoverable
@@ -248,17 +202,14 @@ const PuppiesPage: React.FC = () => {
         overflow: 'visible'
       }}
       cover={
-        <div style={{ position: 'relative', height: '200px', backgroundColor: '#f5f5f5' }}>
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            color: '#999',
-            fontSize: '16px'
-          }}>
-            🐕 Puppy Photo
-          </div>
+        <div style={{ position: 'relative', height: '200px' }}>
+          <Image
+            src={puppy.image}
+            alt={puppy.name}
+            fill
+            style={{ objectFit: 'cover' }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
           <div style={{
             position: 'absolute',
             top: '12px',
@@ -321,10 +272,7 @@ const PuppiesPage: React.FC = () => {
             Breeder: {puppy.breeder.businessName}
           </Text>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <div style={{ fontSize: '12px', color: '#faad14' }}>
-              {'★'.repeat(Math.floor(puppy.breeder.rating))}
-              {'☆'.repeat(5 - Math.floor(puppy.breeder.rating))}
-            </div>
+            <Rate disabled value={puppy.breeder.rating} style={{ fontSize: '12px' }} />
             <Text type="secondary" style={{ fontSize: '12px' }}>
               ({puppy.breeder.reviewCount} reviews)
             </Text>
@@ -363,7 +311,7 @@ const PuppiesPage: React.FC = () => {
           <Button 
             type="primary" 
             size="small"
-            onClick={() => alert(`Contact ${puppy.breeder.businessName} about ${puppy.name}`)}
+            onClick={() => handleContactBreeder(puppy)}
           >
             Contact Breeder
           </Button>
@@ -379,14 +327,16 @@ const PuppiesPage: React.FC = () => {
           borderTop: '1px solid #f0f0f0'
         }}>
           <Space size="middle">
-            <Tooltip title="Save to favorites">
+            <Tooltip title={getCurrentFavoriteStatus(puppy.id) ? "Remove from favorites" : "Save to favorites"}>
               <Button 
                 type="text" 
-                icon={<HeartOutlined />} 
+                icon={getCurrentFavoriteStatus(puppy.id) ? <HeartFilled style={{ color: '#ff4d4f' }} /> : <HeartOutlined />} 
                 size="small" 
+                onClick={() => handleToggleFavorite(puppy)}
+                loading={favoritesLoading}
                 disabled={!user}
                 style={{
-                  color: '#666',
+                  color: getCurrentFavoriteStatus(puppy.id) ? '#ff4d4f' : '#666',
                   fontSize: '16px'
                 }}
               />
@@ -406,6 +356,19 @@ const PuppiesPage: React.FC = () => {
     </Card>
   );
 
+  if (error) {
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
+        <Alert
+          message="Error Loading Puppies"
+          description="There was an error loading the available puppies. Please try again later."
+          type="error"
+          showIcon
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
       <Title level={1} style={{ color: '#08979C', marginBottom: '24px' }}>
@@ -413,36 +376,38 @@ const PuppiesPage: React.FC = () => {
       </Title>
 
       {/* Stats */}
-      <Row gutter={16} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Total Puppies"
-              value={totalCount}
-              prefix="🐕"
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Average Age"
-              value={Math.round(mockPuppies.reduce((sum, p) => sum + p.ageWeeks, 0) / mockPuppies.length)}
-              suffix="weeks"
-              prefix="📅"
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card>
-            <Statistic
-              title="Verified Breeders"
-              value={mockPuppies.filter(p => p.breeder.verified).length}
-              prefix="✅"
-            />
-          </Card>
-        </Col>
-      </Row>
+      {stats && (
+        <Row gutter={16} style={{ marginBottom: '24px' }}>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Total Puppies"
+                value={stats.totalPuppies}
+                prefix="🐕"
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Average Age"
+                value={stats.averageAge}
+                suffix="weeks"
+                prefix="📅"
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card>
+              <Statistic
+                title="Verified Breeders"
+                value={stats.verifiedBreeders}
+                prefix="✅"
+              />
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       <Row gutter={24}>
         {/* Filters Sidebar */}
@@ -472,36 +437,46 @@ const PuppiesPage: React.FC = () => {
               {/* Country Filter */}
               <div>
                 <Text strong>Country</Text>
-                <Select
-                  style={{ width: '100%', marginTop: '8px' }}
+                <CountryFilter
                   value={filters.country}
                   onChange={(value) => {
                     setFilters(prev => ({ ...prev, country: value, state: [] }));
                     setCurrentPage(1);
                   }}
-                >
-                  <Option value="Canada">Canada</Option>
-                  <Option value="United States">United States</Option>
-                </Select>
+                  style={{ width: '100%', marginTop: '8px' }}
+                />
+              </div>
+
+              {/* State Filter */}
+              <div>
+                <Text strong>Location</Text>
+                <StateFilter
+                  value={filters.state}
+                  onChange={(value) => {
+                    setFilters(prev => ({ ...prev, state: value }));
+                    setCurrentPage(1);
+                  }}
+                  availableStates={availableFilters?.availableStates || []}
+                  style={{ width: '100%', marginTop: '8px' }}
+                />
               </div>
 
               {/* Breed Filter */}
               <div>
                 <Text strong>Breed</Text>
-                <Select
+                <BreedSelector
                   style={{ width: '100%', marginTop: '8px' }}
                   placeholder="Select breed"
-                  value={filters.breed}
+                  value={filters.breed || undefined}
                   onChange={(value) => {
-                    setFilters(prev => ({ ...prev, breed: value }));
+                    setFilters(prev => ({ ...prev, breed: value as string }));
                     setCurrentPage(1);
                   }}
                   allowClear
-                >
-                  {availableBreeds.map(breed => (
-                    <Option key={breed} value={breed}>{breed}</Option>
-                  ))}
-                </Select>
+                  showSearch
+                  showBreedInfo={false}
+                  showBreederCount={false}
+                />
               </div>
 
               {/* Gender Filter */}
@@ -522,42 +497,44 @@ const PuppiesPage: React.FC = () => {
                 </Select>
               </div>
               
+
               {/* Checkboxes */}
               <div>
                 <Space direction="vertical">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={filters.shipping}
-                      onChange={(e) => {
-                        setFilters(prev => ({ ...prev, shipping: e.target.checked }));
-                        setCurrentPage(1);
-                      }}
-                      style={{ marginRight: '8px' }}
-                    />
+                  <Checkbox
+                    checked={filters.shipping}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, shipping: e.target.checked }));
+                      setCurrentPage(1);
+                    }}
+                  >
                     Shipping Available
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={filters.verified}
-                      onChange={(e) => {
-                        setFilters(prev => ({ ...prev, verified: e.target.checked }));
-                        setCurrentPage(1);
-                      }}
-                      style={{ marginRight: '8px' }}
-                    />
+                  </Checkbox>
+                  <Checkbox
+                    checked={filters.verified}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, verified: e.target.checked }));
+                      setCurrentPage(1);
+                    }}
+                  >
                     Verified Breeders Only
-                  </label>
+                  </Checkbox>
                 </Space>
-              </div>
+                </div>
             </Space>
           </Card>
         </Col>
 
         {/* Puppies Grid */}
         <Col xs={24} lg={18}>
-          {currentPuppies.length === 0 ? (
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Spin size="large" />
+              <div style={{ marginTop: '16px' }}>
+                <Text>Loading adorable puppies...</Text>
+              </div>
+            </div>
+          ) : puppies.length === 0 ? (
             <Card>
               <div style={{ textAlign: 'center', padding: '50px' }}>
                 <Text type="secondary" style={{ fontSize: '16px' }}>
@@ -567,13 +544,13 @@ const PuppiesPage: React.FC = () => {
                 <Button type="link" onClick={resetFilters}>
                   Clear filters to see all puppies
                 </Button>
-              </div>
-            </Card>
+            </div>
+          </Card>
           ) : (
             <>
               <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text>
-                  Showing {currentPuppies.length} of {totalCount} puppies
+                  Showing {puppies.length} of {totalCount} puppies
                 </Text>
                 <Text type="secondary">
                   Page {currentPage} of {totalPages}
@@ -581,11 +558,11 @@ const PuppiesPage: React.FC = () => {
               </div>
 
               <Row gutter={[16, 16]}>
-                {currentPuppies.map((puppy) => (
+                {puppies.map((puppy, index) => (
                   <Col xs={24} sm={12} lg={8} key={puppy.id}>
                     {renderPuppyCard(puppy)}
-                  </Col>
-                ))}
+        </Col>
+      ))}
               </Row>
 
               {totalPages > 1 && (
@@ -607,6 +584,18 @@ const PuppiesPage: React.FC = () => {
           )}
         </Col>
       </Row>
+
+      {/* Contact Breeder Modal */}
+      {selectedPuppy && (
+        <ContactBreederModal
+          visible={contactModalVisible}
+          onCancel={handleCloseModal}
+          puppyName={selectedPuppy.name}
+          breederName={selectedPuppy.breeder.businessName}
+          senderName={user?.name || user?.displayName || 'Guest User'}
+          senderEmail={user?.email || 'support@homeforpup.com'}
+        />
+      )}
 
       {/* Structured Data */}
       <StructuredData 
