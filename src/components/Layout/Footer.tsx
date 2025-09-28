@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Layout, Row, Col, Typography, Space } from 'antd';
-import { HeartOutlined } from '@ant-design/icons';
+import { Layout, Row, Col, Typography, Space, Button } from 'antd';
+import { HeartOutlined, MailOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Footer: AntFooter } = Layout;
@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
     <AntFooter style={footerStyle}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
         <Row gutter={[32, 32]}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={6}>
             <div style={{ marginBottom: '24px' }}>
               <Title level={4} style={{ color: '#08979C', marginBottom: '16px' }}>
                 <HeartOutlined style={{ marginRight: '8px' }} />
@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
               </Text>
             </div>
           </Col>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Title level={5} style={{ color: '#333', marginBottom: '16px' }}>
               Quick Links
             </Title>
@@ -50,7 +50,7 @@ const Footer: React.FC = () => {
               <Link href="/about" style={linkStyle}>About Us</Link>
             </Space>
           </Col>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Title level={5} style={{ color: '#333', marginBottom: '16px' }}>
               Community
             </Title>
@@ -59,6 +59,40 @@ const Footer: React.FC = () => {
               <Link href="/dashboard/messages" style={linkStyle}>Messages</Link>
               <Link href="/users" style={linkStyle}>Find Users</Link>
               <Link href="/kennel-management" style={linkStyle}>Kennel Management</Link>
+            </Space>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Title level={5} style={{ color: '#333', marginBottom: '16px' }}>
+              Support
+            </Title>
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <Text style={{ color: '#666', fontSize: '14px', display: 'block', marginBottom: '8px' }}>
+                  Need help? We're here for you!
+                </Text>
+                <Button
+                  type="link"
+                  href="mailto:support@homeforpup.com"
+                  icon={<MailOutlined />}
+                  style={{
+                    color: '#08979C',
+                    padding: 0,
+                    height: 'auto',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}
+                >
+                  support@homeforpup.com
+                </Button>
+              </div>
+              <div>
+                <Text style={{ color: '#666', fontSize: '12px', display: 'block', marginBottom: '4px' }}>
+                  Response time: Usually within 24 hours
+                </Text>
+                <Text style={{ color: '#999', fontSize: '11px' }}>
+                  Monday - Friday, 9 AM - 6 PM EST
+                </Text>
+              </div>
             </Space>
           </Col>
         </Row>
