@@ -9,7 +9,6 @@ import {
   TeamOutlined, 
   HomeOutlined,
   QuestionCircleOutlined,
-  PhoneOutlined,
   GlobalOutlined,
   FacebookOutlined,
   InstagramOutlined,
@@ -248,11 +247,11 @@ const Footer: React.FC = () => {
           <Col xs={24} md={12}>
             <div style={{ textAlign: 'right' }}>
               <Text style={{ color: '#666', fontSize: '14px', marginBottom: '8px', display: 'block' }}>
-                <PhoneOutlined style={{ marginRight: '6px' }} />
-                +1 (555) 123-PUPS
+                <MailOutlined style={{ marginRight: '6px' }} />
+                support@homeforpup.com
               </Text>
               <Text style={{ color: '#999', fontSize: '12px' }}>
-                Monday - Friday, 9 AM - 6 PM EST
+                We'll get back to you within 24 hours
               </Text>
             </div>
           </Col>

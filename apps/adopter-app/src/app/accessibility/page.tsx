@@ -21,7 +21,6 @@ import {
   MobileOutlined,
   BulbOutlined,
   HeartOutlined,
-  PhoneOutlined,
   MailOutlined,
   InfoCircleOutlined,
   SettingOutlined,
@@ -406,44 +405,24 @@ const AccessibilityPage: React.FC = () => {
                 style={{ borderRadius: '8px' }}
               />
 
-              <Row gutter={[24, 16]}>
-                <Col xs={24} md={12}>
-                  <div style={{ 
-                    border: '1px solid #e8e8e8', 
-                    borderRadius: '8px', 
-                    padding: '20px',
-                    textAlign: 'center',
-                    backgroundColor: '#fafafa'
-                  }}>
-                    <PhoneOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }} />
-                    <Title level={4} style={{ color: '#333', marginBottom: '8px' }}>Phone Support</Title>
-                    <Text style={{ color: '#666', display: 'block', marginBottom: '12px' }}>
-                      Call us for accessibility assistance
-                    </Text>
-                    <Text strong style={{ color: '#1890ff', fontSize: '18px' }}>
-                      +1 (555) HOME-PUP
-                    </Text>
-                  </div>
-                </Col>
-                <Col xs={24} md={12}>
-                  <div style={{ 
-                    border: '1px solid #e8e8e8', 
-                    borderRadius: '8px', 
-                    padding: '20px',
-                    textAlign: 'center',
-                    backgroundColor: '#fafafa'
-                  }}>
-                    <MailOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '12px' }} />
-                    <Title level={4} style={{ color: '#333', marginBottom: '8px' }}>Email Support</Title>
-                    <Text style={{ color: '#666', display: 'block', marginBottom: '12px' }}>
-                      Send us your accessibility feedback
-                    </Text>
-                    <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
-                      accessibility@homeforpup.com
-                    </Text>
-                  </div>
-                </Col>
-              </Row>
+              <div style={{ 
+                border: '1px solid #e8e8e8', 
+                borderRadius: '8px', 
+                padding: '20px',
+                textAlign: 'center',
+                backgroundColor: '#fafafa',
+                maxWidth: '400px',
+                margin: '0 auto'
+              }}>
+                <MailOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '12px' }} />
+                <Title level={4} style={{ color: '#333', marginBottom: '8px' }}>Email Support</Title>
+                <Text style={{ color: '#666', display: 'block', marginBottom: '12px' }}>
+                  Send us your accessibility feedback
+                </Text>
+                <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
+                  support@homeforpup.com
+                </Text>
+              </div>
 
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <Button 

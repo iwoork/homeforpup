@@ -171,7 +171,7 @@ const KennelManagementLandingPage: React.FC = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <HomeOutlined style={{ fontSize: '64px', marginBottom: '24px', display: 'block' }} />
           <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
-            Caring Kennel Management
+            A Caring Kennel Management Platform
           </Title>
           <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
             Everything you need to care for your dogs, connect with loving families, and help grow happy homes through responsible breeding and open communication.
