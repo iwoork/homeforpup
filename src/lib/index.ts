@@ -13,4 +13,3 @@ export * from './utils/jwt-debug';
 
 // Auth utilities - export specific functions to avoid conflicts
 export { verifyJWT, decodeJWTUnsafe } from './utils/auth';
-export { verifyJWTEnhanced } from './utils/enhanced-auth';

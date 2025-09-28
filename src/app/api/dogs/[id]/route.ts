@@ -4,7 +4,8 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import { verifyJWTEnhanced } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 const dynamoClient = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -27,20 +28,13 @@ const s3Client = new S3Client({
 const DOGS_TABLE_NAME = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'breeding-app-photos';
 
-// Helper function to extract user ID from Cognito JWT token
-async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
+// Helper function to extract user ID from NextAuth session
+async function getUserIdFromSession(): Promise<string | null> {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = await verifyJWTEnhanced(token);
-    
-    return decoded.userId || null;
+    const session = await getServerSession(authOptions);
+    return (session?.user as any)?.id || null;
   } catch (error) {
-    console.error('Error extracting user ID from token:', error);
+    console.error('Error getting user ID from session:', error);
     return null;
   }
 }
@@ -52,7 +46,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const userId = await getUserIdFromToken(request);
+    const userId = await getUserIdFromSession();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -85,7 +79,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await context.params;
-    const userId = await getUserIdFromToken(request);
+    const userId = await getUserIdFromSession();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -233,7 +227,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    const userId = await getUserIdFromToken(request);
+    const userId = await getUserIdFromSession();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

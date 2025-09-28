@@ -12,8 +12,11 @@
  * 3. AWS SDK v3 installed (npm install @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb)
  */
 
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, CreateTableCommand, DescribeTableCommand } = require('@aws-sdk/lib-dynamodb');
+// Load environment variables from .env file
+require('dotenv').config();
+
+const { DynamoDBClient, CreateTableCommand, DescribeTableCommand } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
 
 // Initialize DynamoDB client
 const client = new DynamoDBClient({
@@ -120,6 +123,29 @@ const tables = [
     ],
     AttributeDefinitions: [
       { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'GSI1PK', AttributeType: 'S' }
+    ],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: 'GSI1',
+        KeySchema: [
+          { AttributeName: 'GSI1PK', KeyType: 'HASH' }
+        ],
+        Projection: { ProjectionType: 'ALL' },
+        ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
+      }
+    ],
+    ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
+  },
+  {
+    TableName: 'homeforpup-favorites',
+    KeySchema: [
+      { AttributeName: 'userId', KeyType: 'HASH' },
+      { AttributeName: 'puppyId', KeyType: 'RANGE' }
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'userId', AttributeType: 'S' },
+      { AttributeName: 'puppyId', AttributeType: 'S' },
       { AttributeName: 'GSI1PK', AttributeType: 'S' }
     ],
     GlobalSecondaryIndexes: [

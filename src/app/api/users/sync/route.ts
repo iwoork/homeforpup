@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -46,24 +47,19 @@ function removeUndefinedValues(obj: any): any {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get and verify JWT token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    // Get user session
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let decodedToken;
-    try {
-      const { userId, name, email } = await verifyJWTEnhanced(token);
-      decodedToken = { userId, name, email };
-      console.log('Enhanced JWT verification successful for user sync:', userId.substring(0, 10) + '...');
-    } catch (verificationError) {
-      console.error('Enhanced JWT verification failed:', verificationError);
-      return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
-      }, { status: 401 });
-    }
+    const decodedToken = {
+      userId: (session.user as any).id,
+      name: session.user.name || 'User',
+      email: session.user.email || ''
+    };
+    
+    console.log('Session verification successful for user sync:', decodedToken.userId.substring(0, 10) + '...');
 
     const body = await request.json();
     const { 
@@ -193,23 +189,13 @@ export async function POST(request: NextRequest) {
 // GET endpoint to retrieve current user data
 export async function GET(request: NextRequest) {
   try {
-    // Get and verify JWT token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    // Get user session
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let userId: string;
-    try {
-      const decoded = await verifyJWTEnhanced(token);
-      userId = decoded.userId;
-    } catch (verificationError) {
-      console.error('Enhanced JWT verification failed:', verificationError);
-      return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
-      }, { status: 401 });
-    }
+    const userId = (session.user as any).id;
 
     // Get user from database
     const result = await dynamodb.send(new GetCommand({

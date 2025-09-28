@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth, useDogs, useMatchedPuppies, useMessages, useKennels } from '@/hooks';
+import { useAuth, useDogs, useMatchedPuppies, useMessages, useKennels, useFavorites } from '@/hooks';
 import { AddDogForm } from '@/components';
 import DogManagement from '@/components/dogs/DogManagement';
 import ProfileSwitchingOverlay from '@/components/ProfileSwitchingOverlay';
@@ -85,6 +85,7 @@ const Dashboard: React.FC = () => {
     userName: user?.name || '',
     pollingInterval: 30000
   });
+  const { favorites, count: favoritesCount, isLoading: favoritesLoading, removeFromFavorites } = useFavorites();
   const [addDogModalVisible, setAddDogModalVisible] = useState(false);
 
   // Force refresh auth state when dashboard mounts
@@ -92,7 +93,7 @@ const Dashboard: React.FC = () => {
     // Dashboard mounted
   }, []);
 
-  const isLoading = dogsLoading || puppiesLoading || messagesLoading || kennelsLoading;
+  const isLoading = dogsLoading || puppiesLoading || messagesLoading || kennelsLoading || favoritesLoading;
   const error = dogsError || puppiesError;
 
   if (isLoading) {
@@ -361,7 +362,7 @@ const Dashboard: React.FC = () => {
               >
                 <Statistic
                   title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Favorites</span>}
-                  value={0}
+                  value={favoritesCount}
                   prefix={<HeartOutlined style={{ color: colors.secondary }} />}
                   valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
                 />
@@ -546,6 +547,142 @@ const Dashboard: React.FC = () => {
                     />
               )}
           </Card>
+          )}
+
+          {/* Favorites (for puppy parents) */}
+          {isPuppyParent && (
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <HeartOutlined style={{ color: colors.secondary, fontSize: '20px' }} />
+                  <span style={{ color: colors.text, fontWeight: '600' }}>
+                    My Favorites ({favoritesCount})
+                  </span>
+                </div>
+              }
+              extra={
+                favoritesCount > 0 ? (
+                  <Link href="/browse">
+                    <Button 
+                      type="primary" 
+                      icon={<ArrowRightOutlined />}
+                      style={{ 
+                        background: colors.secondary,
+                        borderColor: colors.secondary,
+                        borderRadius: '8px'
+                      }}
+                    >
+                      Browse More
+                    </Button>
+                  </Link>
+                ) : null
+              }
+              style={{ 
+                marginBottom: '24px',
+                background: colors.card,
+                border: `1px solid ${colors.secondary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.secondary}10`
+              }}
+            >
+              {favoritesCount === 0 ? (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="No favorites yet"
+                >
+                  <Link href="/browse">
+                    <Button type="primary" icon={<HeartOutlined />}>
+                      Browse Puppies
+                    </Button>
+                  </Link>
+                </Empty>
+              ) : (
+                <List
+                  dataSource={favorites.slice(0, 6)}
+                  grid={{ gutter: 16, xs: 1, sm: 2, md: 2, lg: 2, xl: 3 }}
+                  renderItem={(favorite) => (
+                    <List.Item>
+                      <Card
+                        hoverable
+                        cover={
+                          <div style={{ height: '200px', overflow: 'hidden' }}>
+                            {favorite.puppyData?.image ? (
+                              <Image
+                                alt={favorite.puppyData.name || 'Puppy'}
+                                src={favorite.puppyData.image}
+                                fill
+                                style={{ 
+                                  objectFit: 'cover' 
+                                }}
+                              />
+                            ) : (
+                              <div style={{ 
+                                height: '100%', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                background: '#f5f5f5'
+                              }}>
+                                <UserOutlined style={{ fontSize: '48px', color: '#ccc' }} />
+                              </div>
+                            )}
+                          </div>
+                        }
+                        actions={[
+                          <Link href={`/dogs/${favorite.puppyId}`} key="view">
+                            <Button type="link" icon={<EyeOutlined />}>
+                              View Details
+                            </Button>
+                          </Link>,
+                          <Button 
+                            type="link" 
+                            icon={<HeartOutlined style={{ color: '#ff4d4f' }} />}
+                            key="favorite"
+                            onClick={async () => {
+                              try {
+                                await removeFromFavorites(favorite.puppyId);
+                              } catch (error) {
+                                console.error('Error removing from favorites:', error);
+                              }
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        ]}
+                      >
+                        <Card.Meta
+                          title={favorite.puppyData?.name || 'Unknown Puppy'}
+                          description={
+                            <Space direction="vertical" size="small">
+                              <Space>
+                                {favorite.puppyData?.breed && (
+                                  <Tag color="blue">{favorite.puppyData.breed}</Tag>
+                                )}
+                                {favorite.puppyData?.gender && (
+                                  <Tag color={favorite.puppyData.gender === 'male' ? 'blue' : 'pink'}>
+                                    {favorite.puppyData.gender}
+                                  </Tag>
+                                )}
+                              </Space>
+                              {favorite.puppyData?.location && (
+                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                  📍 {favorite.puppyData.location}, {favorite.puppyData.country}
+                                </Text>
+                              )}
+                              {favorite.puppyData?.breederName && (
+                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                  Breeder: {favorite.puppyData.breederName}
+                                </Text>
+                              )}
+                            </Space>
+                          }
+                        />
+                      </Card>
+                    </List.Item>
+                  )}
+                />
+              )}
+            </Card>
           )}
 
           {/* Dog Management (for breeders) */}

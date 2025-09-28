@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 const client = new DynamoDBClient({
@@ -45,12 +46,12 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId } = await verifyJWTEnhanced(token);
+    const userId = session.user.id;
     const { id: kennelId } = await context.params;
     const body = await request.json();
 

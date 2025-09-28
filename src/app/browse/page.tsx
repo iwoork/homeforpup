@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Statistic, Tooltip, Badge, Divider } from 'antd';
-import { HeartOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
 import Image from 'next/image';
 import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
 import ContactBreederModal from '@/components/ContactBreederModal';
-import { useAuth } from '@/hooks';
+import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -55,6 +55,32 @@ const PuppiesPage: React.FC = () => {
     limit: pageSize,
   });
 
+  // Favorites functionality
+  const { toggleFavorite } = useFavorites();
+  const puppyIds = puppies.map(puppy => puppy.id);
+  const { favoriteStatus, isLoading: favoritesLoading } = useBulkFavoriteStatus(puppyIds);
+  
+  // Local state for optimistic updates
+  const [optimisticFavorites, setOptimisticFavorites] = useState<Record<string, boolean>>({});
+  
+  // Combined favorite status that merges server data with optimistic updates
+  const combinedFavoriteStatus = React.useMemo(() => {
+    return {
+      ...favoriteStatus,
+      ...optimisticFavorites
+    };
+  }, [favoriteStatus, optimisticFavorites]);
+  
+  // Helper function to get current favorite status
+  const getCurrentFavoriteStatus = (puppyId: string): boolean => {
+    return combinedFavoriteStatus[puppyId] || false;
+  };
+
+  // Clear optimistic updates when page changes or filters change
+  useEffect(() => {
+    setOptimisticFavorites({});
+  }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verified]);
+
   const resetFilters = () => {
     setFilters({
       country: 'Canada',
@@ -77,6 +103,51 @@ const PuppiesPage: React.FC = () => {
     setSelectedPuppy(null);
   };
 
+  const handleToggleFavorite = async (puppy: PuppyWithBreeder) => {
+    if (!user) {
+      // Redirect to login or show message
+      return;
+    }
+    
+    const currentStatus = getCurrentFavoriteStatus(puppy.id);
+    const newStatus = !currentStatus;
+    
+    // Optimistically update the UI immediately
+    setOptimisticFavorites(prev => ({
+      ...prev,
+      [puppy.id]: newStatus
+    }));
+    
+    try {
+      await toggleFavorite(puppy.id, {
+        name: puppy.name,
+        breed: puppy.breed,
+        image: puppy.image,
+        location: puppy.location,
+        country: puppy.country,
+        ageWeeks: puppy.ageWeeks,
+        gender: puppy.gender,
+        price: puppy.price,
+        breederName: puppy.breeder.businessName
+      });
+      
+      // Clear optimistic update after successful server update
+      setOptimisticFavorites(prev => {
+        const newState = { ...prev };
+        delete newState[puppy.id];
+        return newState;
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // Revert optimistic update on error
+      setOptimisticFavorites(prev => {
+        const newState = { ...prev };
+        delete newState[puppy.id];
+        return newState;
+      });
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -97,12 +168,17 @@ const PuppiesPage: React.FC = () => {
       hoverable
       style={{
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        boxShadow: getCurrentFavoriteStatus(puppy.id) 
+          ? '0 4px 12px rgba(255, 77, 79, 0.3)' 
+          : '0 4px 12px rgba(0, 0, 0, 0.1)',
         marginBottom: '16px',
         overflow: 'visible',
         height: '590px',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        border: getCurrentFavoriteStatus(puppy.id) 
+          ? '2px solid #ff4d4f' 
+          : '1px solid #f0f0f0'
       }}
       bodyStyle={{
         flex: 1,
@@ -128,6 +204,11 @@ const PuppiesPage: React.FC = () => {
             gap: '8px',
             flexWrap: 'wrap'
           }}>
+            {getCurrentFavoriteStatus(puppy.id) && (
+              <Tag color="red" icon={<HeartFilled />}>
+                Favorited
+              </Tag>
+            )}
             {puppy.breeder.verified && (
               <Tag color="green" icon={<CheckCircleOutlined />}>
                 Verified
@@ -237,8 +318,19 @@ const PuppiesPage: React.FC = () => {
           borderTop: '1px solid #f0f0f0'
         }}>
           <Space size="middle">
-            <Tooltip title="Save to favorites">
-              <Button type="text" icon={<HeartOutlined />} size="small" />
+            <Tooltip title={getCurrentFavoriteStatus(puppy.id) ? "Remove from favorites" : "Save to favorites"}>
+              <Button 
+                type="text" 
+                icon={getCurrentFavoriteStatus(puppy.id) ? <HeartFilled style={{ color: '#ff4d4f' }} /> : <HeartOutlined />} 
+                size="small" 
+                onClick={() => handleToggleFavorite(puppy)}
+                loading={favoritesLoading}
+                disabled={!user}
+                style={{
+                  color: getCurrentFavoriteStatus(puppy.id) ? '#ff4d4f' : undefined,
+                  borderColor: getCurrentFavoriteStatus(puppy.id) ? '#ff4d4f' : undefined
+                }}
+              />
             </Tooltip>
             <Tooltip title={puppy.breeder.phone}>
               <Button type="text" icon={<PhoneOutlined />} size="small" />

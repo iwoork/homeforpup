@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '@/lib/utils/enhanced-auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -24,18 +25,18 @@ export async function PUT(
     const userId = params.id;
     console.log('UserType update API called for userId:', userId);
 
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      console.log('No token provided');
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      console.log('No session found');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId: tokenUserId } = await verifyJWTEnhanced(token);
-    console.log('Token userId:', tokenUserId);
+    const sessionUserId = session.user.id;
+    console.log('Session userId:', sessionUserId);
     
     // Only allow users to update their own userType
-    if (userId !== tokenUserId) {
-      console.log('Unauthorized: userId mismatch', { userId, tokenUserId });
+    if (userId !== sessionUserId) {
+      console.log('Unauthorized: userId mismatch', { userId, sessionUserId });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

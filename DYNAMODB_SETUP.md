@@ -34,6 +34,7 @@ BREEDERS_TABLE_NAME=homeforpup-breeders
 BREEDS_TABLE_NAME=homeforpup-breeds
 MESSAGES_TABLE_NAME=homeforpup-messages
 THREADS_TABLE_NAME=homeforpup-message-threads
+FAVORITES_TABLE_NAME=homeforpup-favorites
 
 # Cognito Configuration
 NEXT_PUBLIC_AWS_USER_POOL_ID=your_user_pool_id
@@ -57,6 +58,7 @@ This will create the following tables:
 - `homeforpup-breeds` - Dog breed information
 - `homeforpup-messages` - Message content and metadata
 - `homeforpup-message-threads` - Message thread organization
+- `homeforpup-favorites` - User favorites for puppies
 
 ### 3. Verify Tables
 
@@ -97,6 +99,12 @@ If you prefer to create tables manually through the AWS Console:
 ### Message Threads Table
 - **Table Name**: `homeforpup-message-threads`
 - **Partition Key**: `PK` (String)
+- **Global Secondary Index**: `GSI1` on `GSI1PK` attribute
+
+### Favorites Table
+- **Table Name**: `homeforpup-favorites`
+- **Partition Key**: `userId` (String)
+- **Sort Key**: `puppyId` (String)
 - **Global Secondary Index**: `GSI1` on `GSI1PK` attribute
 
 ## Troubleshooting

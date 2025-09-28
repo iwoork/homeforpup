@@ -4,7 +4,8 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import { verifyJWTEnhanced } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Initialize DynamoDB client
 const dynamoClient = new DynamoDBClient({
@@ -53,20 +54,13 @@ interface DogData {
   updatedAt: string;
 }
 
-// Helper function to extract user ID from Cognito JWT token
-async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
+// Helper function to extract user ID from NextAuth session
+async function getUserIdFromSession(): Promise<string | null> {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = await verifyJWTEnhanced(token);
-    
-    return decoded.userId || null;
+    const session = await getServerSession(authOptions);
+    return (session?.user as any)?.id || null;
   } catch (error) {
-    console.error('Error extracting user ID from token:', error);
+    console.error('Error getting user ID from session:', error);
     return null;
   }
 }
@@ -74,7 +68,7 @@ async function getUserIdFromToken(request: NextRequest): Promise<string | null> 
 // GET /api/dogs - Get all dogs for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserIdFromToken(request);
+    const userId = await getUserIdFromSession();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -99,7 +93,7 @@ export async function GET(request: NextRequest) {
 // POST /api/dogs - Create a new dog
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserIdFromToken(request);
+    const userId = await getUserIdFromSession();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -19,23 +20,13 @@ const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 export async function GET(request: NextRequest) {
   try {
     // Get and verify JWT token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let currentUserId: string;
-    try {
-      const { userId } = await verifyJWTEnhanced(token);
-      currentUserId = userId;
-      console.log('Fetching available users for:', currentUserId.substring(0, 10) + '...');
-    } catch (verificationError) {
-      console.error('Enhanced JWT verification failed:', verificationError);
-      return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
-      }, { status: 401 });
-    }
+    const currentUserId = (session.user as any).id;
+    console.log('Fetching available users for:', currentUserId.substring(0, 10) + '...');
 
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);

@@ -3,7 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '../../../../lib/utils/enhanced-auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../lib/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -152,18 +153,15 @@ export async function GET(
 
     console.log('Fetching user profile for ID:', userId.substring(0, 10) + '...');
 
-    // Get current user from token to check if viewing own profile
+    // Get current user from session to check if viewing own profile
     let currentUserId: string | null = null;
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
-    if (token) {
-      try {
-        const decoded = await verifyJWTEnhanced(token);
-        currentUserId = decoded.userId;
-      } catch (verificationError) {
-        console.error(verificationError);
-        console.log('Invalid token provided, showing public profile only');
-      }
+    try {
+      const session = await getServerSession(authOptions);
+      currentUserId = (session?.user as any)?.id || null;
+    } catch (error) {
+      console.error('Error getting session:', error);
+      console.log('No session found, showing public profile only');
     }
 
     // Get user by ID using GetCommand
@@ -266,22 +264,13 @@ export async function PUT(
       );
     }
 
-    // Verify JWT token for authentication
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ message: 'No token provided' }, { status: 401 });
+    // Get user session for authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    let currentUserId: string;
-    try {
-      const decoded = await verifyJWTEnhanced(token);
-      currentUserId = decoded.userId;
-    } catch (verificationError) {
-      return NextResponse.json({ 
-        message: 'Invalid authentication token',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
-      }, { status: 401 });
-    }
+    const currentUserId = (session.user as any).id;
 
     // Check if user is updating their own profile
     if (currentUserId !== userId) {

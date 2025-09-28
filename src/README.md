@@ -62,7 +62,6 @@ src/
 │   ├── utils/               # Utility functions
 │   │   ├── gtag.ts
 │   │   ├── auth.ts
-│   │   ├── enhanced-auth.ts
 │   │   └── jwt-debug.ts
 │   └── index.ts             # Library exports
 └── app/                      # 📱 Next.js app directory (legacy)

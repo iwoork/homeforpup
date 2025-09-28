@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWTEnhanced } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 const client = new DynamoDBClient({
@@ -18,12 +19,12 @@ const KENNELS_TABLE = 'homeforpup-kennels';
 // GET /api/kennels - Get kennels for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId } = await verifyJWTEnhanced(token);
+    const userId = (session.user as any).id;
 
     const params = {
       TableName: KENNELS_TABLE,
@@ -44,12 +45,12 @@ export async function GET(request: NextRequest) {
 // POST /api/kennels - Create a new kennel
 export async function POST(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userId } = await verifyJWTEnhanced(token);
+    const userId = (session.user as any).id;
     const body = await request.json();
 
     const {
