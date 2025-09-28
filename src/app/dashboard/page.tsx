@@ -53,25 +53,18 @@ dayjs.extend(relativeTime);
 
 const { Title, Text } = Typography;
 
-// Color schemes for different personas
-const PUPPY_PARENT_COLORS = {
-  primary: '#08979C', // Brand teal
-  secondary: '#52C41A', // Green for growth/nature
-  accent: '#FA8C16', // Orange for warmth/energy
-  background: '#F6FFED', // Light green background
-  card: '#FFFFFF',
-  text: '#262626',
-  textSecondary: '#8C8C8C'
-};
-
-const BREEDER_COLORS = {
-  primary: '#08979C', // Brand teal
-  secondary: '#722ED1', // Purple for premium/royalty
-  accent: '#EB2F96', // Pink for care/love
-  background: '#F9F0FF', // Light purple background
-  card: '#FFFFFF',
-  text: '#262626',
-  textSecondary: '#8C8C8C'
+// Clean, consistent color scheme
+const COLORS = {
+  primary: '#08979C', // Brand teal - main brand color
+  secondary: '#13C2C2', // Lighter teal for accents
+  accent: '#FF7875', // Soft red for favorites/important actions
+  neutral: '#F5F5F5', // Light gray for backgrounds
+  card: '#FFFFFF', // Clean white for cards
+  text: '#262626', // Dark gray for main text
+  textSecondary: '#8C8C8C', // Medium gray for secondary text
+  border: '#F0F0F0', // Light border color
+  success: '#52C41A', // Green for success states
+  warning: '#FAAD14' // Orange for warnings
 };
 
 const Dashboard: React.FC = () => {
@@ -113,8 +106,8 @@ const Dashboard: React.FC = () => {
   const isBreeder = effectiveUserType === 'breeder';
   const isAdopter = effectiveUserType === 'adopter';
   
-  // Get color scheme based on user type
-  const colors = isBreeder ? BREEDER_COLORS : PUPPY_PARENT_COLORS;
+  // Use consistent color scheme
+  const colors = COLORS;
   
   // Dashboard profile switching state
 
@@ -136,88 +129,53 @@ const Dashboard: React.FC = () => {
         />
       )}
       
-      {/* Hero Header */}
+      {/* Clean Header */}
       <div style={{ 
-        marginBottom: '32px',
-        background: `linear-gradient(135deg, ${colors.background} 0%, ${colors.card} 100%)`,
-        padding: '32px',
-        borderRadius: '16px',
-        border: `2px solid ${colors.primary}20`,
-        boxShadow: `0 8px 32px ${colors.primary}15`,
-        position: 'relative',
-        overflow: 'hidden'
+        marginBottom: '40px',
+        padding: '24px 0',
+        borderBottom: `1px solid ${colors.border}`
       }}>
-        {/* Background Pattern */}
-        <div style={{
-          position: 'absolute',
-          top: '-50px',
-          right: '-50px',
-          width: '200px',
-          height: '200px',
-          background: `radial-gradient(circle, ${colors.primary}10 0%, transparent 70%)`,
-          borderRadius: '50%'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-30px',
-          left: '-30px',
-          width: '150px',
-          height: '150px',
-          background: `radial-gradient(circle, ${colors.secondary}10 0%, transparent 70%)`,
-          borderRadius: '50%'
-        }} />
-        
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-          <Avatar 
-            size={64} 
-            src={user?.profileImage || undefined} 
-            icon={<UserOutlined />}
-            style={{ 
-              marginRight: '20px',
-              border: `3px solid ${colors.primary}`,
-              boxShadow: `0 4px 12px ${colors.primary}30`
-            }}
-          />
-        <div>
-            <Title level={1} style={{ 
-              color: colors.primary, 
-              margin: 0, 
-              fontSize: '32px',
-              fontWeight: 'bold',
-              textShadow: `0 2px 4px ${colors.primary}20`
-            }}>
-              {isBreeder ? '🐕‍🦺' : '🐾'} Welcome back, {user?.name || 'User'}!
-          </Title>
-            <Text style={{ 
-              color: colors.textSecondary, 
-              fontSize: '18px',
-              fontWeight: '500'
-            }}>
-              {canSwitchProfiles 
-                ? `Currently viewing as ${activeProfileType}. Switch profiles in the user menu to change your view.`
-                : isBreeder 
-                ? "Manage your breeding program and connect with adopters."
-                : "Discover new puppies and connect with breeders."}
-          </Text>
-            
-            {/* Profile Type Badge */}
-            <div style={{ marginTop: '12px' }}>
-              <Tag 
-                color={isBreeder ? 'purple' : 'green'} 
-                style={{ 
-                  fontSize: '14px', 
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontWeight: '600'
-                }}
-                icon={isBreeder ? <CrownOutlined /> : <HeartOutlined />}
-              >
-                {isBreeder ? 'Breeder' : 'Adopter'}
-              </Tag>
-        </div>
-        
-            {/* Debug section removed */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar 
+              size={48} 
+              src={user?.profileImage || undefined} 
+              icon={<UserOutlined />}
+              style={{ 
+                marginRight: '16px',
+                border: `2px solid ${colors.border}`
+              }}
+            />
+            <div>
+              <Title level={2} style={{ 
+                color: colors.text, 
+                margin: 0, 
+                fontSize: '24px',
+                fontWeight: '600'
+              }}>
+                Welcome back, {user?.name || 'User'}
+              </Title>
+              <Text style={{ 
+                color: colors.textSecondary, 
+                fontSize: '14px'
+              }}>
+                {isAdopter ? "Find your perfect puppy companion" : "Manage your breeding program"}
+              </Text>
+            </div>
           </div>
+          
+          {canSwitchProfiles && (
+            <Tag 
+              color="blue" 
+              style={{ 
+                fontSize: '12px', 
+                padding: '4px 8px',
+                fontWeight: '500'
+              }}
+            >
+              Viewing as {activeProfileType}
+            </Tag>
+          )}
         </div>
       </div>
 
@@ -234,192 +192,181 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Quick Stats */}
-      <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-        {isBreeder ? (
-          <>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
-                  border: `1px solid ${colors.primary}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.primary}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Dogs</span>}
-                  value={dogs.length}
-                  prefix={<TeamOutlined style={{ color: colors.primary }} />}
-                  valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Total registered dogs
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.secondary}05 100%)`,
-                  border: `1px solid ${colors.secondary}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.secondary}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Active Litters</span>}
-                  value={dogs.filter(dog => dog.breedingStatus === 'available').length}
-                  prefix={<HeartOutlined style={{ color: colors.secondary }} />}
-                  valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Currently breeding
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
-                  border: `1px solid ${colors.accent}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.accent}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Messages</span>}
-                  value={unreadCount}
-                  prefix={<MessageOutlined style={{ color: colors.accent }} />}
-                  valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Unread conversations
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
-                  border: `1px solid ${colors.accent}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.accent}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Kennels</span>}
-                  value={kennels?.length || 0}
-                  prefix={<HomeOutlined style={{ color: colors.accent }} />}
-                  valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Total kennels
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-          </>
-        ) : (
-          <>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
-                  border: `1px solid ${colors.primary}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.primary}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Matched Puppies</span>}
-                  value={Array.isArray(matchedPuppies) ? matchedPuppies.length : 0}
-                  prefix={<HeartOutlined style={{ color: colors.primary }} />}
-                  valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Based on your preferences
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.secondary}05 100%)`,
-                  border: `1px solid ${colors.secondary}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.secondary}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Favorites</span>}
-                  value={favoritesCount}
-                  prefix={<HeartOutlined style={{ color: colors.secondary }} />}
-                  valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Saved puppies
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
-                  border: `1px solid ${colors.accent}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.accent}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Messages</span>}
-                  value={unreadCount}
-                  prefix={<MessageOutlined style={{ color: colors.accent }} />}
-                  valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    Unread conversations
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <Card 
-                style={{ 
-                  background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
-                  border: `1px solid ${colors.primary}20`,
-                  borderRadius: '12px',
-                  boxShadow: `0 4px 16px ${colors.primary}10`
-                }}
-              >
-                <Statistic
-                  title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Profile Views</span>}
-                  value={0}
-                  prefix={<EyeOutlined style={{ color: colors.primary }} />}
-                  valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    This month
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-          </>
-        )}
-      </Row>
+      {/* Clean Stats for Adopters */}
+      {isAdopter && (
+        <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
+          <Col xs={12} sm={8} lg={4}>
+            <Card 
+              size="small"
+              style={{ 
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}
+            >
+              <Statistic
+                value={Array.isArray(matchedPuppies) ? matchedPuppies.length : 0}
+                prefix={<HeartOutlined style={{ color: colors.primary }} />}
+                valueStyle={{ color: colors.primary, fontSize: '20px', fontWeight: '600' }}
+              />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Matched Puppies
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={12} sm={8} lg={4}>
+            <Card 
+              size="small"
+              style={{ 
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}
+            >
+              <Statistic
+                value={favoritesCount}
+                prefix={<HeartOutlined style={{ color: colors.accent }} />}
+                valueStyle={{ color: colors.accent, fontSize: '20px', fontWeight: '600' }}
+              />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Favorites
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={12} sm={8} lg={4}>
+            <Card 
+              size="small"
+              style={{ 
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}
+            >
+              <Statistic
+                value={unreadCount}
+                prefix={<MessageOutlined style={{ color: colors.secondary }} />}
+                valueStyle={{ color: colors.secondary, fontSize: '20px', fontWeight: '600' }}
+              />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Messages
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={12} sm={8} lg={4}>
+            <Card 
+              size="small"
+              style={{ 
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}
+            >
+              <Statistic
+                value={0}
+                prefix={<EyeOutlined style={{ color: colors.textSecondary }} />}
+                valueStyle={{ color: colors.textSecondary, fontSize: '20px', fontWeight: '600' }}
+              />
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Profile Views
+              </Text>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Breeder Stats (unchanged) */}
+      {isBreeder && (
+        <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card 
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.primary}05 100%)`,
+                border: `1px solid ${colors.primary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.primary}10`
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Dogs</span>}
+                value={dogs.length}
+                prefix={<TeamOutlined style={{ color: colors.primary }} />}
+                valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
+              />
+              <div style={{ marginTop: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Total registered dogs
+                </Text>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card 
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.secondary}05 100%)`,
+                border: `1px solid ${colors.secondary}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.secondary}10`
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Active Litters</span>}
+                value={dogs.filter(dog => dog.breedingStatus === 'available').length}
+                prefix={<HeartOutlined style={{ color: colors.secondary }} />}
+                valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
+              />
+              <div style={{ marginTop: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Currently breeding
+                </Text>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card 
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
+                border: `1px solid ${colors.accent}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.accent}10`
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Messages</span>}
+                value={unreadCount}
+                prefix={<MessageOutlined style={{ color: colors.accent }} />}
+                valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
+              />
+              <div style={{ marginTop: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Unread conversations
+                </Text>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card 
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.card} 0%, ${colors.accent}05 100%)`,
+                border: `1px solid ${colors.accent}20`,
+                borderRadius: '12px',
+                boxShadow: `0 4px 16px ${colors.accent}10`
+              }}
+            >
+              <Statistic
+                title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Kennels</span>}
+                value={kennels?.length || 0}
+                prefix={<HomeOutlined style={{ color: colors.accent }} />}
+                valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
+              />
+              <div style={{ marginTop: '8px' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  Total kennels
+                </Text>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Main Content */}
       <Row gutter={[24, 24]}>
@@ -429,34 +376,28 @@ const Dashboard: React.FC = () => {
           {isAdopter && (
           <Card 
               title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <HeartOutlined style={{ color: colors.primary, fontSize: '20px' }} />
-                  <span style={{ color: colors.text, fontWeight: '600' }}>
-                    Puppies Matched for You ({Array.isArray(matchedPuppies) ? matchedPuppies.length : 0})
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <HeartOutlined style={{ color: colors.primary }} />
+                    <span style={{ color: colors.text, fontWeight: '500' }}>
+                      Matched Puppies ({Array.isArray(matchedPuppies) ? matchedPuppies.length : 0})
+                    </span>
+                  </div>
+                  <Link href="/browse">
+                    <Button 
+                      type="link" 
+                      icon={<ArrowRightOutlined />}
+                      size="small"
+                    >
+                      Browse All
+                    </Button>
+                  </Link>
                 </div>
-              }
-            extra={
-                <Link href="/browse">
-                  <Button 
-                    type="primary" 
-                    icon={<ArrowRightOutlined />}
-                    style={{ 
-                      background: colors.primary,
-                      borderColor: colors.primary,
-                      borderRadius: '8px'
-                    }}
-                  >
-                    View All
-                  </Button>
-                </Link>
               }
               style={{ 
                 marginBottom: '24px',
-                background: colors.card,
-                border: `1px solid ${colors.primary}20`,
-                borderRadius: '12px',
-                boxShadow: `0 4px 16px ${colors.primary}10`
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px'
               }}
             >
               {!matchedPuppies || !Array.isArray(matchedPuppies) || matchedPuppies.length === 0 ? (
@@ -553,50 +494,42 @@ const Dashboard: React.FC = () => {
           {isAdopter && (
             <Card 
               title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <HeartOutlined style={{ color: colors.secondary, fontSize: '20px' }} />
-                  <span style={{ color: colors.text, fontWeight: '600' }}>
-                    My Favorites ({favoritesCount})
-                  </span>
-                </div>
-              }
-              extra={
-                <Space>
-                  {favoritesCount > 0 && (
-                    <Link href="/favorites">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <HeartOutlined style={{ color: colors.accent }} />
+                    <span style={{ color: colors.text, fontWeight: '500' }}>
+                      My Favorites ({favoritesCount})
+                    </span>
+                  </div>
+                  <Space>
+                    {favoritesCount > 0 && (
+                      <Link href="/favorites">
+                        <Button 
+                          type="link" 
+                          icon={<HeartOutlined />}
+                          size="small"
+                          style={{ color: colors.accent }}
+                        >
+                          View All
+                        </Button>
+                      </Link>
+                    )}
+                    <Link href="/browse">
                       <Button 
-                        icon={<HeartOutlined />}
-                        style={{ 
-                          background: colors.secondary,
-                          borderColor: colors.secondary,
-                          borderRadius: '8px'
-                        }}
+                        type="link" 
+                        icon={<ArrowRightOutlined />}
+                        size="small"
                       >
-                        View All ({favoritesCount})
+                        Browse More
                       </Button>
                     </Link>
-                  )}
-                  <Link href="/browse">
-                    <Button 
-                      type="primary" 
-                      icon={<ArrowRightOutlined />}
-                      style={{ 
-                        background: colors.secondary,
-                        borderColor: colors.secondary,
-                        borderRadius: '8px'
-                      }}
-                    >
-                      Browse More
-                    </Button>
-                  </Link>
-                </Space>
+                  </Space>
+                </div>
               }
               style={{ 
                 marginBottom: '24px',
-                background: colors.card,
-                border: `1px solid ${colors.secondary}20`,
-                borderRadius: '12px',
-                boxShadow: `0 4px 16px ${colors.secondary}10`
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px'
               }}
             >
               {favoritesCount === 0 ? (
@@ -837,18 +770,13 @@ const Dashboard: React.FC = () => {
       {/* Quick Actions */}
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <GiftOutlined style={{ color: colors.primary, fontSize: '20px' }} />
-                <span style={{ color: colors.text, fontWeight: '600' }}>
-                  {isBreeder ? 'Breeder Actions' : 'Quick Actions'}
-                </span>
-              </div>
+              <span style={{ color: colors.text, fontWeight: '500' }}>
+                {isBreeder ? 'Breeder Actions' : 'Quick Actions'}
+              </span>
             }
             style={{ 
-              background: colors.card,
-              border: `1px solid ${colors.primary}20`,
-              borderRadius: '12px',
-              boxShadow: `0 4px 16px ${colors.primary}10`
+              border: `1px solid ${colors.border}`,
+              borderRadius: '8px'
             }}
           >
         <Row gutter={[16, 16]}>
@@ -895,88 +823,72 @@ const Dashboard: React.FC = () => {
                   </Col>
                 </>
               )}
-              <Col xs={24} sm={12}>
+              <Col xs={12} sm={8} lg={6}>
                 <Link href="/browse">
                   <Button 
                     icon={<EyeOutlined />} 
-                block 
-                    size="large"
+                    block 
                     style={{ 
-                      height: '60px', 
-                      fontSize: '16px',
-                      background: colors.secondary,
-                      borderColor: colors.secondary,
+                      background: colors.primary,
+                      borderColor: colors.primary,
                       color: 'white',
-                      borderRadius: '8px',
-                      fontWeight: '600'
+                      fontWeight: '500'
                     }}
                   >
                     Browse Puppies
-              </Button>
-            </Link>
-          </Col>
+                  </Button>
+                </Link>
+              </Col>
               {isAdopter && favoritesCount > 0 && (
-                <Col xs={24} sm={12}>
+                <Col xs={12} sm={8} lg={6}>
                   <Link href="/favorites">
                     <Button 
                       icon={<HeartOutlined />} 
                       block 
-                      size="large"
                       style={{ 
-                        height: '60px', 
-                        fontSize: '16px',
-                        background: '#ff4d4f',
-                        borderColor: '#ff4d4f',
+                        background: colors.accent,
+                        borderColor: colors.accent,
                         color: 'white',
-                        borderRadius: '8px',
-                        fontWeight: '600'
+                        fontWeight: '500'
                       }}
                     >
-                      My Favorites ({favoritesCount})
+                      My Favorites
                     </Button>
                   </Link>
                 </Col>
               )}
-              <Col xs={24} sm={12}>
+              <Col xs={12} sm={8} lg={6}>
                 <Link href="/dashboard/messages">
-            <Button 
+                  <Button 
                     icon={<MessageOutlined />} 
                     block
-              size="large" 
                     style={{ 
-                      height: '60px', 
-                      fontSize: '16px',
-                      background: colors.accent,
-                      borderColor: colors.accent,
+                      background: colors.secondary,
+                      borderColor: colors.secondary,
                       color: 'white',
-                      borderRadius: '8px',
-                      fontWeight: '600'
+                      fontWeight: '500'
                     }}
                   >
-                    View Messages
-            </Button>
+                    Messages
+                  </Button>
                 </Link>
-          </Col>
-              <Col xs={24} sm={12}>
+              </Col>
+              <Col xs={12} sm={8} lg={6}>
                 <Link href={`/users/${user?.userId}/edit`}>
-              <Button 
+                  <Button 
                     icon={<SettingOutlined />} 
                     block
-                size="large" 
                     style={{ 
-                      height: '60px', 
-                      fontSize: '16px',
-                      background: colors.primary,
-                      borderColor: colors.primary,
-                      color: 'white',
-                      borderRadius: '8px',
-                      fontWeight: '600'
+                      background: colors.neutral,
+                      borderColor: colors.border,
+                      color: colors.text,
+                      fontWeight: '500'
                     }}
                   >
                     Edit Profile
-              </Button>
-            </Link>
-          </Col>
+                  </Button>
+                </Link>
+              </Col>
         </Row>
       </Card>
         </Col>
@@ -986,44 +898,36 @@ const Dashboard: React.FC = () => {
           {/* Profile Summary */}
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <UserOutlined style={{ color: colors.primary, fontSize: '20px' }} />
-                <span style={{ color: colors.text, fontWeight: '600' }}>
-                  Profile Summary
-                </span>
-              </div>
+              <span style={{ color: colors.text, fontWeight: '500' }}>
+                Profile Summary
+              </span>
             }
             style={{ 
               marginBottom: '24px',
-              background: colors.card,
-              border: `1px solid ${colors.primary}20`,
-              borderRadius: '12px',
-              boxShadow: `0 4px 16px ${colors.primary}10`
+              border: `1px solid ${colors.border}`,
+              borderRadius: '8px'
             }}
           >
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <Avatar 
-                size={80} 
+                size={60} 
                 src={user?.profileImage || undefined} 
                 icon={<UserOutlined />}
                 style={{ 
-                  border: `3px solid ${colors.primary}`,
-                  boxShadow: `0 4px 12px ${colors.primary}30`
+                  border: `2px solid ${colors.border}`
                 }}
               />
-              <div style={{ marginTop: '12px' }}>
-                <Title level={4} style={{ color: colors.text, margin: 0 }}>
+              <div style={{ marginTop: '8px' }}>
+                <Title level={5} style={{ color: colors.text, margin: 0 }}>
                   {user?.name || 'User'}
                 </Title>
                 <Tag 
-                  color={isBreeder ? 'purple' : 'green'} 
+                  color="blue" 
                   style={{ 
-                    fontSize: '12px', 
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
+                    fontSize: '11px', 
+                    padding: '2px 6px',
+                    fontWeight: '500'
                   }}
-                  icon={isBreeder ? <CrownOutlined /> : <HeartOutlined />}
                 >
                   {isBreeder ? 'Breeder' : 'Adopter'}
                 </Tag>
@@ -1039,8 +943,7 @@ const Dashboard: React.FC = () => {
                   style={{ 
                     background: colors.primary,
                     borderColor: colors.primary,
-                    borderRadius: '8px',
-                    fontWeight: '600'
+                    fontWeight: '500'
                   }}
                 >
                   Edit Profile
@@ -1051,42 +954,40 @@ const Dashboard: React.FC = () => {
                   block 
                   icon={<EyeOutlined />}
                   style={{ 
-                    background: colors.secondary,
-                    borderColor: colors.secondary,
-                    color: 'white',
-                    borderRadius: '8px',
-                    fontWeight: '600'
+                    background: colors.neutral,
+                    borderColor: colors.border,
+                    color: colors.text,
+                    fontWeight: '500'
                   }}
                 >
                   View Profile
                 </Button>
               </Link>
               
-              <Divider style={{ margin: '16px 0' }} />
+              <Divider style={{ margin: '12px 0' }} />
               
               <div style={{ 
-                padding: '16px', 
-                background: `${colors.primary}05`, 
-                borderRadius: '8px',
-                border: `1px solid ${colors.primary}20`
+                padding: '12px', 
+                background: colors.neutral, 
+                borderRadius: '6px'
               }}>
                 <div style={{ marginBottom: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '12px', fontWeight: '600' }}>
+                  <Text type="secondary" style={{ fontSize: '11px', fontWeight: '500' }}>
                     <CalendarOutlined style={{ marginRight: '4px' }} />
                     Member since:
                   </Text>
                   <br />
-                  <Text style={{ fontSize: '14px', color: colors.text }}>
+                  <Text style={{ fontSize: '13px', color: colors.text }}>
                     {user?.createdAt ? dayjs(user.createdAt).format('MMM YYYY') : 'Recently joined'}
                   </Text>
                 </div>
                 <div>
-                  <Text type="secondary" style={{ fontSize: '12px', fontWeight: '600' }}>
+                  <Text type="secondary" style={{ fontSize: '11px', fontWeight: '500' }}>
                     <HomeOutlined style={{ marginRight: '4px' }} />
                     Location:
                   </Text>
                   <br />
-                  <Text style={{ fontSize: '14px', color: colors.text }}>
+                  <Text style={{ fontSize: '13px', color: colors.text }}>
                     {user?.location || 'Not specified'}
                   </Text>
                 </div>
@@ -1098,44 +999,36 @@ const Dashboard: React.FC = () => {
           {isAdopter && (
             <Card 
               title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MessageOutlined style={{ color: colors.primary, fontSize: '20px' }} />
-                  <span style={{ color: colors.text, fontWeight: '600' }}>
-                    Messages
-                  </span>
-                  {unreadCount > 0 && (
-                    <Badge 
-                      count={unreadCount} 
-                      size="small" 
-                      style={{ 
-                        background: colors.accent,
-                        boxShadow: `0 2px 4px ${colors.accent}30`
-                      }}
-                    />
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MessageOutlined style={{ color: colors.secondary }} />
+                    <span style={{ color: colors.text, fontWeight: '500' }}>
+                      Messages
+                    </span>
+                    {unreadCount > 0 && (
+                      <Badge 
+                        count={unreadCount} 
+                        size="small" 
+                        style={{ 
+                          background: colors.accent
+                        }}
+                      />
+                    )}
+                  </div>
+                  <Link href="/dashboard/messages">
+                    <Button 
+                      type="link" 
+                      size="small"
+                    >
+                      View All
+                    </Button>
+                  </Link>
                 </div>
-              }
-              extra={
-                <Link href="/dashboard/messages">
-                  <Button 
-                    type="primary" 
-                    size="small"
-                    style={{ 
-                      background: colors.primary,
-                      borderColor: colors.primary,
-                      borderRadius: '6px'
-                    }}
-                  >
-                    View All
-                  </Button>
-                </Link>
               }
               style={{ 
                 marginBottom: '24px',
-                background: colors.card,
-                border: `1px solid ${colors.primary}20`,
-                borderRadius: '12px',
-                boxShadow: `0 4px 16px ${colors.primary}10`
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px'
               }}
             >
               {threads.length === 0 ? (
@@ -1216,19 +1109,14 @@ const Dashboard: React.FC = () => {
           {isAdopter && (
             <Card 
               title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <HeartOutlined style={{ color: colors.primary, fontSize: '20px' }} />
-                  <span style={{ color: colors.text, fontWeight: '600' }}>
-                    Your Puppy Preferences
-                  </span>
-                </div>
+                <span style={{ color: colors.text, fontWeight: '500' }}>
+                  Your Puppy Preferences
+                </span>
               }
               style={{ 
                 marginBottom: '24px',
-                background: colors.card,
-                border: `1px solid ${colors.primary}20`,
-                borderRadius: '12px',
-                boxShadow: `0 4px 16px ${colors.primary}10`
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px'
               }}
             >
               {user?.puppyParentInfo?.preferredBreeds?.length ? (

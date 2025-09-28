@@ -5,7 +5,7 @@ import { Spin } from 'antd';
 
 interface ProfileSwitchingOverlayProps {
   isSwitching: boolean;
-  targetProfile: 'breeder' | 'puppy-parent';
+  targetProfile: 'breeder' | 'adopter';
 }
 
 const ProfileSwitchingOverlay: React.FC<ProfileSwitchingOverlayProps> = ({ 
