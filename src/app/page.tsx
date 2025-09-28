@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import { Button, Typography, Card, Row, Col, Form, Input, message } from 'antd';
-import { HeartOutlined, SafetyOutlined, UserOutlined, SmileOutlined, HomeOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ShopOutlined, TeamOutlined, UserOutlined, CheckCircleOutlined, HomeOutlined, TrophyOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-import { useAuth } from '@/hooks';
+import { useAuth } from '@homeforpup/shared-auth';
 import { UserTypeModal } from '@/components';
 
 const { Title, Paragraph } = Typography;
@@ -12,9 +12,8 @@ const { Title, Paragraph } = Typography;
 const heroStyle: React.CSSProperties = {
   background: 'linear-gradient(135deg, #08979C 0%, #FA8072 100%)',
   color: 'white',
-  padding: '80px 0',
+  padding: '80px 24px',
   textAlign: 'center',
-  width: '100%',
 };
 
 const cardStyle: React.CSSProperties = {
@@ -25,7 +24,7 @@ const cardStyle: React.CSSProperties = {
   textAlign: 'center',
 };
 
-const HomePage: React.FC = () => {
+const BreederHomePage: React.FC = () => {
   const { user, signIn } = useAuth();
   const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
   const [newsletterForm] = Form.useForm();
@@ -82,7 +81,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', width: '100%' }}>
+    <div style={{ minHeight: '100vh' }}>
       <style jsx global>{`
         @media (max-width: 767px) {
           .hero-buttons .ant-col {
@@ -106,16 +105,16 @@ const HomePage: React.FC = () => {
 
       {/* Hero Section */}
       <section style={heroStyle}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
-            Creating Paw-some Families, One Match at a Time
+            Professional Kennel Management Platform
           </Title>
           <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
-            Discover a community where dog lovers and devoted breeders work together to create fur-ever bonds between families and their ideal companions.
+            Everything you need to manage your breeding business, connect with puppy parents, and grow your kennel with professional tools and community support.
           </Paragraph>
           <Row justify="center" gutter={[16, 12]} className="hero-buttons">
             <Col xs={24} sm={12} md={8}>
-              <Link href="/browse">
+              <Link href="/kennel-management">
                 <Button 
                   size="large" 
                   block
@@ -125,7 +124,7 @@ const HomePage: React.FC = () => {
                     fontWeight: '500'
                   }}
                 >
-                  Meet Available Puppies
+                  Manage Your Kennel
                 </Button>
               </Link>
             </Col>
@@ -143,7 +142,7 @@ const HomePage: React.FC = () => {
                   fontWeight: '500'
                 }}
               >
-                {user ? 'Go to Dashboard' : 'Join Our Community'}
+                {user ? 'Go to Dashboard' : 'Join as Breeder'}
               </Button>
             </Col>
           </Row>
@@ -151,36 +150,36 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+      <section style={{ padding: '64px 24px', background: 'white' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
-            What Makes Our Community Special?
+            Why Choose Our Platform?
           </Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <HeartOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Passionate Care</Title>
+                <ShopOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
+                <Title level={3}>Kennel Management</Title>
                 <Paragraph>
-                  Our community of dedicated breeders and enthusiasts prioritizes the wellbeing and happiness of every puppy, treating each one as a cherished family member.
+                  Complete tools to manage your breeding business, track litters, manage puppy listings, and connect with potential families.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <SafetyOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Health & Happiness First</Title>
+                <TeamOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
+                <Title level={3}>Verified Network</Title>
                 <Paragraph>
-                  Every puppy is raised with love and receives comprehensive health care, proper socialization, and nurturing to ensure they&apos;re ready for their forever homes.
+                  Join a trusted network of professional breeders and connect with responsible families who are committed to providing excellent homes.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <UserOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Trusted Network</Title>
+                <TrophyOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
+                <Title level={3}>Professional Tools</Title>
                 <Paragraph>
-                  Connect with a caring network of dog lovers who share knowledge, support each other, and are committed to responsible breeding and pet ownership.
+                  Access professional breeding tools, health tracking, pedigree management, and business analytics to grow your kennel.
                 </Paragraph>
               </Card>
             </Col>
@@ -189,178 +188,61 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section style={{ padding: '64px 0', background: '#F5F5F5', width: '100%' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>Your Journey to Finding Your Paw-fect Match</Title>
+      <section style={{ padding: '64px 24px', background: '#F5F5F5' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+          <Title level={2} style={{ marginBottom: '48px' }}>Your Journey to Professional Breeding</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
-              <SmileOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
-              <Title level={4}>1. Explore & Learn</Title>
-              <Paragraph>Discover different breeds, learn about their personalities, and find puppies who might be perfect additions to your family.</Paragraph>
+              <CheckCircleOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
+              <Title level={4}>1. Set Up Your Kennel</Title>
+              <Paragraph>Create your professional kennel profile, showcase your breeding program, and establish your reputation in the community.</Paragraph>
             </Col>
             <Col xs={24} md={8}>
-              <CheckCircleOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px' }} />
-              <Title level={4}>2. Connect & Build Relationships</Title>
-              <Paragraph>Chat with caring breeders and fellow dog enthusiasts who share your passion and can guide you in your journey.</Paragraph>
+              <UserOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px' }} />
+              <Title level={4}>2. Connect with Families</Title>
+              <Paragraph>Meet responsible families looking for their perfect companion and build lasting relationships with puppy parents.</Paragraph>
             </Col>
             <Col xs={24} md={8}>
               <HomeOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
-              <Title level={4}>3. Welcome Your New Family Member</Title>
-              <Paragraph>Bring home your perfectly matched companion and join a community that supports your lifelong journey together.</Paragraph>
+              <Title level={4}>3. Grow Your Business</Title>
+              <Paragraph>Use our professional tools to manage your breeding program, track health records, and grow your kennel business.</Paragraph>
             </Col>
           </Row>
-        </div>
-      </section>
-
-      {/* AI Matching Section */}
-      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <Title level={2}>Smart Matching with AI Technology</Title>
-            <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
-              Our advanced AI technology analyzes compatibility factors to help connect families with their ideal puppy companions.
-            </Paragraph>
-          </div>
-          
-          <Row gutter={[32, 32]} align="middle">
-            <Col xs={24} lg={12}>
-              <div style={{ padding: '0 24px' }}>
-                <Title level={3} style={{ marginBottom: '24px' }}>
-                  How Our AI Creates Perfect Matches
-                </Title>
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4} style={{ color: '#08979C', marginBottom: '8px' }}>
-                    🏠 Lifestyle Compatibility
-                  </Title>
-                  <Paragraph>
-                    Our AI considers your living space, activity level, work schedule, and family situation to recommend breeds and individual puppies that will thrive in your home.
-                  </Paragraph>
-                </div>
-                
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4} style={{ color: '#FA8072', marginBottom: '8px' }}>
-                    🧬 Personality Profiling
-                  </Title>
-                  <Paragraph>
-                    Each puppy&apos;s temperament, energy level, and social tendencies are assessed and matched with families seeking complementary traits for harmonious relationships.
-                  </Paragraph>
-                </div>
-                
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4} style={{ color: '#08979C', marginBottom: '8px' }}>
-                    🎯 Preference Learning
-                  </Title>
-                  <Paragraph>
-                    The system learns from your interactions and feedback to continuously improve recommendations, ensuring better matches over time.
-                  </Paragraph>
-                </div>
-              </div>
-            </Col>
-            
-            <Col xs={24} lg={12}>
-              <div style={{ 
-                background: 'linear-gradient(135deg, #E6F7F7 0%, #FFF5F5 100%)', 
-                borderRadius: '16px', 
-                padding: '32px',
-                textAlign: 'center'
-              }}>
-                <div style={{ 
-                  background: 'white', 
-                  borderRadius: '12px', 
-                  padding: '24px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  marginBottom: '24px'
-                }}>
-                  <Title level={4} style={{ color: '#08979C', marginBottom: '16px' }}>
-                    Match Compatibility Score
-                  </Title>
-                  <div style={{ 
-                    fontSize: '48px', 
-                    fontWeight: 'bold', 
-                    color: '#FA8072',
-                    marginBottom: '8px'
-                  }}>
-                    94%
-                  </div>
-                  <Paragraph style={{ margin: 0, color: '#666' }}>
-                    Excellent match based on your preferences
-                  </Paragraph>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#08979C' }}>🏃‍♂️</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>Energy Level</div>
-                    <div style={{ fontWeight: 'bold' }}>High</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#FA8072' }}>👨‍👩‍👧‍👦</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>Family Size</div>
-                    <div style={{ fontWeight: 'bold' }}>4+ Members</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#08979C' }}>🏡</div>
-                    <div style={{ fontSize: '12px', color: '#666' }}>Living Space</div>
-                    <div style={{ fontWeight: 'bold' }}>Large Yard</div>
-                  </div>
-                </div>
-              </div>
-            </Col>
-          </Row>
-          
-          <div style={{ textAlign: 'center', marginTop: '48px' }}>
-            <Button 
-              size="large"
-              type="primary"
-              onClick={handleJoinCommunity}
-              style={{ 
-                height: '48px', 
-                padding: '0 32px', 
-                fontSize: '18px',
-                background: '#08979C',
-                borderColor: '#08979C',
-                fontWeight: '500'
-              }}
-            >
-              {user ? 'Try AI Matching' : 'Start Your AI-Powered Search'}
-            </Button>
-          </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section style={{ padding: '64px 0', background: 'white', width: '100%' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>Stories from Our Community</Title>
+      <section style={{ padding: '64px 24px', background: 'white' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
+          <Title level={2} style={{ marginBottom: '48px' }}>Success Stories from Our Breeders</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>&ldquo;The community here truly cares about matching families with their perfect companions. Our Cavapoo feels like she was meant to be with us from day one.&rdquo;</Paragraph>
-                <Title level={4}>&mdash; Sarah & Max</Title>
+                <Paragraph>&ldquo;This platform has transformed my breeding business. The tools are professional and the families I meet are truly committed to responsible pet ownership.&rdquo;</Paragraph>
+                <Title level={4}>&mdash; Sarah Johnson, Golden Dreams Kennel</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>&ldquo;We found not just our golden retriever, but lifelong friends in the breeding community. The ongoing support has been incredible.&rdquo;</Paragraph>
-                <Title level={4}>&mdash; Daniel Family</Title>
+                <Paragraph>&ldquo;The kennel management features are incredible. I can track everything from health records to family communications all in one place.&rdquo;</Paragraph>
+                <Title level={4}>&mdash; Mike Chen, Vancouver Labs</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
               <Card style={cardStyle}>
-                <Paragraph>&ldquo;The transparency and genuine care from everyone we met gave us complete confidence. Our pup came home healthy, happy, and perfectly socialized.&rdquo;</Paragraph>
-                <Title level={4}>&mdash; Priya & Amit</Title>
+                <Paragraph>&ldquo;The community here is amazing. I've built lasting relationships with families and other breeders who share my passion for responsible breeding.&rdquo;</Paragraph>
+                <Title level={4}>&mdash; Lisa Rodriguez, Montreal Frenchies</Title>
               </Card>
-            </Col>
           </Row>
         </div>
       </section>
 
       {/* Newsletter Section */}
-      <section style={{ padding: '64px 0', background: '#E6F7F7', textAlign: 'center', width: '100%' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 24px' }}>
-          <Title level={2} style={{ marginBottom: '24px' }}>Stay Connected with Our Community</Title>
+      <section style={{ padding: '64px 24px', background: '#E6F7F7', textAlign: 'center' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Title level={2} style={{ marginBottom: '24px' }}>Stay Updated on Breeding Best Practices</Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Join our newsletter to hear heartwarming puppy stories, get expert care tips, and be the first to meet new additions to our community family.
+            Join our breeder newsletter for industry insights, health tips, business advice, and community updates.
           </Paragraph>
           <Form 
             form={newsletterForm}
@@ -403,17 +285,17 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section style={{ padding: '64px 0', background: '#fdf6e3', textAlign: 'center', width: '100%' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
+      <section style={{ padding: '64px 24px', background: '#fdf6e3', textAlign: 'center' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <Title level={2} style={{ marginBottom: '24px' }}>
-            Ready to Meet Your New Best Friend?
+            Ready to Grow Your Breeding Business?
           </Title>
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Join our community of dog lovers and discover the joy of finding your perfect four-legged family member through meaningful connections.
+            Join our professional breeder community and access the tools you need to build a successful, ethical breeding business.
           </Paragraph>
           <Row justify="center" gutter={16}>
             <Col>
-              <Link href="/browse">
+              <Link href="/kennel-management">
                 <Button 
                   type="primary" 
                   size="large" 
@@ -426,7 +308,7 @@ const HomePage: React.FC = () => {
                     fontWeight: '500'
                   }}
                 >
-                  Meet Our Puppies
+                  Start Your Kennel
                 </Button>
               </Link>
             </Col>
@@ -461,4 +343,4 @@ const HomePage: React.FC = () => {
   );
 };
 
-export default HomePage;
+export default BreederHomePage;
