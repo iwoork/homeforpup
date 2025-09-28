@@ -31,10 +31,8 @@
         "next": "^15.5.4",
         "next-auth": "^4.24.11",
         "nodemailer": "^6.10.1",
-        "oidc-client-ts": "^3.3.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "react-oidc-context": "^3.3.0",
         "swr": "^2.3.6",
         "uuid": "^10.0.0"
     },

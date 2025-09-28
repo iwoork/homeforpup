@@ -78,6 +78,17 @@ const Dashboard: React.FC = () => {
     userName: user?.name || '',
     pollingInterval: 30000
   });
+
+
+  // Debug messages data
+  console.log('Dashboard messages state:', {
+    userId: user?.userId,
+    userName: user?.name,
+    threadsCount: threads?.length || 0,
+    unreadCount,
+    messagesLoading,
+    threads: threads?.slice(0, 2) // Show first 2 threads for debugging
+  });
   const { favorites, count: favoritesCount, isLoading: favoritesLoading, removeFromFavorites } = useFavorites();
   const [addDogModalVisible, setAddDogModalVisible] = useState(false);
 
@@ -105,6 +116,26 @@ const Dashboard: React.FC = () => {
   // Determine user type for conditional rendering based on active profile
   const isBreeder = effectiveUserType === 'breeder';
   const isAdopter = effectiveUserType === 'adopter';
+
+  // Debug user state for messages
+  console.log('Dashboard user state for messages:', {
+    hasUser: !!user,
+    userId: user?.userId,
+    userName: user?.name,
+    userType: user?.userType,
+    effectiveUserType,
+    isAdopter,
+    isBreeder
+  });
+  
+  // Debug logging
+  console.log('Dashboard render - User state:', {
+    user: user ? { userId: user.userId?.substring(0, 10) + '...', name: user.name, userType: user.userType } : null,
+    effectiveUserType,
+    isAdopter,
+    isBreeder,
+    favoritesCount
+  });
   
   // Use consistent color scheme
   const colors = COLORS;
@@ -193,7 +224,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Clean Stats for Adopters */}
-      {isAdopter && (
+      {(isAdopter || !effectiveUserType) && (
         <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
           <Col xs={12} sm={8} lg={4}>
             <Card 
@@ -373,7 +404,7 @@ const Dashboard: React.FC = () => {
         {/* Left Column - Main Content */}
         <Col xs={24} lg={16}>
           {/* Matched Puppies (for adopters) */}
-          {isAdopter && (
+          {(isAdopter || !effectiveUserType) && (
           <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -491,7 +522,7 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Favorites (for adopters) */}
-          {isAdopter && (
+          {(isAdopter || !effectiveUserType) && (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -839,7 +870,7 @@ const Dashboard: React.FC = () => {
                   </Button>
                 </Link>
               </Col>
-              {isAdopter && favoritesCount > 0 && (
+              {(isAdopter || !effectiveUserType) && favoritesCount > 0 && (
                 <Col xs={12} sm={8} lg={6}>
                   <Link href="/favorites">
                     <Button 
@@ -996,7 +1027,7 @@ const Dashboard: React.FC = () => {
       </Card>
 
           {/* Messages (for adopters) */}
-          {isAdopter && (
+          {(isAdopter || !effectiveUserType) && (
             <Card 
               title={
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1106,7 +1137,7 @@ const Dashboard: React.FC = () => {
           )}
 
           {/* Puppy Preferences (for adopters) */}
-          {isAdopter && (
+          {(isAdopter || !effectiveUserType) && (
             <Card 
               title={
                 <span style={{ color: colors.text, fontWeight: '500' }}>

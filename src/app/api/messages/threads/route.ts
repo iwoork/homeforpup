@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { verifyJWT } from '@/lib';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -64,43 +65,19 @@ const transformThread = (item: ThreadItem, currentUserId: string) => {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get and verify JWT token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
-    }
-
-    console.log('Attempting to verify JWT token for threads request...');
-
-    let userId: string;
+    // Get the session using NextAuth
+    const session = await getServerSession(authOptions);
     
-    try {
-      // Use full verification for security
-      const { userId: verifiedUserId } = await verifyJWT(token);
-      userId = verifiedUserId;
-      console.log('JWT verification successful for user:', userId.substring(0, 10) + '...');
-    } catch (verificationError) {
-      console.error('JWT verification failed:', verificationError);
-      
-      // Check if it's specifically an expiration error
-      const isExpired = verificationError instanceof Error && verificationError.message.includes('expired');
-      
-      // For expired tokens, return a more specific error that the client can handle
-      if (isExpired) {
-        return NextResponse.json({ 
-          error: 'Authentication token has expired. Please refresh your session.',
-          code: 'TOKEN_EXPIRED',
-          action: 'REFRESH_TOKEN',
-          details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
-        }, { status: 401 });
-      }
-      
+    if (!session?.user || !(session.user as any).id) {
+      console.log('No valid session found for threads request');
       return NextResponse.json({ 
-        error: 'Invalid authentication token',
-        code: 'INVALID_TOKEN',
-        details: process.env.NODE_ENV === 'development' ? String(verificationError) : undefined
+        error: 'Your session has expired. Please refresh the page to continue.',
+        code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
+
+    const userId = (session.user as any).id;
+    console.log('Session verification successful for user:', userId.substring(0, 10) + '...');
 
     console.log('Fetching threads for user:', userId?.substring(0, 10) + '...');
 
@@ -151,6 +128,11 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => new Date(b!.updatedAt).getTime() - new Date(a!.updatedAt).getTime());
 
     console.log('Final transformed threads:', threads.length);
+    console.log('Sample thread data:', threads[0] ? {
+      id: threads[0].id,
+      unreadCount: threads[0].unreadCount,
+      participants: threads[0].participants
+    } : 'No threads');
 
     return NextResponse.json({ threads });
 

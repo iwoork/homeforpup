@@ -22,6 +22,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  debug: process.env.NODE_ENV === 'development',
   callbacks: {
     async jwt({ token, account, profile }: any) {
       // Persist the OAuth access_token and or the user id to the token right after signin
@@ -42,6 +43,23 @@ export const authOptions: NextAuthOptions = {
         session.accessToken = token.accessToken as string;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle redirects properly
+      console.log('NextAuth redirect:', { url, baseUrl });
+      
+      // If url is relative, make it absolute
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      
+      // If url is on the same origin, allow it
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      
+      // Default to dashboard
+      return `${baseUrl}/dashboard`;
     },
   },
   pages: {

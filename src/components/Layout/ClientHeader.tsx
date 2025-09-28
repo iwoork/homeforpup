@@ -5,6 +5,7 @@ import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
+import { useSession } from 'next-auth/react';
 
 const ClientHeader: React.FC = () => {
   const { 
@@ -15,13 +16,18 @@ const ClientHeader: React.FC = () => {
     loading, 
     getToken
   } = useAuth();
+  const { data: session } = useSession();
   const [isMobile, setIsMobile] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [forceLoading, setForceLoading] = React.useState(true);
 
+  // Get display name from user data or fallback to session
+  const displayName = user?.name || session?.user?.name || 'User';
   
   console.log('Header render - Auth state:', {
     user: user ? { userId: user.userId?.substring(0, 10) + '...', name: user.name, userType: user.userType } : null,
+    session: session ? { name: session.user?.name, email: session.user?.email } : null,
+    displayName,
     isAuthenticated,
     loading
   });
@@ -354,7 +360,7 @@ const ClientHeader: React.FC = () => {
                     alignItems: 'center',
                     gap: '8px'
                   }}>
-                    {user?.name || 'User'}
+                    {displayName}
                   </span>
                 </div>
               </Button>

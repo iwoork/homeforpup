@@ -5,7 +5,6 @@ import { useState, useCallback, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
 import { Message, MessageThread, MessageFilters } from '@/types';
 import { useAuth } from '@/hooks';
-import { isTokenExpired } from '@/lib/utils/auth';
 
 // Type definition for compose message form
 interface ComposeMessageFormValues {
@@ -42,34 +41,18 @@ interface UseMessagesReturn {
   refreshThreads: () => void;
 }
 
-// API fetcher function with authentication and token expiration check
-const createFetcher = (getToken: () => Promise<string | null>) => {
+// API fetcher function with NextAuth session cookies
+const createFetcher = () => {
   return async (url: string) => {
-    const token = await getToken();
-    if (!token) {
-      throw new Error('No authentication token available');
-    }
-
-    // Check if token is expired before making the request
-    if (isTokenExpired(token)) {
-      throw new Error('Authentication token has expired');
-    }
-
     const response = await fetch(url, {
+      credentials: 'include', // Include session cookies
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      
-      // Handle token expiration from server
-      if (response.status === 401 && errorData.code === 'TOKEN_EXPIRED') {
-        throw new Error('Authentication token has expired');
-      }
-      
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
@@ -77,36 +60,20 @@ const createFetcher = (getToken: () => Promise<string | null>) => {
   };
 };
 
-// API request function with authentication and token expiration check
-const createApiRequest = (getToken: () => Promise<string | null>) => {
+// API request function with NextAuth session cookies
+const createApiRequest = () => {
   return async (url: string, options: RequestInit = {}) => {
-    const token = await getToken();
-    if (!token) {
-      throw new Error('No authentication token available');
-    }
-
-    // Check if token is expired before making the request
-    if (isTokenExpired(token)) {
-      throw new Error('Authentication token has expired');
-    }
-
     const response = await fetch(url, {
       ...options,
+      credentials: 'include', // Include session cookies
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
         ...options.headers,
       },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      
-      // Handle token expiration from server
-      if (response.status === 401 && errorData.code === 'TOKEN_EXPIRED') {
-        throw new Error('Authentication token has expired');
-      }
-      
       throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
@@ -118,15 +85,14 @@ export const useMessages = ({
   userId, 
   pollingInterval = 5000 
 }: UseMessagesProps): UseMessagesReturn => {
-  const { getToken } = useAuth();
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
   const [filters, setFilters] = useState<MessageFilters>({});
 
   // Create memoized fetcher and request functions
-  const fetcher = useMemo(() => createFetcher(getToken), [getToken]);
-  const apiRequest = useMemo(() => createApiRequest(getToken), [getToken]);
+  const fetcher = useMemo(() => createFetcher(), []);
+  const apiRequest = useMemo(() => createApiRequest(), []);
 
   // Fetch threads using SWR with automatic revalidation
   const {
@@ -144,9 +110,24 @@ export const useMessages = ({
       dedupingInterval: 2000, // Prevent duplicate requests within 2 seconds
       onError: (error) => {
         console.error('Error fetching threads:', error);
+      },
+      onSuccess: (data) => {
+        console.log('Successfully fetched threads:', data);
       }
     }
   );
+
+  // Debug logging for threads
+  console.log('useMessages hook state:', {
+    userId,
+    userIdType: typeof userId,
+    userIdLength: userId?.length,
+    threadsData,
+    threadsError,
+    threadsLoading,
+    url: userId ? '/api/messages/threads' : null,
+    willMakeRequest: !!userId
+  });
 
   // Fetch messages for selected thread using SWR
   const {
@@ -173,6 +154,15 @@ export const useMessages = ({
 
   // Helper function to safely get unread count
   const getUnreadCount = (thread: MessageThread, userId: string): number => {
+    console.log(`Thread ${thread.id} unread for user ${userId}:`, {
+      threadUnreadCount: thread.unreadCount,
+      userId,
+      userIdType: typeof userId,
+      result: typeof thread.unreadCount === 'object' && thread.unreadCount !== null 
+        ? (thread.unreadCount as Record<string, number>)[userId] || 0 
+        : 0
+    });
+    
     if (typeof thread.unreadCount === 'object' && thread.unreadCount !== null) {
       return (thread.unreadCount as Record<string, number>)[userId] || 0;
     }
@@ -181,7 +171,16 @@ export const useMessages = ({
 
   // Calculate total unread count
   const unreadCount = useMemo(() => {
-    return threads.reduce((sum: number, thread: MessageThread) => sum + getUnreadCount(thread, userId), 0);
+    console.log('Calculating unread count:', {
+      threadsCount: threads.length,
+      userId,
+      userIdType: typeof userId,
+      threads: threads.map(t => ({ id: t.id, unreadCount: t.unreadCount }))
+    });
+    
+    const total = threads.reduce((sum: number, thread: MessageThread) => sum + getUnreadCount(thread, userId), 0);
+    console.log('Total unread count:', total);
+    return total;
   }, [threads, userId]);
 
   // Handle thread selection

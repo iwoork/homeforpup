@@ -1,12 +1,12 @@
 // hooks/useAuth.ts
 'use client';
 
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { useEffect, useState, useCallback } from 'react';
-import { User } from '@/types';
+import { useAuth as useAuthContext } from '@/contexts/AuthContext';
+import { useSession, signIn } from 'next-auth/react';
+import { useCallback } from 'react';
 
 interface UseAuthReturn {
-  user: User | null;
+  user: any;
   loading: boolean;
   signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
   signOut: () => Promise<void>;
@@ -14,8 +14,8 @@ interface UseAuthReturn {
   isAuthenticated: boolean;
   getToken: () => Promise<string | null>;
   refreshToken: () => Promise<boolean>;
-  syncUser: (userData?: Partial<User>, providedToken?: string) => Promise<User | null>;
-  updateUser: (updates: Partial<User>) => Promise<User | null>;
+  syncUser: (userData?: any, providedToken?: string) => Promise<any>;
+  updateUser: (updates: any) => Promise<any>;
   // Legacy properties for backward compatibility
   login: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
   effectiveUserType: 'breeder' | 'adopter' | null;
@@ -27,10 +27,8 @@ interface UseAuthReturn {
 }
 
 export const useAuth = (): UseAuthReturn => {
-  const { data: session, status } = useSession();
-  const [user, setUser] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const { data: session } = useSession();
+  const authContext = useAuthContext();
 
   // Method to get the current JWT token
   const getToken = useCallback(async (): Promise<string | null> => {
@@ -40,79 +38,34 @@ export const useAuth = (): UseAuthReturn => {
   // Method to refresh the token if needed
   const refreshToken = useCallback(async (): Promise<boolean> => {
     try {
-      console.log('Attempting to refresh token...');
-      // NextAuth handles token refresh automatically
-      // We can trigger a session update
-      await fetch('/api/auth/session?update');
-      console.log('Token refresh successful');
+      await authContext.refreshToken();
       return true;
     } catch (error) {
       console.error('Token refresh failed:', error);
       return false;
     }
-  }, []);
+  }, [authContext]);
 
   // Method to sync user data with DynamoDB
-  const syncUser = useCallback(async (userData?: Partial<User>, providedToken?: string): Promise<User | null> => {
-    const token = providedToken || getToken();
-    if (!token) {
-      console.warn('No token available for user sync');
-      return null;
-    }
-
-    try {
-      const response = await fetch('/api/users/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(userData || {}),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const { user: syncedUser, isNewUser } = await response.json();
-      
-      console.log(`User sync successful (${isNewUser ? 'new' : 'existing'} user):`, {
-        userId: syncedUser.userId.substring(0, 10) + '...',
-        name: syncedUser.name,
-        userType: syncedUser.userType
-      });
-
-      setUser(syncedUser);
-      setError(null);
-      return syncedUser;
-
-    } catch (error) {
-      console.error('Failed to sync user:', error);
-      setError(error instanceof Error ? error.message : 'Failed to sync user data');
-      return null;
-    }
-  }, [getToken]);
+  const syncUser = useCallback(async (userData?: any, providedToken?: string): Promise<any> => {
+    // The AuthContext handles user syncing automatically
+    return authContext.user;
+  }, [authContext]);
 
   // Method to update user data
-  const updateUser = useCallback(async (updates: Partial<User>): Promise<User | null> => {
-    if (!user) {
+  const updateUser = useCallback(async (updates: any): Promise<any> => {
+    if (!authContext.user) {
       console.warn('No user to update');
       return null;
     }
 
     try {
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch(`/api/users/${user.userId}`, {
+      const response = await fetch(`/api/users/${authContext.user.userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(updates),
       });
 
@@ -122,201 +75,66 @@ export const useAuth = (): UseAuthReturn => {
       }
 
       const updatedUser = await response.json();
-      setUser(updatedUser);
+      // The AuthContext will handle updating the user state
+      await authContext.checkAuthStatus();
       return updatedUser;
 
     } catch (error) {
       console.error('Failed to update user:', error);
-      setError(error instanceof Error ? error.message : 'Failed to update user data');
-      return null;
+      throw error;
     }
-  }, [user, getToken]);
-
-  // Update user state when NextAuth session changes
-  useEffect(() => {
-    const updateUserState = async () => {
-      console.log('useAuth effect running with NextAuth state:', {
-        status,
-        hasSession: !!session,
-        user: session?.user ? {
-          id: (session.user as any).id?.substring(0, 10) + '...',
-          email: session.user.email,
-          name: session.user.name,
-          userType: (session.user as any).userType
-        } : null
-      });
-
-      if (status === 'loading') {
-        setIsInitializing(true);
-        return;
-      }
-
-      if (status === 'authenticated' && session?.user) {
-        const profile = session.user as any;
-        const userId = profile.id || '';
-        const email = profile.email || '';
-        const name = profile.name || profile.email?.split('@')[0] || 'User';
-        const userType = profile.userType || 'adopter';
-
-        console.log('NextAuth authentication successful, syncing user data...', {
-          userId: userId.substring(0, 10) + '...',
-          email,
-          name,
-          userType
-        });
-
-        // Sync user data with DynamoDB
-        const syncedUser = await syncUser({
-          userId,
-          email,
-          name,
-          userType
-        });
-
-        console.log('Sync result:', syncedUser ? 'Success' : 'Failed');
-        
-        // If sync failed, create a basic user object from NextAuth data
-        if (!syncedUser) {
-          console.log('Creating basic user from NextAuth data');
-          const basicUser: User = {
-            userId,
-            email,
-            name,
-            userType: userType as 'breeder' | 'adopter' | 'both',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            verified: false,
-            accountStatus: 'active',
-            lastActiveAt: new Date().toISOString(),
-            preferences: {
-              privacy: {
-                showEmail: false,
-                showPhone: true,
-                showLocation: true
-              },
-              notifications: {
-                sms: false,
-                email: true,
-                push: true
-              }
-            },
-            galleryPhotos: [],
-            ...(userType === 'breeder' ? {
-              breederInfo: {
-                kennelName: '',
-                license: '',
-                specialties: [],
-                experience: 0,
-                website: ''
-              }
-            } : {
-              puppyParentInfo: {
-                housingType: 'house',
-                yardSize: 'medium',
-                hasOtherPets: false,
-                experienceLevel: 'first-time',
-                preferredBreeds: []
-              }
-            })
-          };
-          setUser(basicUser);
-        }
-
-      } else if (status === 'unauthenticated') {
-        console.log('NextAuth not authenticated, clearing user state');
-        setUser(null);
-      }
-
-      setIsInitializing(false);
-    };
-
-    updateUserState();
-  }, [status, session, syncUser]);
-
-  // Handle initialization timeout to prevent infinite loading
-  useEffect(() => {
-    const initTimeout = setTimeout(() => {
-      if (isInitializing) {
-        console.log('Auth initialization timeout, setting loading to false');
-        setIsInitializing(false);
-      }
-    }, 5000); // 5 second timeout
-
-    return () => clearTimeout(initTimeout);
-  }, [isInitializing]);
+  }, [authContext]);
 
   const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
-    console.log('signIn function called with action:', action, 'userType:', userType);
-    
     try {
-      setError(null);
-      console.log('Starting sign in process...');
-      
       // Store user type for after signup completion
       if (action === 'signup' && userType) {
         localStorage.setItem('pendingUserType', userType);
       }
       
-      // Use NextAuth signIn
-      await signIn('cognito', { 
+      // Use NextAuth signIn directly with proper redirect handling
+      const result = await signIn('cognito', { 
         callbackUrl: '/dashboard',
         redirect: true 
       });
+      
+      if (result?.error) {
+        throw new Error(result.error);
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to sign in';
-      setError(errorMessage);
       console.error('Sign in error:', error);
+      throw error;
     }
   }, []);
 
   const handleSignOut = useCallback(async () => {
     try {
-      console.log('Signing out...');
-      await signOut({ 
-        callbackUrl: '/',
-        redirect: true 
-      });
+      await authContext.logout();
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force redirect even if signOut fails
-      window.location.href = '/';
+      throw error;
     }
-  }, []);
-
-  const loading = status === 'loading' || isInitializing;
-  const isAuthenticated = status === 'authenticated' && !!user;
+  }, [authContext]);
 
   // Legacy properties for backward compatibility
-  const effectiveUserType = user?.userType === 'both' ? 'breeder' : (user?.userType as 'breeder' | 'adopter' | null) || null;
-  const canSwitchProfiles = user?.userType === 'both';
+  const effectiveUserType = authContext.user?.userType === 'both' ? 'breeder' : (authContext.user?.userType as 'breeder' | 'adopter' | null) || null;
+  const canSwitchProfiles = authContext.user?.userType === 'both';
   const activeProfileType = effectiveUserType;
   const isSwitchingProfile = false; // Not implemented in current version
   const clearAllAuthData = () => {
-    setUser(null);
-    setError(null);
+    // This is handled by the context
   };
   const refreshUserData = async () => {
-    // Re-fetch user data
-    if (user?.userId) {
-      try {
-        const response = await fetch(`/api/users/${user.userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Failed to refresh user data:', error);
-      }
-    }
+    await authContext.checkAuthStatus();
   };
 
   return {
-    user,
-    loading,
+    user: authContext.user,
+    loading: authContext.isLoading,
     signIn: handleSignIn,
     signOut: handleSignOut,
-    error,
-    isAuthenticated,
+    error: authContext.error,
+    isAuthenticated: authContext.isAuthenticated,
     getToken,
     refreshToken,
     syncUser,

@@ -4,9 +4,6 @@
 export * from './api/dynamodb';
 export * from './api/s3';
 
-// Configuration
-export * from './config/auth-config';
-
 // Utilities
 export * from './utils/gtag';
 export * from './utils/jwt-debug';
