@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space, 
   Rate, Spin, Alert
@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Breeder } from '@/types';
-import { useAuth } from '@/hooks';
+import { useAuth, useProfileViews } from '@/hooks';
 import { ProfileHeader } from '@/features/users';
 import { ComposeMessage } from '@/features/messaging';
 
@@ -50,6 +50,16 @@ const BreederProfilePage: React.FC = () => {
   const breeder = data?.breeder;
   const { user: authUser, getToken } = useAuth();
   const isOwnProfile = authUser && breeder && authUser.userId === String(breeder.userId);
+  
+  // Profile view tracking
+  const { trackProfileView } = useProfileViews();
+
+  // Track profile view when component mounts and profile is loaded
+  useEffect(() => {
+    if (breederId && breeder && !isOwnProfile) {
+      trackProfileView(String(breeder.userId));
+    }
+  }, [breederId, breeder, isOwnProfile, trackProfileView]);
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',

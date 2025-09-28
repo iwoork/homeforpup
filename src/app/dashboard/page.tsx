@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth, useDogs, useMatchedPuppies, useMessages, useKennels, useFavorites } from '@/hooks';
+import { useAuth, useDogs, useMatchedPuppies, useMessages, useKennels, useFavorites, useProfileViews } from '@/hooks';
 import { AddDogForm } from '@/components';
 import DogManagement from '@/components/dogs/DogManagement';
 import ProfileSwitchingOverlay from '@/components/ProfileSwitchingOverlay';
@@ -90,12 +90,30 @@ const Dashboard: React.FC = () => {
     threads: threads?.slice(0, 2) // Show first 2 threads for debugging
   });
   const { favorites, count: favoritesCount, isLoading: favoritesLoading, removeFromFavorites } = useFavorites();
+  const { getProfileViews } = useProfileViews();
   const [addDogModalVisible, setAddDogModalVisible] = useState(false);
+  const [profileViews, setProfileViews] = useState<number>(0);
 
   // Force refresh auth state when dashboard mounts
   useEffect(() => {
     // Dashboard mounted
   }, []);
+
+  // Fetch profile views when user is available
+  useEffect(() => {
+    const fetchProfileViews = async () => {
+      if (user?.userId) {
+        try {
+          const views = await getProfileViews(user.userId);
+          setProfileViews(views);
+        } catch (error) {
+          console.error('Error fetching profile views:', error);
+        }
+      }
+    };
+
+    fetchProfileViews();
+  }, [user?.userId, getProfileViews]);
 
   const isLoading = dogsLoading || puppiesLoading || messagesLoading || kennelsLoading || favoritesLoading;
   const error = dogsError || puppiesError;
@@ -293,7 +311,7 @@ const Dashboard: React.FC = () => {
               }}
             >
               <Statistic
-                value={0}
+                value={profileViews}
                 prefix={<EyeOutlined style={{ color: colors.textSecondary }} />}
                 valueStyle={{ color: colors.textSecondary, fontSize: '20px', fontWeight: '600' }}
               />
@@ -458,27 +476,68 @@ const Dashboard: React.FC = () => {
                       <Card
                         hoverable
                         cover={
-                          <div style={{ height: '200px', overflow: 'hidden' }}>
+                          <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
                             {puppy.photoUrl ? (
-                              <Image
-                                alt={puppy.name}
-                                src={puppy.photoUrl}
-                                fill
-                                style={{ 
-                                  objectFit: 'cover' 
-                                }}
-                              />
+                              <>
+                                <Image
+                                  alt={puppy.name}
+                                  src={puppy.photoUrl}
+                                  fill
+                                  style={{ 
+                                    objectFit: 'cover' 
+                                  }}
+                                />
+                                {/* Gradient overlay for better text readability */}
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: '60px',
+                                  background: 'linear-gradient(transparent, rgba(0, 0, 0, 0.7))',
+                                  zIndex: 1
+                                }} />
+                                {/* Puppy name overlay */}
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '8px',
+                                  left: '12px',
+                                  right: '12px',
+                                  zIndex: 2,
+                                  color: 'white',
+                                  fontWeight: '600',
+                                  fontSize: '16px',
+                                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {puppy.name}
+                                </div>
+                              </>
                             ) : (
-                                  <div style={{ 
+                              <div style={{ 
                                 height: '100%', 
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 justifyContent: 'center',
-                                background: '#f5f5f5'
+                                background: '#f5f5f5',
+                                position: 'relative'
                               }}>
                                 <UserOutlined style={{ fontSize: '48px', color: '#ccc' }} />
-                                  </div>
-                                )}
+                                {/* Puppy name for placeholder */}
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '8px',
+                                  left: '12px',
+                                  right: '12px',
+                                  color: '#666',
+                                  fontWeight: '600',
+                                  fontSize: '16px',
+                                  textAlign: 'center'
+                                }}>
+                                  {puppy.name}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         }
                           actions={[
@@ -495,7 +554,6 @@ const Dashboard: React.FC = () => {
                         ]}
                       >
                         <Card.Meta
-                          title={puppy.name}
                           description={
                             <Space direction="vertical" size="small">
                               <Space>
@@ -583,25 +641,66 @@ const Dashboard: React.FC = () => {
                       <Card
                         hoverable
                         cover={
-                          <div style={{ height: '200px', overflow: 'hidden' }}>
+                          <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
                             {favorite.puppyData?.image ? (
-                              <Image
-                                alt={favorite.puppyData.name || 'Puppy'}
-                                src={favorite.puppyData.image}
-                                fill
-                                style={{ 
-                                  objectFit: 'cover' 
-                                }}
-                              />
+                              <>
+                                <Image
+                                  alt={favorite.puppyData.name || 'Puppy'}
+                                  src={favorite.puppyData.image}
+                                  fill
+                                  style={{ 
+                                    objectFit: 'cover' 
+                                  }}
+                                />
+                                {/* Gradient overlay for better text readability */}
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: '60px',
+                                  background: 'linear-gradient(transparent, rgba(0, 0, 0, 0.7))',
+                                  zIndex: 1
+                                }} />
+                                {/* Puppy name overlay */}
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '8px',
+                                  left: '12px',
+                                  right: '12px',
+                                  zIndex: 2,
+                                  color: 'white',
+                                  fontWeight: '600',
+                                  fontSize: '16px',
+                                  textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {favorite.puppyData.name || 'Unknown Puppy'}
+                                </div>
+                              </>
                             ) : (
                               <div style={{ 
                                 height: '100%', 
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 justifyContent: 'center',
-                                background: '#f5f5f5'
+                                background: '#f5f5f5',
+                                position: 'relative'
                               }}>
                                 <UserOutlined style={{ fontSize: '48px', color: '#ccc' }} />
+                                {/* Puppy name for placeholder */}
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '8px',
+                                  left: '12px',
+                                  right: '12px',
+                                  color: '#666',
+                                  fontWeight: '600',
+                                  fontSize: '16px',
+                                  textAlign: 'center'
+                                }}>
+                                  {favorite.puppyData?.name || 'Unknown Puppy'}
+                                </div>
                               </div>
                             )}
                           </div>
@@ -629,7 +728,6 @@ const Dashboard: React.FC = () => {
                         ]}
                       >
                         <Card.Meta
-                          title={favorite.puppyData?.name || 'Unknown Puppy'}
                           description={
                             <Space direction="vertical" size="small">
                               <Space>

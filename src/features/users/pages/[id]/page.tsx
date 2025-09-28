@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Typography, Button, Tabs, Tag, Space, 
    Spin, Alert, Progress, List
@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { useAuth } from '@/hooks';
+import { useAuth, useProfileViews } from '@/hooks';
 import { ProfileHeader } from '@/features/users';
 import { ComposeMessage } from '@/features/messaging';
 
@@ -97,9 +97,19 @@ const AdopterProfilePage: React.FC = () => {
 
   // Use global auth for current user
   const { user: authUser, getToken } = useAuth();
+  
+  // Profile view tracking
+  const { trackProfileView } = useProfileViews();
 
   const adopter = data?.user;
   const isOwnProfile = authUser && adopter && authUser.userId === adopter.userId;
+
+  // Track profile view when component mounts and profile is loaded
+  useEffect(() => {
+    if (adopterId && adopter && !isOwnProfile) {
+      trackProfileView(adopterId);
+    }
+  }, [adopterId, adopter, isOwnProfile, trackProfileView]);
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Typography, Button, Tabs, Tag, Space, 
    Spin, Alert, Progress, List
@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { useAuth } from '@/hooks';
+import { useAuth, useProfileViews } from '@/hooks';
 import { ProfileHeader } from '@/features/users';
 import { ComposeMessage } from '@/features/messaging';
 
@@ -148,10 +148,20 @@ const PuppyParentProfilePage: React.FC = () => {
 
   // Use global auth for current user
   const { user: authUser, getToken } = useAuth();
+  
+  // Profile view tracking
+  const { trackProfileView } = useProfileViews();
 
   const puppyParent = data?.user;
   const puppyParentInfo = puppyParent ? getPuppyParentInfo(puppyParent) : getPuppyParentInfo(undefined);
   const isOwnProfile = authUser && puppyParent && authUser.userId === puppyParent.userId;
+
+  // Track profile view when component mounts and profile is loaded
+  useEffect(() => {
+    if (puppyParentId && puppyParent && !isOwnProfile) {
+      trackProfileView(puppyParentId);
+    }
+  }, [puppyParentId, puppyParent, isOwnProfile, trackProfileView]);
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',

@@ -58,6 +58,7 @@ export interface User {
   createdAt: string; // ISO timestamp
   updatedAt: string; // ISO timestamp
   lastActiveAt?: string; // Last login/activity
+  profileViews?: number; // Number of profile views
 }
 
 // Kennel interface for breeders
