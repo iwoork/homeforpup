@@ -104,6 +104,9 @@ const Footer: React.FC = () => {
                 <Link href="/dashboard/messages" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Messages
                 </Link>
+                <Link href="/ethical-guidelines" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
+                  Ethical Guidelines
+                </Link>
               </Space>
             </div>
           </Col>
