@@ -487,9 +487,6 @@ const BreederDirectoryPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col xs={24} sm={16}>
                   <Space wrap>
-                    <Text strong style={{ color: '#08979C', fontSize: '14px' }}>
-                      {breeder.pricing?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    </Text>
                     <Text style={{ fontSize: '12px', color: '#666' }}>
                       Response: {breeder.avgResponseTime}
                     </Text>

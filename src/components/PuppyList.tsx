@@ -280,11 +280,6 @@ const PuppyList: React.FC<PuppyListProps> = ({
                 <Tag color="green">{puppy.ageWeeks} weeks</Tag>
               </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <Text strong style={{ fontSize: '20px', color: '#08979C' }}>
-                ${puppy.price.toLocaleString()}
-              </Text>
-            </div>
           </div>
           
           <div style={{ marginBottom: '8px' }}>

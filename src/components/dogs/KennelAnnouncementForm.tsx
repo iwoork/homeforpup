@@ -151,18 +151,6 @@ const KennelAnnouncementForm: React.FC<KennelAnnouncementFormProps> = ({
               </Col>
             </Row>
 
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Price Range (Min)" name={['priceRange', 'min']}>
-                  <InputNumber min={0} placeholder="Minimum price" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Price Range (Max)" name={['priceRange', 'max']}>
-                  <InputNumber min={0} placeholder="Maximum price" />
-                </Form.Item>
-              </Col>
-            </Row>
           </>
         )}
 

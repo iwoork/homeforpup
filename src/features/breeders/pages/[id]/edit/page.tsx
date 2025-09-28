@@ -19,7 +19,6 @@ interface BreederProfile {
   website: string;
   about: string;
   businessHours: string;
-  pricing: string;
   specialties: string[];
   breeds: string[];
   certifications: string[];
@@ -64,7 +63,6 @@ const BreederEditPage: React.FC = () => {
         website: data.breeder.website,
         location: data.breeder.location,
         businessHours: data.breeder.businessHours,
-        pricing: data.breeder.pricing,
       });
     }
   }, [data, form]);
@@ -147,9 +145,6 @@ const BreederEditPage: React.FC = () => {
             <Input placeholder="Mon-Fri 9am-5pm" />
           </Form.Item>
 
-          <Form.Item label="Pricing" name="pricing">
-            <Input placeholder="$1500 - $2500" />
-          </Form.Item>
 
           <Form.Item label="About" name="about">
             <Input.TextArea rows={6} placeholder="Tell families about your program" />

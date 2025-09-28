@@ -269,11 +269,6 @@ const BreederProfilePage: React.FC = () => {
           <Card title="Business Information" style={cardStyle}>
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <div>
-                <Text strong>Pricing: </Text>
-                <Text>{breeder.pricing}</Text>
-              </div>
-              
-              <div>
                 <Text strong>Response Rate: </Text>
                 <Text>{Math.round(breeder.responseRate * 100)}%</Text>
               </div>
