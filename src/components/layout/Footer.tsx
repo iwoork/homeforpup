@@ -49,6 +49,8 @@ const Footer: React.FC = () => {
               <Link href="/kennel-management" style={linkStyle}>Kennel Management</Link>
               <Link href="/about" style={linkStyle}>About Us</Link>
               <Link href="/faq" style={linkStyle}>FAQ</Link>
+              <Link href="/terms" style={linkStyle}>Terms of Service</Link>
+              <Link href="/privacy" style={linkStyle}>Privacy Policy</Link>
             </Space>
           </Col>
           <Col xs={24} sm={12} md={6}>
