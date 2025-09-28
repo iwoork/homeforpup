@@ -25,6 +25,7 @@ import {
 import dayjs from 'dayjs';
 import { Dog, Kennel } from '@/types';
 import { useKennels } from '@/hooks/useKennels';
+import { BreedSelector } from '@/components';
 import KennelSelector from './KennelSelector';
 import KennelForm from './KennelForm';
 
@@ -153,18 +154,13 @@ const DogForm: React.FC<DogFormProps> = ({
               name="breed"
               rules={[{ required: true, message: 'Please select breed' }]}
             >
-              <Select placeholder="Select breed" showSearch>
-                <Option value="Golden Retriever">Golden Retriever</Option>
-                <Option value="Labrador Retriever">Labrador Retriever</Option>
-                <Option value="German Shepherd">German Shepherd</Option>
-                <Option value="French Bulldog">French Bulldog</Option>
-                <Option value="Bulldog">Bulldog</Option>
-                <Option value="Poodle">Poodle</Option>
-                <Option value="Beagle">Beagle</Option>
-                <Option value="Rottweiler">Rottweiler</Option>
-                <Option value="German Shorthaired Pointer">German Shorthaired Pointer</Option>
-                <Option value="Yorkshire Terrier">Yorkshire Terrier</Option>
-              </Select>
+              <BreedSelector
+                placeholder="Select breed"
+                showSearch={true}
+                showBreedInfo={true}
+                showBreederCount={true}
+                allowClear={true}
+              />
             </Form.Item>
           </Col>
         </Row>

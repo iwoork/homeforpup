@@ -8,6 +8,7 @@ export { default as CoverPhotoUpload } from './forms/Upload/CoverPhotoUpload';
 export { default as PhotoUpload } from './forms/Upload/PhotoUpload';
 export { default as ImageCropperModal } from './forms/Upload/ImageCropperModal';
 export { default as DocumentUpload } from './forms/Upload/DocumentUpload';
+export { default as BreedSelector } from './forms/BreedSelector';
 
 // Core components
 export { Providers } from './Providers';

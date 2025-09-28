@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
-import { ProfilePhotoUpload, CoverPhotoUpload, PhotoUpload } from '@/components';
+import { ProfilePhotoUpload, CoverPhotoUpload, PhotoUpload, BreedSelector } from '@/components';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -73,13 +73,6 @@ interface UserProfile {
   };
 }
 
-// Common breed options
-const COMMON_BREEDS = [
-  'Golden Retriever', 'Labrador Retriever', 'German Shepherd', 'Bulldog', 'Poodle',
-  'Beagle', 'Rottweiler', 'Yorkshire Terrier', 'Dachshund', 'Siberian Husky',
-  'Boxer', 'Border Collie', 'Australian Shepherd', 'Cocker Spaniel', 'Chihuahua',
-  'Shih Tzu', 'Boston Terrier', 'Pomeranian', 'Australian Cattle Dog', 'Mastiff'
-];
 
 // Component that uses the App context
 const EditProfilePage: React.FC = () => {
@@ -971,20 +964,15 @@ const EditProfilePage: React.FC = () => {
                   <Card title="Preferred Breeds" style={cardStyle}>
                     <div style={{ marginBottom: '16px' }}>
                       <Space.Compact style={{ width: '100%' }}>
-                        <Select
+                        <BreedSelector
                           style={{ flex: 1 }}
                           placeholder="Select a breed"
-                          value={newBreed}
-                          onChange={setNewBreed}
+                          value={newBreed || undefined}
+                          onChange={(value) => setNewBreed(value as string)}
                           showSearch
-                          filterOption={(input, option) =>
-                            String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                          }
-                        >
-                          {COMMON_BREEDS.map(breed => (
-                            <Option key={breed} value={breed}>{breed}</Option>
-                          ))}
-                        </Select>
+                          showBreedInfo={false}
+                          showBreederCount={false}
+                        />
                         <Button 
                           type="primary" 
                           icon={<PlusOutlined />}

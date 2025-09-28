@@ -8,6 +8,7 @@ import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
 import ContactBreederModal from '@/components/ContactBreederModal';
+import { BreedSelector } from '@/components';
 import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
 
 const { Title, Paragraph, Text } = Typography;
@@ -73,7 +74,13 @@ const PuppiesPage: React.FC = () => {
   
   // Helper function to get current favorite status
   const getCurrentFavoriteStatus = (puppyId: string): boolean => {
-    return combinedFavoriteStatus[puppyId] || false;
+    const status = combinedFavoriteStatus[puppyId] || false;
+    console.log('Getting favorite status for', puppyId, ':', status, {
+      serverStatus: favoriteStatus[puppyId],
+      optimisticStatus: optimisticFavorites[puppyId],
+      combined: combinedFavoriteStatus[puppyId]
+    });
+    return status;
   };
 
   // Clear optimistic updates when page changes or filters change
@@ -105,12 +112,19 @@ const PuppiesPage: React.FC = () => {
 
   const handleToggleFavorite = async (puppy: PuppyWithBreeder) => {
     if (!user) {
-      // Redirect to login or show message
+      console.log('No user, cannot toggle favorite');
       return;
     }
     
     const currentStatus = getCurrentFavoriteStatus(puppy.id);
     const newStatus = !currentStatus;
+    
+    console.log('Toggling favorite:', {
+      puppyId: puppy.id,
+      puppyName: puppy.name,
+      currentStatus,
+      newStatus
+    });
     
     // Optimistically update the UI immediately
     setOptimisticFavorites(prev => ({
@@ -130,6 +144,8 @@ const PuppiesPage: React.FC = () => {
         price: puppy.price,
         breederName: puppy.breeder.businessName
       });
+      
+      console.log('Successfully toggled favorite for:', puppy.name);
       
       // Clear optimistic update after successful server update
       setOptimisticFavorites(prev => {
@@ -168,17 +184,13 @@ const PuppiesPage: React.FC = () => {
       hoverable
       style={{
         borderRadius: '12px',
-        boxShadow: getCurrentFavoriteStatus(puppy.id) 
-          ? '0 4px 12px rgba(255, 77, 79, 0.3)' 
-          : '0 4px 12px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         marginBottom: '16px',
         overflow: 'visible',
         height: '590px',
         display: 'flex',
         flexDirection: 'column',
-        border: getCurrentFavoriteStatus(puppy.id) 
-          ? '2px solid #ff4d4f' 
-          : '1px solid #f0f0f0'
+        border: '1px solid #f0f0f0'
       }}
       bodyStyle={{
         flex: 1,
@@ -204,11 +216,6 @@ const PuppiesPage: React.FC = () => {
             gap: '8px',
             flexWrap: 'wrap'
           }}>
-            {getCurrentFavoriteStatus(puppy.id) && (
-              <Tag color="red" icon={<HeartFilled />}>
-                Favorited
-              </Tag>
-            )}
             {puppy.breeder.verified && (
               <Tag color="green" icon={<CheckCircleOutlined />}>
                 Verified
@@ -327,8 +334,8 @@ const PuppiesPage: React.FC = () => {
                 loading={favoritesLoading}
                 disabled={!user}
                 style={{
-                  color: getCurrentFavoriteStatus(puppy.id) ? '#ff4d4f' : undefined,
-                  borderColor: getCurrentFavoriteStatus(puppy.id) ? '#ff4d4f' : undefined
+                  color: getCurrentFavoriteStatus(puppy.id) ? '#ff4d4f' : '#666',
+                  fontSize: '16px'
                 }}
               />
             </Tooltip>
@@ -455,26 +462,19 @@ const PuppiesPage: React.FC = () => {
               {/* Breed Filter */}
               <div>
                 <Text strong>Breed</Text>
-                <Select
+                <BreedSelector
                   style={{ width: '100%', marginTop: '8px' }}
                   placeholder="Select breed"
-                  value={filters.breed}
+                  value={filters.breed || undefined}
                   onChange={(value) => {
-                    setFilters(prev => ({ ...prev, breed: value }));
+                    setFilters(prev => ({ ...prev, breed: value as string }));
                     setCurrentPage(1);
                   }}
                   allowClear
                   showSearch
-                  filterOption={(input, option) => {
-                    const label = option?.label || option?.children;
-                    const searchText = String(label || '');
-                    return searchText.toLowerCase().includes(input.toLowerCase());
-                  }}
-                >
-                  {availableFilters?.availableBreeds.map((breed: string) => (
-                    <Option key={breed} value={breed}>{breed}</Option>
-                  ))}
-                </Select>
+                  showBreedInfo={false}
+                  showBreederCount={false}
+                />
               </div>
 
               {/* Gender Filter */}

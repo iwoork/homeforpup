@@ -23,6 +23,7 @@ import {
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useMemo } from 'react';
+import { BreedSelector } from '@/components';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -659,24 +660,16 @@ const BreederDirectoryPage: React.FC = () => {
             {/* Breed Filter */}
             <div style={{ marginBottom: '16px' }}>
               <Text strong>Breed</Text>
-              <Select
+              <BreedSelector
                 style={{ width: '100%', marginTop: '8px' }}
                 placeholder="Select breed"
-                value={selectedBreed}
-                onChange={setSelectedBreed}
+                value={selectedBreed || undefined}
+                onChange={(value) => setSelectedBreed(value as string)}
                 allowClear
                 showSearch
-                filterOption={(input, option) => {
-                  // Use label property which is more reliable in newer Ant Design versions
-                  const label = option?.label || option?.children;
-                  const searchText = String(label || '');
-                  return searchText.toLowerCase().includes(input.toLowerCase());
-                }}
-              >
-                {breederFilters?.availableBreeds.map(breed => (
-                  <Option key={breed} value={breed}>{breed}</Option>
-                ))}
-              </Select>
+                showBreedInfo={false}
+                showBreederCount={false}
+              />
             </div>
 
             {/* State Filter */}
