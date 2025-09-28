@@ -293,20 +293,20 @@ Thanks for choosing HomeForPup! 🐕
   } catch (error) {
     console.error('Contact form error:', error);
     console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace available',
+      name: error instanceof Error ? error.name : 'Unknown'
     });
     
     // Return more specific error messages for debugging
-    if (error.message?.includes('InvalidParameterValue')) {
+    if (error instanceof Error && error.message?.includes('InvalidParameterValue')) {
       return NextResponse.json(
         { message: 'Invalid email configuration. Please check AWS SES setup.' },
         { status: 500 }
       );
     }
     
-    if (error.message?.includes('MessageRejected')) {
+    if (error instanceof Error && error.message?.includes('MessageRejected')) {
       return NextResponse.json(
         { message: 'Email was rejected. Please check email addresses and try again.' },
         { status: 500 }

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     } catch (importError) {
       console.error('❌ Failed to import AWS SES:', importError);
       return NextResponse.json(
-        { message: 'Failed to import AWS SES module', error: importError.message },
+        { message: 'Failed to import AWS SES module', error: importError instanceof Error ? importError.message : 'Unknown error' },
         { status: 500 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     } catch (clientError) {
       console.error('❌ Failed to create SES client:', clientError);
       return NextResponse.json(
-        { message: 'Failed to create SES client', error: clientError.message },
+        { message: 'Failed to create SES client', error: clientError instanceof Error ? clientError.message : 'Unknown error' },
         { status: 500 }
       );
     }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     } catch (commandError) {
       console.error('❌ Failed to create email command:', commandError);
       return NextResponse.json(
-        { message: 'Failed to create email command', error: commandError.message },
+        { message: 'Failed to create email command', error: commandError instanceof Error ? commandError.message : 'Unknown error' },
         { status: 500 }
       );
     }
@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
     console.error('Debug error:', error);
     return NextResponse.json(
       { 
-        message: 'Debug failed: ' + error.message,
-        error: error.stack
+        message: 'Debug failed: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        error: error instanceof Error ? error.stack : 'No stack trace available'
       },
       { status: 500 }
     );

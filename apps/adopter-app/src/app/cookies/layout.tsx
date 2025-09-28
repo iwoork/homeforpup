@@ -38,7 +38,6 @@ export const metadata: Metadata = {
   creator: 'HomeForPup',
   publisher: 'HomeForPup',
   robots: 'index, follow',
-  googleBot: 'index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1',
   alternates: {
     canonical: 'https://homeforpup.com/cookies',
   },

@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     console.error('Contact form test error:', error);
     return NextResponse.json(
       { 
-        message: 'Test error: ' + error.message,
-        error: error.stack
+        message: 'Test error: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        error: error instanceof Error ? error.stack : 'No stack trace available'
       },
       { status: 500 }
     );

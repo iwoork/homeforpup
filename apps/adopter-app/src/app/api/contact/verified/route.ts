@@ -120,8 +120,8 @@ ${message}
     
     return NextResponse.json(
       { 
-        message: 'Error: ' + error.message,
-        error: error.stack
+        message: 'Error: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        error: error instanceof Error ? error.stack : 'No stack trace available'
       },
       { status: 500 }
     );

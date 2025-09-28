@@ -139,15 +139,15 @@ ${message}
   } catch (error) {
     console.error('Simple contact form error:', error);
     console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace available',
+      name: error instanceof Error ? error.name : 'Unknown'
     });
     
     return NextResponse.json(
       { 
-        message: 'Error: ' + error.message,
-        error: error.stack
+        message: 'Error: ' + (error instanceof Error ? error.message : 'Unknown error'),
+        error: error instanceof Error ? error.stack : 'No stack trace available'
       },
       { status: 500 }
     );
