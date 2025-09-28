@@ -48,6 +48,7 @@ const Footer: React.FC = () => {
               <Link href="/breeds" style={linkStyle}>Dog Breeds</Link>
               <Link href="/kennel-management" style={linkStyle}>Kennel Management</Link>
               <Link href="/about" style={linkStyle}>About Us</Link>
+              <Link href="/faq" style={linkStyle}>FAQ</Link>
             </Space>
           </Col>
           <Col xs={24} sm={12} md={6}>
