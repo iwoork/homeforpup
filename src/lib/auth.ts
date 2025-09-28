@@ -4,9 +4,9 @@ import CognitoProvider from 'next-auth/providers/cognito';
 export const authOptions: NextAuthOptions = {
   providers: [
     CognitoProvider({
-      clientId: process.env.COGNITO_CLIENT_ID!,
+      clientId: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID!,
       clientSecret: '',
-      issuer: process.env.COGNITO_ISSUER!,
+      issuer: process.env.NEXT_PUBLIC_COGNITO_AUTHORITY!,
       client: {
         token_endpoint_auth_method: "none"
       },
@@ -24,7 +24,6 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   debug: process.env.NODE_ENV === 'development',
-  trustHost: true, // Allow any host in development
   callbacks: {
     async jwt({ token, account, profile }: any) {
       // Persist the OAuth access_token and or the user id to the token right after signin
@@ -47,17 +46,33 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle redirects properly
       console.log('NextAuth redirect:', { url, baseUrl });
       
-      // If url is relative, make it absolute
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
+      // Handle sign out with Cognito SSO logout
+      if (url === 'signOut') {
+        const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+        const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
+        const nextAuthUrl = process.env.NEXTAUTH_URL || baseUrl;
+        
+        if (cognitoDomain && clientId) {
+          const ssoLogoutUrl = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${nextAuthUrl}/`;
+          const signoutWithRedirectUrl = `${ssoLogoutUrl}&redirect_uri=${encodeURIComponent(nextAuthUrl)}`;
+          console.log('Cognito SSO logout URL:', signoutWithRedirectUrl);
+          return signoutWithRedirectUrl;
+        }
+        
+        // Fallback to base URL if Cognito config is missing
+        return baseUrl;
       }
       
       // If url is on the same origin, allow it
       if (url.startsWith(baseUrl)) {
         return url;
+      }
+      
+      // Allows relative callback URLs
+      if (url.startsWith('/')) {
+        return new URL(url, baseUrl).toString();
       }
       
       // Default to dashboard
