@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
-import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity';
+import { ActivityFeed, activityTracker } from '@homeforpup/shared-activity';
 import useSWR from 'swr';
 
 const { Title, Paragraph, Text } = Typography;
@@ -188,16 +188,6 @@ const AdopterDashboard: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Activity Stats */}
-      <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-        <Col span={24}>
-          <ActivityStats
-            userId={user.userId}
-            userType="adopter"
-            period="week"
-          />
-        </Col>
-      </Row>
 
       <Row gutter={[24, 24]}>
         {/* Recent Activity */}

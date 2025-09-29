@@ -16,3 +16,6 @@ export { useKennels } from './useKennels';
 export { useUserData } from './useUserData';
 export { useWebSocket } from './useWebSocket';
 export { useWebSocketMessages } from './useWebSocketMessages';
+
+// UI hooks
+export { useMessage } from './useMessage';

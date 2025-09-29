@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Card, Row, Col, Typography, Button, Form, Input, Select, Switch, 
   Spin, Alert, Tabs, Space, Divider, Tag, Avatar,
-  InputNumber, App, message
+  InputNumber
 } from 'antd';
 import { 
   UserOutlined, SaveOutlined, LoadingOutlined,
@@ -12,7 +12,7 @@ import {
   SafetyOutlined, PlusOutlined,
   EyeOutlined
 } from '@ant-design/icons';
-import { useAuth } from '@/hooks';
+import { useAuth, useMessage } from '@/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
 import { ProfilePhotoUpload, CoverPhotoUpload, PhotoUpload } from '@/components';
@@ -84,6 +84,7 @@ const COMMON_BREEDS = [
 
 // Component that uses the App context
 const EditProfilePage: React.FC = () => {
+  const message = useMessage();
   const { user, getToken, effectiveUserType, canSwitchProfiles, activeProfileType, isSwitchingProfile } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -100,8 +101,6 @@ const EditProfilePage: React.FC = () => {
   const [coverPhoto, setCoverPhoto] = useState<string | undefined>();
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]);
 
-  // Get message API from Ant Design App context
-  const { message } = App.useApp();
 
   // Auto-save function for photo updates
   const autoSavePhoto = async (photoType: 'profileImage' | 'coverPhoto' | 'galleryPhotos', value: string | string[]) => {
