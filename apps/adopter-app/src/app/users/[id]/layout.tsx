@@ -21,6 +21,11 @@ interface User {
 
 async function fetchUser(id: string): Promise<User | null> {
   try {
+    // Skip API calls during build time to avoid build failures
+    if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_API_URL) {
+      return null;
+    }
+    
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/users/${id}`, {
       next: { revalidate: 3600 }, // Revalidate every hour
