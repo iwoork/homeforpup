@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import Header from './Header';
+import ClientHeader from './ClientHeader';
 import Footer from './Footer';
-import { useAuth } from '@homeforpup/shared-auth';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +12,6 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const isAuthPage = pathname.startsWith('/auth/');
-  const { user, isAuthenticated, loading, signIn, signOut } = useAuth();
 
   if (isAuthPage) {
     return <>{children}</>;
@@ -21,14 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Header 
-        user={user}
-        isAuthenticated={isAuthenticated}
-        loading={loading}
-        onLogin={signIn}
-        onLogout={signOut}
-        unreadCount={0}
-      />
+      <ClientHeader />
       <main style={{ flex: 1 }}>
         {children}
       </main>

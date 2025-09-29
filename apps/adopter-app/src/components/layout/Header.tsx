@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Layout, Button, Avatar, Dropdown, Badge } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, HeartOutlined, TeamOutlined, HomeOutlined, BookOutlined } from '@ant-design/icons';
+import { Layout, Button, Avatar, Dropdown, Badge, Drawer, Menu } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, HeartOutlined, TeamOutlined, HomeOutlined, BookOutlined, MenuOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Header: AntHeader } = Layout;
@@ -25,6 +25,7 @@ const Header: React.FC<HeaderProps> = ({
   unreadCount = 0 
 }) => {
   const [isMobile, setIsMobile] = React.useState(false);
+  const [drawerVisible, setDrawerVisible] = React.useState(false);
 
   // Check for mobile screen size
   React.useEffect(() => {
@@ -78,6 +79,79 @@ const Header: React.FC<HeaderProps> = ({
     return menuItems;
   }, [user?.userId, unreadCount, onLogout]);
 
+  // Mobile drawer menu items
+  const getMobileMenuItems = React.useMemo(() => {
+    if (!isAuthenticated) return [];
+
+    const mobileItems = [
+      {
+        key: 'dashboard',
+        icon: <DashboardOutlined />,
+        label: <Link href="/dashboard">Dashboard</Link>,
+      },
+      {
+        key: 'browse',
+        icon: <HeartOutlined />,
+        label: <Link href="/browse">Browse Puppies</Link>,
+      },
+      {
+        key: 'breeds',
+        icon: <TeamOutlined />,
+        label: <Link href="/breeds">Dog Breeds</Link>,
+      },
+      {
+        key: 'adoption-guide',
+        icon: <HomeOutlined />,
+        label: <Link href="/adoption-guide">Adoption Guide</Link>,
+      },
+      {
+        type: 'divider',
+      },
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
+      },
+      {
+        key: 'settings',
+        icon: <SettingOutlined />,
+        label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
+      },
+      {
+        key: 'favorites',
+        icon: <HeartOutlined />,
+        label: <Link href="/dashboard/favorites">My Favorites</Link>,
+      },
+      {
+        key: 'activity',
+        icon: <MessageOutlined />,
+        label: <Link href="/dashboard/activity">My Activity</Link>,
+      },
+      {
+        key: 'messages',
+        icon: <MessageOutlined />,
+        label: (
+          <Link href="/dashboard/messages">
+            <Badge count={unreadCount} size="small">
+              Messages
+            </Badge>
+          </Link>
+        ),
+      },
+      {
+        type: 'divider',
+      },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: 'Sign Out',
+        onClick: onLogout,
+      }
+    ];
+
+    return mobileItems;
+  }, [user?.userId, unreadCount, onLogout, isAuthenticated]);
+
   const headerStyle = {
     background: '#fff',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -126,6 +200,23 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px' }}>
+        {/* Mobile hamburger menu */}
+        {isMobile && isAuthenticated && (
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            onClick={() => setDrawerVisible(true)}
+            style={{
+              height: '40px',
+              width: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px'
+            }}
+          />
+        )}
+
         {/* Navigation - desktop only */}
         {isAuthenticated && !isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
@@ -197,35 +288,57 @@ const Header: React.FC<HeaderProps> = ({
               </Link>
             )}
             
-            {/* User dropdown */}
-            <Dropdown
-              menu={{ items: getUserMenuItems }}
-              placement="bottomRight"
-              trigger={['click']}
-            >
-              <Button type="text" style={{ padding: '4px', height: 'auto' }}>
+            {/* User dropdown - desktop only */}
+            {!isMobile && (
+              <Dropdown
+                menu={{ items: getUserMenuItems }}
+                placement="bottomRight"
+                trigger={['click']}
+              >
+                <Button type="text" style={{ padding: '4px', height: 'auto' }}>
+                  <Avatar 
+                    size="default"
+                    src={user?.profileImage || undefined}
+                    icon={<UserOutlined />}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <span style={{ 
+                      fontSize: '14px',
+                      maxWidth: '120px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      {displayName}
+                    </span>
+                  </div>
+                </Button>
+              </Dropdown>
+            )}
+
+            {/* Mobile user info */}
+            {isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Avatar 
-                  size={isMobile ? 'small' : 'default'}
+                  size="small"
                   src={user?.profileImage || undefined}
                   icon={<UserOutlined />}
-                  style={{ marginRight: '8px' }}
                 />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ 
-                    fontSize: isMobile ? '12px' : '14px',
-                    maxWidth: isMobile ? '80px' : '120px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    {displayName}
-                  </span>
-                </div>
-              </Button>
-            </Dropdown>
+                <span style={{ 
+                  fontSize: '12px',
+                  maxWidth: '80px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {displayName}
+                </span>
+              </div>
+            )}
           </>
         ) : (
           <Button 
@@ -238,6 +351,34 @@ const Header: React.FC<HeaderProps> = ({
           </Button>
         )}
       </div>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Avatar 
+              size="small"
+              src={user?.profileImage || undefined}
+              icon={<UserOutlined />}
+            />
+            <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+              {displayName}
+            </span>
+          </div>
+        }
+        placement="left"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={280}
+        bodyStyle={{ padding: 0 }}
+      >
+        <Menu
+          mode="inline"
+          items={getMobileMenuItems}
+          style={{ border: 'none' }}
+          onClick={() => setDrawerVisible(false)}
+        />
+      </Drawer>
     </AntHeader>
   );
 };

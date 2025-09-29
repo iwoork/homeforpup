@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined } from '@ant-design/icons';
+import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin, Drawer, Menu } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined, MenuOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 import { useSession } from 'next-auth/react';
@@ -20,6 +20,7 @@ const ClientHeader: React.FC = () => {
   const [isMobile, setIsMobile] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [forceLoading, setForceLoading] = React.useState(true);
+  const [drawerVisible, setDrawerVisible] = React.useState(false);
 
   // Get display name from user data or fallback to session
   const displayName = user?.name || session?.user?.name || 'User';
@@ -120,7 +121,9 @@ const ClientHeader: React.FC = () => {
   // Check for mobile screen size
   React.useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      console.log('Mobile check:', { width: window.innerWidth, isMobile: mobile });
+      setIsMobile(mobile);
     };
     
     checkMobile();
@@ -224,10 +227,73 @@ const ClientHeader: React.FC = () => {
 
   const userMenuItems = getUserMenuItems;
 
+  // Mobile drawer menu items
+  const getMobileMenuItems = React.useMemo(() => {
+    if (!isAuthenticated) return [];
+
+    const mobileItems = [
+      {
+        key: 'dashboard',
+        icon: <DashboardOutlined />,
+        label: <Link href="/dashboard">Dashboard</Link>,
+      },
+      ...getProfileNavigationItems,
+      {
+        type: 'divider',
+      },
+      {
+        key: 'profile',
+        icon: <UserOutlined />,
+        label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
+      },
+      {
+        key: 'settings',
+        icon: <SettingOutlined />,
+        label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
+      },
+      {
+        key: 'favorites',
+        icon: <HeartOutlined />,
+        label: <Link href="/dashboard/favorites">My Favorites</Link>,
+      },
+      {
+        key: 'activity',
+        icon: <BellOutlined />,
+        label: <Link href="/dashboard/activity">My Activity</Link>,
+      },
+      {
+        key: 'messages',
+        icon: <MessageOutlined />,
+        label: (
+          <Link href="/dashboard/messages">
+            <Badge count={unreadCount} size="small">
+              Messages
+            </Badge>
+          </Link>
+        ),
+      },
+      {
+        type: 'divider',
+      },
+      {
+        key: 'logout',
+        icon: <LogoutOutlined />,
+        label: 'Sign Out',
+        onClick: logout,
+      }
+    ];
+
+    return mobileItems;
+  }, [user, getProfileNavigationItems, unreadCount, logout]);
+
   // Debug logging (reduced)
   if (process.env.NODE_ENV === 'development') {
     console.log('Header state:', { 
-      menuItems: userMenuItems.length
+      menuItems: userMenuItems.length,
+      isMobile,
+      isAuthenticated,
+      drawerVisible,
+      mobileMenuItems: getMobileMenuItems.length
     });
   }
 
@@ -279,6 +345,26 @@ const ClientHeader: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '8px' }}>
+        {/* Mobile hamburger menu */}
+        {isMobile && isAuthenticated && (
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            onClick={() => {
+              console.log('Hamburger clicked, opening drawer');
+              setDrawerVisible(true);
+            }}
+            style={{
+              height: '40px',
+              width: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px'
+            }}
+          />
+        )}
+
         {/* Profile-specific navigation - desktop only */}
         {isAuthenticated && !isMobile && getProfileNavigationItems.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}>
@@ -320,35 +406,57 @@ const ClientHeader: React.FC = () => {
               </Link>
             )}
             
-            {/* User dropdown */}
-            <Dropdown
-              menu={{ items: userMenuItems }}
-              placement="bottomRight"
-              trigger={['click']}
-            >
-              <Button type="text" style={{ padding: '4px', height: 'auto' }}>
+            {/* User dropdown - desktop only */}
+            {!isMobile && (
+              <Dropdown
+                menu={{ items: userMenuItems }}
+                placement="bottomRight"
+                trigger={['click']}
+              >
+                <Button type="text" style={{ padding: '4px', height: 'auto' }}>
+                  <Avatar 
+                    size="default"
+                    src={user?.profileImage || undefined}
+                    icon={<UserOutlined />}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <span style={{ 
+                      fontSize: '14px',
+                      maxWidth: '120px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      {displayName}
+                    </span>
+                  </div>
+                </Button>
+              </Dropdown>
+            )}
+
+            {/* Mobile user info */}
+            {isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Avatar 
-                  size={isMobile ? 'small' : 'default'}
+                  size="small"
                   src={user?.profileImage || undefined}
                   icon={<UserOutlined />}
-                  style={{ marginRight: '8px' }}
                 />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ 
-                    fontSize: isMobile ? '12px' : '14px',
-                    maxWidth: isMobile ? '80px' : '120px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    {displayName}
-                  </span>
-                </div>
-              </Button>
-            </Dropdown>
+                <span style={{ 
+                  fontSize: '12px',
+                  maxWidth: '80px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {displayName}
+                </span>
+              </div>
+            )}
           </>
         ) : (
           <Button 
@@ -361,6 +469,44 @@ const ClientHeader: React.FC = () => {
           </Button>
         )}
       </div>
+
+      {/* Mobile Drawer */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Avatar 
+              size="small"
+              src={user?.profileImage || undefined}
+              icon={<UserOutlined />}
+            />
+            <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+              {displayName}
+            </span>
+          </div>
+        }
+        placement="right"
+        onClose={() => {
+          console.log('Drawer closing');
+          setDrawerVisible(false);
+        }}
+        open={drawerVisible}
+        width={280}
+        bodyStyle={{ padding: 0 }}
+        zIndex={1001}
+        maskClosable={true}
+        keyboard={true}
+        destroyOnClose={false}
+      >
+        <Menu
+          mode="inline"
+          items={getMobileMenuItems}
+          style={{ border: 'none', height: '100%' }}
+          onClick={() => {
+            console.log('Menu item clicked, closing drawer');
+            setDrawerVisible(false);
+          }}
+        />
+      </Drawer>
     </Layout.Header>
   );
 };
