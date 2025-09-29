@@ -8,6 +8,7 @@ import { useAuth } from '@homeforpup/shared-auth';
 import UserTypeModal from '@/components/UserTypeModal';
 import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
+import DogGallery from '@/components/DogGallery';
 
 const { Title, Paragraph } = Typography;
 
@@ -210,6 +211,41 @@ const HomePage: React.FC = () => {
               <Paragraph>Bring home your perfectly matched companion and join a community that supports your lifelong journey together.</Paragraph>
             </Col>
           </Row>
+        </div>
+      </section>
+
+      {/* Dog Gallery Section */}
+      <section style={{ padding: '64px 24px', background: 'white' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <Title level={2}>Meet Our Adorable Community</Title>
+            <Paragraph style={{ fontSize: '18px', color: '#666', maxWidth: '600px', margin: '16px auto 0' }}>
+              Browse through our gallery of beautiful dogs from our community. Each one represents a potential new family member waiting to bring joy to your home.
+            </Paragraph>
+          </div>
+          
+          <DogGallery 
+            style={{ maxWidth: '100%' }}
+          />
+          
+          <div style={{ textAlign: 'center', marginTop: '48px' }}>
+            <Link href="/browse">
+              <Button 
+                size="large"
+                type="primary"
+                style={{ 
+                  height: '48px', 
+                  padding: '0 32px', 
+                  fontSize: '18px',
+                  background: '#08979C',
+                  borderColor: '#08979C',
+                  fontWeight: '500'
+                }}
+              >
+                Browse All Available Puppies
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
