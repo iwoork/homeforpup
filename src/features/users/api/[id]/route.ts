@@ -90,13 +90,19 @@ type UserProfileResponse = PublicUserItem | PrivateUserItem;
 
 // Type-safe sanitization function
 const sanitizeUserData = (user: DatabaseUserItem, isOwnProfile: boolean): UserProfileResponse => {
+  // Transform adopterInfo to puppyParentInfo for frontend compatibility
+  const transformedUser = {
+    ...user,
+    puppyParentInfo: user.adopterInfo
+  };
+
   if (isOwnProfile) {
     // Return full profile for own profile
-    return user as PrivateUserItem;
+    return transformedUser as PrivateUserItem;
   }
 
   // Create public profile by omitting sensitive fields and selectively including privacy-controlled fields
-  const { email, phone, location, ...basePublicFields } = user;
+  const { email, phone, location, ...basePublicFields } = transformedUser;
   
   // Build public profile (accountStatus is implicitly excluded by not being in basePublicFields)
   const publicProfile: PublicUserItem = {
@@ -236,6 +242,7 @@ interface UserUpdateRequest {
   galleryPhotos?: string[];
   preferences?: DatabaseUserItem['preferences'];
   adopterInfo?: DatabaseUserItem['adopterInfo'];
+  puppyParentInfo?: DatabaseUserItem['adopterInfo']; // Alias for adopterInfo
   breederInfo?: DatabaseUserItem['breederInfo'];
 }
 
@@ -305,10 +312,12 @@ export async function PUT(
       expressionAttributeValues[':preferences'] = updates.preferences;
     }
 
-    if (updates.adopterInfo) {
+    // Handle both adopterInfo and puppyParentInfo (they're the same data)
+    const adopterData = updates.adopterInfo || updates.puppyParentInfo;
+    if (adopterData) {
       updateExpressions.push('#adopterInfo = :adopterInfo');
       expressionAttributeNames['#adopterInfo'] = 'adopterInfo';
-      expressionAttributeValues[':adopterInfo'] = updates.adopterInfo;
+      expressionAttributeValues[':adopterInfo'] = adopterData;
     }
 
     if (updates.breederInfo) {

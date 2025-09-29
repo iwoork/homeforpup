@@ -67,6 +67,13 @@ const AdopterDashboard: React.FC = () => {
     }
   }, [favoritesData, threadsData, user]);
 
+  // Track page view activity
+  useEffect(() => {
+    if (user?.userId) {
+      activityTracker.trackPageView(user.userId, 'dashboard');
+    }
+  }, [user?.userId]);
+
   if (loading) {
     return (
       <div style={{ 
@@ -101,13 +108,6 @@ const AdopterDashboard: React.FC = () => {
     );
   }
 
-  // Track page view activity
-  useEffect(() => {
-    if (user?.userId) {
-      activityTracker.trackPageView(user.userId, 'dashboard');
-    }
-  }, [user?.userId]);
-
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
@@ -140,10 +140,14 @@ const AdopterDashboard: React.FC = () => {
             padding: 16px !important;
           }
           .ant-statistic-title {
-            font-size: 12px !important;
+            font-size: 11px !important;
+            line-height: 1.2 !important;
           }
           .ant-statistic-content {
-            font-size: 20px !important;
+            font-size: 18px !important;
+          }
+          .ant-statistic-content-value {
+            font-size: 18px !important;
           }
           .ant-btn {
             height: 44px !important;
@@ -170,6 +174,16 @@ const AdopterDashboard: React.FC = () => {
           .ant-card-head-title {
             font-size: 14px !important;
             padding: 8px 0 !important;
+          }
+          .ant-statistic-title {
+            font-size: 10px !important;
+            line-height: 1.1 !important;
+          }
+          .ant-statistic-content {
+            font-size: 16px !important;
+          }
+          .ant-statistic-content-value {
+            font-size: 16px !important;
           }
           .ant-btn {
             height: 40px !important;
@@ -213,8 +227,8 @@ const AdopterDashboard: React.FC = () => {
       </Card>
 
       {/* Stats Cards */}
-      <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} lg={6}>
+      <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Col xs={12} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
               title="Favorites"
@@ -224,7 +238,7 @@ const AdopterDashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
               title="Unread Messages"
@@ -234,7 +248,7 @@ const AdopterDashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
               title="Profile Views"
@@ -244,7 +258,7 @@ const AdopterDashboard: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={12} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
               title="Active Conversations"

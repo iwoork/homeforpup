@@ -41,6 +41,7 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
       onCancel={onClose}
       footer={null}
       width={600}
+      destroyOnClose
     >
       <Form
         form={form}

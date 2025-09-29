@@ -163,7 +163,7 @@ const AddDogForm: React.FC<AddDogFormProps> = ({
       onCancel={handleCancel}
       footer={null}
       width={800}
-      destroyOnHidden
+      destroyOnClose
       centered
     >
       <Form

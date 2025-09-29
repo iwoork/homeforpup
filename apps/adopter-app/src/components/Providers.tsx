@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider, message } from 'antd';
+import { ConfigProvider, message, App } from 'antd';
 import { NextAuthProvider } from './providers/NextAuthProvider';
 import { AuthProvider } from '@homeforpup/shared-auth';
 import { Spin } from 'antd';
@@ -67,11 +67,13 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
 
   return (
     <ConfigProvider theme={theme}>
-      <NextAuthProvider>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </NextAuthProvider>
+      <App>
+        <NextAuthProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </NextAuthProvider>
+      </App>
     </ConfigProvider>
   );
 };
