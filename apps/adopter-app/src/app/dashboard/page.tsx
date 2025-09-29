@@ -254,7 +254,7 @@ const AdopterDashboard: React.FC = () => {
                 </Button>
               </Link>
               
-              <Link href="/users">
+              <Link href="/breeders">
                 <Button 
                   block 
                   size="large"
