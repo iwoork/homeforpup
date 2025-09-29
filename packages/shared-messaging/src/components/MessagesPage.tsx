@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   List,
@@ -63,7 +63,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
     sendMessage,
     markAsRead,
     deleteMessage,
-    fetchThreadMessages
+    fetchThreadMessages,
+    fetchMessages
   } = useMessaging(userId);
 
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
@@ -72,6 +73,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
   const [searchTerm, setSearchTerm] = useState('');
   const [messageTypeFilter, setMessageTypeFilter] = useState<MessageType | 'all'>('all');
   const [loadingThread, setLoadingThread] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load thread messages when a thread is selected
   useEffect(() => {
@@ -83,6 +85,13 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
       });
     }
   }, [selectedThread, fetchThreadMessages]);
+
+  // Scroll to bottom when new messages are added
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [threadMessages]);
 
   const handleSendMessage = async (values: any) => {
     try {
@@ -286,14 +295,17 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
                   }}
                 >
                   {threadMessages.length > 0 ? (
-                    threadMessages.map((msg, index) => (
-                      <ChatMessage
-                        key={msg.id}
-                        message={msg}
-                        currentUserId={userId || ''}
-                        isLastMessage={index === threadMessages.length - 1}
-                      />
-                    ))
+                    <>
+                      {threadMessages.map((msg, index) => (
+                        <ChatMessage
+                          key={msg.id}
+                          message={msg}
+                          currentUserId={userId || ''}
+                          isLastMessage={index === threadMessages.length - 1}
+                        />
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </>
                   ) : (
                     <div style={{ 
                       display: 'flex', 
@@ -344,9 +356,23 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
                       throw new Error(errorData.error || 'Failed to send reply');
                     }
 
-                    // Refresh messages
+                    // Refresh the entire messages list to update thread counts
+                    await fetchMessages();
+                    
+                    // Refresh the current thread messages
                     const messages = await fetchThreadMessages(selectedThread.id);
                     setThreadMessages(messages);
+                    
+                    // Update the selected thread to reflect the new last message
+                    if (messages.length > 0) {
+                      const lastMessage = messages[messages.length - 1];
+                      setSelectedThread(prev => prev ? {
+                        ...prev,
+                        lastMessage,
+                        messageCount: messages.length,
+                        updatedAt: lastMessage.timestamp
+                      } : null);
+                    }
                   } catch (error) {
                     console.error('Failed to send reply:', error);
                     throw error;
