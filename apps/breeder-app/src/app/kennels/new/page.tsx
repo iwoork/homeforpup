@@ -17,6 +17,7 @@ import {
   Steps,
   Divider
 } from 'antd';
+import BreedSelector from '@/components/forms/BreedSelector';
 import { 
   HomeOutlined, 
   EnvironmentOutlined, 
@@ -398,22 +399,13 @@ const CreateKennelPage: React.FC = () => {
                 name="specialties"
                 label="Breed Specialties"
               >
-                <Select
-                  mode="multiple"
+                <BreedSelector
+                  multiple
                   placeholder="Select breeds you specialize in"
                   style={{ width: '100%' }}
-                >
-                  <Option value="Golden Retriever">Golden Retriever</Option>
-                  <Option value="Labrador">Labrador</Option>
-                  <Option value="German Shepherd">German Shepherd</Option>
-                  <Option value="French Bulldog">French Bulldog</Option>
-                  <Option value="Poodle">Poodle</Option>
-                  <Option value="Bulldog">Bulldog</Option>
-                  <Option value="Beagle">Beagle</Option>
-                  <Option value="Rottweiler">Rottweiler</Option>
-                  <Option value="Siberian Husky">Siberian Husky</Option>
-                  <Option value="Dachshund">Dachshund</Option>
-                </Select>
+                  showBreedInfo={true}
+                  showBreederCount={false}
+                />
               </Form.Item>
             </Col>
             <Divider />
