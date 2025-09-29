@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/lib';
 import { Activity, ActivityFilter, ActivityResponse, ActivityStats, CreateActivityRequest } from '@homeforpup/shared-types';
 
 const dynamoClient = new DynamoDBClient({
@@ -20,13 +20,13 @@ const ACTIVITIES_TABLE = process.env.ACTIVITIES_TABLE_NAME || 'homeforpup-activi
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const filters: ActivityFilter = {
-      userId: session.user.userId,
+      userId: session.user.id,
       limit: parseInt(searchParams.get('limit') || '20'),
       offset: parseInt(searchParams.get('offset') || '0'),
     };
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure the activity belongs to the authenticated user
-    if (body.userId !== session.user.userId) {
+    if (body.userId !== session.user.id) {
       return NextResponse.json(
         { error: 'Unauthorized to create activity for this user' },
         { status: 403 }

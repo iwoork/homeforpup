@@ -594,6 +594,12 @@ export type AnnouncementStatus = 'published' | 'draft' | 'archived';
 export type AnnouncementVisibility = 'public' | 'followers' | 'private';
 
 // ============================================================================
+// KENNEL MANAGEMENT TYPES
+// ============================================================================
+
+export * from './kennel';
+
+// ============================================================================
 // ACTIVITY TRACKING TYPES
 // ============================================================================
 

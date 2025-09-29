@@ -8,7 +8,8 @@ import {
   MessageOutlined, 
   BarChartOutlined,
   PlusOutlined,
-  SettingOutlined
+  SettingOutlined,
+  BookOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 
@@ -125,6 +126,22 @@ export default function BreederDashboard() {
             <Link href="/analytics">
               <Button type="primary" icon={<BarChartOutlined />}>
                 View Analytics
+              </Button>
+            </Link>
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card 
+            title="Help & Documentation" 
+            extra={<BookOutlined style={{ fontSize: '24px' }} />}
+            hoverable
+          >
+            <Paragraph>
+              Learn how to use the system with our comprehensive guides and tutorials
+            </Paragraph>
+            <Link href="/docs">
+              <Button type="primary" icon={<BookOutlined />}>
+                View Documentation
               </Button>
             </Link>
           </Card>

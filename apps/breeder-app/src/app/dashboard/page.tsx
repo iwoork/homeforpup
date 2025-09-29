@@ -12,7 +12,8 @@ import {
   BellOutlined,
   HeartOutlined,
   EyeOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  BookOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
@@ -266,6 +267,17 @@ const BreederDashboard: React.FC = () => {
                   style={{ height: '48px', fontSize: '16px' }}
                 >
                   View Analytics
+                </Button>
+              </Link>
+              
+              <Link href="/docs">
+                <Button 
+                  block 
+                  size="large"
+                  icon={<BookOutlined />}
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  Help & Documentation
                 </Button>
               </Link>
             </Space>
