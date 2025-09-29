@@ -121,9 +121,7 @@ const ClientHeader: React.FC = () => {
   // Check for mobile screen size
   React.useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      console.log('Mobile check:', { width: window.innerWidth, isMobile: mobile });
-      setIsMobile(mobile);
+      setIsMobile(window.innerWidth < 768);
     };
     
     checkMobile();
@@ -201,18 +199,18 @@ const ClientHeader: React.FC = () => {
         icon: <SettingOutlined />,
         label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
       },
-            {
-              key: 'favorites',
-              icon: <HeartOutlined />,
-              label: <Link href="/dashboard/favorites">My Favorites</Link>,
-            },
-            {
-              key: 'activity',
-              icon: <BellOutlined />,
-              label: <Link href="/dashboard/activity">My Activity</Link>,
-            },
       {
-        type: 'divider',
+        key: 'favorites',
+        icon: <HeartOutlined />,
+        label: <Link href="/dashboard/favorites">My Favorites</Link>,
+      },
+      {
+        key: 'activity',
+        icon: <BellOutlined />,
+        label: <Link href="/dashboard/activity">My Activity</Link>,
+      },
+      {
+        type: 'divider' as const,
       },
       {
         key: 'logout',
@@ -231,7 +229,7 @@ const ClientHeader: React.FC = () => {
   const getMobileMenuItems = React.useMemo(() => {
     if (!isAuthenticated) return [];
 
-    const mobileItems = [
+    const mobileItems: any[] = [
       {
         key: 'dashboard',
         icon: <DashboardOutlined />,
@@ -239,7 +237,7 @@ const ClientHeader: React.FC = () => {
       },
       ...getProfileNavigationItems,
       {
-        type: 'divider',
+        type: 'divider' as const,
       },
       {
         key: 'profile',
@@ -273,7 +271,7 @@ const ClientHeader: React.FC = () => {
         ),
       },
       {
-        type: 'divider',
+        type: 'divider' as const,
       },
       {
         key: 'logout',
@@ -286,16 +284,6 @@ const ClientHeader: React.FC = () => {
     return mobileItems;
   }, [user, getProfileNavigationItems, unreadCount, logout]);
 
-  // Debug logging (reduced)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Header state:', { 
-      menuItems: userMenuItems.length,
-      isMobile,
-      isAuthenticated,
-      drawerVisible,
-      mobileMenuItems: getMobileMenuItems.length
-    });
-  }
 
   const headerStyle = {
     background: '#fff',
@@ -350,10 +338,7 @@ const ClientHeader: React.FC = () => {
           <Button
             type="text"
             icon={<MenuOutlined />}
-            onClick={() => {
-              console.log('Hamburger clicked, opening drawer');
-              setDrawerVisible(true);
-            }}
+            onClick={() => setDrawerVisible(true)}
             style={{
               height: '40px',
               width: '40px',
@@ -485,10 +470,7 @@ const ClientHeader: React.FC = () => {
           </div>
         }
         placement="right"
-        onClose={() => {
-          console.log('Drawer closing');
-          setDrawerVisible(false);
-        }}
+        onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         width={280}
         bodyStyle={{ padding: 0 }}
@@ -501,10 +483,7 @@ const ClientHeader: React.FC = () => {
           mode="inline"
           items={getMobileMenuItems}
           style={{ border: 'none', height: '100%' }}
-          onClick={() => {
-            console.log('Menu item clicked, closing drawer');
-            setDrawerVisible(false);
-          }}
+          onClick={() => setDrawerVisible(false)}
         />
       </Drawer>
     </Layout.Header>

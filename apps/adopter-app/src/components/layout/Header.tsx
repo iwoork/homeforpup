@@ -66,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
         label: <Link href="/dashboard/favorites">My Favorites</Link>,
       },
       {
-        type: 'divider',
+        type: 'divider' as const,
       },
       {
         key: 'logout',
@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
   const getMobileMenuItems = React.useMemo(() => {
     if (!isAuthenticated) return [];
 
-    const mobileItems = [
+    const mobileItems: any[] = [
       {
         key: 'dashboard',
         icon: <DashboardOutlined />,
@@ -105,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
         label: <Link href="/adoption-guide">Adoption Guide</Link>,
       },
       {
-        type: 'divider',
+        type: 'divider' as const,
       },
       {
         key: 'profile',
@@ -139,7 +139,7 @@ const Header: React.FC<HeaderProps> = ({
         ),
       },
       {
-        type: 'divider',
+        type: 'divider' as const,
       },
       {
         key: 'logout',
