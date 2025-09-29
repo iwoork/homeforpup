@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Image, Typography } from 'antd';
 import { HeartOutlined } from '@ant-design/icons';
 
@@ -23,8 +23,6 @@ const DogGallery: React.FC<DogGalleryProps> = ({
   style = {}
 }) => {
   const [images, setImages] = useState<DogImage[]>([]);
-  const firstRowRef = useRef<HTMLDivElement>(null);
-  const secondRowRef = useRef<HTMLDivElement>(null);
 
   // Generate breed images from the public/breeds folder
   const generateDogImages = (): DogImage[] => {
@@ -67,45 +65,6 @@ const DogGallery: React.FC<DogGalleryProps> = ({
     setImages(allImages);
   }, []);
 
-  // Auto-scroll animation
-  useEffect(() => {
-    const scrollSpeed = 0.5; // pixels per frame (adjust for speed)
-    let animationId: number;
-
-    const animateScroll = () => {
-      if (firstRowRef.current && secondRowRef.current) {
-        // First row scrolls left
-        firstRowRef.current.scrollLeft -= scrollSpeed;
-        
-        // Second row scrolls right
-        secondRowRef.current.scrollLeft += scrollSpeed;
-
-        // Reset scroll position when reaching the end
-        if (firstRowRef.current.scrollLeft <= 0) {
-          firstRowRef.current.scrollLeft = firstRowRef.current.scrollWidth - firstRowRef.current.clientWidth;
-        }
-        
-        if (secondRowRef.current.scrollLeft >= secondRowRef.current.scrollWidth - secondRowRef.current.clientWidth) {
-          secondRowRef.current.scrollLeft = 0;
-        }
-      }
-      
-      animationId = requestAnimationFrame(animateScroll);
-    };
-
-    // Start animation after a short delay
-    const startAnimation = setTimeout(() => {
-      animateScroll();
-    }, 1000);
-
-    return () => {
-      clearTimeout(startAnimation);
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [images]);
-
   const handleImageClick = (image: DogImage) => {
     // You can add modal or navigation logic here
     console.log('Clicked on:', image.breed);
@@ -117,16 +76,15 @@ const DogGallery: React.FC<DogGalleryProps> = ({
 
   return (
     <div className={className} style={style}>
-      {/* First Row - Scrolls Left */}
+      {/* First Row */}
       <div 
-        ref={firstRowRef}
         style={{ 
           display: 'flex',
           gap: '16px',
           padding: '16px 0',
-          overflowX: 'hidden',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          overflowX: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#d9d9d9 transparent'
         }}
       >
         {firstRowImages.map((image) => (
@@ -173,7 +131,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
                 <HeartOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />
               </div>
             </div>
-            <div style={{ padding: '12px' }}>
+            <div style={{ padding: '12px', textAlign: 'center' }}>
               <Text strong style={{ fontSize: '14px' }}>
                 {image.breed}
               </Text>
@@ -182,16 +140,15 @@ const DogGallery: React.FC<DogGalleryProps> = ({
         ))}
       </div>
 
-      {/* Second Row - Scrolls Right */}
+      {/* Second Row */}
       <div 
-        ref={secondRowRef}
         style={{ 
           display: 'flex',
           gap: '16px',
           padding: '16px 0',
-          overflowX: 'hidden',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          overflowX: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#d9d9d9 transparent'
         }}
       >
         {secondRowImages.map((image) => (
@@ -219,7 +176,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
                   objectFit: 'cover',
                   borderRadius: '12px 12px 0 0'
                 }}
-                fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfX0UQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
               />
               <div style={{
                 position: 'absolute',
@@ -238,7 +195,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
                 <HeartOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />
               </div>
             </div>
-            <div style={{ padding: '12px' }}>
+            <div style={{ padding: '12px', textAlign: 'center' }}>
               <Text strong style={{ fontSize: '14px' }}>
                 {image.breed}
               </Text>
