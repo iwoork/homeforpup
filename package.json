@@ -14,7 +14,7 @@
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
     "dev:adopter": "turbo run dev --filter=adopter-app",
-    "dev:breeder": "turbo run run dev --filter=breeder-app",
+    "dev:breeder": "turbo run dev --filter=breeder-app",
     "build:adopter": "turbo run build --filter=adopter-app",
     "build:breeder": "turbo run build --filter=breeder-app"
   },

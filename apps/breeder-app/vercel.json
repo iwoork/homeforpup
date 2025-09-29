@@ -1,6 +1,9 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && npm install --include=dev && npm run build --filter=@homeforpup/shared-* && npm run build --filter=breeder-app",
+  "buildCommand": "cd ../.. && npm install --include=dev && npm run build --filter=\"@homeforpup/shared-*\" && npm run build --filter=breeder-app",
   "installCommand": "cd ../.. && npm install --include=dev",
-  "outputDirectory": "apps/breeder-app/.next"
+  "outputDirectory": "apps/breeder-app/.next",
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

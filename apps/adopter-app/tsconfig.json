@@ -26,7 +26,21 @@
       "@/lib/*": ["./src/lib/*"],
       "@/hooks/*": ["./src/hooks/*"],
       "@/types/*": ["./src/types/*"],
-      "@/features/*": ["./src/features/*"]
+      "@/features/*": ["./src/features/*"],
+      "@homeforpup/shared-types": ["../../packages/shared-types/src"],
+      "@homeforpup/shared-types/*": ["../../packages/shared-types/src/*"],
+      "@homeforpup/shared-auth": ["../../packages/shared-auth/src"],
+      "@homeforpup/shared-auth/*": ["../../packages/shared-auth/src/*"],
+      "@homeforpup/shared-activity": ["../../packages/shared-activity/src"],
+      "@homeforpup/shared-activity/*": ["../../packages/shared-activity/src/*"],
+      "@homeforpup/shared-components": ["../../packages/shared-components/src"],
+      "@homeforpup/shared-components/*": ["../../packages/shared-components/src/*"],
+      "@homeforpup/shared-hooks": ["../../packages/shared-hooks/src"],
+      "@homeforpup/shared-hooks/*": ["../../packages/shared-hooks/src/*"],
+      "@homeforpup/shared-lib": ["../../packages/shared-lib/src"],
+      "@homeforpup/shared-lib/*": ["../../packages/shared-lib/src/*"],
+      "@homeforpup/shared-messaging": ["../../packages/shared-messaging/src"],
+      "@homeforpup/shared-messaging/*": ["../../packages/shared-messaging/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
