@@ -53,10 +53,10 @@ const BreederResourcesPage: React.FC = () => {
   const heroStyle = {
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
-    padding: '80px 24px',
+    padding: '60px 16px',
     textAlign: 'center' as const,
     borderRadius: '12px',
-    marginBottom: '48px'
+    marginBottom: '32px'
   };
 
   const cardStyle = {
@@ -67,7 +67,7 @@ const BreederResourcesPage: React.FC = () => {
   };
 
   const sectionStyle = {
-    marginBottom: '64px'
+    marginBottom: '48px'
   };
 
   const stats = [
@@ -252,20 +252,20 @@ const BreederResourcesPage: React.FC = () => {
       {/* Hero Section */}
       <div style={heroStyle}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px' }}>
+          <Title level={1} style={{ color: 'white', marginBottom: '16px', fontSize: '32px' }}>
             Breeder Resources & Tools
           </Title>
-          <Paragraph style={{ color: 'white', fontSize: '20px', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>
+          <Paragraph style={{ color: 'white', fontSize: '16px', marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px' }}>
             Comprehensive tools to help you manage your breeding program, rehome puppies, and build lasting relationships with families
           </Paragraph>
-          <Space size="large">
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Link href="/kennel-management">
-              <Button size="large" type="primary" style={{ height: '48px', padding: '0 32px', fontSize: '16px' }}>
+              <Button size="large" type="primary" style={{ height: '48px', padding: '0 24px', fontSize: '16px', width: '100%', maxWidth: '300px' }}>
                 Start Managing Your Kennel
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="large" ghost style={{ height: '48px', padding: '0 32px', fontSize: '16px', borderColor: 'white', color: 'white' }}>
+              <Button size="large" ghost style={{ height: '48px', padding: '0 24px', fontSize: '16px', borderColor: 'white', color: 'white', width: '100%', maxWidth: '300px' }}>
                 Get Support
               </Button>
             </Link>
@@ -273,26 +273,26 @@ const BreederResourcesPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
         {/* Statistics Section */}
         <section style={sectionStyle}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <Title level={2}>Platform Success Metrics</Title>
-            <Paragraph style={{ fontSize: '18px', color: '#666' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <Title level={2} style={{ fontSize: '24px' }}>Platform Success Metrics</Title>
+            <Paragraph style={{ fontSize: '16px', color: '#666' }}>
               Join successful breeders who have streamlined their operations
             </Paragraph>
           </div>
-          <Row gutter={[32, 32]}>
+          <Row gutter={[16, 16]}>
             {stats.map((stat, index) => (
-              <Col xs={12} md={6} key={index}>
-                <Card style={cardStyle} bodyStyle={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }}>
+              <Col xs={12} sm={6} key={index}>
+                <Card style={cardStyle} bodyStyle={{ textAlign: 'center', padding: '16px' }}>
+                  <div style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }}>
                     {stat.icon}
                   </div>
                   <Statistic
                     title={stat.title}
                     value={stat.value}
-                    valueStyle={{ color: '#1890ff', fontSize: '32px', fontWeight: 'bold' }}
+                    valueStyle={{ color: '#1890ff', fontSize: '24px', fontWeight: 'bold' }}
                   />
                 </Card>
               </Col>
@@ -302,28 +302,28 @@ const BreederResourcesPage: React.FC = () => {
 
         {/* Core Features */}
         <section style={sectionStyle}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <Title level={2}>Core Breeding Tools</Title>
-            <Paragraph style={{ fontSize: '18px', color: '#666' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <Title level={2} style={{ fontSize: '24px' }}>Core Breeding Tools</Title>
+            <Paragraph style={{ fontSize: '16px', color: '#666' }}>
               Essential tools for managing your breeding program and puppy rehoming
             </Paragraph>
           </div>
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             {coreFeatures.map((feature, index) => (
-              <Col xs={24} md={12} lg={8} key={index}>
+              <Col xs={24} sm={12} lg={8} key={index}>
                 <Card
                   style={cardStyle}
                   hoverable
-                  bodyStyle={{ padding: '24px' }}
+                  bodyStyle={{ padding: '16px' }}
                 >
-                  <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '48px', color: feature.color, marginBottom: '16px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '32px', color: feature.color, marginBottom: '12px' }}>
                       {feature.icon}
                     </div>
-                    <Title level={4} style={{ marginBottom: '12px' }}>
+                    <Title level={4} style={{ marginBottom: '8px', fontSize: '16px' }}>
                       {feature.title}
                     </Title>
-                    <Paragraph style={{ color: '#666', marginBottom: '16px' }}>
+                    <Paragraph style={{ color: '#666', marginBottom: '12px', fontSize: '14px' }}>
                       {feature.description}
                     </Paragraph>
                   </div>
@@ -331,8 +331,8 @@ const BreederResourcesPage: React.FC = () => {
                     size="small"
                     dataSource={feature.features}
                     renderItem={(item) => (
-                      <List.Item>
-                        <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
+                      <List.Item style={{ padding: '4px 0', fontSize: '12px' }}>
+                        <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '6px', fontSize: '12px' }} />
                         {item}
                       </List.Item>
                     )}
@@ -345,29 +345,29 @@ const BreederResourcesPage: React.FC = () => {
 
         {/* Advanced Features */}
         <section style={sectionStyle}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <Title level={2}>Advanced Features</Title>
-            <Paragraph style={{ fontSize: '18px', color: '#666' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <Title level={2} style={{ fontSize: '24px' }}>Advanced Features</Title>
+            <Paragraph style={{ fontSize: '16px', color: '#666' }}>
               Specialized tools for professional breeders and complex programs
             </Paragraph>
           </div>
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             {advancedFeatures.map((feature, index) => (
-              <Col xs={24} md={12} key={index}>
+              <Col xs={24} sm={12} key={index}>
                 <Card
                   style={cardStyle}
                   hoverable
-                  bodyStyle={{ padding: '24px' }}
+                  bodyStyle={{ padding: '16px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '32px', color: feature.color, marginRight: '16px', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '24px', color: feature.color, marginRight: '12px', marginTop: '2px' }}>
                       {feature.icon}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <Title level={4} style={{ marginBottom: '8px' }}>
+                      <Title level={4} style={{ marginBottom: '6px', fontSize: '16px' }}>
                         {feature.title}
                       </Title>
-                      <Paragraph style={{ color: '#666', marginBottom: '16px' }}>
+                      <Paragraph style={{ color: '#666', marginBottom: '12px', fontSize: '14px' }}>
                         {feature.description}
                       </Paragraph>
                     </div>
@@ -376,8 +376,8 @@ const BreederResourcesPage: React.FC = () => {
                     size="small"
                     dataSource={feature.features}
                     renderItem={(item) => (
-                      <List.Item>
-                        <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
+                      <List.Item style={{ padding: '2px 0', fontSize: '12px' }}>
+                        <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '6px', fontSize: '12px' }} />
                         {item}
                       </List.Item>
                     )}
@@ -390,15 +390,15 @@ const BreederResourcesPage: React.FC = () => {
 
         {/* Workflow Process */}
         <section style={sectionStyle}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <Title level={2}>Your Breeding Workflow</Title>
-            <Paragraph style={{ fontSize: '18px', color: '#666' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <Title level={2} style={{ fontSize: '24px' }}>Your Breeding Workflow</Title>
+            <Paragraph style={{ fontSize: '16px', color: '#666' }}>
               Streamlined process from kennel setup to successful puppy rehoming
             </Paragraph>
           </div>
-          <Card style={cardStyle}>
+          <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
             <Steps
-              direction="horizontal"
+              direction="vertical"
               size="small"
               items={workflowSteps.map((step, index) => ({
                 title: step.title,
@@ -412,17 +412,17 @@ const BreederResourcesPage: React.FC = () => {
 
         {/* Benefits Section */}
         <section style={sectionStyle}>
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             <Col xs={24} lg={12}>
-              <Card style={cardStyle}>
-                <Title level={3} style={{ marginBottom: '24px' }}>
+              <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
+                <Title level={3} style={{ marginBottom: '16px', fontSize: '18px' }}>
                   Why Choose Our Platform?
                 </Title>
                 <List
                   dataSource={benefits}
                   renderItem={(item) => (
-                    <List.Item>
-                      <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
+                    <List.Item style={{ padding: '4px 0', fontSize: '14px' }}>
+                      <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px', fontSize: '14px' }} />
                       {item}
                     </List.Item>
                   )}
@@ -430,21 +430,21 @@ const BreederResourcesPage: React.FC = () => {
               </Card>
             </Col>
             <Col xs={24} lg={12}>
-              <Card style={cardStyle}>
-                <Title level={3} style={{ marginBottom: '24px' }}>
+              <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
+                <Title level={3} style={{ marginBottom: '16px', fontSize: '18px' }}>
                   Get Started Today
                 </Title>
-                <Paragraph style={{ marginBottom: '24px' }}>
+                <Paragraph style={{ marginBottom: '16px', fontSize: '14px' }}>
                   Join hundreds of successful breeders who have streamlined their operations and improved their puppy rehoming process.
                 </Paragraph>
-                <Space direction="vertical" style={{ width: '100%' }}>
+                <Space direction="vertical" style={{ width: '100%' }} size="middle">
                   <Link href="/kennel-management">
-                    <Button type="primary" size="large" block style={{ height: '48px', fontSize: '16px' }}>
+                    <Button type="primary" size="large" block style={{ height: '44px', fontSize: '14px' }}>
                       <SettingOutlined /> Setup Your Kennel
                     </Button>
                   </Link>
                   <Link href="/contact">
-                    <Button size="large" block style={{ height: '48px', fontSize: '16px' }}>
+                    <Button size="large" block style={{ height: '44px', fontSize: '14px' }}>
                       <CustomerServiceOutlined /> Contact Support
                     </Button>
                   </Link>
@@ -457,22 +457,22 @@ const BreederResourcesPage: React.FC = () => {
         {/* CTA Section */}
         <section style={{ ...sectionStyle, textAlign: 'center' }}>
           <Card style={cardStyle}>
-            <div style={{ padding: '48px 24px' }}>
-              <TrophyOutlined style={{ fontSize: '64px', color: '#1890ff', marginBottom: '24px' }} />
-              <Title level={2} style={{ marginBottom: '16px' }}>
+            <div style={{ padding: '32px 16px' }}>
+              <TrophyOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+              <Title level={2} style={{ marginBottom: '12px', fontSize: '20px' }}>
                 Ready to Transform Your Breeding Program?
               </Title>
-              <Paragraph style={{ fontSize: '18px', color: '#666', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>
+              <Paragraph style={{ fontSize: '16px', color: '#666', marginBottom: '24px', maxWidth: '600px', margin: '0 auto 24px' }}>
                 Join our platform and access professional tools designed specifically for breeders. Streamline your operations, improve family relationships, and focus on what you love most - breeding healthy, happy puppies.
               </Paragraph>
-              <Space size="large">
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 <Link href="/kennel-management">
-                  <Button size="large" type="primary" style={{ height: '48px', padding: '0 32px', fontSize: '16px' }}>
+                  <Button size="large" type="primary" style={{ height: '44px', padding: '0 24px', fontSize: '14px', width: '100%', maxWidth: '280px' }}>
                     Start Your Free Trial
                   </Button>
                 </Link>
                 <Link href="/contact">
-                  <Button size="large" style={{ height: '48px', padding: '0 32px', fontSize: '16px' }}>
+                  <Button size="large" style={{ height: '44px', padding: '0 24px', fontSize: '14px', width: '100%', maxWidth: '280px' }}>
                     Schedule Demo
                   </Button>
                 </Link>
