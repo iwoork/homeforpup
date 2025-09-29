@@ -1,10 +1,8 @@
-// hooks/useMessages.ts
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
-import { Message, MessageThread, MessageFilters } from '@/types';
-import { useAuth } from '@/hooks';
+import { Message, MessageThread, MessageFilters } from '../types';
 
 // Type definition for compose message form
 interface ComposeMessageFormValues {
@@ -236,7 +234,7 @@ export const useMessages = ({
       if (otherParticipant) {
         if ('participantNames' in selectedThread && selectedThread.participantNames) {
           recipientName = (selectedThread.participantNames as Record<string, string>)[otherParticipant] || 'Unknown';
-        } else if (selectedThread.lastMessage.senderId === otherParticipant) {
+        } else if (selectedThread.lastMessage?.senderId === otherParticipant) {
           recipientName = selectedThread.lastMessage.senderName || 'Unknown';
         }
       }
@@ -335,7 +333,7 @@ export const useMessages = ({
         const searchTerm = filters.search.toLowerCase();
         const matchesSearch = 
           thread.subject.toLowerCase().includes(searchTerm) ||
-          thread.lastMessage.content.toLowerCase().includes(searchTerm);
+          (thread.lastMessage?.content.toLowerCase().includes(searchTerm) ?? false);
         if (!matchesSearch) return false;
       }
 
@@ -345,7 +343,7 @@ export const useMessages = ({
         if (!filters.read && !isUnread) return false;
       }
 
-      if (filters.type && thread.lastMessage.messageType !== filters.type) {
+      if (filters.type && thread.lastMessage?.messageType !== filters.type) {
         return false;
       }
 

@@ -10,7 +10,8 @@
   "dependencies": {
     "react": "^19.0.0",
     "antd": "^5.12.8",
-    "@ant-design/icons": "^5.2.6"
+    "@ant-design/icons": "^5.2.6",
+    "swr": "^2.3.6"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

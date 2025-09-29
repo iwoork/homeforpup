@@ -39,6 +39,12 @@ export interface MessageThread {
   updatedAt: string;
 }
 
+export interface MessageFilters {
+  search?: string;
+  read?: boolean;
+  type?: 'inquiry' | 'general' | 'business' | 'urgent';
+}
+
 export interface Announcement {
   id: string;
   title: string;

@@ -81,7 +81,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
       setLoadingThread(true);
       fetchThreadMessages(selectedThread.id).then(messages => {
         // Sort messages by timestamp (oldest first for chat display)
-        const sortedMessages = messages.sort((a, b) => 
+        const sortedMessages = messages.sort((a: Message, b: Message) => 
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
         );
         setThreadMessages(sortedMessages);
@@ -388,7 +388,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
                     console.log('Messages refreshed:', messagesResult.length, 'messages');
                     
                     // Sort messages by timestamp (oldest first for chat display)
-                    const sortedMessages = messagesResult.sort((a, b) => 
+                    const sortedMessages = messagesResult.sort((a: Message, b: Message) => 
                       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
                     );
                     
