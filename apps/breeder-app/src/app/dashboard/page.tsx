@@ -131,6 +131,72 @@ const BreederDashboard: React.FC = () => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .dashboard-container {
+            padding: 16px !important;
+          }
+          .ant-col {
+            margin-bottom: 16px !important;
+          }
+          .ant-card {
+            margin-bottom: 16px !important;
+          }
+          .ant-card-head {
+            padding: 0 16px !important;
+            min-height: 48px !important;
+          }
+          .ant-card-head-title {
+            font-size: 16px !important;
+            padding: 12px 0 !important;
+          }
+          .ant-card-body {
+            padding: 16px !important;
+          }
+          .ant-statistic-title {
+            font-size: 12px !important;
+          }
+          .ant-statistic-content {
+            font-size: 20px !important;
+          }
+          .ant-btn {
+            height: 44px !important;
+            font-size: 14px !important;
+          }
+          .ant-typography h1 {
+            font-size: 24px !important;
+          }
+          .ant-typography h4 {
+            font-size: 16px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .dashboard-container {
+            padding: 12px !important;
+          }
+          .ant-card-body {
+            padding: 12px !important;
+          }
+          .ant-card-head {
+            padding: 0 12px !important;
+            min-height: 44px !important;
+          }
+          .ant-card-head-title {
+            font-size: 14px !important;
+            padding: 8px 0 !important;
+          }
+          .ant-btn {
+            height: 40px !important;
+            font-size: 13px !important;
+          }
+          .ant-typography h1 {
+            font-size: 20px !important;
+          }
+          .ant-typography h4 {
+            font-size: 14px !important;
+          }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <Title level={1}>Breeder Dashboard</Title>

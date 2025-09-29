@@ -245,6 +245,82 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   return (
     <div>
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .ant-list-item-meta {
+            align-items: flex-start !important;
+          }
+          .ant-list-item-meta-avatar {
+            margin-right: 12px !important;
+            margin-top: 2px !important;
+          }
+          .ant-list-item-meta-content {
+            flex: 1 !important;
+            min-width: 0 !important;
+          }
+          .ant-list-item-meta-title {
+            margin-bottom: 8px !important;
+          }
+          .ant-list-item-meta-description {
+            margin-bottom: 0 !important;
+          }
+          .ant-tag {
+            font-size: 10px !important;
+            padding: 2px 6px !important;
+            margin: 0 !important;
+            line-height: 1.2 !important;
+            border-radius: 4px !important;
+          }
+          .ant-avatar {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 14px !important;
+          }
+          .ant-list-item {
+            padding: 12px !important;
+            margin-bottom: 8px !important;
+          }
+          .ant-card {
+            margin-bottom: 16px !important;
+          }
+          .ant-card-head {
+            padding: 0 12px !important;
+            min-height: 48px !important;
+          }
+          .ant-card-head-title {
+            font-size: 16px !important;
+            padding: 12px 0 !important;
+          }
+          .ant-card-body {
+            padding: 12px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .ant-list-item {
+            padding: 8px !important;
+            margin-bottom: 6px !important;
+          }
+          .ant-avatar {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 12px !important;
+          }
+          .ant-list-item-meta-avatar {
+            margin-right: 8px !important;
+          }
+          .ant-card-body {
+            padding: 8px !important;
+          }
+          .ant-card-head {
+            padding: 0 8px !important;
+            min-height: 44px !important;
+          }
+          .ant-card-head-title {
+            font-size: 14px !important;
+            padding: 8px 0 !important;
+          }
+        }
+      `}</style>
       {/* Stats */}
       {showStats && (
         <Card style={{ marginBottom: '16px' }}>
@@ -332,7 +408,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                 style={{
                   backgroundColor: activity.read ? 'transparent' : '#f6ffed',
                   borderLeft: activity.read ? 'none' : '3px solid #52c41a',
-                  padding: '16px',
+                  padding: '12px',
                   marginBottom: '8px',
                   borderRadius: '8px',
                   cursor: 'pointer'
@@ -349,6 +425,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                     <Badge dot={!activity.read}>
                       <Avatar 
                         icon={getActivityIcon(activity.type)}
+                        size="small"
                         style={{ 
                           backgroundColor: getActivityColor(activity.category),
                           border: `2px solid ${getPriorityColor(activity.priority)}`
@@ -357,22 +434,78 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                     </Badge>
                   }
                   title={
-                    <Space>
-                      <Text strong={!activity.read}>{activity.title}</Text>
-                      <Tag color={getActivityColor(activity.category)}>
-                        {activity.category}
-                      </Tag>
-                      <Tag color={getPriorityColor(activity.priority)}>
-                        {activity.priority}
-                      </Tag>
-                    </Space>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '4px',
+                      width: '100%'
+                    }}>
+                      <Text 
+                        strong={!activity.read} 
+                        style={{ 
+                          fontSize: '14px',
+                          lineHeight: '1.4',
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        {activity.title}
+                      </Text>
+                      <div style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: '4px',
+                        marginTop: '4px'
+                      }}>
+                        <Tag 
+                          color={getActivityColor(activity.category)}
+                          style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px',
+                            margin: 0,
+                            lineHeight: '1.2'
+                          }}
+                        >
+                          {activity.category}
+                        </Tag>
+                        <Tag 
+                          color={getPriorityColor(activity.priority)}
+                          style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px',
+                            margin: 0,
+                            lineHeight: '1.2'
+                          }}
+                        >
+                          {activity.priority}
+                        </Tag>
+                      </div>
+                    </div>
                   }
                   description={
-                    <div>
-                      <Paragraph style={{ margin: 0, color: activity.read ? '#666' : '#333' }}>
+                    <div style={{ marginTop: '8px' }}>
+                      <Paragraph 
+                        style={{ 
+                          margin: 0, 
+                          color: activity.read ? '#666' : '#333',
+                          fontSize: '13px',
+                          lineHeight: '1.4',
+                          wordBreak: 'break-word',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}
+                      >
                         {activity.description}
                       </Paragraph>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                      <Text 
+                        type="secondary" 
+                        style={{ 
+                          fontSize: '11px',
+                          display: 'block',
+                          marginTop: '4px'
+                        }}
+                      >
                         {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                       </Text>
                     </div>
