@@ -47,7 +47,61 @@ const staticRoutes = [
     priority: 0.7,
   },
   {
+    url: '/accessibility',
+    lastModified: new Date(),
+    changeFrequency: 'yearly' as const,
+    priority: 0.4,
+  },
+  {
+    url: '/contact',
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  },
+  {
+    url: '/cookies',
+    lastModified: new Date(),
+    changeFrequency: 'yearly' as const,
+    priority: 0.3,
+  },
+  {
+    url: '/dashboard',
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
+  },
+  {
+    url: '/dashboard/activity',
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  },
+  {
+    url: '/dashboard/favorites',
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  },
+  {
+    url: '/dashboard/messages',
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  },
+  {
+    url: '/ethical-guidelines',
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  },
+  {
     url: '/faq',
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  },
+  {
+    url: '/kennel-management',
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
@@ -63,6 +117,18 @@ const staticRoutes = [
     lastModified: new Date(),
     changeFrequency: 'yearly' as const,
     priority: 0.3,
+  },
+  {
+    url: '/auth/login',
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  },
+  {
+    url: '/auth/error',
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.4,
   },
 ]
 
