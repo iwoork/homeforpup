@@ -4,11 +4,15 @@ import React from 'react';
 import { useAuth } from '@homeforpup/shared-auth';
 import { MessagesPage } from '@homeforpup/shared-messaging';
 
-const BreederMessagesPage: React.FC = () => {
-  const { user, effectiveUserType } = useAuth();
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
-  // Redirect non-breeders
-  if (effectiveUserType === 'adopter') {
+const BreederMessagesPage: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  console.log('BreederMessagesPage: user data:', { user, loading });
+
+  if (loading) {
     return (
       <div style={{
         maxWidth: '1200px',
@@ -16,8 +20,22 @@ const BreederMessagesPage: React.FC = () => {
         padding: '32px 16px'
       }}>
         <div style={{ textAlign: 'center', padding: '40px' }}>
-          <h2>Messages are only available for breeders</h2>
-          <p>Please switch to breeder mode to access messages.</p>
+          <p>Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user?.userId) {
+    return (
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '32px 16px'
+      }}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <h2>No user ID found</h2>
+          <p>Please log in to access messages.</p>
         </div>
       </div>
     );
@@ -25,7 +43,7 @@ const BreederMessagesPage: React.FC = () => {
 
   return (
     <MessagesPage 
-      userId={user?.id} 
+      userId={user.userId} 
       userType="breeder"
     />
   );

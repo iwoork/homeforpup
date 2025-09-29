@@ -4,6 +4,9 @@ import React from 'react';
 import { useAuth } from '@homeforpup/shared-auth';
 import { MessagesPage } from '@homeforpup/shared-messaging';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const AdopterMessagesPage: React.FC = () => {
   const { user, loading } = useAuth();
 
