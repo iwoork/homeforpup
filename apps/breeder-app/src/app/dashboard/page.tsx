@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Statistic, List, Avatar, Tag, Spin, Alert } from 'antd';
+import { Card, Row, Col, Typography, Button, Space, Statistic, Spin, Alert } from 'antd';
 import { 
-  HeartOutlined, 
+  HomeOutlined, 
+  TeamOutlined, 
   MessageOutlined, 
-  EyeOutlined, 
-  UserOutlined,
-  SearchOutlined,
-  CalendarOutlined,
-  TeamOutlined,
+  BarChartOutlined,
+  PlusOutlined,
+  SettingOutlined,
+  BellOutlined,
+  HeartOutlined,
+  EyeOutlined,
   TrophyOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
@@ -17,35 +19,45 @@ import { useAuth } from '@homeforpup/shared-auth';
 import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity';
 import useSWR from 'swr';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 
-interface DashboardStats {
-  totalFavorites: number;
-  totalMessages: number;
+interface BreederStats {
+  activeKennels: number;
+  totalDogs: number;
+  availablePuppies: number;
+  newMessages: number;
   profileViews: number;
-  activeThreads: number;
+  totalFavorites: number;
 }
 
-
-const AdopterDashboard: React.FC = () => {
+const BreederDashboard: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalFavorites: 0,
-    totalMessages: 0,
+  const [stats, setStats] = useState<BreederStats>({
+    activeKennels: 0,
+    totalDogs: 0,
+    availablePuppies: 0,
+    newMessages: 0,
     profileViews: 0,
-    activeThreads: 0
+    totalFavorites: 0
   });
 
-  // Fetch user's favorites
-  const { data: favoritesData } = useSWR(
-    isAuthenticated ? '/api/favorites' : null,
+  // Fetch breeder data
+  const { data: kennelsData } = useSWR(
+    isAuthenticated ? '/api/kennels' : null,
     async (url) => {
       const response = await fetch(url);
       return response.json();
     }
   );
 
-  // Fetch user's message threads
+  const { data: dogsData } = useSWR(
+    isAuthenticated ? '/api/dogs' : null,
+    async (url) => {
+      const response = await fetch(url);
+      return response.json();
+    }
+  );
+
   const { data: threadsData } = useSWR(
     isAuthenticated ? '/api/messages/threads' : null,
     async (url) => {
@@ -56,16 +68,25 @@ const AdopterDashboard: React.FC = () => {
 
   // Calculate stats
   useEffect(() => {
-    if (favoritesData && threadsData && user) {
+    if (kennelsData && dogsData && threadsData && user) {
       setStats({
-        totalFavorites: favoritesData.favorites?.length || 0,
-        totalMessages: threadsData.threads?.reduce((total: number, thread: any) => 
+        activeKennels: kennelsData.kennels?.length || 0,
+        totalDogs: dogsData.dogs?.length || 0,
+        availablePuppies: dogsData.dogs?.filter((dog: any) => dog.dogType === 'puppy' && dog.breedingStatus === 'available').length || 0,
+        newMessages: threadsData.threads?.reduce((total: number, thread: any) => 
           total + (thread.unreadCount?.[user.userId] || 0), 0) || 0,
         profileViews: user.profileViews || 0,
-        activeThreads: threadsData.threads?.length || 0
+        totalFavorites: 0 // This would need to be fetched from a favorites API
       });
     }
-  }, [favoritesData, threadsData, user]);
+  }, [kennelsData, dogsData, threadsData, user]);
+
+  // Track page view activity
+  useEffect(() => {
+    if (user?.userId) {
+      activityTracker.trackPageView(user.userId, 'breeder-dashboard');
+    }
+  }, [user?.userId]);
 
   if (loading) {
     return (
@@ -88,7 +109,7 @@ const AdopterDashboard: React.FC = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
         <Alert
           message="Authentication Required"
-          description="Please sign in to access your dashboard."
+          description="Please sign in to access your breeder dashboard."
           type="warning"
           showIcon
           action={
@@ -101,13 +122,6 @@ const AdopterDashboard: React.FC = () => {
     );
   }
 
-  // Track page view activity
-  useEffect(() => {
-    if (user?.userId) {
-      activityTracker.trackPageView(user.userId, 'dashboard');
-    }
-  }, [user?.userId]);
-
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
@@ -115,74 +129,54 @@ const AdopterDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-      {/* Welcome Header */}
-      <Card style={{ marginBottom: '24px', ...cardStyle }}>
-        <Row align="middle" justify="space-between">
-          <Col>
-            <Title level={2} style={{ margin: 0, color: '#08979C' }}>
-              Welcome back, {user.displayName || user.name}!
-            </Title>
-            <Paragraph style={{ margin: '8px 0 0 0', color: '#666' }}>
-              Here's what's happening with your adoption journey
-            </Paragraph>
-          </Col>
-          <Col>
-            <Space>
-              <Link href="/browse">
-                <Button type="primary" icon={<SearchOutlined />}>
-                  Browse Puppies
-                </Button>
-              </Link>
-              <Link href={`/users/${user.userId}`}>
-                <Button icon={<UserOutlined />}>
-                  View Profile
-                </Button>
-              </Link>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <Title level={1}>Breeder Dashboard</Title>
+        <Paragraph style={{ fontSize: '1.1rem' }}>
+          Manage your kennel, dogs, and connect with potential families
+        </Paragraph>
+      </div>
 
-      {/* Stats Cards */}
-      <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} lg={6}>
+      {/* Quick Stats */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
+        <Col xs={12} sm={6}>
           <Card style={cardStyle}>
             <Statistic
-              title="Favorites"
-              value={stats.totalFavorites}
-              prefix={<HeartOutlined style={{ color: '#f5222d' }} />}
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card style={cardStyle}>
-            <Statistic
-              title="Unread Messages"
-              value={stats.totalMessages}
-              prefix={<MessageOutlined style={{ color: '#1890ff' }} />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card style={cardStyle}>
-            <Statistic
-              title="Profile Views"
-              value={stats.profileViews}
-              prefix={<EyeOutlined style={{ color: '#52c41a' }} />}
+              title="Active Kennels"
+              value={stats.activeKennels}
+              prefix={<HomeOutlined style={{ color: '#52c41a' }} />}
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={12} sm={6}>
           <Card style={cardStyle}>
             <Statistic
-              title="Active Conversations"
-              value={stats.activeThreads}
-              prefix={<TeamOutlined style={{ color: '#fa8c16' }} />}
+              title="Total Dogs"
+              value={stats.totalDogs}
+              prefix={<TeamOutlined style={{ color: '#1890ff' }} />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card style={cardStyle}>
+            <Statistic
+              title="Available Puppies"
+              value={stats.availablePuppies}
+              prefix={<TrophyOutlined style={{ color: '#fa8c16' }} />}
               valueStyle={{ color: '#fa8c16' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card style={cardStyle}>
+            <Statistic
+              title="New Messages"
+              value={stats.newMessages}
+              prefix={<MessageOutlined style={{ color: '#f5222d' }} />}
+              valueStyle={{ color: '#f5222d' }}
             />
           </Card>
         </Col>
@@ -193,7 +187,7 @@ const AdopterDashboard: React.FC = () => {
         <Col span={24}>
           <ActivityStats
             userId={user.userId}
-            userType="adopter"
+            userType="breeder"
             period="week"
           />
         </Col>
@@ -204,7 +198,7 @@ const AdopterDashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <ActivityFeed
             userId={user.userId}
-            userType="adopter"
+            userType="breeder"
             limit={5}
             showFilters={false}
             showStats={false}
@@ -219,37 +213,26 @@ const AdopterDashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card title="Quick Actions" style={cardStyle}>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Link href="/browse">
+              <Link href="/kennels">
                 <Button 
                   type="primary" 
                   block 
                   size="large"
-                  icon={<SearchOutlined />}
+                  icon={<HomeOutlined />}
                   style={{ height: '48px', fontSize: '16px' }}
                 >
-                  Browse Available Puppies
+                  Manage Kennels
                 </Button>
               </Link>
               
-              <Link href="/breeds">
+              <Link href="/dogs">
                 <Button 
                   block 
                   size="large"
-                  icon={<TrophyOutlined />}
+                  icon={<TeamOutlined />}
                   style={{ height: '48px', fontSize: '16px' }}
                 >
-                  Explore Dog Breeds
-                </Button>
-              </Link>
-              
-              <Link href="/dashboard/favorites">
-                <Button 
-                  block 
-                  size="large"
-                  icon={<HeartOutlined />}
-                  style={{ height: '48px', fontSize: '16px' }}
-                >
-                  View My Favorites
+                  Manage Dogs
                 </Button>
               </Link>
               
@@ -264,14 +247,25 @@ const AdopterDashboard: React.FC = () => {
                 </Button>
               </Link>
               
-              <Link href="/users">
+              <Link href="/announcements/new">
                 <Button 
                   block 
                   size="large"
-                  icon={<TeamOutlined />}
+                  icon={<PlusOutlined />}
                   style={{ height: '48px', fontSize: '16px' }}
                 >
-                  Connect with Breeders
+                  Create Announcement
+                </Button>
+              </Link>
+              
+              <Link href="/analytics">
+                <Button 
+                  block 
+                  size="large"
+                  icon={<BarChartOutlined />}
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  View Analytics
                 </Button>
               </Link>
             </Space>
@@ -286,25 +280,25 @@ const AdopterDashboard: React.FC = () => {
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12}>
                 <div style={{ textAlign: 'center', padding: '16px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '8px' }}>📝</div>
-                  <Title level={4}>Complete Your Profile</Title>
+                  <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏠</div>
+                  <Title level={4}>Complete Your Kennel Profile</Title>
                   <Paragraph>
-                    Add more details to help breeders understand your preferences
+                    Add more details to help families understand your breeding practices
                   </Paragraph>
-                  <Link href={`/users/${user.userId}/edit`}>
-                    <Button type="primary">Edit Profile</Button>
+                  <Link href="/kennels">
+                    <Button type="primary">Manage Kennels</Button>
                   </Link>
                 </div>
               </Col>
               <Col xs={24} sm={12}>
                 <div style={{ textAlign: 'center', padding: '16px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '8px' }}>🎯</div>
-                  <Title level={4}>Set Preferences</Title>
+                  <div style={{ fontSize: '48px', marginBottom: '8px' }}>🐕</div>
+                  <Title level={4}>Add Your Dogs</Title>
                   <Paragraph>
-                    Tell us about your ideal dog to get better matches
+                    Showcase your breeding dogs and their health clearances
                   </Paragraph>
-                  <Link href={`/users/${user.userId}/edit`}>
-                    <Button type="primary">Set Preferences</Button>
+                  <Link href="/dogs">
+                    <Button type="primary">Manage Dogs</Button>
                   </Link>
                 </div>
               </Col>
@@ -316,4 +310,4 @@ const AdopterDashboard: React.FC = () => {
   );
 };
 
-export default AdopterDashboard;
+export default BreederDashboard;

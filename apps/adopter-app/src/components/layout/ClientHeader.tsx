@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 import { useSession } from 'next-auth/react';
@@ -193,11 +193,16 @@ const ClientHeader: React.FC = () => {
         icon: <SettingOutlined />,
         label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
       },
-      {
-        key: 'favorites',
-        icon: <HeartOutlined />,
-        label: <Link href="/dashboard/favorites">My Favorites</Link>,
-      },
+            {
+              key: 'favorites',
+              icon: <HeartOutlined />,
+              label: <Link href="/dashboard/favorites">My Favorites</Link>,
+            },
+            {
+              key: 'activity',
+              icon: <BellOutlined />,
+              label: <Link href="/dashboard/activity">My Activity</Link>,
+            },
       {
         type: 'divider',
       },

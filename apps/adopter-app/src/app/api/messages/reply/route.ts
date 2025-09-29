@@ -1,7 +1,6 @@
-// src/app/api/messages/reply/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,280 +21,96 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
     convertClassInstanceToMap: false,
   },
 });
+
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
 const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
-
-// Helper function to get user info from users table
-async function getUserInfo(userId: string) {
-  try {
-    const result = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: userId }
-    }));
-    
-    if (result.Item) {
-      return {
-        name: result.Item.displayName || result.Item.name || result.Item.firstName || 'Unknown User',
-        displayName: result.Item.displayName,
-        profileImage: result.Item.profileImage,
-        userType: result.Item.userType || 'adopter'
-      };
-    }
-    
-    return {
-      name: `User ${userId.slice(-4)}`,
-      displayName: undefined,
-      profileImage: undefined,
-      userType: 'adopter'
-    };
-  } catch (error) {
-    console.error('Error fetching user info:', error);
-    return {
-      name: `User ${userId.slice(-4)}`,
-      displayName: undefined,
-      profileImage: undefined,
-      userType: 'adopter'
-    };
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the session using NextAuth (consistent with threads API)
     const session = await getServerSession(authOptions);
-    
-    if (!session?.user || !(session.user as any).id) {
-      console.log('No valid session found for reply request');
-      return NextResponse.json({ 
-        error: 'Your session has expired. Please refresh the page to continue.',
-        code: 'SESSION_EXPIRED'
-      }, { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
-    const senderNameFromSession = (session.user as any).name || 'User';
-    console.log('Session verification successful for reply, user:', userId.substring(0, 10) + '...', 'name from session:', senderNameFromSession);
 
     const body = await request.json();
     const { threadId, content, receiverId, receiverName, subject } = body;
 
     if (!threadId || !content || !receiverId) {
       return NextResponse.json(
-        { error: 'Missing required fields: threadId, content, receiverId' }, 
+        { error: 'Missing required fields: threadId, content, receiverId' },
         { status: 400 }
       );
     }
 
-    // Security checks
-    if (!userId) {
-      return NextResponse.json({ error: 'Invalid user authentication' }, { status: 401 });
-    }
-
-    if (userId === receiverId) {
-      return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
-    }
-
-    console.log('Sending reply to thread:', threadId, 'from:', userId.substring(0, 10) + '...', 'to:', receiverId.substring(0, 10) + '...');
-
-    // Verify thread exists and user has access
-    const threadCommand = new GetCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: `${threadId}#${userId}` }
-    });
-
-    const threadResult = await dynamodb.send(threadCommand);
-    if (!threadResult.Item) {
-      console.log('Thread not found or access denied for user:', userId);
-      return NextResponse.json({ error: 'Thread not found or access denied' }, { status: 403 });
-    }
-
-    // Verify user is actually a participant in the thread
-    const threadParticipants = threadResult.Item.participants || [];
-    if (!threadParticipants.includes(userId)) {
-      console.log('User is not a participant in thread:', threadId);
-      return NextResponse.json({ error: 'Access denied - not a participant' }, { status: 403 });
-    }
-
-    // Verify the receiverId is also a participant in the thread
-    if (!threadParticipants.includes(receiverId)) {
-      console.log('Receiver is not a participant in thread:', threadId);
-      return NextResponse.json({ error: 'Invalid receiver - not a participant' }, { status: 400 });
-    }
-
-    // Get comprehensive user info for both sender and recipient
-    const [senderInfo, receiverInfo] = await Promise.all([
-      getUserInfo(userId),
-      (receiverName && receiverName !== 'Unknown User' && receiverName.trim() !== '') 
-        ? Promise.resolve({
-            name: receiverName,
-            displayName: receiverName,
-            profileImage: undefined,
-            userType: 'adopter'
-          })
-        : getUserInfo(receiverId)
-    ]);
-
-    console.log('Resolved user info for reply - Sender:', senderInfo.name, 'Receiver:', receiverInfo.name);
-
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
+    const userId = session.user.id;
 
-    const message = {
-      id: messageId,
+    // Create the new message with the correct DynamoDB structure
+    const newMessage = {
+      PK: threadId, // Partition key is threadId
+      SK: messageId, // Sort key is messageId
       threadId,
       senderId: userId,
-      senderName: senderInfo.name,
-      senderAvatar: senderInfo.profileImage,
+      senderName: session.user.name || 'Unknown User',
       receiverId,
-      receiverName: receiverInfo.name,
-      subject: subject || `Re: ${threadResult.Item.subject}`,
+      receiverName: receiverName || 'Unknown User',
       content,
-      timestamp,
+      subject: subject || 'Re: Message',
+      messageType: 'general',
       read: false,
-      messageType: 'general'
+      timestamp,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      // GSI keys for querying by sender/receiver
+      GSI1PK: userId, // senderId
+      GSI1SK: timestamp,
+      GSI2PK: receiverId, // receiverId
+      GSI2SK: timestamp
     };
 
-    // Transaction to add message and update thread records
-    const transactItems = [
-      // Add new message
-      {
-        Put: {
-          TableName: MESSAGES_TABLE,
-          Item: {
-            PK: threadId,
-            SK: messageId,
-            GSI1PK: userId,
-            GSI1SK: timestamp,
-            GSI2PK: receiverId,
-            GSI2SK: timestamp,
-            ...message
-          }
-        }
-      },
-      // Update main thread record
-      {
-        Update: {
-          TableName: THREADS_TABLE,
-          Key: { PK: threadId },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName, participantInfo.#sender = :senderInfo, participantInfo.#receiver = :receiverInfo',
-          ExpressionAttributeNames: {
-            '#receiver': receiverId,
-            '#sender': userId
-          },
-          ExpressionAttributeValues: {
-            ':msg': message,
-            ':inc': 1,
-            ':timestamp': timestamp,
-            ':senderName': senderInfo.name,
-            ':receiverName': receiverInfo.name,
-            ':senderInfo': {
-              name: senderInfo.name,
-              displayName: senderInfo.displayName,
-              profileImage: senderInfo.profileImage,
-              userType: senderInfo.userType
-            },
-            ':receiverInfo': {
-              name: receiverInfo.name,
-              displayName: receiverInfo.displayName,
-              profileImage: receiverInfo.profileImage,
-              userType: receiverInfo.userType
-            }
-          }
-        }
-      },
-      // Update sender's participant record
-      {
-        Update: {
-          TableName: THREADS_TABLE,
-          Key: { PK: `${threadId}#${userId}` },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName, participantInfo.#sender = :senderInfo, participantInfo.#receiver = :receiverInfo',
-          ExpressionAttributeNames: {
-            '#sender': userId,
-            '#receiver': receiverId
-          },
-          ExpressionAttributeValues: {
-            ':msg': message,
-            ':inc': 1,
-            ':timestamp': timestamp,
-            ':senderName': senderInfo.name,
-            ':receiverName': receiverInfo.name,
-            ':senderInfo': {
-              name: senderInfo.name,
-              displayName: senderInfo.displayName,
-              profileImage: senderInfo.profileImage,
-              userType: senderInfo.userType
-            },
-            ':receiverInfo': {
-              name: receiverInfo.name,
-              displayName: receiverInfo.displayName,
-              profileImage: receiverInfo.profileImage,
-              userType: receiverInfo.userType
-            }
-          }
-        }
-      },
-      // Update receiver's participant record
-      {
-        Update: {
-          TableName: THREADS_TABLE,
-          Key: { PK: `${threadId}#${receiverId}` },
-          UpdateExpression: 'SET lastMessage = :msg, messageCount = messageCount + :inc, updatedAt = :timestamp, GSI1SK = :timestamp, unreadCount.#receiver = unreadCount.#receiver + :inc, participantNames.#sender = :senderName, participantNames.#receiver = :receiverName, participantInfo.#sender = :senderInfo, participantInfo.#receiver = :receiverInfo',
-          ExpressionAttributeNames: {
-            '#receiver': receiverId,
-            '#sender': userId
-          },
-          ExpressionAttributeValues: {
-            ':msg': message,
-            ':inc': 1,
-            ':timestamp': timestamp,
-            ':senderName': senderInfo.name,
-            ':receiverName': receiverInfo.name,
-            ':senderInfo': {
-              name: senderInfo.name,
-              displayName: senderInfo.displayName,
-              profileImage: senderInfo.profileImage,
-              userType: senderInfo.userType
-            },
-            ':receiverInfo': {
-              name: receiverInfo.name,
-              displayName: receiverInfo.displayName,
-              profileImage: receiverInfo.profileImage,
-              userType: receiverInfo.userType
-            }
-          }
-        }
-      }
-    ];
+    // Save the message
+    await dynamodb.send(new PutCommand({
+      TableName: MESSAGES_TABLE,
+      Item: newMessage
+    }));
 
-    const command = new TransactWriteCommand({
-      TransactItems: transactItems
+    // Update the thread participant records for both users
+    const updatePromises = [userId, receiverId].map(participantId => 
+      dynamodb.send(new UpdateCommand({
+        TableName: THREADS_TABLE,
+        Key: { PK: `${threadId}#${participantId}` },
+        UpdateExpression: 'SET lastMessage = :lastMessage, messageCount = messageCount + :inc, updatedAt = :updatedAt, unreadCount.#receiverId = unreadCount.#receiverId + :inc',
+        ExpressionAttributeNames: {
+          '#receiverId': receiverId
+        },
+        ExpressionAttributeValues: {
+          ':lastMessage': {
+            id: messageId,
+            content,
+            senderId: userId,
+            senderName: session.user.name || 'Unknown User',
+            messageType: 'general',
+            timestamp
+          },
+          ':inc': 1,
+          ':updatedAt': timestamp
+        }
+      }))
+    );
+
+    await Promise.all(updatePromises);
+
+    return NextResponse.json({ 
+      message: 'Reply sent successfully',
+      messageId,
+      threadId 
     });
-
-    await dynamodb.send(command);
-
-    console.log('Reply sent successfully:', messageId, 'from:', senderInfo.name, 'to:', receiverInfo.name);
-
-    return NextResponse.json({ message }, { status: 201 });
 
   } catch (error) {
     console.error('Error sending reply:', error);
-    
-    // Handle specific JWT errors
-    if (error instanceof Error) {
-      if (error.message.includes('Token expired') || error.message.includes('Invalid token')) {
-        return NextResponse.json({ error: 'Authentication expired. Please log in again.' }, { status: 401 });
-      }
-      if (error.message.includes('Token verification failed')) {
-        return NextResponse.json({ error: 'Invalid authentication.' }, { status: 401 });
-      }
-    }
-    
     return NextResponse.json(
-      { 
-        error: 'Failed to send reply',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

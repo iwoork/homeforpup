@@ -32,6 +32,7 @@ import {
 } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
+import { activityTracker } from '@homeforpup/shared-activity';
 
 const { Text } = Typography;
 
@@ -120,6 +121,9 @@ const PuppyList: React.FC<PuppyListProps> = ({
   user
 }) => {
   const [optimisticFavorites, setOptimisticFavorites] = useState<Record<string, boolean>>({});
+  
+  // Get current user ID for activity tracking
+  const currentUserId = user?.userId || user?.id;
 
   // Helper function to get current favorite status
   const getCurrentFavoriteStatus = (puppyId: string): boolean => {
@@ -140,13 +144,32 @@ const PuppyList: React.FC<PuppyListProps> = ({
       return;
     }
     
+    const currentStatus = getCurrentFavoriteStatus(puppy.id);
+    const newStatus = !currentStatus;
+    
+    // Track favorite activity
+    if (currentUserId) {
+      await activityTracker.trackPuppyActivity(
+        currentUserId,
+        newStatus ? 'puppy_favorited' : 'puppy_unfavorited',
+        puppy.id,
+        puppy.name,
+        puppy.breed,
+        puppy.breeder.id,
+        puppy.breeder.businessName,
+        {
+          puppyPrice: puppy.price,
+          puppyAge: puppy.ageWeeks,
+          puppyGender: puppy.gender,
+          puppyPhotos: puppy.image ? [puppy.image] : [],
+        }
+      );
+    }
+    
     if (onToggleFavorite) {
       onToggleFavorite(puppy);
     } else {
       // Fallback optimistic update
-      const currentStatus = getCurrentFavoriteStatus(puppy.id);
-      const newStatus = !currentStatus;
-      
       setOptimisticFavorites(prev => ({
         ...prev,
         [puppy.id]: newStatus
@@ -160,7 +183,26 @@ const PuppyList: React.FC<PuppyListProps> = ({
     }
   };
 
-  const handleViewDetails = (puppy: PuppyWithBreeder) => {
+  const handleViewDetails = async (puppy: PuppyWithBreeder) => {
+    // Track puppy view activity
+    if (currentUserId) {
+      await activityTracker.trackPuppyActivity(
+        currentUserId,
+        'puppy_viewed',
+        puppy.id,
+        puppy.name,
+        puppy.breed,
+        puppy.breeder.id,
+        puppy.breeder.businessName,
+        {
+          puppyPrice: puppy.price,
+          puppyAge: puppy.ageWeeks,
+          puppyGender: puppy.gender,
+          puppyPhotos: puppy.image ? [puppy.image] : [],
+        }
+      );
+    }
+
     if (onViewDetails) {
       onViewDetails(puppy);
     }

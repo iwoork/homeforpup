@@ -139,10 +139,13 @@ export const useMessaging = (userId?: string) => {
 
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - messageIds.length));
+      
+      // Refresh threads to update unread counts
+      await fetchMessages();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark messages as read');
     }
-  }, []);
+  }, [fetchMessages]);
 
   const deleteMessage = useCallback(async (messageId: string) => {
     try {

@@ -80,7 +80,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
     if (selectedThread) {
       setLoadingThread(true);
       fetchThreadMessages(selectedThread.id).then(messages => {
-        setThreadMessages(messages);
+        // Sort messages by timestamp (oldest first for chat display)
+        const sortedMessages = messages.sort((a, b) => 
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+        setThreadMessages(sortedMessages);
         setLoadingThread(false);
       });
     }
@@ -108,12 +112,31 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
   };
 
 
-  const handleThreadSelect = (thread: MessageThread) => {
+  const handleThreadSelect = async (thread: MessageThread) => {
     setSelectedThread(thread);
-    // Mark messages as read when thread is opened
-    const unreadMessages = threadMessages.filter(msg => !msg.read);
-    if (unreadMessages.length > 0) {
-      markAsRead(unreadMessages.map(msg => msg.id));
+    
+    // Mark all messages in this thread as read for the current user
+    const unreadCount = thread.unreadCount[userId || ''] || 0;
+    console.log('Selecting thread:', thread.subject, 'unread count:', unreadCount);
+    
+    if (unreadCount > 0) {
+      try {
+        console.log('Marking thread messages as read...');
+        const response = await fetch(`/api/messages/threads/${thread.id}/mark-read`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          console.log('Successfully marked messages as read, refreshing threads...');
+          // Refresh the threads list to update unread counts
+          await fetchMessages();
+        } else {
+          console.error('Failed to mark messages as read:', response.status);
+        }
+      } catch (error) {
+        console.error('Failed to mark thread messages as read:', error);
+      }
     }
   };
 
@@ -356,20 +379,30 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter
                       throw new Error(errorData.error || 'Failed to send reply');
                     }
 
-                    // Refresh the entire messages list to update thread counts
-                    await fetchMessages();
+                    // Refresh threads first, then get messages
+                    console.log('Refreshing threads and messages after reply...');
+                    await fetchMessages(); // Refresh threads list
                     
-                    // Refresh the current thread messages
-                    const messages = await fetchThreadMessages(selectedThread.id);
-                    setThreadMessages(messages);
+                    // Get the updated messages for the current thread
+                    const messagesResult = await fetchThreadMessages(selectedThread.id);
+                    console.log('Messages refreshed:', messagesResult.length, 'messages');
+                    
+                    // Sort messages by timestamp (oldest first for chat display)
+                    const sortedMessages = messagesResult.sort((a, b) => 
+                      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    );
+                    
+                    // Update the thread messages state
+                    setThreadMessages(sortedMessages);
                     
                     // Update the selected thread to reflect the new last message
-                    if (messages.length > 0) {
-                      const lastMessage = messages[messages.length - 1];
+                    if (sortedMessages.length > 0) {
+                      const lastMessage = sortedMessages[sortedMessages.length - 1];
+                      console.log('Updating selected thread with last message:', lastMessage);
                       setSelectedThread(prev => prev ? {
                         ...prev,
                         lastMessage,
-                        messageCount: messages.length,
+                        messageCount: sortedMessages.length,
                         updatedAt: lastMessage.timestamp
                       } : null);
                     }

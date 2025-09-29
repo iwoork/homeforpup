@@ -592,3 +592,175 @@ export type HealthStatus = 'excellent' | 'good' | 'fair' | 'poor';
 export type AccountStatus = 'active' | 'suspended' | 'pending';
 export type AnnouncementStatus = 'published' | 'draft' | 'archived';
 export type AnnouncementVisibility = 'public' | 'followers' | 'private';
+
+// ============================================================================
+// ACTIVITY TRACKING TYPES
+// ============================================================================
+
+export interface Activity {
+  id: string;
+  userId: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  metadata: ActivityMetadata;
+  timestamp: string;
+  read: boolean;
+  priority: 'low' | 'medium' | 'high';
+  category: ActivityCategory;
+}
+
+export type ActivityType = 
+  // Adopter Activities
+  | 'puppy_favorited'
+  | 'puppy_unfavorited'
+  | 'breeder_contacted'
+  | 'message_received'
+  | 'message_sent'
+  | 'profile_viewed'
+  | 'search_performed'
+  | 'breed_explored'
+  | 'kennel_visited'
+  | 'puppy_viewed'
+  | 'adoption_guide_viewed'
+  | 'preferences_updated'
+  | 'profile_updated'
+  | 'account_created'
+  | 'login'
+  | 'logout'
+  
+  // Breeder Activities
+  | 'kennel_created'
+  | 'kennel_updated'
+  | 'dog_added'
+  | 'dog_updated'
+  | 'puppy_listed'
+  | 'puppy_updated'
+  | 'puppy_removed'
+  | 'announcement_created'
+  | 'announcement_updated'
+  | 'inquiry_received'
+  | 'inquiry_responded'
+  | 'profile_viewed_by_adopter'
+  | 'kennel_viewed_by_adopter'
+  | 'puppy_viewed_by_adopter'
+  | 'favorite_received'
+  | 'message_received_from_adopter'
+  | 'message_sent_to_adopter'
+  | 'health_record_updated'
+  | 'litter_created'
+  | 'litter_updated'
+  | 'certification_added'
+  | 'photo_uploaded'
+  | 'video_uploaded'
+  | 'account_verified'
+  | 'payment_processed'
+  | 'subscription_updated';
+
+export type ActivityCategory = 
+  | 'engagement'
+  | 'communication'
+  | 'profile'
+  | 'content'
+  | 'business'
+  | 'system'
+  | 'security'
+  | 'marketing';
+
+export interface ActivityMetadata {
+  // Common fields
+  actorId?: string;
+  actorName?: string;
+  actorType?: 'adopter' | 'breeder';
+  targetId?: string;
+  targetName?: string;
+  targetType?: 'puppy' | 'breeder' | 'kennel' | 'message' | 'user' | 'announcement';
+  
+  // Puppy-related
+  puppyId?: string;
+  puppyName?: string;
+  puppyBreed?: string;
+  puppyAge?: number;
+  puppyGender?: string;
+  puppyPrice?: number;
+  puppyPhotos?: string[];
+  
+  // Breeder-related
+  breederId?: string;
+  breederName?: string;
+  kennelId?: string;
+  kennelName?: string;
+  
+  // Message-related
+  messageId?: string;
+  messageContent?: string;
+  messageType?: 'general' | 'inquiry' | 'business' | 'urgent';
+  threadId?: string;
+  
+  // Search-related
+  searchQuery?: string;
+  searchFilters?: Record<string, any>;
+  searchResults?: number;
+  
+  // Profile-related
+  profileField?: string;
+  profileValue?: any;
+  
+  // Business-related
+  revenue?: number;
+  subscriptionType?: string;
+  paymentMethod?: string;
+  
+  // System-related
+  ipAddress?: string;
+  userAgent?: string;
+  deviceType?: 'mobile' | 'tablet' | 'desktop';
+  location?: {
+    country?: string;
+    state?: string;
+    city?: string;
+  };
+  
+  // Additional data
+  [key: string]: any;
+}
+
+export interface ActivityFilter {
+  types?: ActivityType[];
+  categories?: ActivityCategory[];
+  priority?: ('low' | 'medium' | 'high')[];
+  read?: boolean;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  userId?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ActivityStats {
+  total: number;
+  unread: number;
+  byType: Record<ActivityType, number>;
+  byCategory: Record<ActivityCategory, number>;
+  byPriority: Record<'low' | 'medium' | 'high', number>;
+  recent: Activity[];
+}
+
+export interface CreateActivityRequest {
+  userId: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  metadata: ActivityMetadata;
+  priority?: 'low' | 'medium' | 'high';
+  category: ActivityCategory;
+}
+
+export interface ActivityResponse {
+  activities: Activity[];
+  total: number;
+  hasMore: boolean;
+  stats: ActivityStats;
+}
