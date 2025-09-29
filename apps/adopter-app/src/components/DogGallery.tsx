@@ -126,8 +126,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
           padding: '16px 0',
           overflowX: 'hidden',
           scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitScrollbar: { display: 'none' }
+          msOverflowStyle: 'none'
         }}
       >
         {firstRowImages.map((image) => (
@@ -192,8 +191,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
           padding: '16px 0',
           overflowX: 'hidden',
           scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitScrollbar: { display: 'none' }
+          msOverflowStyle: 'none'
         }}
       >
         {secondRowImages.map((image) => (
