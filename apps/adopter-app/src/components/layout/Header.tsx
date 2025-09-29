@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Layout, Button, Avatar, Dropdown, Badge } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, HeartOutlined, TeamOutlined, HomeOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, HeartOutlined, TeamOutlined, HomeOutlined, BookOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 
 const { Header: AntHeader } = Layout;

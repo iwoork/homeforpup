@@ -47,6 +47,12 @@ const staticRoutes = [
     priority: 0.7,
   },
   {
+    url: '/breeder-resources',
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  },
+  {
     url: '/accessibility',
     lastModified: new Date(),
     changeFrequency: 'yearly' as const,

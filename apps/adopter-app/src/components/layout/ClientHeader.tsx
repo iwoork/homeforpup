@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 import { useSession } from 'next-auth/react';
@@ -168,6 +168,11 @@ const ClientHeader: React.FC = () => {
           key: 'kennel-management',
           icon: <TeamOutlined />,
           label: <Link href="/kennel-management">Kennel Management</Link>,
+        },
+        {
+          key: 'breeder-resources',
+          icon: <BookOutlined />,
+          label: <Link href="/breeder-resources">Breeder Resources</Link>,
         }
       );
     }
