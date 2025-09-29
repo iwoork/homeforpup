@@ -131,7 +131,8 @@ const BreederDashboard: React.FC = () => {
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media (max-width: 768px) {
           .dashboard-container {
             padding: 16px !important;
@@ -196,7 +197,8 @@ const BreederDashboard: React.FC = () => {
             font-size: 14px !important;
           }
         }
-      `}</style>
+        `
+      }} />
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <Title level={1}>Breeder Dashboard</Title>

@@ -116,7 +116,8 @@ const AdopterDashboard: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media (max-width: 768px) {
           .dashboard-container {
             padding: 16px !important;
@@ -181,7 +182,8 @@ const AdopterDashboard: React.FC = () => {
             font-size: 14px !important;
           }
         }
-      `}</style>
+        `
+      }} />
       {/* Welcome Header */}
       <Card style={{ marginBottom: '24px', ...cardStyle }}>
         <Row align="middle" justify="space-between">
