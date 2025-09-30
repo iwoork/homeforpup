@@ -97,15 +97,6 @@ const Footer: React.FC = () => {
                 <Link href="/adoption-guide" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Adoption Guide
                 </Link>
-                <Link href="/dashboard" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
-                  My Dashboard
-                </Link>
-                <Link href="/dashboard/favorites" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
-                  My Favorites
-                </Link>
-                <Link href="/dashboard/messages" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
-                  Messages
-                </Link>
                 <Link href="/ethical-guidelines" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Ethical Guidelines
                 </Link>
@@ -123,12 +114,6 @@ const Footer: React.FC = () => {
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <Link href="/kennel-management" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Kennel Management
-                </Link>
-                <Link href="/dashboard/kennels" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
-                  My Kennels
-                </Link>
-                <Link href="/dashboard/messages" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
-                  Breeder Messages
                 </Link>
                 <Link href="/breeder-resources" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Breeder Resources
