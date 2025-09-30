@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { Typography, Card, Spin } from 'antd';
-import { useAuth } from '@homeforpup/shared-auth';
+import { useSession } from 'next-auth/react';
 import { ActivityFeed, ActivityStats } from '@homeforpup/shared-activity';
 
 // Force dynamic rendering
@@ -11,7 +11,11 @@ export const dynamic = 'force-dynamic';
 const { Title, Paragraph } = Typography;
 
 const ActivityContent: React.FC = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { data: session, status } = useSession();
+  
+  const user = session?.user;
+  const isAuthenticated = status === 'authenticated';
+  const loading = status === 'loading';
 
   if (loading) {
     return (
@@ -53,7 +57,7 @@ const ActivityContent: React.FC = () => {
       {/* Activity Stats */}
       <div style={{ marginBottom: '32px' }}>
         <ActivityStats
-          userId={user.userId}
+          userId={(user as any)?.id || (user as any)?.sub || user?.email}
           userType="breeder"
           period="month"
         />
@@ -61,7 +65,7 @@ const ActivityContent: React.FC = () => {
 
       {/* Activity Feed */}
       <ActivityFeed
-        userId={user.userId}
+        userId={(user as any)?.id || (user as any)?.sub || user?.email}
         userType="breeder"
         limit={50}
         showFilters={true}

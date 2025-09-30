@@ -13,7 +13,7 @@ import {
   BookOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { useAuth } from '@homeforpup/shared-auth';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 // Force dynamic rendering
@@ -22,8 +22,12 @@ export const dynamic = 'force-dynamic';
 const { Title, Paragraph } = Typography;
 
 const BreederLandingContent: React.FC = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  
+  const user = session?.user;
+  const isAuthenticated = status === 'authenticated';
+  const loading = status === 'loading';
 
   // Redirect to dashboard if authenticated
   useEffect(() => {

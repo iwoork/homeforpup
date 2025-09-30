@@ -12,7 +12,6 @@ import {
   BookOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
-// import { useAuth } from '@homeforpup/shared-auth'; // Temporarily disabled
 // import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity'; // Temporarily disabled
 import useSWR from 'swr';
 

@@ -2,14 +2,17 @@
 
 import React, { Suspense } from 'react';
 import { Spin } from 'antd';
-import { useAuth } from '@homeforpup/shared-auth';
+import { useSession } from 'next-auth/react';
 import { MessagesPage } from '@homeforpup/shared-messaging';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 const MessagesContent: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  
+  const user = session?.user;
+  const loading = status === 'loading';
 
   console.log('BreederMessagesPage: user data:', { user, loading });
 
@@ -27,7 +30,7 @@ const MessagesContent: React.FC = () => {
     );
   }
 
-  if (!user?.userId) {
+  if (!user) {
     return (
       <div style={{
         maxWidth: '1200px',
@@ -44,7 +47,7 @@ const MessagesContent: React.FC = () => {
 
   return (
     <MessagesPage 
-      userId={user.userId} 
+      userId={(user as any)?.id || (user as any)?.sub || user?.email} 
       userType="breeder"
     />
   );
