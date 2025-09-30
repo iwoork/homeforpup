@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
       dogType: body.type || 'parent', // Map 'type' from request to 'dogType' in database
       color: body.color,
       weight: body.weight || 0,
-      description: body.description || '',
+      description: (body as any).description || '',
       healthTests: [],
       kennelId: body.kennelId,
       sireId: body.sireId,
