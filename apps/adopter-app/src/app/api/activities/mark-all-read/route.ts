@@ -16,7 +16,7 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient);
 const ACTIVITIES_TABLE = process.env.ACTIVITIES_TABLE_NAME || 'homeforpup-activities';
 
 // POST /api/activities/mark-all-read - Mark all user activities as read
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {

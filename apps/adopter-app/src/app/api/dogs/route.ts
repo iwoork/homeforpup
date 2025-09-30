@@ -1,7 +1,7 @@
 // app/api/dogs/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
@@ -66,7 +66,7 @@ async function getUserIdFromSession(): Promise<string | null> {
 }
 
 // GET /api/dogs - Get all dogs for the authenticated user
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const userId = await getUserIdFromSession();
     if (!userId) {

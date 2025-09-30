@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib';
-import { Kennel, CreateKennelRequest, KennelsResponse, KennelFilter } from '@homeforpup/shared-types';
+import { CreateKennelRequest, KennelsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 
 const dynamoClient = new DynamoDBClient({

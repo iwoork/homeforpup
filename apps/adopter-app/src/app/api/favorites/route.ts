@@ -4,8 +4,7 @@ import {
   DynamoDBDocumentClient, 
   PutCommand, 
   DeleteCommand, 
-  QueryCommand,
-  ScanCommand 
+  QueryCommand
 } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';

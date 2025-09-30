@@ -15,10 +15,8 @@ import {
 } from 'antd';
 import {
   CheckCircleOutlined,
-  ExclamationCircleOutlined,
   EyeOutlined,
   SoundOutlined,
-  MobileOutlined,
   BulbOutlined,
   HeartOutlined,
   MailOutlined,
@@ -222,7 +220,7 @@ const AccessibilityPage: React.FC = () => {
               At HomeForPup, we believe that finding the perfect pet companion should be accessible to everyone. We are committed to providing an inclusive, barrier-free experience that allows all users to browse, search, and connect with their ideal furry friend.
             </Paragraph>
             <Paragraph style={{ fontSize: '16px', lineHeight: '1.6' }}>
-              We continuously work to improve our platform's accessibility and comply with the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA standards, ensuring our website is usable by people with diverse abilities and assistive technologies.
+              We continuously work to improve our platform&apos;s accessibility and comply with the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA standards, ensuring our website is usable by people with diverse abilities and assistive technologies.
             </Paragraph>
           </Card>
 

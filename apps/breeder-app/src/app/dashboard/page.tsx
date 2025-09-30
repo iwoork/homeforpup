@@ -8,10 +8,6 @@ import {
   MessageOutlined, 
   BarChartOutlined,
   PlusOutlined,
-  SettingOutlined,
-  BellOutlined,
-  HeartOutlined,
-  EyeOutlined,
   TrophyOutlined,
   BookOutlined
 } from '@ant-design/icons';

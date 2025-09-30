@@ -115,7 +115,7 @@ const normalizeCategory = (group: string): string => {
 };
 
 // Generate characteristics based on breed group and size
-const generateCharacteristics = (group: string, size: string, type: string) => {
+const generateCharacteristics = (group: string, _size: string, _type: string) => {
   const baseCharacteristics = {
     energyLevel: 5,
     trainability: 5,
@@ -212,7 +212,7 @@ const generatePhysicalTraits = (size: string, group: string): string[] => {
 };
 
 // Generate temperament traits
-const generateTemperament = (group: string, type: string): string[] => {
+const generateTemperament = (group: string, _type: string): string[] => {
   const baseTemperament = ['Loyal', 'Affectionate', 'Intelligent'];
   
   switch (group.toLowerCase()) {
@@ -380,7 +380,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Apply sorting
-    let sortedBreeds = [...allTransformedBreeds];
+    const sortedBreeds = [...allTransformedBreeds];
     switch (sortBy) {
       case 'name':
         sortedBreeds.sort((a, b) => a.name.localeCompare(b.name));

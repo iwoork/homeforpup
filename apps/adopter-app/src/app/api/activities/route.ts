@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Activity, ActivityFilter, ActivityResponse, ActivityStats, CreateActivityRequest } from '@homeforpup/shared-types';

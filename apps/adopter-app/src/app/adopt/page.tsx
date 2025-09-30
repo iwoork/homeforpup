@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { 
   Card, Row, Col, Typography, Input, Select, Collapse, Space, Button, 
-  Tag, Divider, Statistic, Alert, Tooltip, Badge, Empty
+  Tag, Statistic, Alert, Tooltip, Badge, Empty
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -687,7 +687,7 @@ const AdoptPage: React.FC = () => {
                 <li>Research the organization and their adoption process</li>
                 <li>Consider your lifestyle and ability to care for a pet</li>
                 <li>Be prepared for adoption fees and ongoing pet care costs</li>
-                <li>Ask about the animal's health history and behavioral needs</li>
+                <li>Ask about the animal&apos;s health history and behavioral needs</li>
               </ul>
             </Paragraph>
           </div>

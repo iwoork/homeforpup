@@ -1,14 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Steps, Collapse, Space, Button, Alert, Divider, Checkbox, Affix, Progress, Badge } from 'antd';
+import React, { useState } from 'react';
+import { Card, Row, Col, Typography, Steps, Collapse, Space, Button, Divider, Checkbox, Affix, Progress, Badge } from 'antd';
 import { 
-  SearchOutlined, 
   HeartOutlined, 
-  UserOutlined,
-  ClockCircleOutlined,
-  HomeOutlined,
-  PhoneOutlined,
   ArrowRightOutlined,
   CheckCircleOutlined,
   BookOutlined,
@@ -16,8 +11,7 @@ import {
   MessageOutlined,
   CalendarOutlined,
   EyeOutlined,
-  GiftOutlined,
-  QuestionCircleOutlined
+  GiftOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 
@@ -212,7 +206,7 @@ const AdoptionGuidePage: React.FC = () => {
       "Waste bags and cleaning supplies"
     ]},
     { category: "Home Preparation", items: [
-      "Remove hazardous items from puppy's reach",
+      "Remove hazardous items from puppy&apos;s reach",
       "Secure electrical cords and small objects",
       "Install baby gates if needed",
       "Designate a quiet, safe space for puppy",

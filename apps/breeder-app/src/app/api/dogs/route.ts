@@ -3,7 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib';
-import { CreateDogRequest, DogsResponse, DogFilter } from '@homeforpup/shared-types';
+import { CreateDogRequest, DogsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 
 const dynamoClient = new DynamoDBClient({
@@ -197,13 +197,13 @@ export async function POST(request: NextRequest) {
     }));
 
     // Update kennel dog count
-    const updateKennelCommand = new ScanCommand({
-      TableName: KENNELS_TABLE,
-      FilterExpression: 'id = :kennelId',
-      ExpressionAttributeValues: {
-        ':kennelId': body.kennelId,
-      },
-    });
+    // const updateKennelCommand = new ScanCommand({
+    //   TableName: KENNELS_TABLE,
+    //   FilterExpression: 'id = :kennelId',
+    //   ExpressionAttributeValues: {
+    //     ':kennelId': body.kennelId,
+    //   },
+    // });
 
     // This would need to be an UpdateCommand in a real implementation
     // For now, we'll just return the created dog

@@ -423,16 +423,16 @@ const BreederWebsitePage: React.FC = () => {
           </div>
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} lg={8}>
-              <Card style={cardStyle}>
-                <GlobalOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
-                <Title level={4} style={{ marginBottom: '12px' }}>Your Own .com Domain</Title>
-                <Paragraph style={{ color: '#666' }}>
-                  Professional web presence with your own custom domain like yourkennel.com
-                </Paragraph>
-              </Card>
+                <Card style={cardStyle} bodyStyle={{ padding: '24px', textAlign: 'center' }}>
+                  <GlobalOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+                  <Title level={4} style={{ marginBottom: '12px' }}>Your Own .com Domain</Title>
+                  <Paragraph style={{ color: '#666' }}>
+                    Professional web presence with your own custom domain like yourkennel.com
+                  </Paragraph>
+                </Card>
             </Col>
             <Col xs={24} sm={12} lg={8}>
-              <Card style={cardStyle} styles={{ body: { padding: '24px', textAlign: 'center' }   }}>
+                <Card style={cardStyle} bodyStyle={{ padding: '24px', textAlign: 'center' }}>
                 <CheckCircleOutlined style={{ fontSize: '48px', color: '#52c41a', marginBottom: '16px' }} />
                 <Title level={4} style={{ marginBottom: '12px' }}>Seamless Integration</Title>
                 <Paragraph style={{ color: '#666' }}>
@@ -441,13 +441,13 @@ const BreederWebsitePage: React.FC = () => {
               </Card>
             </Col>
             <Col xs={24} sm={12} lg={8}>
-              <Card style={cardStyle}>
-                <MobileOutlined style={{ fontSize: '48px', color: '#fa8c16', marginBottom: '16px' }} />
-                <Title level={4} style={{ marginBottom: '12px' }}>Mobile Perfect</Title>
-                <Paragraph style={{ color: '#666' }}>
-                  Beautiful on all devices - phones, tablets, and desktops
-                </Paragraph>
-              </Card>
+                <Card style={cardStyle} bodyStyle={{ padding: '24px', textAlign: 'center' }}>
+                  <MobileOutlined style={{ fontSize: '48px', color: '#fa8c16', marginBottom: '16px' }} />
+                  <Title level={4} style={{ marginBottom: '12px' }}>Mobile Perfect</Title>
+                  <Paragraph style={{ color: '#666' }}>
+                    Beautiful on all devices - phones, tablets, and desktops
+                  </Paragraph>
+                </Card>
             </Col>
           </Row>
         </section>
@@ -466,7 +466,7 @@ const BreederWebsitePage: React.FC = () => {
                 <Card
                   style={cardStyle}
                   hoverable
-            
+                  bodyStyle={{ padding: '20px' }}
                 >
                   <div style={{ textAlign: 'center', marginBottom: '16px' }}>
                     <div style={{ fontSize: '36px', color: feature.color, marginBottom: '12px' }}>
@@ -516,7 +516,7 @@ const BreederWebsitePage: React.FC = () => {
           <Row gutter={[16, 16]}>
             {platformIntegration.map((integration, index) => (
               <Col xs={24} sm={12} lg={6} key={index}>
-                <Card style={cardStyle}>
+                <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
                   <div style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }}>
                     {integration.icon}
                   </div>
@@ -553,7 +553,7 @@ const BreederWebsitePage: React.FC = () => {
           <Row gutter={[16, 16]}>
             {successStories.map((story, index) => (
               <Col xs={24} sm={12} lg={8} key={index}>
-                <Card style={cardStyle}>
+                <Card style={cardStyle} bodyStyle={{ padding: '20px' }}>
                   <div style={{ textAlign: 'center', marginBottom: '16px' }}>
                     <div style={{ 
                       width: '100%', 
@@ -618,6 +618,7 @@ const BreederWebsitePage: React.FC = () => {
                 <Card
                   style={cardStyle}
                   hoverable
+                  bodyStyle={{ padding: '20px', textAlign: 'center' }}
                 >
                   <div style={{ fontSize: '32px', color: feature.color, marginBottom: '12px' }}>
                     {feature.icon}
@@ -714,6 +715,7 @@ const BreederWebsitePage: React.FC = () => {
                     border: plan.popular ? '2px solid #52c41a' : undefined,
                     position: 'relative'
                   }}
+                  bodyStyle={{ padding: '24px' }}
                 >
                   {plan.popular && (
                     <div style={{
@@ -802,7 +804,7 @@ const BreederWebsitePage: React.FC = () => {
               Getting your professional breeder website is simple
             </Paragraph>
           </div>
-          <Card style={cardStyle}>
+          <Card style={cardStyle} bodyStyle={{ padding: '24px' }}>
             <Steps
               direction="horizontal"
               size="small"
