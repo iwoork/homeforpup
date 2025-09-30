@@ -24,6 +24,10 @@ const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 // GET /api/kennels - List kennels with filtering
 export async function GET(request: NextRequest) {
   try {
+    // Log cookies for debugging
+    const cookies = request.cookies.getAll();
+    console.log('Kennels API - Cookies:', cookies.map(c => ({ name: c.name, hasValue: !!c.value })));
+    
     const session = await getServerSession(authOptions);
     console.log('Kennels API - Session:', {
       hasSession: !!session,
@@ -33,6 +37,7 @@ export async function GET(request: NextRequest) {
       env: {
         hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
         hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
+        nextAuthUrl: process.env.NEXTAUTH_URL,
         nodeEnv: process.env.NODE_ENV,
       }
     });

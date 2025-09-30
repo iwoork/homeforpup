@@ -14,6 +14,12 @@ NEXTAUTH_URL=https://your-exact-production-domain.vercel.app
 ```
 **Must match exactly - no trailing slash!**
 
+### 3. NextAuth Trust Host (Vercel Required)
+```bash
+NEXTAUTH_TRUST_HOST=true
+```
+**Required for Vercel and other proxy environments**
+
 ## 📋 Full Environment Variables List
 
 Copy these to Vercel Dashboard → Settings → Environment Variables:
@@ -22,6 +28,7 @@ Copy these to Vercel Dashboard → Settings → Environment Variables:
 # NextAuth (REQUIRED FOR PRODUCTION)
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=
+NEXTAUTH_TRUST_HOST=true
 
 # AWS
 AWS_REGION=us-east-1
