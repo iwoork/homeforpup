@@ -32,6 +32,7 @@ const HomePage: React.FC = () => {
   const [userTypeModalVisible, setUserTypeModalVisible] = useState(false);
   const [newsletterForm] = Form.useForm();
   const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterMessage, setNewsletterMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleJoinCommunity = () => {
     if (user) {
@@ -57,6 +58,7 @@ const HomePage: React.FC = () => {
 
   const handleNewsletterSubmit = async (values: { email: string }) => {
     setNewsletterLoading(true);
+    setNewsletterMessage(null);
     
     try {
       // Replace this with your actual API endpoint
@@ -69,15 +71,15 @@ const HomePage: React.FC = () => {
       });
 
       if (response.ok) {
-        message.success('Successfully subscribed to our newsletter! 🎉');
+        setNewsletterMessage({ type: 'success', text: 'Successfully subscribed to our newsletter! 🎉' });
         newsletterForm.resetFields();
       } else {
         const errorData = await response.json();
-        message.error(errorData.message || 'Failed to subscribe. Please try again.');
+        setNewsletterMessage({ type: 'error', text: errorData.message || 'Failed to subscribe. Please try again.' });
       }
     } catch (error) {
       console.error('Newsletter subscription error:', error);
-      message.error('Something went wrong. Please try again later.');
+      setNewsletterMessage({ type: 'error', text: 'Something went wrong. Please try again later.' });
     } finally {
       setNewsletterLoading(false);
     }
@@ -399,6 +401,26 @@ const HomePage: React.FC = () => {
           <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
             Join our newsletter to hear heartwarming puppy stories, get expert care tips, and be the first to meet new additions to our community family.
           </Paragraph>
+          
+          {/* Newsletter Message Display */}
+          {newsletterMessage && (
+            <div 
+              style={{
+                marginBottom: '24px',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                backgroundColor: newsletterMessage.type === 'success' ? '#f6ffed' : '#fff2f0',
+                border: `1px solid ${newsletterMessage.type === 'success' ? '#b7eb8f' : '#ffccc7'}`,
+                color: newsletterMessage.type === 'success' ? '#52c41a' : '#ff4d4f',
+                fontSize: '16px',
+                fontWeight: '500',
+                textAlign: 'center'
+              }}
+            >
+              {newsletterMessage.text}
+            </div>
+          )}
+          
           <Form 
             form={newsletterForm}
             onFinish={handleNewsletterSubmit}
