@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CognitoProvider from 'next-auth/providers/cognito';
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CognitoProvider({
       clientId: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID!,
@@ -90,4 +91,16 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     maxAge: 24 * 60 * 60, // 24 hours
   },
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+  useSecureCookies: process.env.NODE_ENV === 'production',
 };

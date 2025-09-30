@@ -25,8 +25,23 @@ const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    console.log('Kennels API - Session:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+    });
+    
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('Kennels API - Unauthorized: No session or user ID');
+      return NextResponse.json({ 
+        error: 'Unauthorized',
+        debug: process.env.NODE_ENV === 'development' ? {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id,
+        } : undefined
+      }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
