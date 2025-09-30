@@ -20,7 +20,8 @@ import {
   Form,
   Input,
   Select,
-  InputNumber
+  InputNumber,
+  Divider
 } from 'antd';
 import { 
   HomeOutlined, 
@@ -34,7 +35,8 @@ import {
   TrophyOutlined,
   HeartOutlined,
   EyeOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import BreedSelector from '@/components/forms/BreedSelector';
@@ -52,8 +54,17 @@ const KennelDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [addDogVisible, setAddDogVisible] = useState(false);
   const [addLitterVisible, setAddLitterVisible] = useState(false);
+  const [editDogVisible, setEditDogVisible] = useState(false);
+  const [editLitterVisible, setEditLitterVisible] = useState(false);
+  const [editingDog, setEditingDog] = useState<any>(null);
+  const [editingLitter, setEditingLitter] = useState<any>(null);
+  const [selectedPuppies, setSelectedPuppies] = useState<any[]>([]);
+  const [addPuppyVisible, setAddPuppyVisible] = useState(false);
   const [dogForm] = Form.useForm();
   const [litterForm] = Form.useForm();
+  const [editDogForm] = Form.useForm();
+  const [editLitterForm] = Form.useForm();
+  const [addPuppyForm] = Form.useForm();
 
   const { data, error, isLoading, mutate } = useSWR<KennelResponse>(
     `/api/kennels/${kennelId}`,
@@ -121,6 +132,158 @@ const KennelDetailPage: React.FC = () => {
     } catch (error) {
       console.error('Error adding litter:', error);
       message.error('Failed to add litter');
+    }
+  };
+
+  const handleEditDog = (dog: any) => {
+    setEditingDog(dog);
+    editDogForm.setFieldsValue({
+      name: dog.name,
+      callName: dog.callName,
+      breed: dog.breed,
+      gender: dog.gender,
+      birthDate: dog.birthDate,
+      type: dog.type,
+      color: dog.color,
+      markings: dog.markings,
+      weight: dog.weight,
+      height: dog.height,
+      eyeColor: dog.eyeColor,
+      temperament: dog.temperament,
+      specialNeeds: dog.specialNeeds,
+      notes: dog.notes,
+    });
+    setEditDogVisible(true);
+  };
+
+  const handleUpdateDog = async (values: any) => {
+    if (!editingDog) return;
+    
+    try {
+      const response = await fetch(`/api/dogs/${editingDog.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update dog');
+      }
+
+      message.success('Dog updated successfully!');
+      setEditDogVisible(false);
+      setEditingDog(null);
+      editDogForm.resetFields();
+      mutate();
+    } catch (error) {
+      console.error('Error updating dog:', error);
+      message.error('Failed to update dog');
+    }
+  };
+
+  const handleEditLitter = (litter: any) => {
+    setEditingLitter(litter);
+    setSelectedPuppies(litter.puppies || []);
+    editLitterForm.setFieldsValue({
+      name: litter.name,
+      expectedPuppyCount: litter.expectedPuppyCount,
+      actualPuppyCount: litter.actualPuppyCount,
+      status: litter.status,
+      birthDate: litter.birthDate,
+      notes: litter.notes,
+      specialInstructions: litter.specialInstructions,
+    });
+    setEditLitterVisible(true);
+  };
+
+  const handleUpdateLitter = async (values: any) => {
+    if (!editingLitter) return;
+    
+    try {
+      const updateData = {
+        ...values,
+        puppies: selectedPuppies,
+        actualPuppyCount: selectedPuppies.length,
+      };
+
+      const response = await fetch(`/api/litters/${editingLitter.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update litter');
+      }
+
+      message.success('Litter updated successfully!');
+      setEditLitterVisible(false);
+      setEditingLitter(null);
+      setSelectedPuppies([]);
+      editLitterForm.resetFields();
+      mutate();
+    } catch (error) {
+      console.error('Error updating litter:', error);
+      message.error('Failed to update litter');
+    }
+  };
+
+  const handleAddPuppy = (puppy: any) => {
+    setSelectedPuppies([...selectedPuppies, puppy]);
+  };
+
+  const handleRemovePuppy = (puppyId: string) => {
+    setSelectedPuppies(selectedPuppies.filter(p => p.id !== puppyId));
+  };
+
+  const handleCreatePuppy = async (values: any) => {
+    try {
+      const response = await fetch('/api/dogs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...values,
+          kennelId: kennelId,
+          type: 'puppy',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create puppy');
+      }
+
+      const result = await response.json();
+      const newPuppy = {
+        id: result.dog.id,
+        name: result.dog.name,
+        gender: result.dog.gender,
+        color: result.dog.color,
+        markings: result.dog.markings,
+        weight: result.dog.weight,
+        status: 'available',
+        notes: result.dog.notes,
+      };
+
+      handleAddPuppy(newPuppy);
+      setAddPuppyVisible(false);
+      addPuppyForm.resetFields();
+      message.success('Puppy created and added to litter!');
+      mutate();
+    } catch (error) {
+      console.error('Error creating puppy:', error);
+      message.error('Failed to create puppy');
     }
   };
 
@@ -229,7 +392,12 @@ const KennelDetailPage: React.FC = () => {
           <Button type="text" icon={<EyeOutlined />} size="small">
             View
           </Button>
-          <Button type="text" icon={<EditOutlined />} size="small">
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            size="small"
+            onClick={() => handleEditDog(record)}
+          >
             Edit
           </Button>
         </Space>
@@ -288,7 +456,12 @@ const KennelDetailPage: React.FC = () => {
           <Button type="text" icon={<EyeOutlined />} size="small">
             View
           </Button>
-          <Button type="text" icon={<EditOutlined />} size="small">
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            size="small"
+            onClick={() => handleEditLitter(record)}
+          >
             Edit
           </Button>
         </Space>
@@ -726,6 +899,516 @@ const KennelDetailPage: React.FC = () => {
               </Button>
               <Button type="primary" htmlType="submit">
                 Add Litter
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Edit Dog Modal */}
+      <Modal
+        title="Edit Dog"
+        open={editDogVisible}
+        onCancel={() => {
+          setEditDogVisible(false);
+          setEditingDog(null);
+          editDogForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={editDogForm}
+          layout="vertical"
+          onFinish={handleUpdateDog}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="name"
+                label="Dog Name"
+                rules={[{ required: true, message: 'Please enter dog name' }]}
+              >
+                <Input placeholder="Enter dog name" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="callName"
+                label="Call Name (Nickname)"
+              >
+                <Input placeholder="Enter nickname" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="breed"
+                label="Breed"
+                rules={[{ required: true, message: 'Please select breed' }]}
+              >
+                <BreedSelector
+                  placeholder="Select breed"
+                  showSearch={true}
+                  allowClear={true}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="gender"
+                label="Gender"
+                rules={[{ required: true, message: 'Please select gender' }]}
+              >
+                <Select placeholder="Select gender">
+                  <Option value="male">Male</Option>
+                  <Option value="female">Female</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="type"
+                label="Type"
+                rules={[{ required: true, message: 'Please select type' }]}
+              >
+                <Select placeholder="Select type">
+                  <Option value="parent">Parent</Option>
+                  <Option value="puppy">Puppy</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="birthDate"
+                label="Birth Date"
+                rules={[{ required: true, message: 'Please enter birth date' }]}
+              >
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="color"
+                label="Color"
+                rules={[{ required: true, message: 'Please enter color' }]}
+              >
+                <Input placeholder="Enter color" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="weight"
+                label="Weight (lbs)"
+              >
+                <InputNumber 
+                  min={0} 
+                  max={200} 
+                  style={{ width: '100%' }}
+                  placeholder="Weight"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="height"
+                label="Height (inches)"
+              >
+                <InputNumber 
+                  min={0} 
+                  max={50} 
+                  style={{ width: '100%' }}
+                  placeholder="Height"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="eyeColor"
+                label="Eye Color"
+              >
+                <Input placeholder="Enter eye color" />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="markings"
+                label="Markings"
+              >
+                <Input placeholder="Describe any markings" />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="temperament"
+                label="Temperament"
+              >
+                <Input.TextArea 
+                  rows={3} 
+                  placeholder="Describe the dog's temperament" 
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="specialNeeds"
+                label="Special Needs"
+              >
+                <Input.TextArea 
+                  rows={2} 
+                  placeholder="Any special needs or requirements" 
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="notes"
+                label="Notes"
+              >
+                <Input.TextArea 
+                  rows={3} 
+                  placeholder="Additional notes about this dog" 
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setEditDogVisible(false);
+                setEditingDog(null);
+                editDogForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Update Dog
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Edit Litter Modal */}
+      <Modal
+        title="Edit Litter"
+        open={editLitterVisible}
+        onCancel={() => {
+          setEditLitterVisible(false);
+          setEditingLitter(null);
+          editLitterForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={editLitterForm}
+          layout="vertical"
+          onFinish={handleUpdateLitter}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={24}>
+              <Form.Item
+                name="name"
+                label="Litter Name"
+                rules={[{ required: true, message: 'Please enter litter name' }]}
+              >
+                <Input placeholder="Enter litter name" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="expectedPuppyCount"
+                label="Expected Puppy Count"
+                rules={[{ required: true, message: 'Please enter expected puppy count' }]}
+              >
+                <InputNumber 
+                  min={1} 
+                  max={20} 
+                  style={{ width: '100%' }}
+                  placeholder="Expected puppies"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="actualPuppyCount"
+                label="Actual Puppy Count"
+              >
+                <InputNumber 
+                  min={0} 
+                  max={20} 
+                  style={{ width: '100%' }}
+                  placeholder="Actual puppies"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="status"
+                label="Status"
+                rules={[{ required: true, message: 'Please select status' }]}
+              >
+                <Select placeholder="Select status">
+                  <Option value="expected">Expected</Option>
+                  <Option value="born">Born</Option>
+                  <Option value="weaned">Weaned</Option>
+                  <Option value="ready_for_homes">Ready for Homes</Option>
+                  <Option value="sold">Sold</Option>
+                  <Option value="completed">Completed</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="birthDate"
+                label="Birth Date"
+              >
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="notes"
+                label="Notes"
+              >
+                <Input.TextArea 
+                  rows={3} 
+                  placeholder="Additional notes about this litter" 
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="specialInstructions"
+                label="Special Instructions"
+              >
+                <Input.TextArea 
+                  rows={2} 
+                  placeholder="Any special instructions for this litter" 
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Divider>Puppies in this Litter</Divider>
+              <div style={{ marginBottom: '16px' }}>
+                <Space wrap>
+                  <Button 
+                    type="dashed" 
+                    icon={<PlusOutlined />}
+                    onClick={() => setAddPuppyVisible(true)}
+                  >
+                    Add New Puppy
+                  </Button>
+                  <Select
+                    placeholder="Add existing puppy"
+                    style={{ width: 200 }}
+                    showSearch
+                    optionFilterProp="children"
+                    onSelect={(value) => {
+                      const puppy = data?.dogs.find(d => d.id === value);
+                      if (puppy && puppy.type === 'puppy') {
+                        const puppyInfo = {
+                          id: puppy.id,
+                          name: puppy.name,
+                          gender: puppy.gender,
+                          color: puppy.color,
+                          markings: puppy.markings,
+                          weight: puppy.weight,
+                          status: 'available',
+                          notes: puppy.notes,
+                        };
+                        handleAddPuppy(puppyInfo);
+                      }
+                    }}
+                  >
+                    {data?.dogs
+                      ?.filter(dog => dog.type === 'puppy' && !selectedPuppies.some(p => p.id === dog.id))
+                      ?.map(dog => (
+                        <Option key={dog.id} value={dog.id}>
+                          {dog.name} ({dog.gender})
+                        </Option>
+                      ))}
+                  </Select>
+                </Space>
+              </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {selectedPuppies.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+                    No puppies selected
+                  </div>
+                ) : (
+                  <Row gutter={[8, 8]}>
+                    {selectedPuppies.map((puppy, index) => (
+                      <Col xs={24} sm={12} md={8} key={puppy.id}>
+                        <Card size="small" style={{ position: 'relative' }}>
+                          <Button
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<CloseOutlined />}
+                            style={{ position: 'absolute', top: 4, right: 4 }}
+                            onClick={() => handleRemovePuppy(puppy.id)}
+                          />
+                          <div>
+                            <Typography.Text strong>{puppy.name}</Typography.Text>
+                            <br />
+                            <Typography.Text style={{ fontSize: '12px', color: '#999' }}>
+                              {puppy.gender} • {puppy.color}
+                            </Typography.Text>
+                            {puppy.weight && (
+                              <>
+                                <br />
+                                <Typography.Text style={{ fontSize: '12px', color: '#999' }}>
+                                  {puppy.weight} lbs
+                                </Typography.Text>
+                              </>
+                            )}
+                          </div>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                )}
+              </div>
+            </Col>
+          </Row>
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setEditLitterVisible(false);
+                setEditingLitter(null);
+                editLitterForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Update Litter
+              </Button>
+            </Space>
+          </div>
+        </Form>
+      </Modal>
+
+      {/* Add New Puppy Modal */}
+      <Modal
+        title="Add New Puppy"
+        open={addPuppyVisible}
+        onCancel={() => {
+          setAddPuppyVisible(false);
+          addPuppyForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={addPuppyForm}
+          layout="vertical"
+          onFinish={handleCreatePuppy}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="name"
+                label="Puppy Name"
+                rules={[{ required: true, message: 'Please enter puppy name' }]}
+              >
+                <Input placeholder="Enter puppy name" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="callName"
+                label="Call Name (Nickname)"
+              >
+                <Input placeholder="Enter nickname" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="breed"
+                label="Breed"
+                rules={[{ required: true, message: 'Please select breed' }]}
+              >
+                <BreedSelector
+                  placeholder="Select breed"
+                  showSearch={true}
+                  allowClear={true}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="gender"
+                label="Gender"
+                rules={[{ required: true, message: 'Please select gender' }]}
+              >
+                <Select placeholder="Select gender">
+                  <Option value="male">Male</Option>
+                  <Option value="female">Female</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="birthDate"
+                label="Birth Date"
+                rules={[{ required: true, message: 'Please enter birth date' }]}
+              >
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="color"
+                label="Color"
+                rules={[{ required: true, message: 'Please enter color' }]}
+              >
+                <Input placeholder="Enter color" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="weight"
+                label="Weight (lbs)"
+              >
+                <InputNumber 
+                  min={0} 
+                  max={50} 
+                  style={{ width: '100%' }}
+                  placeholder="Weight"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="markings"
+                label="Markings"
+              >
+                <Input placeholder="Describe any markings" />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="notes"
+                label="Notes"
+              >
+                <Input.TextArea 
+                  rows={3} 
+                  placeholder="Additional notes about this puppy" 
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setAddPuppyVisible(false);
+                addPuppyForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Create Puppy
               </Button>
             </Space>
           </div>

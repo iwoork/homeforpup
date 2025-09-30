@@ -95,7 +95,7 @@ export async function PUT(
     // Add fields to update
     const fieldsToUpdate = [
       'name', 'expectedPuppyCount', 'actualPuppyCount', 'status',
-      'birthDate', 'health', 'notes', 'specialInstructions'
+      'birthDate', 'health', 'notes', 'specialInstructions', 'puppies'
     ];
 
     fieldsToUpdate.forEach(field => {
