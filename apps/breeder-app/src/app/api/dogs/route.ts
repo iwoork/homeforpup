@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib';
+import { authOptions } from '@/lib/auth';
 import { CreateDogRequest, DogsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 
