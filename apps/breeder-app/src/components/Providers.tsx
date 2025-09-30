@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App } from 'antd';
 import { NextAuthProvider } from '@/components/providers/NextAuthProvider';
 
 interface ProvidersProps {
@@ -18,7 +18,9 @@ export function Providers({ children }: ProvidersProps) {
           },
         }}
       >
-        {children}
+        <App>
+          {children}
+        </App>
       </ConfigProvider>
     </NextAuthProvider>
   );

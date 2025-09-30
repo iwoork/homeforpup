@@ -14,12 +14,12 @@ import {
   Select,
   Empty,
   Spin,
-  message,
   Modal,
   Form,
   InputNumber,
   Divider,
-  Statistic
+  Statistic,
+  App
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -43,6 +43,7 @@ interface DogsResponse {
 }
 
 const DogsPage: React.FC = () => {
+  const { message, modal } = App.useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -81,6 +82,18 @@ const DogsPage: React.FC = () => {
       return response.json();
     },
     { refreshInterval: 30000 }
+  );
+
+  // Fetch kennels for the dropdown
+  const { data: kennelsData } = useSWR(
+    '/api/kennels',
+    async (url: string) => {
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch kennels');
+      }
+      return response.json();
+    }
   );
 
   const handleAddDog = async (values: any) => {
@@ -149,7 +162,7 @@ const DogsPage: React.FC = () => {
   };
 
   const handleDeleteDog = async (dogId: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: 'Are you sure you want to delete this dog?',
       content: 'This action cannot be undone.',
       okText: 'Yes, Delete',
@@ -420,6 +433,20 @@ const DogsPage: React.FC = () => {
           layout="vertical"
           onFinish={handleAddDog}
         >
+          <Form.Item
+            name="kennelId"
+            label="Kennel"
+            rules={[{ required: true, message: 'Please select a kennel' }]}
+          >
+            <Select placeholder="Select kennel">
+              {kennelsData?.kennels?.map((kennel: any) => (
+                <Option key={kennel.id} value={kennel.id}>
+                  {kennel.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
           <Form.Item
             name="name"
             label="Dog Name"

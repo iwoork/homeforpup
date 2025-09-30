@@ -62,9 +62,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (type) {
-      filterExpression += ' AND #type = :type';
-      expressionAttributeNames['#type'] = 'type';
-      expressionAttributeValues[':type'] = type;
+      filterExpression += ' AND #dogType = :dogType';
+      expressionAttributeNames['#dogType'] = 'dogType';
+      expressionAttributeValues[':dogType'] = type;
     }
 
     if (gender) {
@@ -155,41 +155,24 @@ export async function POST(request: NextRequest) {
 
     const dog: any = {
       id: dogId,
+      ownerId: session.user.id,
       name: body.name,
-      callName: body.callName,
       breed: body.breed,
       gender: body.gender,
       birthDate: body.birthDate,
-      type: body.type,
+      dogType: body.type || 'parent', // Map 'type' from request to 'dogType' in database
       color: body.color,
-      markings: body.markings,
-      weight: body.weight,
-      height: body.height,
-      eyeColor: body.eyeColor,
+      weight: body.weight || 0,
+      description: body.description || '',
+      healthTests: [],
       kennelId: body.kennelId,
-      kennelName: kennel.name,
       sireId: body.sireId,
       damId: body.damId,
-      health: {
-        healthClearances: [],
-        vaccinations: [],
-        medicalHistory: [],
-        currentHealthStatus: 'excellent',
-      },
-      breeding: {
-        isBreedingDog: body.type === 'parent',
-        breedingStatus: body.type === 'parent' ? 'available' : 'too_young',
-        breedingHistory: [],
-        geneticTests: [],
-      },
+      breedingStatus: body.type === 'parent' ? 'available' : 'not_ready',
+      healthStatus: 'excellent',
       status: 'active',
       createdAt: timestamp,
       updatedAt: timestamp,
-      photos: [],
-      videos: [],
-      temperament: body.temperament,
-      specialNeeds: body.specialNeeds,
-      notes: body.notes,
     };
 
     await docClient.send(new PutCommand({

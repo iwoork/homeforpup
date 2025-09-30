@@ -94,9 +94,9 @@ export async function PUT(
 
     // Add fields to update
     const fieldsToUpdate = [
-      'name', 'callName', 'breed', 'gender', 'birthDate', 'type',
-      'color', 'markings', 'weight', 'height', 'eyeColor',
-      'sireId', 'damId', 'temperament', 'specialNeeds', 'notes'
+      'name', 'breed', 'gender', 'birthDate',
+      'color', 'weight', 'description',
+      'sireId', 'damId'
     ];
 
     fieldsToUpdate.forEach(field => {
@@ -106,6 +106,18 @@ export async function PUT(
         expressionAttributeValues[`:${field}`] = body[field as keyof UpdateDogRequest];
       }
     });
+
+    // Handle type field mapping to dogType
+    if (body.type !== undefined) {
+      updateExpression += `, #dogType = :dogType`;
+      expressionAttributeNames[`#dogType`] = 'dogType';
+      expressionAttributeValues[`:dogType`] = body.type;
+      
+      // Also update breedingStatus based on type
+      updateExpression += `, #breedingStatus = :breedingStatus`;
+      expressionAttributeNames[`#breedingStatus`] = 'breedingStatus';
+      expressionAttributeValues[`:breedingStatus`] = body.type === 'parent' ? 'available' : 'not_ready';
+    }
 
     const updateCommand = new UpdateCommand({
       TableName: DOGS_TABLE,
