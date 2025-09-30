@@ -30,17 +30,24 @@ export async function GET(request: NextRequest) {
       hasUser: !!session?.user,
       userId: session?.user?.id,
       userEmail: session?.user?.email,
+      env: {
+        hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+        hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
+        nodeEnv: process.env.NODE_ENV,
+      }
     });
     
     if (!session?.user?.id) {
       console.error('Kennels API - Unauthorized: No session or user ID');
       return NextResponse.json({ 
         error: 'Unauthorized',
-        debug: process.env.NODE_ENV === 'development' ? {
+        message: 'Please ensure you are logged in. If this issue persists, try logging out and logging back in.',
+        debug: {
           hasSession: !!session,
           hasUser: !!session?.user,
           userId: session?.user?.id,
-        } : undefined
+          timestamp: new Date().toISOString(),
+        }
       }, { status: 401 });
     }
 
