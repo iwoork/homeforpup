@@ -264,6 +264,11 @@ const BreederResourcesPage: React.FC = () => {
                 Start Managing Your Kennel
               </Button>
             </Link>
+            <Link href="/breeder-website">
+              <Button size="large" ghost style={{ height: '48px', padding: '0 24px', fontSize: '16px', borderColor: 'white', color: 'white', width: '100%', maxWidth: '300px' }}>
+                Get Your Website
+              </Button>
+            </Link>
             <Link href="/contact">
               <Button size="large" ghost style={{ height: '48px', padding: '0 24px', fontSize: '16px', borderColor: 'white', color: 'white', width: '100%', maxWidth: '300px' }}>
                 Get Support

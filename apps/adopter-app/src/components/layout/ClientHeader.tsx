@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Layout, Button, Dropdown, Avatar, Badge, Divider, Spin, Drawer, Menu } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined, MenuOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import { Layout, Button, Dropdown, Avatar, Badge, Drawer, Menu } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined, MenuOutlined, EnvironmentOutlined, GlobalOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@/hooks';
 import { useSession } from 'next-auth/react';
@@ -179,6 +179,11 @@ const ClientHeader: React.FC = () => {
           key: 'breeder-resources',
           icon: <BookOutlined />,
           label: <Link href="/breeder-resources">Breeder Resources</Link>,
+        },
+        {
+          key: 'breeder-website',
+          icon: <GlobalOutlined />,
+          label: <Link href="/breeder-website">Your Website</Link>,
         }
       );
     }
@@ -478,11 +483,10 @@ const ClientHeader: React.FC = () => {
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         width={280}
-        bodyStyle={{ padding: 0 }}
         zIndex={1001}
         maskClosable={true}
         keyboard={true}
-        destroyOnClose={false}
+        destroyOnHidden={false}
       >
         <Menu
           mode="inline"

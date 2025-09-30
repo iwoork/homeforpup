@@ -595,7 +595,7 @@ const AdoptPage: React.FC = () => {
                           </Text>
                           <Space wrap size={[4, 4]}>
                             {shelter.services.map(service => (
-                              <Tag key={service} size="small" color="blue">{service}</Tag>
+                              <Tag key={service} color="blue">{service}</Tag>
                             ))}
                           </Space>
                         </div>
@@ -609,7 +609,7 @@ const AdoptPage: React.FC = () => {
                           </Text>
                           <Space wrap size={[4, 4]}>
                             {shelter.specialties.map(specialty => (
-                              <Tag key={specialty} size="small" color="green">{specialty}</Tag>
+                              <Tag key={specialty} color="green">{specialty}</Tag>
                             ))}
                           </Space>
                         </div>

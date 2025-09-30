@@ -9,11 +9,11 @@ import {
   TeamOutlined, 
   HomeOutlined,
   QuestionCircleOutlined,
-  GlobalOutlined,
   FacebookOutlined,
   InstagramOutlined,
   TwitterOutlined
 } from '@ant-design/icons';
+import Image from 'next/image';
 import Link from 'next/link';
 
 const { Footer: AntFooter } = Layout;
@@ -56,9 +56,16 @@ const Footer: React.FC = () => {
           {/* Company Branding */}
           <Col xs={24} lg={6}>
             <div style={{ marginBottom: '24px' }}>
-              <Title level={3} style={{ color: '#08979C', marginBottom: '16px', fontSize: '24px' }}>
-                <HeartOutlined style={{ marginRight: '8px' }} />
-                HomeForPup
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Image 
+                    src="/logo.png" 
+                    alt="Home for Pup"
+                    width={48}
+                    height={48}
+                  />
+              </div>
+              <Title level={4} style={{ color: '#08979C', marginBottom: '16px', fontSize: '24px' }}>
+                Home for Pup
               </Title>
               <Text style={{ color: '#666', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px', display: 'block' }}>
                 Connecting loving families with ethical breeders to create perfect puppy matches and lifelong friendships.
@@ -117,6 +124,9 @@ const Footer: React.FC = () => {
                 </Link>
                 <Link href="/breeder-resources" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Breeder Resources
+                </Link>
+                <Link href="/breeder-website" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
+                  Professional Websites
                 </Link>
                 <Link href="/ethical-guidelines" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#FA8072'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Ethical Guidelines
@@ -250,7 +260,7 @@ const Footer: React.FC = () => {
         <Row justify="space-between" align="middle">
           <Col xs={24} sm={12}>
             <Text style={{ color: '#999', fontSize: '12px' }}>
-              © {currentYear} HomeForPup. All rights reserved.
+              © {currentYear} Home for Pup. All rights reserved.
             </Text>
           </Col>
           <Col xs={24} sm={12}>
