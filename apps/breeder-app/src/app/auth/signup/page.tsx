@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { Card, Typography, Button, Space, Alert, Spin } from 'antd';
 import { HomeOutlined, UserAddOutlined } from '@ant-design/icons';
 import { useSession } from 'next-auth/react';
@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 const { Title, Paragraph, Text } = Typography;
 
-const SignupPage: React.FC = () => {
+const SignupContent: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -158,6 +158,36 @@ const SignupPage: React.FC = () => {
         </div>
       </Card>
     </div>
+  );
+};
+
+const SignupPage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <Card style={{ 
+          width: '100%',
+          maxWidth: '500px',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px' }}>
+            <Text>Loading...</Text>
+          </div>
+        </Card>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 };
 

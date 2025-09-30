@@ -223,6 +223,7 @@ const EditKennelPage: React.FC = () => {
       
       // Build the update request
       const kennelData: UpdateKennelRequest = {
+        id: kennelId,
         name: finalValues.name,
         description: finalValues.description,
         businessName: finalValues.businessName,
@@ -255,6 +256,8 @@ const EditKennelPage: React.FC = () => {
         capacity: {
           maxDogs: finalValues.maxDogs || 10,
           maxLitters: finalValues.maxLitters || 5,
+          currentDogs: 0, // This will be calculated by the backend
+          currentLitters: 0, // This will be calculated by the backend
         },
         specialties: finalValues.specialties || [],
         socialMedia: {
@@ -322,6 +325,7 @@ const EditKennelPage: React.FC = () => {
       }
 
       const kennelData: UpdateKennelRequest = {
+        id: kennelId,
         name: finalValues.name,
         description: finalValues.description,
         businessName: finalValues.businessName,
@@ -354,6 +358,8 @@ const EditKennelPage: React.FC = () => {
         capacity: {
           maxDogs: finalValues.maxDogs || 10,
           maxLitters: finalValues.maxLitters || 5,
+          currentDogs: 0, // This will be calculated by the backend
+          currentLitters: 0, // This will be calculated by the backend
         },
         specialties: finalValues.specialties || [],
         socialMedia: {
@@ -766,13 +772,6 @@ const EditKennelPage: React.FC = () => {
                   showBreederCount={false}
                   onSelect={(value, option) => {
                     console.log('Breed selected:', value, option);
-                  }}
-                  onKeyDown={(e) => {
-                    // Prevent Enter key from submitting the form when selecting breeds
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
                   }}
                 />
               </Form.Item>

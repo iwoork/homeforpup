@@ -1,13 +1,16 @@
 'use client';
 
-import React from 'react';
-import { Typography, Card } from 'antd';
+import React, { Suspense } from 'react';
+import { Typography, Card, Spin } from 'antd';
 import { useAuth } from '@homeforpup/shared-auth';
 import { ActivityFeed, ActivityStats } from '@homeforpup/shared-activity';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const { Title, Paragraph } = Typography;
 
-const BreederActivityPage: React.FC = () => {
+const ActivityContent: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -69,6 +72,25 @@ const BreederActivityPage: React.FC = () => {
         }}
       />
     </div>
+  );
+};
+
+const BreederActivityPage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <Spin size="large" />
+        <Paragraph style={{ marginTop: '16px' }}>Loading activity...</Paragraph>
+      </div>
+    }>
+      <ActivityContent />
+    </Suspense>
   );
 };
 

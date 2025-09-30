@@ -1,13 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
+import { Spin } from 'antd';
 import { useAuth } from '@homeforpup/shared-auth';
 import { MessagesPage } from '@homeforpup/shared-messaging';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-const BreederMessagesPage: React.FC = () => {
+const MessagesContent: React.FC = () => {
   const { user, loading } = useAuth();
 
   console.log('BreederMessagesPage: user data:', { user, loading });
@@ -46,6 +47,26 @@ const BreederMessagesPage: React.FC = () => {
       userId={user.userId} 
       userType="breeder"
     />
+  );
+};
+
+const BreederMessagesPage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '32px 16px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '400px'
+      }}>
+        <Spin size="large" />
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   );
 };
 

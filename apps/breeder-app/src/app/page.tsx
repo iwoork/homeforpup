@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { Button, Card, Row, Col, Typography, Space, Spin, Alert } from 'antd';
 import { 
   HomeOutlined, 
@@ -16,9 +16,12 @@ import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
 import { useRouter } from 'next/navigation';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 const { Title, Paragraph } = Typography;
 
-export default function BreederLandingPage() {
+const BreederLandingContent: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
@@ -204,5 +207,35 @@ export default function BreederLandingPage() {
         </Card>
       </div>
     </div>
+  );
+};
+
+export default function BreederLandingPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <Card style={{ 
+          width: '100%',
+          maxWidth: '500px',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px' }}>
+            <Paragraph>Loading...</Paragraph>
+          </div>
+        </Card>
+      </div>
+    }>
+      <BreederLandingContent />
+    </Suspense>
   );
 }

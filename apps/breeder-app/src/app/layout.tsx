@@ -6,6 +6,9 @@ import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 const inter = Inter({ subsets: ['latin'] })
 
+// Force dynamic rendering for all pages
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'HomeForPup Breeders - Manage Your Kennel',
   description: 'Professional tools for dog breeders to manage kennels, dogs, and connect with potential families',

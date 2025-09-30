@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { Card, Typography, Spin, Alert } from 'antd';
 import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const { Title, Paragraph, Text } = Typography;
 
-const AuthCallbackPage: React.FC = () => {
+const AuthCallbackContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get('code');
@@ -88,6 +88,36 @@ const AuthCallbackPage: React.FC = () => {
         <Spin size="large" />
       </Card>
     </div>
+  );
+};
+
+const AuthCallbackPage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <Card style={{ 
+          width: '100%',
+          maxWidth: '400px',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px' }}>
+            <Text>Loading...</Text>
+          </div>
+        </Card>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 };
 

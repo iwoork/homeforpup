@@ -1,14 +1,14 @@
 'use client';
 
-import React from 'react';
-import { Card, Typography, Button, Alert, Space } from 'antd';
+import React, { Suspense } from 'react';
+import { Card, Typography, Button, Alert, Space, Spin } from 'antd';
 import { ExclamationCircleOutlined, HomeOutlined, LoginOutlined } from '@ant-design/icons';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const { Title, Paragraph, Text } = Typography;
 
-const AuthErrorPage: React.FC = () => {
+const AuthErrorContent: React.FC = () => {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
 
@@ -122,6 +122,36 @@ const AuthErrorPage: React.FC = () => {
         </div>
       </Card>
     </div>
+  );
+};
+
+const AuthErrorPage: React.FC = () => {
+  return (
+    <Suspense fallback={
+      <div style={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <Card style={{ 
+          width: '100%',
+          maxWidth: '500px',
+          borderRadius: '12px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px' }}>
+            <Text>Loading...</Text>
+          </div>
+        </Card>
+      </div>
+    }>
+      <AuthErrorContent />
+    </Suspense>
   );
 };
 

@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 const { Title, Paragraph, Text } = Typography;
 
 const DebugPage: React.FC = () => {
-  const { data: session, status, error } = useSession();
+  const { data: session, status } = useSession();
 
   return (
     <div style={{ 
@@ -46,18 +46,6 @@ const DebugPage: React.FC = () => {
             </pre>
           </div>
           
-          <div>
-            <Text strong>Error:</Text>
-            <pre style={{ 
-              background: '#f5f5f5', 
-              padding: '10px', 
-              borderRadius: '4px',
-              fontSize: '12px',
-              overflow: 'auto'
-            }}>
-              {JSON.stringify(error, null, 2)}
-            </pre>
-          </div>
           
           <div>
             <Text strong>Environment Variables:</Text>

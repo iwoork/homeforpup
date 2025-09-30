@@ -536,7 +536,7 @@ const CreateKennelPage: React.FC = () => {
           onFinish={handleSubmit}
           onValuesChange={(changedValues, allValues) => {
             console.log('Form values changed:', changedValues, allValues);
-            setFormValues(prev => ({ ...prev, ...allValues }));
+            setFormValues((prev: any) => ({ ...prev, ...allValues }));
           }}
           initialValues={{
             maxDogs: 10,
