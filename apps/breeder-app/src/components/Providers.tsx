@@ -3,7 +3,7 @@
 import React from 'react';
 import { ConfigProvider } from 'antd';
 import { NextAuthProvider } from '@/components/providers/NextAuthProvider';
-import { AuthProvider } from '@homeforpup/shared-auth';
+// import { AuthProvider } from '@homeforpup/shared-auth'; // Temporarily disabled
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <NextAuthProvider>
-      <AuthProvider>
+      {/* <AuthProvider> Temporarily disabled */}
         <ConfigProvider
           theme={{
             token: {
@@ -22,7 +22,7 @@ export function Providers({ children }: ProvidersProps) {
         >
           {children}
         </ConfigProvider>
-      </AuthProvider>
+      {/* </AuthProvider> */}
     </NextAuthProvider>
   );
 }

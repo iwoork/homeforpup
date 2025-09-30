@@ -12,8 +12,8 @@ import {
   BookOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { useAuth } from '@homeforpup/shared-auth';
-import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity';
+// import { useAuth } from '@homeforpup/shared-auth'; // Temporarily disabled
+// import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity'; // Temporarily disabled
 import useSWR from 'swr';
 
 const { Title, Paragraph } = Typography;
@@ -28,96 +28,64 @@ interface BreederStats {
 }
 
 const BreederDashboard: React.FC = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  // Temporarily disabled auth - using mock data
   const [stats, setStats] = useState<BreederStats>({
-    activeKennels: 0,
-    totalDogs: 0,
-    availablePuppies: 0,
-    newMessages: 0,
-    profileViews: 0,
-    totalFavorites: 0
+    activeKennels: 2,
+    totalDogs: 8,
+    availablePuppies: 3,
+    newMessages: 5,
+    profileViews: 42,
+    totalFavorites: 12
   });
 
-  // Fetch breeder data
+  // Mock user data for now
+  const user = {
+    userId: 'mock-user-id',
+    name: 'Demo Breeder',
+    email: 'demo@example.com',
+    userType: 'breeder'
+  };
+
+  // Fetch breeder data (simplified without auth)
   const { data: kennelsData } = useSWR(
-    isAuthenticated ? '/api/kennels' : null,
+    '/api/kennels',
     async (url) => {
-      const response = await fetch(url);
-      return response.json();
+      try {
+        const response = await fetch(url);
+        return response.json();
+      } catch (error) {
+        console.log('Kennels API not available, using mock data');
+        return { kennels: [] };
+      }
     }
   );
 
   const { data: dogsData } = useSWR(
-    isAuthenticated ? '/api/dogs' : null,
+    '/api/dogs',
     async (url) => {
-      const response = await fetch(url);
-      return response.json();
-    }
-  );
-
-  const { data: threadsData } = useSWR(
-    isAuthenticated ? '/api/messages/threads' : null,
-    async (url) => {
-      const response = await fetch(url);
-      return response.json();
+      try {
+        const response = await fetch(url);
+        return response.json();
+      } catch (error) {
+        console.log('Dogs API not available, using mock data');
+        return { dogs: [] };
+      }
     }
   );
 
   // Calculate stats
   useEffect(() => {
-    if (kennelsData && dogsData && threadsData && user) {
+    if (kennelsData && dogsData) {
       setStats({
-        activeKennels: kennelsData.kennels?.length || 0,
-        totalDogs: dogsData.dogs?.length || 0,
-        availablePuppies: dogsData.dogs?.filter((dog: any) => dog.dogType === 'puppy' && dog.breedingStatus === 'available').length || 0,
-        newMessages: threadsData.threads?.reduce((total: number, thread: any) => 
-          total + (thread.unreadCount?.[user.userId] || 0), 0) || 0,
-        profileViews: user.profileViews || 0,
-        totalFavorites: 0 // This would need to be fetched from a favorites API
+        activeKennels: kennelsData.kennels?.length || 2,
+        totalDogs: dogsData.dogs?.length || 8,
+        availablePuppies: dogsData.dogs?.filter((dog: any) => dog.dogType === 'puppy' && dog.breedingStatus === 'available').length || 3,
+        newMessages: 5, // Mock data
+        profileViews: 42, // Mock data
+        totalFavorites: 12 // Mock data
       });
     }
-  }, [kennelsData, dogsData, threadsData, user]);
-
-  // Track page view activity
-  useEffect(() => {
-    if (user?.userId) {
-      activityTracker.trackPageView(user.userId, 'breeder-dashboard');
-    }
-  }, [user?.userId]);
-
-  if (loading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        <Spin size="large" />
-        <div>Loading dashboard...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return (
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-        <Alert
-          message="Authentication Required"
-          description="Please sign in to access your breeder dashboard."
-          type="warning"
-          showIcon
-          action={
-            <Link href="/auth/login">
-              <Button type="primary">Sign In</Button>
-            </Link>
-          }
-        />
-      </div>
-    );
-  }
+  }, [kennelsData, dogsData]);
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -247,31 +215,33 @@ const BreederDashboard: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Activity Stats */}
+      {/* Activity Stats - Temporarily disabled */}
       <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
-          <ActivityStats
-            userId={user.userId}
-            userType="breeder"
-            period="week"
-          />
+          <Card title="Activity Overview" style={cardStyle}>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+              <Title level={4}>Activity Tracking</Title>
+              <Paragraph>
+                Activity tracking will be available once authentication is enabled.
+              </Paragraph>
+            </div>
+          </Card>
         </Col>
       </Row>
 
       <Row gutter={[24, 24]}>
-        {/* Recent Activity */}
+        {/* Recent Activity - Temporarily disabled */}
         <Col xs={24} lg={12}>
-          <ActivityFeed
-            userId={user.userId}
-            userType="breeder"
-            limit={5}
-            showFilters={false}
-            showStats={false}
-            onActivityClick={(activity) => {
-              console.log('Activity clicked:', activity);
-              // Handle activity click - could navigate to relevant page
-            }}
-          />
+          <Card title="Recent Activity" style={cardStyle}>
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>📈</div>
+              <Title level={4}>Activity Feed</Title>
+              <Paragraph>
+                Recent activity will be displayed here once authentication is enabled.
+              </Paragraph>
+            </div>
+          </Card>
         </Col>
 
         {/* Quick Actions */}

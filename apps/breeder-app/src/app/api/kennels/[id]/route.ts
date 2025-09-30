@@ -112,6 +112,13 @@ export async function PUT(
 
     const { id: kennelId } = await params;
     const body: UpdateKennelRequest = await request.json();
+    
+    console.log('Received update request for kennel:', kennelId);
+    console.log('Request body:', body);
+    console.log('Facilities in request:', body.facilities);
+    console.log('Specialties in request:', body.specialties);
+    console.log('Specialties type:', typeof body.specialties);
+    console.log('Is specialties array:', Array.isArray(body.specialties));
 
     // Get existing kennel
     const getCommand = new GetCommand({
@@ -152,6 +159,10 @@ export async function PUT(
       }
     });
 
+    console.log('Update expression:', updateExpression);
+    console.log('Expression attribute names:', expressionAttributeNames);
+    console.log('Expression attribute values:', expressionAttributeValues);
+
     const updateCommand = new UpdateCommand({
       TableName: KENNELS_TABLE,
       Key: { id: kennelId },
@@ -163,6 +174,11 @@ export async function PUT(
 
     const result = await docClient.send(updateCommand);
     const updatedKennel = result.Attributes as any;
+    
+    console.log('Updated kennel from DynamoDB:', updatedKennel);
+    console.log('Updated facilities:', updatedKennel?.facilities);
+    console.log('Facilities type:', typeof updatedKennel?.facilities);
+    console.log('Is facilities object:', updatedKennel?.facilities && typeof updatedKennel?.facilities === 'object');
 
     return NextResponse.json({ kennel: updatedKennel });
   } catch (error) {

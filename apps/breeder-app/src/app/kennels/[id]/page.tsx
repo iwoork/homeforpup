@@ -37,6 +37,7 @@ import {
   CalendarOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
+import BreedSelector from '@/components/forms/BreedSelector';
 import { useParams } from 'next/navigation';
 import { KennelResponse } from '@homeforpup/shared-types';
 import useSWR from 'swr';
@@ -145,6 +146,14 @@ const KennelDetailPage: React.FC = () => {
   }
 
   const { kennel, dogs, litters, stats } = data;
+  
+  // Debug: Log specialties value to understand the issue
+  console.log('Kennel specialties:', kennel.specialties);
+  console.log('Specialties type:', typeof kennel.specialties);
+  console.log('Is array:', Array.isArray(kennel.specialties));
+  
+  // Ensure specialties is always an array
+  const specialties = Array.isArray(kennel.specialties) ? kennel.specialties : [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -393,11 +402,11 @@ const KennelDetailPage: React.FC = () => {
         )}
 
         {/* Specialties */}
-        {kennel.specialties && kennel.specialties.length > 0 && (
+        {specialties.length > 0 && (
           <div style={{ marginTop: '24px' }}>
             <Title level={4}>Breed Specialties</Title>
             <Space wrap>
-              {kennel.specialties.map((specialty, index) => (
+              {specialties.map((specialty, index) => (
                 <Tag key={index} color="blue">{specialty}</Tag>
               ))}
             </Space>
@@ -566,9 +575,13 @@ const KennelDetailPage: React.FC = () => {
               <Form.Item
                 name="breed"
                 label="Breed"
-                rules={[{ required: true, message: 'Please enter breed' }]}
+                rules={[{ required: true, message: 'Please select breed' }]}
               >
-                <Input placeholder="Enter breed" />
+                <BreedSelector
+                  placeholder="Select breed"
+                  showSearch={true}
+                  allowClear={true}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Form, 
@@ -39,7 +39,16 @@ const CreateKennelPage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [formValues, setFormValues] = useState<any>({});
   const router = useRouter();
+
+  // Sync form with saved values when step changes
+  useEffect(() => {
+    if (Object.keys(formValues).length > 0) {
+      console.log('Syncing form with saved values:', formValues);
+      form.setFieldsValue(formValues);
+    }
+  }, [currentStep, formValues, form]);
 
   const steps = [
     {
@@ -63,48 +72,68 @@ const CreateKennelPage: React.FC = () => {
   const handleSubmit = async (values: any) => {
     setLoading(true);
     try {
+      console.log('Form values received:', values);
+      
+      // Get all form values - should now include all steps
+      const allValues = form.getFieldsValue();
+      console.log('All form values:', allValues);
+      console.log('Saved form values:', formValues);
+      
+      // Merge current form values with saved values to ensure we have everything
+      const finalValues = { ...formValues, ...allValues };
+      console.log('Final merged values:', finalValues);
+      
+      // Validate required fields before submission
+      if (!finalValues.name) {
+        throw new Error('Kennel name is required');
+      }
+      
+      if (!finalValues.street || !finalValues.city || !finalValues.state || !finalValues.zipCode || !finalValues.country) {
+        throw new Error('Complete address information is required');
+      }
+
       const kennelData: CreateKennelRequest = {
-        name: values.name,
-        description: values.description,
-        businessName: values.businessName,
-        website: values.website,
-        phone: values.phone,
-        email: values.email,
+        name: finalValues.name,
+        description: finalValues.description,
+        businessName: finalValues.businessName,
+        website: finalValues.website,
+        phone: finalValues.phone,
+        email: finalValues.email,
         address: {
-          street: values.street,
-          city: values.city,
-          state: values.state,
-          zipCode: values.zipCode,
-          country: values.country,
-          coordinates: values.latitude && values.longitude ? {
-            latitude: values.latitude,
-            longitude: values.longitude,
+          street: finalValues.street,
+          city: finalValues.city,
+          state: finalValues.state,
+          zipCode: finalValues.zipCode,
+          country: finalValues.country,
+          coordinates: finalValues.latitude && finalValues.longitude ? {
+            latitude: finalValues.latitude,
+            longitude: finalValues.longitude,
           } : undefined,
         },
         facilities: {
-          indoorSpace: values.indoorSpace || false,
-          outdoorSpace: values.outdoorSpace || false,
-          exerciseArea: values.exerciseArea || false,
-          whelpingArea: values.whelpingArea || false,
-          quarantineArea: values.quarantineArea || false,
-          groomingArea: values.groomingArea || false,
-          veterinaryAccess: values.veterinaryAccess || false,
-          climateControl: values.climateControl || false,
-          security: values.security || false,
-          other: values.otherFacilities || [],
+          indoorSpace: finalValues.indoorSpace || false,
+          outdoorSpace: finalValues.outdoorSpace || false,
+          exerciseArea: finalValues.exerciseArea || false,
+          whelpingArea: finalValues.whelpingArea || false,
+          quarantineArea: finalValues.quarantineArea || false,
+          groomingArea: finalValues.groomingArea || false,
+          veterinaryAccess: finalValues.veterinaryAccess || false,
+          climateControl: finalValues.climateControl || false,
+          security: finalValues.security || false,
+          other: finalValues.otherFacilities || [],
         },
         capacity: {
-          maxDogs: values.maxDogs || 10,
-          maxLitters: values.maxLitters || 5,
+          maxDogs: finalValues.maxDogs || 10,
+          maxLitters: finalValues.maxLitters || 5,
           currentDogs: 0,
           currentLitters: 0,
         },
-        specialties: values.specialties || [],
+        specialties: finalValues.specialties || [],
         socialMedia: {
-          facebook: values.facebook,
-          instagram: values.instagram,
-          twitter: values.twitter,
-          youtube: values.youtube,
+          facebook: finalValues.facebook,
+          instagram: finalValues.instagram,
+          twitter: finalValues.twitter,
+          youtube: finalValues.youtube,
         },
       };
 
@@ -134,14 +163,46 @@ const CreateKennelPage: React.FC = () => {
   };
 
   const nextStep = () => {
-    form.validateFields().then(() => {
+    // Validate current step fields
+    const fieldsToValidate = getFieldsForStep(currentStep);
+    form.validateFields(fieldsToValidate).then(() => {
+      // Get current form values and save them
+      const currentValues = form.getFieldsValue();
+      console.log('Moving to next step. Current values:', currentValues);
+      const newFormValues = { ...formValues, ...currentValues };
+      setFormValues(newFormValues);
+      
+      // Set the form values to ensure they persist
+      form.setFieldsValue(newFormValues);
+      
       setCurrentStep(currentStep + 1);
     }).catch(() => {
-      message.error('Please fill in all required fields');
+      message.error('Please fill in all required fields for this step');
     });
   };
 
+  const getFieldsForStep = (step: number) => {
+    switch (step) {
+      case 0:
+        return ['name', 'email']; // Basic info - name and email are required
+      case 1:
+        return ['street', 'city', 'state', 'zipCode', 'country']; // Address info
+      case 2:
+        return []; // Facilities - all optional
+      case 3:
+        return ['maxDogs', 'maxLitters']; // Capacity - required
+      default:
+        return [];
+    }
+  };
+
   const prevStep = () => {
+    // Save current form values before going back
+    const currentValues = form.getFieldsValue();
+    const newFormValues = { ...formValues, ...currentValues };
+    setFormValues(newFormValues);
+    form.setFieldsValue(newFormValues);
+    
     setCurrentStep(currentStep - 1);
   };
 
@@ -191,6 +252,7 @@ const CreateKennelPage: React.FC = () => {
                 name="email"
                 label="Email"
                 rules={[
+                  { required: true, message: 'Please enter email' },
                   { type: 'email', message: 'Please enter a valid email' }
                 ]}
               >
@@ -472,6 +534,10 @@ const CreateKennelPage: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          onValuesChange={(changedValues, allValues) => {
+            console.log('Form values changed:', changedValues, allValues);
+            setFormValues(prev => ({ ...prev, ...allValues }));
+          }}
           initialValues={{
             maxDogs: 10,
             maxLitters: 5,
@@ -498,7 +564,7 @@ const CreateKennelPage: React.FC = () => {
                 ) : (
                   <Button 
                     type="primary" 
-                    htmlType="submit" 
+                    htmlType="submit"
                     loading={loading}
                     icon={<SaveOutlined />}
                   >

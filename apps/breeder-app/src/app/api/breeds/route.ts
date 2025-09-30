@@ -13,7 +13,11 @@ const client = new DynamoDBClient({
   },
 });
 
-const dynamodb = DynamoDBDocumentClient.from(client);
+const dynamodb = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true,
+  },
+});
 const BREEDS_TABLE = process.env.BREEDS_TABLE_NAME || 'homeforpup-breeds-simple';
 
 // Enhanced breed interface matching Python script

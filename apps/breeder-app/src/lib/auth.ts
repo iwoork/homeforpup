@@ -38,7 +38,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }: any) {
       // Send properties to the client
       if (token) {
-        session.user.id = token.sub!;
+        session.user.id = token.sub || token.id;
         session.user.userType = token.userType as string;
         session.user.isVerified = token.isVerified as boolean;
         session.accessToken = token.accessToken as string;

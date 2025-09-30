@@ -14,7 +14,11 @@ const dynamoClient = new DynamoDBClient({
   },
 });
 
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
+const docClient = DynamoDBDocumentClient.from(dynamoClient, {
+  marshallOptions: {
+    removeUndefinedValues: true,
+  },
+});
 const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 

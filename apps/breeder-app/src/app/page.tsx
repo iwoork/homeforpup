@@ -1,180 +1,208 @@
 'use client';
 
-import React from 'react';
-import { Button, Card, Row, Col, Typography, Space, Statistic } from 'antd';
+import React, { useEffect } from 'react';
+import { Button, Card, Row, Col, Typography, Space, Spin, Alert } from 'antd';
 import { 
   HomeOutlined, 
   TeamOutlined, 
   MessageOutlined, 
   BarChartOutlined,
   PlusOutlined,
-  SettingOutlined,
+  LoginOutlined,
+  UserAddOutlined,
   BookOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
+import { useAuth } from '@homeforpup/shared-auth';
+import { useRouter } from 'next/navigation';
 
 const { Title, Paragraph } = Typography;
 
-export default function BreederDashboard() {
-  return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <Title level={1}>Breeder Dashboard</Title>
-        <Paragraph style={{ fontSize: '1.1rem' }}>
-          Manage your kennel, dogs, and connect with potential families
-        </Paragraph>
+export default function BreederLandingPage() {
+  const { user, isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+
+  // Redirect to dashboard if authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, user, router]);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <Spin size="large" />
+        <div>Loading...</div>
       </div>
+    );
+  }
 
-      {/* Quick Stats */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic title="Active Kennels" value={2} />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic title="Total Dogs" value={8} />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic title="Available Puppies" value={3} />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic title="New Messages" value={5} />
-          </Card>
-        </Col>
-      </Row>
+  if (isAuthenticated && user) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <Spin size="large" />
+        <div>Redirecting to dashboard...</div>
+      </div>
+    );
+  }
 
-      {/* Quick Actions */}
-      <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
-        <Col xs={24} md={12}>
-          <Card 
-            title="Kennel Management" 
-            extra={<HomeOutlined style={{ fontSize: '24px' }} />}
-            hoverable
-          >
-            <Paragraph>
-              Manage your kennels, update information, and create announcements
-            </Paragraph>
-            <Space>
-              <Link href="/kennels">
-                <Button type="primary" icon={<HomeOutlined />}>
-                  View Kennels
-                </Button>
-              </Link>
-              <Link href="/kennels/new">
-                <Button icon={<PlusOutlined />}>
-                  Add Kennel
-                </Button>
-              </Link>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card 
-            title="Dog Management" 
-            extra={<TeamOutlined style={{ fontSize: '24px' }} />}
-            hoverable
-          >
-            <Paragraph>
-              Add and manage your dogs, track litters, and update health records
-            </Paragraph>
-            <Space>
-              <Link href="/dogs">
-                <Button type="primary" icon={<TeamOutlined />}>
-                  View Dogs
-                </Button>
-              </Link>
-              <Link href="/dogs/new">
-                <Button icon={<PlusOutlined />}>
-                  Add Dog
-                </Button>
-              </Link>
-            </Space>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card 
-            title="Messages" 
-            extra={<MessageOutlined style={{ fontSize: '24px' }} />}
-            hoverable
-          >
-            <Paragraph>
-              Respond to inquiries from potential families and manage conversations
-            </Paragraph>
-            <Link href="/messages">
-              <Button type="primary" icon={<MessageOutlined />}>
-                View Messages
+  return (
+    <div style={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '40px 20px'
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <HomeOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '24px' }} />
+          <Title level={1} style={{ color: 'white', marginBottom: '16px' }}>
+            HomeForPup Breeders
+          </Title>
+          <Paragraph style={{ color: 'white', fontSize: '1.2rem', marginBottom: '32px' }}>
+            Professional tools for dog breeders to manage kennels, dogs, and connect with potential families
+          </Paragraph>
+          
+          <Space size="large">
+            <Link href="/auth/login">
+              <Button 
+                type="primary" 
+                size="large" 
+                icon={<LoginOutlined />}
+                style={{ height: '48px', fontSize: '16px', fontWeight: '500' }}
+              >
+                Sign In
               </Button>
             </Link>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card 
-            title="Analytics" 
-            extra={<BarChartOutlined style={{ fontSize: '24px' }} />}
-            hoverable
-          >
-            <Paragraph>
-              Track your business performance, profile views, and engagement
-            </Paragraph>
-            <Link href="/analytics">
-              <Button type="primary" icon={<BarChartOutlined />}>
-                View Analytics
+            <Link href="/auth/signup">
+              <Button 
+                size="large" 
+                icon={<UserAddOutlined />}
+                style={{ 
+                  height: '48px', 
+                  fontSize: '16px', 
+                  fontWeight: '500',
+                  background: 'white',
+                  color: '#1890ff',
+                  border: '2px solid white'
+                }}
+              >
+                Create Account
               </Button>
             </Link>
-          </Card>
-        </Col>
-        <Col xs={24} md={12}>
-          <Card 
-            title="Help & Documentation" 
-            extra={<BookOutlined style={{ fontSize: '24px' }} />}
-            hoverable
-          >
-            <Paragraph>
-              Learn how to use the system with our comprehensive guides and tutorials
-            </Paragraph>
-            <Link href="/docs">
-              <Button type="primary" icon={<BookOutlined />}>
-                View Documentation
-              </Button>
-            </Link>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Recent Activity */}
-      <Card title="Recent Activity" style={{ marginBottom: '32px' }}>
-        <div style={{ textAlign: 'center', padding: '24px' }}>
-          <Paragraph>No recent activity</Paragraph>
-          <Link href="/announcements/new">
-            <Button type="primary" icon={<PlusOutlined />}>
-              Create Your First Announcement
-            </Button>
-          </Link>
+          </Space>
         </div>
-      </Card>
 
-      {/* Settings */}
-      <Card title="Account Settings" extra={<SettingOutlined />}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12}>
-            <Link href="/profile">
-              <Button block>Edit Profile</Button>
-            </Link>
+        {/* Features */}
+        <Row gutter={[32, 32]} style={{ marginBottom: '60px' }}>
+          <Col xs={24} md={8}>
+            <Card 
+              style={{ 
+                height: '100%',
+                borderRadius: '12px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                background: 'white'
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <HomeOutlined style={{ fontSize: '48px', color: '#52c41a', marginBottom: '16px' }} />
+                <Title level={3}>Kennel Management</Title>
+                <Paragraph>
+                  Manage multiple kennels, update information, and create announcements for potential families.
+                </Paragraph>
+              </div>
+            </Card>
           </Col>
-          <Col xs={24} sm={12}>
-            <Link href="/settings">
-              <Button block>App Settings</Button>
-            </Link>
+          <Col xs={24} md={8}>
+            <Card 
+              style={{ 
+                height: '100%',
+                borderRadius: '12px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                background: 'white'
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <TeamOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+                <Title level={3}>Dog & Litter Tracking</Title>
+                <Paragraph>
+                  Track your dogs, manage litters, and maintain comprehensive health and breeding records.
+                </Paragraph>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} md={8}>
+            <Card 
+              style={{ 
+                height: '100%',
+                borderRadius: '12px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+                background: 'white'
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <MessageOutlined style={{ fontSize: '48px', color: '#fa8c16', marginBottom: '16px' }} />
+                <Title level={3}>Connect with Families</Title>
+                <Paragraph>
+                  Communicate with potential families, answer questions, and build lasting relationships.
+                </Paragraph>
+              </div>
+            </Card>
           </Col>
         </Row>
-      </Card>
+
+        {/* CTA Section */}
+        <Card 
+          style={{ 
+            textAlign: 'center',
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+            background: 'white'
+          }}
+        >
+          <Title level={2}>Ready to Get Started?</Title>
+          <Paragraph style={{ fontSize: '1.1rem', marginBottom: '32px' }}>
+            Join our community of professional dog breeders and start managing your breeding business more effectively.
+          </Paragraph>
+          
+          <Space size="large">
+            <Link href="/auth/signup">
+              <Button 
+                type="primary" 
+                size="large" 
+                icon={<UserAddOutlined />}
+                style={{ height: '48px', fontSize: '16px', fontWeight: '500' }}
+              >
+                Create Your Account
+              </Button>
+            </Link>
+            <Link href="/docs">
+              <Button 
+                size="large" 
+                icon={<BookOutlined />}
+                style={{ height: '48px', fontSize: '16px', fontWeight: '500' }}
+              >
+                Learn More
+              </Button>
+            </Link>
+          </Space>
+        </Card>
+      </div>
     </div>
   );
 }
