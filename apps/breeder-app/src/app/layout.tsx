@@ -24,11 +24,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <GoogleAnalytics />
       </head>
-      <body className={inter.className} style={{margin: 0, padding: 0}}>
+      <body className={inter.className} style={{margin: 0, padding: 0}} suppressHydrationWarning>
         <Providers>
           <ConditionalHeader />
           {children}

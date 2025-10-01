@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { ConfigProvider, App } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { ConfigProvider, App, Spin } from 'antd';
 import { NextAuthProvider } from '@/components/providers/NextAuthProvider';
 
 interface ProvidersProps {
@@ -9,6 +9,27 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent FOUC by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: '#f5f5f5'
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <NextAuthProvider>
       <ConfigProvider
