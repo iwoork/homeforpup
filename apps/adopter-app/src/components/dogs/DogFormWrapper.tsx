@@ -3,12 +3,11 @@
 import React, { useState } from 'react';
 import { Modal, message } from 'antd';
 import { DogForm } from '@homeforpup/shared-components';
-import type { DogFormProps } from '@homeforpup/shared-components';
 import { useKennels } from '@/hooks/useKennels';
 import { mutate } from 'swr';
 import type { Dog } from '@/types';
 
-interface DogFormWrapperProps {
+export interface DogFormWrapperProps {
   visible: boolean;
   onClose: () => void;
   dog?: Dog | null;

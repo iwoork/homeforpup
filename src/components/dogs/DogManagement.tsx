@@ -27,7 +27,7 @@ import dayjs from 'dayjs';
 import { Dog, Kennel } from '@/types';
 import { useDogs } from '@/hooks/api/useDogs';
 import { useKennels } from '@/hooks/useKennels';
-import DogForm from './DogForm';
+import { DogForm } from '@homeforpup/shared-components';
 import KennelForm from './KennelForm';
 
 const { Title, Text } = Typography;
@@ -67,10 +67,40 @@ const DogManagement: React.FC<DogManagementProps> = ({ userId }) => {
     }
   };
 
-  const handleDogSaved = () => {
-    setShowDogForm(false);
-    setEditingDog(null);
-    refreshDogs();
+  const handleDogSaved = async (values: any) => {
+    try {
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (key === 'birthDate' && value && typeof value === 'object' && 'format' in value) {
+            formData.append(key, (value as any).format('YYYY-MM-DD'));
+          } else if (key === 'photo' && value && typeof value === 'object' && 'fileList' in value) {
+            if ((value as any).fileList && (value as any).fileList[0]) {
+              formData.append('photo', (value as any).fileList[0].originFileObj);
+            }
+          } else if (Array.isArray(value)) {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      const url = editingDog?.id ? `/api/dogs/${editingDog.id}` : '/api/dogs';
+      const method = editingDog?.id ? 'PUT' : 'POST';
+
+      const response = await fetch(url, { method, body: formData });
+      if (!response.ok) throw new Error('Failed to save dog');
+
+      message.success(editingDog ? 'Dog updated successfully' : 'Dog created successfully');
+      setShowDogForm(false);
+      setEditingDog(null);
+      refreshDogs();
+    } catch (error) {
+      console.error('Error saving dog:', error);
+      message.error('Failed to save dog');
+      throw error;
+    }
   };
 
   const handleDogFormCancel = () => {
@@ -386,8 +416,13 @@ const DogManagement: React.FC<DogManagementProps> = ({ userId }) => {
       >
         <DogForm
           dog={editingDog || undefined}
-          onSave={handleDogSaved}
+          kennels={kennels?.map(k => ({ id: k.id, name: k.name })) || []}
+          kennelsLoading={kennelsLoading}
+          onSubmit={handleDogSaved}
           onCancel={handleDogFormCancel}
+          showKennelSelector={true}
+          showAdvancedFields={true}
+          showPhotoUpload={true}
         />
       </Modal>
 

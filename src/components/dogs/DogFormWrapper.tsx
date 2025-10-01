@@ -1,21 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { message } from 'antd';
+import { Modal, message } from 'antd';
 import { DogForm } from '@homeforpup/shared-components';
 import { useKennels } from '@/hooks/useKennels';
+import { mutate } from 'swr';
 import type { Dog } from '@/types';
 
-interface DogFormWrapperProps {
+export interface DogFormWrapperProps {
+  visible: boolean;
+  onClose: () => void;
   dog?: Dog | null;
-  onSave?: (dog: Dog) => void;
-  onCancel?: () => void;
+  onSuccess?: (dog: Dog) => void;
 }
 
 export const DogFormWrapper: React.FC<DogFormWrapperProps> = ({
+  visible,
+  onClose,
   dog,
-  onSave,
-  onCancel,
+  onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
   const { kennels, isLoading: kennelsLoading } = useKennels();
@@ -56,9 +59,13 @@ export const DogFormWrapper: React.FC<DogFormWrapperProps> = ({
       }
 
       const savedDog = await response.json();
-      message.success(dog ? 'Dog updated successfully' : 'Dog created successfully');
+      message.success(dog?.id ? 'Dog updated successfully!' : 'Dog added successfully!');
       
-      onSave?.(savedDog);
+      // Refresh dogs data
+      mutate('/api/dogs');
+      
+      onSuccess?.(savedDog);
+      onClose();
     } catch (error) {
       console.error('Error saving dog:', error);
       message.error('Failed to save dog');
@@ -67,18 +74,30 @@ export const DogFormWrapper: React.FC<DogFormWrapperProps> = ({
     }
   };
 
+  if (!visible) return null;
+
   return (
-    <DogForm
-      dog={dog}
-      kennels={kennels?.map(k => ({ id: k.id, name: k.name })) || []}
-      kennelsLoading={kennelsLoading}
-      onSubmit={handleSubmit}
-      onCancel={onCancel}
-      loading={loading}
-      showKennelSelector={true}
-      showAdvancedFields={true}
-      showPhotoUpload={true}
-    />
+    <Modal
+      title={dog?.id ? 'Edit Dog' : 'Add New Dog'}
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      width={800}
+      destroyOnClose
+      centered
+    >
+      <DogForm
+        dog={dog}
+        kennels={kennels?.map(k => ({ id: k.id, name: k.name })) || []}
+        kennelsLoading={kennelsLoading}
+        onSubmit={handleSubmit}
+        onCancel={onClose}
+        loading={loading}
+        showKennelSelector={true}
+        showAdvancedFields={true}
+        showPhotoUpload={true}
+      />
+    </Modal>
   );
 };
 
