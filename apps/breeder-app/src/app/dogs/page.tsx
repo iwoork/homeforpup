@@ -30,6 +30,8 @@ import {
   HeartOutlined,
   TeamOutlined
 } from '@ant-design/icons';
+import { ColorSelector } from '@homeforpup/shared-components';
+import { useDogColors } from '@homeforpup/shared-hooks';
 import Link from 'next/link';
 import useSWR from 'swr';
 import type { Dog } from '@homeforpup/shared-types';
@@ -56,6 +58,7 @@ const DogsPage: React.FC = () => {
   const [editingDog, setEditingDog] = useState<Dog | null>(null);
   const [addDogForm] = Form.useForm();
   const [editDogForm] = Form.useForm();
+  const { colors, loading: colorsLoading, error: colorsError } = useDogColors();
 
   // Build query parameters
   const buildQueryString = () => {
@@ -505,9 +508,17 @@ const DogsPage: React.FC = () => {
           <Form.Item
             name="color"
             label="Color"
-            rules={[{ required: true, message: 'Please enter color' }]}
+            rules={[{ required: true, message: 'Please select color' }]}
+            help="Select the primary color or pattern"
           >
-            <Input placeholder="e.g., Golden" />
+            <ColorSelector
+              colors={colors}
+              loading={colorsLoading}
+              error={colorsError || undefined}
+              showColorSwatches={true}
+              showDescription={true}
+              placeholder="Select color or pattern"
+            />
           </Form.Item>
 
           <Form.Item
@@ -618,9 +629,17 @@ const DogsPage: React.FC = () => {
           <Form.Item
             name="color"
             label="Color"
-            rules={[{ required: true, message: 'Please enter color' }]}
+            rules={[{ required: true, message: 'Please select color' }]}
+            help="Select the primary color or pattern"
           >
-            <Input placeholder="e.g., Golden" />
+            <ColorSelector
+              colors={colors}
+              loading={colorsLoading}
+              error={colorsError || undefined}
+              showColorSwatches={true}
+              showDescription={true}
+              placeholder="Select color or pattern"
+            />
           </Form.Item>
 
           <Form.Item

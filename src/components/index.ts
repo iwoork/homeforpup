@@ -1,7 +1,7 @@
 // Component exports organized by type
 
 // Form components
-export { default as AddDogForm } from './forms/AddDogForm';
+export { default as AddDogForm } from './dogs/DogFormWrapper'; // Using shared DogForm component
 export { default as UserTypeModal } from './forms/UserTypeModal';
 export { default as ProfilePhotoUpload } from './forms/Upload/ProfilePhotoUpload';
 export { default as CoverPhotoUpload } from './forms/Upload/CoverPhotoUpload';

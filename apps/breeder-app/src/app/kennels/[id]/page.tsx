@@ -38,6 +38,8 @@ import {
   CalendarOutlined,
   CloseOutlined
 } from '@ant-design/icons';
+import { ColorSelector } from '@homeforpup/shared-components';
+import { useDogColors } from '@homeforpup/shared-hooks';
 import Link from 'next/link';
 import BreedSelector from '@/components/forms/BreedSelector';
 import { useParams } from 'next/navigation';
@@ -58,6 +60,7 @@ const KennelDetailPage: React.FC = () => {
   const [editLitterVisible, setEditLitterVisible] = useState(false);
   const [editingDog, setEditingDog] = useState<any>(null);
   const [editingLitter, setEditingLitter] = useState<any>(null);
+  const { colors, loading: colorsLoading, error: colorsError } = useDogColors();
   const [selectedPuppies, setSelectedPuppies] = useState<any[]>([]);
   const [addPuppyVisible, setAddPuppyVisible] = useState(false);
   const [dogForm] = Form.useForm();
@@ -794,9 +797,17 @@ const KennelDetailPage: React.FC = () => {
               <Form.Item
                 name="color"
                 label="Color"
-                rules={[{ required: true, message: 'Please enter color' }]}
+                rules={[{ required: true, message: 'Please select color' }]}
+                help="Select the primary color or pattern"
               >
-                <Input placeholder="Enter color" />
+                <ColorSelector
+                  colors={colors}
+                  loading={colorsLoading}
+                  error={colorsError || undefined}
+                  showColorSwatches={true}
+                  showDescription={true}
+                  placeholder="Select color or pattern"
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -990,9 +1001,17 @@ const KennelDetailPage: React.FC = () => {
               <Form.Item
                 name="color"
                 label="Color"
-                rules={[{ required: true, message: 'Please enter color' }]}
+                rules={[{ required: true, message: 'Please select color' }]}
+                help="Select the primary color or pattern"
               >
-                <Input placeholder="Enter color" />
+                <ColorSelector
+                  colors={colors}
+                  loading={colorsLoading}
+                  error={colorsError || undefined}
+                  showColorSwatches={true}
+                  showDescription={true}
+                  placeholder="Select color or pattern"
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
@@ -1361,9 +1380,17 @@ const KennelDetailPage: React.FC = () => {
               <Form.Item
                 name="color"
                 label="Color"
-                rules={[{ required: true, message: 'Please enter color' }]}
+                rules={[{ required: true, message: 'Please select color' }]}
+                help="Select the primary color or pattern"
               >
-                <Input placeholder="Enter color" />
+                <ColorSelector
+                  colors={colors}
+                  loading={colorsLoading}
+                  error={colorsError || undefined}
+                  showColorSwatches={true}
+                  showDescription={true}
+                  placeholder="Select color or pattern"
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
