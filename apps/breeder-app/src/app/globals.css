@@ -16,7 +16,15 @@
   }
 }
 
+html {
+  /* Prevent FOUC */
+  visibility: visible;
+  opacity: 1;
+}
+
 body {
+  margin: 0;
+  padding: 0;
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
       to bottom,
@@ -24,6 +32,8 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  /* Prevent FOUC */
+  min-height: 100vh;
 }
 
 @layer utilities {

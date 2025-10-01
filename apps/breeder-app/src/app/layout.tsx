@@ -5,7 +5,10 @@ import { Providers } from '@/components/Providers'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import ConditionalHeader from '@/components/ConditionalHeader'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap', // Prevent FOUC with font loading
+})
 
 // Force dynamic rendering for all pages
 export const dynamic = 'force-dynamic';
@@ -25,7 +28,7 @@ export default function RootLayout({
       <head>
         <GoogleAnalytics />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} style={{margin: 0, padding: 0}}>
         <Providers>
           <ConditionalHeader />
           {children}
