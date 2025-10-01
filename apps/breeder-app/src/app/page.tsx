@@ -69,44 +69,115 @@ const BreederLandingContent: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '40px 20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <HomeOutlined style={{ fontSize: '64px', color: '#52c41a', marginBottom: '24px' }} />
-          <Title level={1} style={{ color: 'white', marginBottom: '16px' }}>
-            HomeForPup Breeders
+    <>
+      {/* Hero Section with Video Background */}
+      <section style={{ 
+        position: 'relative',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 0,
+          }}
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+
+        {/* Overlay for better text readability */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(135deg, rgba(82, 196, 26, 0.75) 0%, rgba(24, 144, 255, 0.75) 100%)',
+          zIndex: 1,
+        }} />
+
+        {/* Hero Content */}
+        <div style={{ 
+          position: 'relative', 
+          zIndex: 2, 
+          textAlign: 'center',
+          padding: '40px 20px',
+          maxWidth: '1000px',
+          width: '100%'
+        }}>
+          
+          {/* Hero Text */}
+          <Title level={1} style={{ 
+            color: 'white', 
+            marginBottom: '24px',
+            fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+            fontWeight: 700,
+            textShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+            lineHeight: 1.2
+          }}>
+            Professional Breeding Management
           </Title>
-          <Paragraph style={{ color: 'white', fontSize: '1.2rem', marginBottom: '32px' }}>
-            Professional tools for dog breeders to manage kennels, dogs, and connect with potential families
+          <Paragraph style={{ 
+            color: 'white', 
+            fontSize: 'clamp(1rem, 2.5vw, 1.4rem)', 
+            marginBottom: '48px',
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+            lineHeight: 1.8,
+            maxWidth: '800px',
+            margin: '0 auto 48px'
+          }}>
+            Streamline your breeding operations with our comprehensive platform. Manage kennels, track breeding programs, and connect with families seeking their perfect companion.
           </Paragraph>
           
-          <Space size="large">
+          {/* CTA Buttons */}
+          <Space size="large" wrap>
             <Link href="/auth/login">
               <Button 
                 type="primary" 
                 size="large" 
                 icon={<LoginOutlined />}
-                style={{ height: '48px', fontSize: '16px', fontWeight: '500' }}
+                style={{ 
+                  height: '60px', 
+                  fontSize: '18px', 
+                  fontWeight: '600',
+                  padding: '0 48px',
+                  borderRadius: '12px',
+                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+                  background: '#52c41a',
+                  borderColor: '#52c41a'
+                }}
               >
                 Sign In
               </Button>
             </Link>
             <Link href="/auth/signup">
               <Button 
-                size="large" 
+                size="large"
                 icon={<UserAddOutlined />}
                 style={{ 
-                  height: '48px', 
-                  fontSize: '16px', 
-                  fontWeight: '500',
-                  background: 'white',
-                  color: '#1890ff',
-                  border: '2px solid white'
+                  height: '60px', 
+                  fontSize: '18px', 
+                  fontWeight: '600',
+                  padding: '0 48px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  border: '2px solid white',
+                  borderRadius: '12px',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)'
                 }}
               >
                 Create Account
@@ -114,9 +185,16 @@ const BreederLandingContent: React.FC = () => {
             </Link>
           </Space>
         </div>
+      </section>
 
-        {/* Features */}
-        <Row gutter={[32, 32]} style={{ marginBottom: '60px' }}>
+      {/* Features Section */}
+      <div style={{ 
+        background: '#f5f5f5',
+        padding: '80px 20px',
+        width: '100%'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <Row gutter={[32, 32]} style={{ marginBottom: '0' }}>
           <Col xs={24} md={8}>
             <Card 
               style={{ 
@@ -172,8 +250,16 @@ const BreederLandingContent: React.FC = () => {
             </Card>
           </Col>
         </Row>
+        </div>
+      </div>
 
-        {/* CTA Section */}
+      {/* CTA Section */}
+      <div style={{ 
+        background: 'white',
+        padding: '80px 20px',
+        width: '100%'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <Card 
           style={{ 
             textAlign: 'center',
@@ -209,8 +295,9 @@ const BreederLandingContent: React.FC = () => {
             </Link>
           </Space>
         </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

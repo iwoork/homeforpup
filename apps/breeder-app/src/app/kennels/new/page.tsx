@@ -503,7 +503,7 @@ const CreateKennelPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '24px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
       {/* Header */}
       <Row justify="space-between" align="middle" style={{ marginBottom: '24px' }}>
         <Col>

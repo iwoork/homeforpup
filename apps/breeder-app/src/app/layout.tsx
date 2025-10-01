@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Providers'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import ConditionalHeader from '@/components/ConditionalHeader'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <Providers>
+          <ConditionalHeader />
           {children}
         </Providers>
       </body>

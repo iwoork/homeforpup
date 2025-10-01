@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Typography, Button, Space, Alert } from 'antd';
 import { HomeOutlined, LoginOutlined } from '@ant-design/icons';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,10 +11,20 @@ const { Title, Paragraph, Text } = Typography;
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  const handleSignIn = () => {
-    // For now, just redirect to dashboard without authentication
-    router.push('/dashboard');
+  const handleSignIn = async () => {
+    try {
+      setLoading(true);
+      // Use NextAuth signIn with Cognito provider
+      await signIn('cognito', { 
+        callbackUrl: '/dashboard',
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,6 +69,7 @@ const LoginPage: React.FC = () => {
             size="large"
             icon={<LoginOutlined />}
             onClick={handleSignIn}
+            loading={loading}
             style={{ 
               width: '100%',
               height: '48px',

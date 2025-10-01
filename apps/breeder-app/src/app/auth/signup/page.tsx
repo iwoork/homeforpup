@@ -85,7 +85,7 @@ const SignupContent: React.FC = () => {
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <HomeOutlined style={{ fontSize: '48px', color: '#52c41a', marginBottom: '16px' }} />
           <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
-            Join HomeForPup Breeders
+            Join Home for Pup Breeders
           </Title>
           <Paragraph type="secondary" style={{ margin: '8px 0 0 0' }}>
             Professional tools for dog breeders
