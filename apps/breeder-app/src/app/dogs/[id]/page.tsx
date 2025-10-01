@@ -54,6 +54,7 @@ import useSWR from 'swr';
 import dayjs from 'dayjs';
 import { PhotoUpload, setS3Operations } from '@homeforpup/shared-photo-upload';
 import { s3Operations } from '@/lib/api/s3';
+import { formatDetailedAge } from '@/lib/utils/ageDisplay';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -397,7 +398,7 @@ const DogDetailsPage: React.FC = () => {
                     {dayjs(dog.birthDate).format('MMMM DD, YYYY')}
                   </Descriptions.Item>
                   <Descriptions.Item label="Age">
-                    {dayjs().diff(dayjs(dog.birthDate), 'year')} years old
+                    {formatDetailedAge(dog.birthDate)}
                   </Descriptions.Item>
                   <Descriptions.Item label="Color">{dog.color}</Descriptions.Item>
                   <Descriptions.Item label="Weight">

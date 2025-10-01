@@ -35,6 +35,7 @@ import { useDogColors } from '@homeforpup/shared-hooks';
 import Link from 'next/link';
 import useSWR from 'swr';
 import type { Dog } from '@homeforpup/shared-types';
+import { formatAge } from '@/lib/utils/ageDisplay';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -232,10 +233,7 @@ const DogsPage: React.FC = () => {
       key: 'age',
       render: (birthDate: string) => {
         if (!birthDate) return '-';
-        const age = Math.floor(
-          (new Date().getTime() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365)
-        );
-        return `${age} ${age === 1 ? 'year' : 'years'}`;
+        return formatAge(birthDate);
       },
     },
     {
