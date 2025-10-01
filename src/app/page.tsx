@@ -294,6 +294,7 @@ const BreederHomePage: React.FC = () => {
                 <Paragraph style={{ fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>&ldquo;The community here is amazing. I've built lasting relationships with families and other breeders who share my passion for responsible breeding.&rdquo;</Paragraph>
                 <Title level={4} style={{ fontSize: '16px', margin: 0 }}>&mdash; Lisa Rodriguez, Montreal Frenchies</Title>
               </Card>
+            </Col>
           </Row>
         </div>
       </section>
