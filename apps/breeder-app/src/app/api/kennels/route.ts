@@ -34,13 +34,27 @@ export async function GET(request: NextRequest) {
       hasUser: !!session?.user,
       userId: session?.user?.id,
       userEmail: session?.user?.email,
+      fullSession: session,
       env: {
         hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
         hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
         nextAuthUrl: process.env.NEXTAUTH_URL,
         nodeEnv: process.env.NODE_ENV,
+        hasTrustHost: !!process.env.NEXTAUTH_TRUST_HOST,
       }
     });
+    
+    // Check if session exists but user.id is missing
+    if (session && !session.user?.id) {
+      console.error('Kennels API - Session exists but no user.id. Trying alternative fields...');
+      // Try alternative user ID fields
+      const userId = (session.user as any)?.sub || (session.user as any)?.email;
+      if (userId) {
+        console.log('Kennels API - Found alternative user ID:', userId);
+        // Continue with this userId
+        (session.user as any).id = userId;
+      }
+    }
     
     if (!session?.user?.id) {
       console.error('Kennels API - Unauthorized: No session or user ID');
@@ -51,6 +65,8 @@ export async function GET(request: NextRequest) {
           hasSession: !!session,
           hasUser: !!session?.user,
           userId: session?.user?.id,
+          sessionKeys: session ? Object.keys(session) : [],
+          userKeys: session?.user ? Object.keys(session.user) : [],
           timestamp: new Date().toISOString(),
         }
       }, { status: 401 });
