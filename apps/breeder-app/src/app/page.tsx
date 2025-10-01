@@ -114,9 +114,9 @@ const BreederLandingContent: React.FC = () => {
           position: 'relative', 
           zIndex: 2, 
           textAlign: 'center',
-          padding: '40px 20px',
           maxWidth: '1000px',
-          width: '100%'
+          width: '100%',
+          margin: '0 auto'
         }}>
           
           {/* Hero Text */}
@@ -143,7 +143,7 @@ const BreederLandingContent: React.FC = () => {
           </Paragraph>
           
           {/* CTA Buttons */}
-          <Space size="large" wrap>
+          <Space size="middle" wrap style={{ width: '100%', justifyContent: 'center' }}>
             <Link href="/auth/login">
               <Button 
                 type="primary" 
@@ -153,11 +153,12 @@ const BreederLandingContent: React.FC = () => {
                   height: '60px', 
                   fontSize: '18px', 
                   fontWeight: '600',
-                  padding: '0 48px',
+                  padding: '0 32px',
                   borderRadius: '12px',
                   boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
                   background: '#52c41a',
-                  borderColor: '#52c41a'
+                  borderColor: '#52c41a',
+                  minWidth: '160px'
                 }}
               >
                 Sign In
@@ -171,13 +172,14 @@ const BreederLandingContent: React.FC = () => {
                   height: '60px', 
                   fontSize: '18px', 
                   fontWeight: '600',
-                  padding: '0 48px',
+                  padding: '0 32px',
                   background: 'rgba(255, 255, 255, 0.2)',
                   color: 'white',
                   border: '2px solid white',
                   borderRadius: '12px',
                   backdropFilter: 'blur(10px)',
-                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)'
+                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+                  minWidth: '160px'
                 }}
               >
                 Create Account
@@ -190,11 +192,11 @@ const BreederLandingContent: React.FC = () => {
       {/* Features Section */}
       <div style={{ 
         background: '#f5f5f5',
-        padding: '80px 20px',
+        padding: '80px 0px',
         width: '100%'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <Row gutter={[32, 32]} style={{ marginBottom: '0' }}>
+        <Row gutter={[24, 32]}>
           <Col xs={24} md={8}>
             <Card 
               style={{ 
@@ -256,7 +258,7 @@ const BreederLandingContent: React.FC = () => {
       {/* CTA Section */}
       <div style={{ 
         background: 'white',
-        padding: '80px 20px',
+        padding: '80px 0',
         width: '100%'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -273,13 +275,13 @@ const BreederLandingContent: React.FC = () => {
             Join our community of professional dog breeders and start managing your breeding business more effectively.
           </Paragraph>
           
-          <Space size="large">
+          <Space size="middle" wrap style={{ width: '100%', justifyContent: 'center' }}>
             <Link href="/auth/signup">
               <Button 
                 type="primary" 
                 size="large" 
                 icon={<UserAddOutlined />}
-                style={{ height: '48px', fontSize: '16px', fontWeight: '500' }}
+                style={{ height: '48px', fontSize: '16px', fontWeight: '500', minWidth: '180px' }}
               >
                 Create Your Account
               </Button>
@@ -288,7 +290,7 @@ const BreederLandingContent: React.FC = () => {
               <Button 
                 size="large" 
                 icon={<BookOutlined />}
-                style={{ height: '48px', fontSize: '16px', fontWeight: '500' }}
+                style={{ height: '48px', fontSize: '16px', fontWeight: '500', minWidth: '140px' }}
               >
                 Learn More
               </Button>

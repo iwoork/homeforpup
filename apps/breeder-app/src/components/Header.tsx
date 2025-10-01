@@ -62,7 +62,7 @@ export const Header: React.FC = () => {
     <AntHeader
       style={{
         background: '#fff',
-        padding: '0 24px',
+        padding: '0 16px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         display: 'flex',
         alignItems: 'center',
@@ -70,6 +70,8 @@ export const Header: React.FC = () => {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
+        maxWidth: '100vw',
+        overflow: 'hidden',
       }}
     >
       {/* Logo and Brand */}
