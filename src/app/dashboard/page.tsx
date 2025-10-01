@@ -323,7 +323,7 @@ const Dashboard: React.FC = () => {
         </Row>
       )}
 
-      {/* Breeder Stats (unchanged) */}
+      {/* Breeder Stats */}
       {isBreeder && (
         <Row gutter={[24, 24]} style={{ marginBottom: '32px' }}>
           <Col xs={24} sm={12} lg={6}>
@@ -337,7 +337,7 @@ const Dashboard: React.FC = () => {
             >
               <Statistic
                 title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Dogs</span>}
-                value={dogs.length}
+                value={Array.isArray(dogs) ? dogs.length : 0}
                 prefix={<TeamOutlined style={{ color: colors.primary }} />}
                 valueStyle={{ color: colors.primary, fontSize: '28px', fontWeight: 'bold' }}
               />
@@ -358,14 +358,14 @@ const Dashboard: React.FC = () => {
               }}
             >
               <Statistic
-                title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Active Litters</span>}
-                value={dogs.filter(dog => dog.breedingStatus === 'available').length}
+                title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Available Puppies</span>}
+                value={Array.isArray(dogs) ? dogs.filter(dog => dog.breedingStatus === 'available').length : 0}
                 prefix={<HeartOutlined style={{ color: colors.secondary }} />}
                 valueStyle={{ color: colors.secondary, fontSize: '28px', fontWeight: 'bold' }}
               />
               <div style={{ marginTop: '8px' }}>
                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                  Currently breeding
+                  Ready for adoption
                 </Text>
               </div>
             </Card>
@@ -381,7 +381,7 @@ const Dashboard: React.FC = () => {
             >
               <Statistic
                 title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>Messages</span>}
-                value={unreadCount}
+                value={unreadCount || 0}
                 prefix={<MessageOutlined style={{ color: colors.accent }} />}
                 valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
               />
@@ -403,7 +403,7 @@ const Dashboard: React.FC = () => {
             >
               <Statistic
                 title={<span style={{ color: colors.textSecondary, fontWeight: '600' }}>My Kennels</span>}
-                value={kennels?.length || 0}
+                value={Array.isArray(kennels) ? kennels.length : 0}
                 prefix={<HomeOutlined style={{ color: colors.accent }} />}
                 valueStyle={{ color: colors.accent, fontSize: '28px', fontWeight: 'bold' }}
               />
@@ -1387,7 +1387,7 @@ const Dashboard: React.FC = () => {
                       color: colors.primary,
                       marginBottom: '4px'
                     }}>
-                      {dogs.length}
+                      {Array.isArray(dogs) ? dogs.length : 0}
                     </div>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
                       Total Dogs
@@ -1400,21 +1400,21 @@ const Dashboard: React.FC = () => {
                       color: colors.secondary,
                       marginBottom: '4px'
                     }}>
-                      {dogs.filter(dog => dog.breedingStatus === 'available').length}
+                      {Array.isArray(dogs) ? dogs.filter(dog => dog.breedingStatus === 'available').length : 0}
                     </div>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                      Active Litters
+                      Available Puppies
                     </Text>
                   </div>
                 </div>
                 <Progress 
-                  percent={Math.min((dogs.length / 10) * 100, 100)} 
+                  percent={Math.min(((Array.isArray(dogs) ? dogs.length : 0) / 10) * 100, 100)} 
                   strokeColor={colors.primary}
                   trailColor={`${colors.primary}20`}
                   style={{ marginBottom: '12px' }}
                 />
                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                  {dogs.length < 10 ? `${10 - dogs.length} more dogs to reach 10` : 'Great! You have 10+ dogs'}
+                  {(Array.isArray(dogs) ? dogs.length : 0) < 10 ? `${10 - (Array.isArray(dogs) ? dogs.length : 0)} more dogs to reach 10` : 'Great! You have 10+ dogs'}
                 </Text>
               </div>
             </Card>

@@ -4,14 +4,11 @@ import { Dog } from '@/types';
 import { message } from 'antd';
 import { useAuth } from '@/hooks';
 
-// Fetcher function that includes auth token
-const fetcher = (getToken: () => Promise<string | null>) => async (url: string) => {
-  // Get the auth token from the new authentication system
-  const token = await getToken();
-  
+// Fetcher function that includes session cookies
+const fetcher = async (url: string) => {
   const response = await fetch(url, {
+    credentials: 'include', // Include session cookies
     headers: {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -25,22 +22,24 @@ const fetcher = (getToken: () => Promise<string | null>) => async (url: string) 
 
 // Custom hook for managing dogs with SWR
 export const useDogs = () => {
-  const { getToken } = useAuth();
+  const { user } = useAuth();
   
-  const { data, error, isLoading, mutate: mutateDogs } = useSWR<Dog[]>('/api/dogs', fetcher(getToken), {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: true,
-    dedupingInterval: 5000,
-  });
+  const { data, error, isLoading, mutate: mutateDogs } = useSWR<Dog[]>(
+    user?.userId ? '/api/dogs' : null, 
+    fetcher, 
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
+    }
+  );
 
   const deleteDog = async (dogId: string) => {
     try {
-      const token = await getToken();
-      
       const response = await fetch(`/api/dogs/${dogId}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });

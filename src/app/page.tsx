@@ -12,8 +12,11 @@ const { Title, Paragraph } = Typography;
 const heroStyle: React.CSSProperties = {
   background: 'linear-gradient(135deg, #08979C 0%, #FA8072 100%)',
   color: 'white',
-  padding: '80px 24px',
+  padding: '60px 16px',
   textAlign: 'center',
+  minHeight: '400px',
+  display: 'flex',
+  alignItems: 'center',
 };
 
 const cardStyle: React.CSSProperties = {
@@ -102,16 +105,72 @@ const BreederHomePage: React.FC = () => {
           .newsletter-form .ant-form-item:last-child {
             margin-bottom: 0 !important;
           }
+          .hero-title {
+            font-size: 28px !important;
+            line-height: 1.2 !important;
+            margin-bottom: 16px !important;
+          }
+          .hero-paragraph {
+            font-size: 16px !important;
+            line-height: 1.5 !important;
+            margin-bottom: 24px !important;
+            padding: 0 8px !important;
+          }
+          .hero-container {
+            padding: 40px 16px !important;
+          }
+          .section-padding {
+            padding: 40px 16px !important;
+          }
+          .feature-card {
+            margin-bottom: 24px !important;
+          }
+          .cta-buttons .ant-col {
+            width: 100% !important;
+            margin-bottom: 12px !important;
+          }
+          .cta-buttons .ant-col:last-child {
+            margin-bottom: 0 !important;
+          }
+          .ant-typography-h2 {
+            font-size: 24px !important;
+          }
+          .ant-typography-h3 {
+            font-size: 18px !important;
+          }
+          .ant-typography-h4 {
+            font-size: 16px !important;
+          }
+          .ant-btn-lg {
+            height: 44px !important;
+            font-size: 16px !important;
+          }
+        }
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .hero-title {
+            font-size: 42px !important;
+          }
+          .hero-paragraph {
+            font-size: 18px !important;
+          }
+          .section-padding {
+            padding: 50px 24px !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .hero-container {
+            padding: 60px 24px !important;
+          }
         }
       `}</style>
 
       {/* Hero Section */}
       <section style={heroStyle}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <Title level={1} style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="hero-container">
+          <Title level={1} className="hero-title" style={{ color: 'white', marginBottom: '24px', fontSize: '48px', fontWeight: 'bold' }}>
             Professional Kennel Management Platform
           </Title>
-          <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
+          <Paragraph className="hero-paragraph" style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
             Everything you need to manage your breeding business, connect with puppy parents, and grow your kennel with professional tools and community support.
           </Paragraph>
           <Row justify="center" gutter={[16, 12]} className="hero-buttons">
@@ -152,35 +211,35 @@ const BreederHomePage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section style={{ padding: '64px 24px', background: 'white' }}>
+      <section style={{ padding: '64px 24px', background: 'white' }} className="section-padding">
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <Title level={2} style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <Title level={2} style={{ textAlign: 'center', marginBottom: '48px', fontSize: '32px' }}>
             Why Choose Our Platform?
           </Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
-              <Card style={cardStyle}>
+              <Card style={cardStyle} className="feature-card">
                 <ShopOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Kennel Management</Title>
-                <Paragraph>
+                <Title level={3} style={{ fontSize: '20px' }}>Kennel Management</Title>
+                <Paragraph style={{ fontSize: '14px', lineHeight: '1.6' }}>
                   Complete tools to manage your breeding business, track litters, manage puppy listings, and connect with potential families.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Card style={cardStyle}>
+              <Card style={cardStyle} className="feature-card">
                 <TeamOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Verified Network</Title>
-                <Paragraph>
+                <Title level={3} style={{ fontSize: '20px' }}>Verified Network</Title>
+                <Paragraph style={{ fontSize: '14px', lineHeight: '1.6' }}>
                   Join a trusted network of professional breeders and connect with responsible families who are committed to providing excellent homes.
                 </Paragraph>
               </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Card style={cardStyle}>
+              <Card style={cardStyle} className="feature-card">
                 <TrophyOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px', display: 'block' }} />
-                <Title level={3}>Professional Tools</Title>
-                <Paragraph>
+                <Title level={3} style={{ fontSize: '20px' }}>Professional Tools</Title>
+                <Paragraph style={{ fontSize: '14px', lineHeight: '1.6' }}>
                   Access professional breeding tools, health tracking, pedigree management, and business analytics to grow your kennel.
                 </Paragraph>
               </Card>
@@ -190,60 +249,60 @@ const BreederHomePage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section style={{ padding: '64px 24px', background: '#F5F5F5' }}>
+      <section style={{ padding: '64px 24px', background: '#F5F5F5' }} className="section-padding">
         <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>Your Journey to Professional Breeding</Title>
+          <Title level={2} style={{ marginBottom: '48px', fontSize: '32px' }}>Your Journey to Professional Breeding</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
               <CheckCircleOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
-              <Title level={4}>1. Set Up Your Kennel</Title>
-              <Paragraph>Create your professional kennel profile, showcase your breeding program, and establish your reputation in the community.</Paragraph>
+              <Title level={4} style={{ fontSize: '18px', marginBottom: '12px' }}>1. Set Up Your Kennel</Title>
+              <Paragraph style={{ fontSize: '14px', lineHeight: '1.6' }}>Create your professional kennel profile, showcase your breeding program, and establish your reputation in the community.</Paragraph>
             </Col>
             <Col xs={24} md={8}>
               <UserOutlined style={{ fontSize: '36px', color: '#FA8072', marginBottom: '16px' }} />
-              <Title level={4}>2. Connect with Families</Title>
-              <Paragraph>Meet responsible families looking for their perfect companion and build lasting relationships with puppy parents.</Paragraph>
+              <Title level={4} style={{ fontSize: '18px', marginBottom: '12px' }}>2. Connect with Families</Title>
+              <Paragraph style={{ fontSize: '14px', lineHeight: '1.6' }}>Meet responsible families looking for their perfect companion and build lasting relationships with puppy parents.</Paragraph>
             </Col>
             <Col xs={24} md={8}>
               <HomeOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px' }} />
-              <Title level={4}>3. Grow Your Business</Title>
-              <Paragraph>Use our professional tools to manage your breeding program, track health records, and grow your kennel business.</Paragraph>
+              <Title level={4} style={{ fontSize: '18px', marginBottom: '12px' }}>3. Grow Your Business</Title>
+              <Paragraph style={{ fontSize: '14px', lineHeight: '1.6' }}>Use our professional tools to manage your breeding program, track health records, and grow your kennel business.</Paragraph>
             </Col>
           </Row>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section style={{ padding: '64px 24px', background: 'white' }}>
+      <section style={{ padding: '64px 24px', background: 'white' }} className="section-padding">
         <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
-          <Title level={2} style={{ marginBottom: '48px' }}>Success Stories from Our Breeders</Title>
+          <Title level={2} style={{ marginBottom: '48px', fontSize: '32px' }}>Success Stories from Our Breeders</Title>
           <Row gutter={[32, 32]}>
             <Col xs={24} md={8}>
-              <Card style={cardStyle}>
-                <Paragraph>&ldquo;This platform has transformed my breeding business. The tools are professional and the families I meet are truly committed to responsible pet ownership.&rdquo;</Paragraph>
-                <Title level={4}>&mdash; Sarah Johnson, Golden Dreams Kennel</Title>
+              <Card style={cardStyle} className="feature-card">
+                <Paragraph style={{ fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>&ldquo;This platform has transformed my breeding business. The tools are professional and the families I meet are truly committed to responsible pet ownership.&rdquo;</Paragraph>
+                <Title level={4} style={{ fontSize: '16px', margin: 0 }}>&mdash; Sarah Johnson, Golden Dreams Kennel</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Card style={cardStyle}>
-                <Paragraph>&ldquo;The kennel management features are incredible. I can track everything from health records to family communications all in one place.&rdquo;</Paragraph>
-                <Title level={4}>&mdash; Mike Chen, Vancouver Labs</Title>
+              <Card style={cardStyle} className="feature-card">
+                <Paragraph style={{ fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>&ldquo;The kennel management features are incredible. I can track everything from health records to family communications all in one place.&rdquo;</Paragraph>
+                <Title level={4} style={{ fontSize: '16px', margin: 0 }}>&mdash; Mike Chen, Vancouver Labs</Title>
               </Card>
             </Col>
             <Col xs={24} md={8}>
-              <Card style={cardStyle}>
-                <Paragraph>&ldquo;The community here is amazing. I've built lasting relationships with families and other breeders who share my passion for responsible breeding.&rdquo;</Paragraph>
-                <Title level={4}>&mdash; Lisa Rodriguez, Montreal Frenchies</Title>
+              <Card style={cardStyle} className="feature-card">
+                <Paragraph style={{ fontSize: '14px', lineHeight: '1.6', marginBottom: '16px' }}>&ldquo;The community here is amazing. I've built lasting relationships with families and other breeders who share my passion for responsible breeding.&rdquo;</Paragraph>
+                <Title level={4} style={{ fontSize: '16px', margin: 0 }}>&mdash; Lisa Rodriguez, Montreal Frenchies</Title>
               </Card>
           </Row>
         </div>
       </section>
 
       {/* Newsletter Section */}
-      <section style={{ padding: '64px 24px', background: '#E6F7F7', textAlign: 'center' }}>
+      <section style={{ padding: '64px 24px', background: '#E6F7F7', textAlign: 'center' }} className="section-padding">
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <Title level={2} style={{ marginBottom: '24px' }}>Stay Updated on Breeding Best Practices</Title>
-          <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
+          <Title level={2} style={{ marginBottom: '24px', fontSize: '28px' }}>Stay Updated on Breeding Best Practices</Title>
+          <Paragraph style={{ fontSize: '16px', marginBottom: '32px', lineHeight: '1.6' }}>
             Join our breeder newsletter for industry insights, health tips, business advice, and community updates.
           </Paragraph>
           
@@ -307,24 +366,24 @@ const BreederHomePage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section style={{ padding: '64px 24px', background: '#fdf6e3', textAlign: 'center' }}>
+      <section style={{ padding: '64px 24px', background: '#fdf6e3', textAlign: 'center' }} className="section-padding">
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <Title level={2} style={{ marginBottom: '24px' }}>
+          <Title level={2} style={{ marginBottom: '24px', fontSize: '28px' }}>
             Ready to Grow Your Breeding Business?
           </Title>
-          <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
+          <Paragraph style={{ fontSize: '16px', marginBottom: '32px', lineHeight: '1.6' }}>
             Join our professional breeder community and access the tools you need to build a successful, ethical breeding business.
           </Paragraph>
-          <Row justify="center" gutter={16}>
-            <Col>
+          <Row justify="center" gutter={16} className="cta-buttons">
+            <Col xs={24} sm={12}>
               <Link href="/kennel-management">
                 <Button 
                   type="primary" 
                   size="large" 
+                  block
                   style={{ 
                     height: '48px', 
-                    padding: '0 32px', 
-                    fontSize: '18px', 
+                    fontSize: '16px', 
                     background: '#FA8072', 
                     borderColor: '#FA8072',
                     fontWeight: '500'
@@ -335,14 +394,14 @@ const BreederHomePage: React.FC = () => {
               </Link>
             </Col>
             {!user && (
-              <Col>
+              <Col xs={24} sm={12}>
                 <Button 
                   size="large" 
+                  block
                   onClick={handleLogin}
                   style={{ 
                     height: '48px', 
-                    padding: '0 32px', 
-                    fontSize: '18px',
+                    fontSize: '16px',
                     fontWeight: '500'
                   }}
                 >

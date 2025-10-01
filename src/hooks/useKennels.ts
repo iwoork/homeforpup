@@ -3,12 +3,10 @@ import useSWR from 'swr';
 import { useSession } from 'next-auth/react';
 import { Kennel } from '@/types';
 
-const fetcher = async (url: string, token: string | null) => {
-  if (!token) throw new Error('No token available');
-  
+const fetcher = async (url: string) => {
   const response = await fetch(url, {
+    credentials: 'include', // Include session cookies
     headers: {
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -22,27 +20,18 @@ const fetcher = async (url: string, token: string | null) => {
 
 export const useKennels = () => {
   const { data: session, status } = useSession();
-  const [token, setToken] = React.useState<string | null>(null);
   const isAuthenticated = !!session;
 
-  React.useEffect(() => {
-    if (isAuthenticated && (session as any)?.accessToken) {
-      setToken((session as any).accessToken);
-    }
-  }, [isAuthenticated, session]);
-
   const { data: kennels, error, isLoading, mutate } = useSWR<Kennel[]>(
-    token ? ['/api/kennels', token] : null,
-    ([url, token]) => fetcher(url, token as string)
+    isAuthenticated ? '/api/kennels' : null,
+    fetcher
   );
 
   const createKennel = async (kennelData: Omit<Kennel, 'id' | 'ownerId' | 'createdAt' | 'updatedAt'>) => {
-    if (!token) throw new Error('No token available');
-
     const response = await fetch('/api/kennels', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(kennelData),
@@ -58,12 +47,10 @@ export const useKennels = () => {
   };
 
   const updateKennel = async (kennelId: string, updates: Partial<Kennel>) => {
-    if (!token) throw new Error('No token available');
-
     const response = await fetch(`/api/kennels/${kennelId}`, {
       method: 'PUT',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(updates),
@@ -81,12 +68,10 @@ export const useKennels = () => {
   };
 
   const deleteKennel = async (kennelId: string) => {
-    if (!token) throw new Error('No token available');
-
     const response = await fetch(`/api/kennels/${kennelId}`, {
       method: 'DELETE',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });

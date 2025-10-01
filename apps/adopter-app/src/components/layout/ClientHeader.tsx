@@ -151,39 +151,9 @@ const ClientHeader: React.FC = () => {
           label: <Link href="/breeds">Dog Breeds</Link>,
         },
         {
-          key: 'adopt',
-          icon: <EnvironmentOutlined />,
-          label: <Link href="/adopt">Adopt</Link>,
-        },
-        {
           key: 'adoption-guide',
           icon: <HomeOutlined />,
           label: <Link href="/adoption-guide">Adoption Guide</Link>,
-        }
-      );
-    }
-
-    if (user.userType === 'breeder' || user.userType === 'both') {
-      baseItems.push(
-        {
-          key: 'breeders',
-          icon: <ShopOutlined />,
-          label: <Link href="/breeders">Find Breeders</Link>,
-        },
-        {
-          key: 'kennel-management',
-          icon: <TeamOutlined />,
-          label: <Link href="/kennel-management">Kennel Management</Link>,
-        },
-        {
-          key: 'breeder-resources',
-          icon: <BookOutlined />,
-          label: <Link href="/breeder-resources">Breeder Resources</Link>,
-        },
-        {
-          key: 'breeder-website',
-          icon: <GlobalOutlined />,
-          label: <Link href="/breeder-website">Your Website</Link>,
         }
       );
     }
