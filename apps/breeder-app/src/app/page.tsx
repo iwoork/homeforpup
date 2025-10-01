@@ -143,51 +143,49 @@ const BreederLandingContent: React.FC = () => {
           </Paragraph>
           
           {/* CTA Buttons */}
-          <Space size="middle" wrap style={{ width: '100%', justifyContent: 'center' }}>
-            <Link href="/auth/login">
-              <Button 
-                type="primary" 
-                size="large" 
-                icon={<LoginOutlined />}
-                style={{ 
-                  height: 'clamp(48px, 8vw, 60px)', 
-                  fontSize: 'clamp(14px, 3vw, 18px)', 
-                  fontWeight: '600',
-                  padding: '0 clamp(16px, 4vw, 32px)',
-                  borderRadius: '12px',
-                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                  background: '#52c41a',
-                  borderColor: '#52c41a',
-                  minWidth: 'clamp(120px, 25vw, 160px)',
-                  maxWidth: '200px'
-                }}
-              >
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/auth/signup">
-              <Button 
-                size="large"
-                icon={<UserAddOutlined />}
-                style={{ 
-                  height: 'clamp(48px, 8vw, 60px)', 
-                  fontSize: 'clamp(14px, 3vw, 18px)', 
-                  fontWeight: '600',
-                  padding: '0 clamp(16px, 4vw, 32px)',
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  color: 'white',
-                  border: '2px solid white',
-                  borderRadius: '12px',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                  minWidth: 'clamp(120px, 25vw, 160px)',
-                  maxWidth: '200px'
-                }}
-              >
-                Create Account
-              </Button>
-            </Link>
-          </Space>
+          <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto', padding: '0 20px' }}>
+            <Space size="middle" direction="vertical" style={{ width: '100%' }}>
+              <Link href="/auth/login" style={{ width: '100%', display: 'block' }}>
+                <Button 
+                  type="primary" 
+                  size="large" 
+                  icon={<LoginOutlined />}
+                  style={{ 
+                    height: 'clamp(48px, 8vw, 60px)', 
+                    fontSize: 'clamp(14px, 3vw, 18px)', 
+                    fontWeight: '600',
+                    borderRadius: '12px',
+                    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+                    background: '#52c41a',
+                    borderColor: '#52c41a',
+                    width: '100%'
+                  }}
+                >
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/signup" style={{ width: '100%', display: 'block' }}>
+                <Button 
+                  size="large"
+                  icon={<UserAddOutlined />}
+                  style={{ 
+                    height: 'clamp(48px, 8vw, 60px)', 
+                    fontSize: 'clamp(14px, 3vw, 18px)', 
+                    fontWeight: '600',
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    border: '2px solid white',
+                    borderRadius: '12px',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+                    width: '100%'
+                  }}
+                >
+                  Create Account
+                </Button>
+              </Link>
+            </Space>
+          </div>
         </div>
       </section>
 

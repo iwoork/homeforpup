@@ -72,10 +72,9 @@ body {
     width: 100% !important;
   }
   
-  /* Make hero buttons more mobile-friendly */
+  /* Make hero buttons full width on mobile */
   .ant-btn {
-    width: auto !important;
-    max-width: 180px !important;
+    width: 100% !important;
   }
   
   /* Let Ant Design handle Row/Col spacing naturally */
@@ -90,11 +89,10 @@ body {
     padding: 12px !important;
   }
   
-  /* Extra small screens - make buttons even smaller */
+  /* Extra small screens - ensure full width buttons */
   .ant-btn {
-    max-width: 160px !important;
+    width: 100% !important;
     font-size: 14px !important;
-    padding: 0 12px !important;
   }
   
   /* Let Ant Design handle spacing on small screens */
