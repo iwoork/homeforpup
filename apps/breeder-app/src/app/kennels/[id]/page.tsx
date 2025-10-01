@@ -42,7 +42,8 @@ import { ColorSelector } from '@homeforpup/shared-components';
 import { useDogColors } from '@homeforpup/shared-hooks';
 import Link from 'next/link';
 import BreedSelector from '@/components/forms/BreedSelector';
-import PhotoUpload from '@/components/forms/Upload/PhotoUpload';
+import { PhotoUpload, setS3Operations } from '@homeforpup/shared-photo-upload';
+import { s3Operations } from '@/lib/api/s3';
 import { useParams } from 'next/navigation';
 import { KennelResponse } from '@homeforpup/shared-types';
 import useSWR from 'swr';
@@ -55,6 +56,11 @@ const KennelDetailPage: React.FC = () => {
   const params = useParams();
   const kennelId = params.id as string;
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Configure S3 operations for shared photo upload
+  React.useEffect(() => {
+    setS3Operations(s3Operations);
+  }, []);
   const [addDogVisible, setAddDogVisible] = useState(false);
   const [addLitterVisible, setAddLitterVisible] = useState(false);
   const [editDogVisible, setEditDogVisible] = useState(false);
@@ -1141,6 +1147,7 @@ const KennelDetailPage: React.FC = () => {
                   }}
                   maxPhotos={10}
                   aspect="standard"
+                  uploadPath="dog-photos"
                 />
               </Form.Item>
             </Col>

@@ -1,0 +1,26 @@
+{
+  "name": "@homeforpup/shared-api",
+  "version": "1.0.0",
+  "description": "Shared API routes for HomeForPup applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@homeforpup/shared-types": "*",
+    "@aws-sdk/client-dynamodb": "^3.891.0",
+    "@aws-sdk/lib-dynamodb": "^3.891.0",
+    "@aws-sdk/client-s3": "^3.891.0",
+    "next": "^15.5.4",
+    "next-auth": "^4.24.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  }
+}

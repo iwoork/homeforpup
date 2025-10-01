@@ -52,7 +52,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Dog, VeterinaryVisit, TrainingRecord, DogPhoto } from '@homeforpup/shared-types/kennel';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
-import PhotoUpload from '@/components/forms/Upload/PhotoUpload';
+import { PhotoUpload, setS3Operations } from '@homeforpup/shared-photo-upload';
+import { s3Operations } from '@/lib/api/s3';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -63,6 +64,11 @@ const DogDetailsPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const dogId = params.id as string;
+
+  // Configure S3 operations for shared photo upload
+  React.useEffect(() => {
+    setS3Operations(s3Operations);
+  }, []);
   const [activeTab, setActiveTab] = useState('overview');
   const [vetVisitVisible, setVetVisitVisible] = useState(false);
   const [trainingVisible, setTrainingVisible] = useState(false);
@@ -791,6 +797,7 @@ const DogDetailsPage: React.FC = () => {
               }}
               maxPhotos={5}
               aspect="standard"
+              uploadPath="dog-photos"
             />
           </div>
 

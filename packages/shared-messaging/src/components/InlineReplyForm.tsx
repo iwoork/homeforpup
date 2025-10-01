@@ -43,16 +43,19 @@ const InlineReplyForm: React.FC<InlineReplyFormProps> = ({
   return (
     <div
       style={{
-        padding: '16px',
+        padding: '12px 16px',
         borderTop: '1px solid #f0f0f0',
-        backgroundColor: '#fafafa'
+        backgroundColor: '#fff',
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 10
       }}
     >
       <Form
         form={form}
         onFinish={handleSubmit}
         layout="vertical"
-        size="small"
+        size="middle"
       >
         <Form.Item
           name="content"
@@ -60,50 +63,58 @@ const InlineReplyForm: React.FC<InlineReplyFormProps> = ({
             { required: true, message: 'Please enter your message' },
             { max: 1000, message: 'Message too long (max 1000 characters)' }
           ]}
+          style={{ marginBottom: '8px' }}
         >
           <TextArea
             placeholder="Type your message..."
             autoSize={{ minRows: 2, maxRows: 4 }}
-            style={{ resize: 'none' }}
+            style={{ 
+              resize: 'none',
+              fontSize: '16px', // Prevents zoom on iOS
+              borderRadius: '20px',
+              padding: '12px 16px'
+            }}
           />
         </Form.Item>
         
-        <Form.Item
-          name="messageType"
-          initialValue="general"
-          style={{ marginBottom: '12px' }}
-        >
-          <Select
-            placeholder="Message type"
-            style={{ width: '150px' }}
-            size="small"
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <Form.Item
+            name="messageType"
+            initialValue="general"
+            style={{ marginBottom: 0, flex: 1 }}
           >
-            <Option value="general">💬 General</Option>
-            <Option value="inquiry">❓ Inquiry</Option>
-            <Option value="business">💼 Business</Option>
-            <Option value="urgent">🚨 Urgent</Option>
-          </Select>
-        </Form.Item>
-        
-        <Form.Item style={{ marginBottom: 0 }}>
-          <Space>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SendOutlined />}
-              loading={sending || loading}
-              size="small"
+            <Select
+              placeholder="Type"
+              style={{ width: '100%' }}
+              size="middle"
             >
-              Send
-            </Button>
-            <Button
-              onClick={() => form.resetFields()}
-              size="small"
-            >
-              Clear
-            </Button>
-          </Space>
-        </Form.Item>
+              <Option value="general">💬 General</Option>
+              <Option value="inquiry">❓ Inquiry</Option>
+              <Option value="business">💼 Business</Option>
+              <Option value="urgent">🚨 Urgent</Option>
+            </Select>
+          </Form.Item>
+          
+          <Button
+            type="primary"
+            htmlType="submit"
+            icon={<SendOutlined />}
+            loading={sending || loading}
+            size="middle"
+            style={{ 
+              minWidth: '80px',
+              height: '40px',
+              borderRadius: '20px'
+            }}
+          >
+            Send
+          </Button>
+        </div>
       </Form>
     </div>
   );

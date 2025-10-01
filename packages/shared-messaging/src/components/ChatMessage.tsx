@@ -43,13 +43,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       style={{
         display: 'flex',
         justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
-        marginBottom: '12px',
-        padding: '0 16px'
+        marginBottom: '16px',
+        padding: '0 8px'
       }}
     >
       <div
         style={{
-          maxWidth: '70%',
+          maxWidth: '85%',
           display: 'flex',
           flexDirection: isOwnMessage ? 'row-reverse' : 'row',
           alignItems: 'flex-end',
@@ -59,7 +59,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Avatar - only show for other messages */}
         {!isOwnMessage && (
           <Avatar 
-            size="small" 
+            size="default" 
             icon={<UserOutlined />}
             style={{ flexShrink: 0 }}
           />
@@ -76,7 +76,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             borderBottomLeftRadius: isOwnMessage ? '18px' : '4px',
             position: 'relative',
             wordWrap: 'break-word',
-            maxWidth: '100%'
+            maxWidth: '100%',
+            minWidth: '60px'
           }}
         >
           {/* Message header */}
@@ -129,8 +130,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div
             style={{
               whiteSpace: 'pre-wrap',
-              lineHeight: '1.4',
-              marginBottom: '4px'
+              lineHeight: '1.5',
+              marginBottom: '4px',
+              fontSize: '14px',
+              wordBreak: 'break-word'
             }}
           >
             {message.content}

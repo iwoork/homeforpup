@@ -7,12 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check",
-    "clean": "turbo run clean",
+    "dev": "turbo run dev --concurrency=20",
+    "build": "turbo run build --concurrency=20",
+    "start": "turbo run start --concurrency=20",
+    "lint": "turbo run lint --concurrency=20",
+    "type-check": "turbo run type-check --concurrency=20",
+    "clean": "turbo run clean --concurrency=20",
     "dev:adopter": "turbo run dev --filter=adopter-app",
     "dev:breeder": "turbo run dev --filter=breeder-app",
     "build:adopter": "turbo run build --filter=adopter-app",

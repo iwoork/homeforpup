@@ -23,6 +23,23 @@ NEXTAUTH_URL=http://localhost:3001
 NEXTAUTH_SECRET=your-nextauth-secret-key-here
 ```
 
+## Custom Domain Setup (Optional)
+
+To use a custom domain like `img.homeforpup.com` for your S3 bucket:
+
+1. **Set up CloudFront Distribution**:
+   - Create CloudFront distribution pointing to your S3 bucket
+   - Configure alternate domain name: `img.homeforpup.com`
+   - Set up SSL certificate for your domain
+
+2. **Configure DNS**:
+   - Create CNAME record: `img` → `your-cloudfront-domain.cloudfront.net`
+
+3. **Update Environment Variable**:
+   ```bash
+   NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN=img.homeforpup.com
+   ```
+
 ## Features Implemented
 
 ### 1. Dog Details Page (`/dogs/[id]`)

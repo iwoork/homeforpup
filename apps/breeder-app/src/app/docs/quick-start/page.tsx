@@ -261,7 +261,7 @@ const QuickStartPage: React.FC = () => {
               <Paragraph style={{ margin: '0 0 16px 0' }}>
                 Add a new dog to your kennel
               </Paragraph>
-              <Link href="/kennels">
+              <Link href="/dogs">
                 <Button type="primary" block>
                   Manage Dogs
                 </Button>

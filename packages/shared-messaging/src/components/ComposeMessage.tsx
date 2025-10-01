@@ -40,7 +40,8 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={600}
+      width={window.innerWidth < 768 ? '95%' : 600}
+      style={{ top: window.innerWidth < 768 ? 20 : undefined }}
     >
       <Form
         form={form}
@@ -56,7 +57,12 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
           label="Recipient"
           rules={[{ required: true, message: 'Please select a recipient' }]}
         >
-          <Input placeholder="Recipient ID" disabled={!!defaultRecipientId} />
+          <Input 
+            placeholder="Recipient ID" 
+            disabled={!!defaultRecipientId}
+            size="large"
+            style={{ fontSize: '16px' }} // Prevents zoom on iOS
+          />
         </Form.Item>
 
         <Form.Item
@@ -64,18 +70,22 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
           label="Subject"
           rules={[{ required: true, message: 'Please enter a subject' }]}
         >
-          <Input placeholder="Message subject" />
+          <Input 
+            placeholder="Message subject"
+            size="large"
+            style={{ fontSize: '16px' }} // Prevents zoom on iOS
+          />
         </Form.Item>
 
         <Form.Item
           name="messageType"
           label="Message Type"
         >
-          <Select>
-            <Option value="general">General</Option>
-            <Option value="inquiry">Inquiry</Option>
-            <Option value="business">Business</Option>
-            <Option value="urgent">Urgent</Option>
+          <Select size="large">
+            <Option value="general">💬 General</Option>
+            <Option value="inquiry">❓ Inquiry</Option>
+            <Option value="business">💼 Business</Option>
+            <Option value="urgent">🚨 Urgent</Option>
           </Select>
         </Form.Item>
 
@@ -87,19 +97,27 @@ const ComposeMessage: React.FC<ComposeMessageProps> = ({
           <TextArea
             rows={6}
             placeholder="Type your message here..."
+            style={{ fontSize: '16px' }} // Prevents zoom on iOS
           />
         </Form.Item>
 
         <Form.Item>
-          <Space>
-            <Button type="primary"
+          <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+            <Button 
+              type="primary"
               htmlType="submit"
               loading={loading}
               icon={<SendOutlined />}
+              size="large"
+              style={{ minWidth: '120px' }}
             >
               Send Message
             </Button>
-            <Button onClick={onClose}>
+            <Button 
+              onClick={onClose}
+              size="large"
+              style={{ minWidth: '80px' }}
+            >
               Cancel
             </Button>
           </Space>
