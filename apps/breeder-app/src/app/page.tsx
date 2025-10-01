@@ -150,15 +150,16 @@ const BreederLandingContent: React.FC = () => {
                 size="large" 
                 icon={<LoginOutlined />}
                 style={{ 
-                  height: '60px', 
-                  fontSize: '18px', 
+                  height: 'clamp(48px, 8vw, 60px)', 
+                  fontSize: 'clamp(14px, 3vw, 18px)', 
                   fontWeight: '600',
-                  padding: '0 32px',
+                  padding: '0 clamp(16px, 4vw, 32px)',
                   borderRadius: '12px',
                   boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
                   background: '#52c41a',
                   borderColor: '#52c41a',
-                  minWidth: '160px'
+                  minWidth: 'clamp(120px, 25vw, 160px)',
+                  maxWidth: '200px'
                 }}
               >
                 Sign In
@@ -169,17 +170,18 @@ const BreederLandingContent: React.FC = () => {
                 size="large"
                 icon={<UserAddOutlined />}
                 style={{ 
-                  height: '60px', 
-                  fontSize: '18px', 
+                  height: 'clamp(48px, 8vw, 60px)', 
+                  fontSize: 'clamp(14px, 3vw, 18px)', 
                   fontWeight: '600',
-                  padding: '0 32px',
+                  padding: '0 clamp(16px, 4vw, 32px)',
                   background: 'rgba(255, 255, 255, 0.2)',
                   color: 'white',
                   border: '2px solid white',
                   borderRadius: '12px',
                   backdropFilter: 'blur(10px)',
                   boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                  minWidth: '160px'
+                  minWidth: 'clamp(120px, 25vw, 160px)',
+                  maxWidth: '200px'
                 }}
               >
                 Create Account
