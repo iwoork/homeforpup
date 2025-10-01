@@ -94,6 +94,91 @@ export interface KennelAward {
   awardUrl?: string;
 }
 
+// ============================================================================
+// DOG DETAILS TRACKING TYPES
+// ============================================================================
+
+export interface VeterinaryVisit {
+  id: string;
+  dogId: string;
+  visitDate: string;
+  veterinarian: {
+    name: string;
+    clinic: string;
+    phone?: string;
+    email?: string;
+  };
+  visitType: 'routine' | 'emergency' | 'follow-up' | 'vaccination' | 'surgery' | 'checkup';
+  reason: string;
+  diagnosis?: string;
+  treatment?: string;
+  medications?: Medication[];
+  weight?: number; // in pounds
+  temperature?: number; // in Fahrenheit
+  heartRate?: number; // BPM
+  notes?: string;
+  followUpRequired?: boolean;
+  followUpDate?: string;
+  cost?: number;
+  attachments?: string[]; // URLs to documents/photos
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Medication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  prescribedBy: string;
+  startDate: string;
+  endDate?: string;
+  notes?: string;
+}
+
+export interface TrainingRecord {
+  id: string;
+  dogId: string;
+  sessionDate: string;
+  trainer?: {
+    name: string;
+    credentials?: string;
+    contact?: string;
+  };
+  trainingType: 'basic_obedience' | 'advanced_obedience' | 'agility' | 'therapy' | 'service' | 'behavioral' | 'socialization' | 'other';
+  customTrainingType?: string; // For 'other' type
+  skills: TrainingSkill[];
+  duration: number; // in minutes
+  location: string;
+  notes?: string;
+  progress: 'excellent' | 'good' | 'fair' | 'needs_work';
+  nextSessionDate?: string;
+  attachments?: string[]; // URLs to videos/photos
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TrainingSkill {
+  skill: string;
+  level: 'introduced' | 'learning' | 'practicing' | 'mastered';
+  notes?: string;
+}
+
+export interface DogPhoto {
+  id: string;
+  dogId: string;
+  url: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  category: 'general' | 'vet_visit' | 'training' | 'show' | 'breeding' | 'puppy' | 'family';
+  takenDate: string;
+  photographer?: string;
+  tags?: string[];
+  isProfilePhoto?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Dog {
   id: string;
   name: string;
@@ -157,6 +242,11 @@ export interface Dog {
   temperament?: string;
   specialNeeds?: string;
   notes?: string;
+  
+  // Extended tracking features
+  veterinaryVisits?: VeterinaryVisit[];
+  trainingRecords?: TrainingRecord[];
+  photoGallery?: DogPhoto[];
 }
 
 export interface PedigreeInfo {

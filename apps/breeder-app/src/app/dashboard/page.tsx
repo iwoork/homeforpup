@@ -286,7 +286,7 @@ const BreederDashboard: React.FC = () => {
                 </Button>
               </Link>
               
-              <Link href="/dogs">
+              <Link href="/kennels">
                 <Button 
                   block 
                   size="large"

@@ -94,9 +94,10 @@ export async function PUT(
 
     // Add fields to update
     const fieldsToUpdate = [
-      'name', 'breed', 'gender', 'birthDate',
-      'color', 'weight', 'description',
-      'sireId', 'damId'
+      'name', 'callName', 'breed', 'gender', 'birthDate',
+      'color', 'weight', 'height', 'eyeColor', 'markings',
+      'temperament', 'specialNeeds', 'notes', 'description',
+      'sireId', 'damId', 'photos'
     ];
 
     fieldsToUpdate.forEach(field => {

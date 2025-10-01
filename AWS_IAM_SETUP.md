@@ -70,7 +70,7 @@ AWS_SECRET_ACCESS_KEY=your_secret_key_here
 NEXT_PUBLIC_AWS_REGION=us-east-1
 
 # S3 Configuration
-NEXT_PUBLIC_AWS_S3_BUCKET=homeforpup-photos
+NEXT_PUBLIC_AWS_S3_BUCKET=homeforpup-images
 NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN=img.homeforpup.com
 
 # Cognito Configuration
@@ -129,7 +129,7 @@ Before using this policy, ensure the following resources exist:
 - `homeforpup-litters`
 
 ### S3 Bucket
-- `homeforpup-photos` (with appropriate CORS configuration)
+- `homeforpup-images` (with appropriate CORS configuration)
 
 ### Cognito User Pool
 - User pool with appropriate app clients

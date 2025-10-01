@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Card, 
   Row, 
@@ -42,6 +42,7 @@ import { ColorSelector } from '@homeforpup/shared-components';
 import { useDogColors } from '@homeforpup/shared-hooks';
 import Link from 'next/link';
 import BreedSelector from '@/components/forms/BreedSelector';
+import PhotoUpload from '@/components/forms/Upload/PhotoUpload';
 import { useParams } from 'next/navigation';
 import { KennelResponse } from '@homeforpup/shared-types';
 import useSWR from 'swr';
@@ -68,6 +69,8 @@ const KennelDetailPage: React.FC = () => {
   const [editDogForm] = Form.useForm();
   const [editLitterForm] = Form.useForm();
   const [addPuppyForm] = Form.useForm();
+  const [editDogPhotos, setEditDogPhotos] = useState<string[]>([]);
+  const photosRef = useRef<string[]>([]);
 
   const { data, error, isLoading, mutate } = useSWR<KennelResponse>(
     `/api/kennels/${kennelId}`,
@@ -140,6 +143,9 @@ const KennelDetailPage: React.FC = () => {
 
   const handleEditDog = (dog: any) => {
     setEditingDog(dog);
+    const existingPhotos = dog.photos || [];
+    setEditDogPhotos(existingPhotos);
+    photosRef.current = existingPhotos;
     editDogForm.setFieldsValue({
       name: dog.name,
       callName: dog.callName,
@@ -155,12 +161,19 @@ const KennelDetailPage: React.FC = () => {
       temperament: dog.temperament,
       specialNeeds: dog.specialNeeds,
       notes: dog.notes,
+      photos: existingPhotos,
     });
     setEditDogVisible(true);
   };
 
   const handleUpdateDog = async (values: any) => {
     if (!editingDog) return;
+    
+    // Validate photos
+    if (photosRef.current.length === 0) {
+      message.error('Please upload at least one photo');
+      return;
+    }
     
     try {
       const response = await fetch(`/api/dogs/${editingDog.id}`, {
@@ -169,7 +182,10 @@ const KennelDetailPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          ...values,
+          photos: photosRef.current,
+        }),
       });
 
       if (!response.ok) {
@@ -181,6 +197,7 @@ const KennelDetailPage: React.FC = () => {
       setEditDogVisible(false);
       setEditingDog(null);
       editDogForm.resetFields();
+      setEditDogPhotos([]);
       mutate();
     } catch (error) {
       console.error('Error updating dog:', error);
@@ -392,7 +409,12 @@ const KennelDetailPage: React.FC = () => {
       key: 'actions',
       render: (_: any, record: any) => (
         <Space>
-          <Button type="text" icon={<EyeOutlined />} size="small">
+          <Button 
+            type="text" 
+            icon={<EyeOutlined />} 
+            size="small"
+            onClick={() => window.open(`/dogs/${record.id}`, '_blank')}
+          >
             View
           </Button>
           <Button 
@@ -1086,6 +1108,39 @@ const KennelDetailPage: React.FC = () => {
                 <Input.TextArea 
                   rows={3} 
                   placeholder="Additional notes about this dog" 
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item
+                name="photos"
+                label="Photos"
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      const currentPhotos = photosRef.current.length > 0 ? photosRef.current : (value || []);
+                      if (currentPhotos.length === 0) {
+                        return Promise.reject(new Error('Please upload at least one photo'));
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
+              >
+                <PhotoUpload
+                  key={`photo-upload-${editDogPhotos.length}`}
+                  photos={editDogPhotos}
+                  onPhotosChange={(photos) => {
+                    photosRef.current = photos;
+                    setEditDogPhotos(photos);
+                    editDogForm.setFieldsValue({ photos });
+                    // Trigger validation after state update
+                    setTimeout(() => {
+                      editDogForm.validateFields(['photos']);
+                    }, 0);
+                  }}
+                  maxPhotos={10}
+                  aspect="standard"
                 />
               </Form.Item>
             </Col>
