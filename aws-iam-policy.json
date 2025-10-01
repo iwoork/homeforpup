@@ -1,0 +1,95 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DynamoDBDataAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-users",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-dogs",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeders",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeds",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-messages",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-message-threads",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-favorites",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-activities",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-kennels",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-litters",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-users/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-dogs/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeders/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-message-threads/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-favorites/index/*"
+      ]
+    },
+    {
+      "Sid": "DynamoDBTableInfo",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:DescribeTable",
+        "dynamodb:ListTables"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3DataAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::homeforpup-photos",
+        "arn:aws:s3:::homeforpup-photos/*"
+      ]
+    },
+    {
+      "Sid": "SESEmailSending",
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail",
+        "ses:GetSendQuota",
+        "ses:GetSendStatistics"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CognitoReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "cognito-idp:DescribeUserPool",
+        "cognito-idp:DescribeUserPoolClient",
+        "cognito-idp:ListUsers",
+        "cognito-idp:AdminGetUser",
+        "cognito-idp:AdminListGroupsForUser",
+        "cognito-idp:ListUserPoolClients",
+        "cognito-idp:DescribeUserPoolDomain"
+      ],
+      "Resource": [
+        "arn:aws:cognito-idp:us-east-1:*:userpool/*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:us-east-1:*:log-group:/aws/lambda/*"
+    }
+  ]
+}
