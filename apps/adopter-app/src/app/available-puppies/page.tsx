@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Typography, Select, Checkbox, Button, Tag, Space, Spin, Alert, Pagination, Statistic, Badge } from 'antd';
-import { HeartOutlined, HeartFilled, EnvironmentOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined, MessageOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Typography, Select, Checkbox, Button, Tag, Space, Spin, Alert, Pagination, Statistic, Badge, Collapse } from 'antd';
+import { HeartOutlined, HeartFilled, EnvironmentOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined, MessageOutlined, DownOutlined } from '@ant-design/icons';
 import { PuppyList, PuppyWithKennel } from '@homeforpup/shared-dogs';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
@@ -30,6 +30,10 @@ const AvailablePuppiesPage: React.FC = () => {
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
+
+  // Mobile filters state
+  const [isMobile, setIsMobile] = useState(false);
+  const [filtersCollapsed, setFiltersCollapsed] = useState<string[]>([]);
 
   // Get user data
   const { user, loading: userLoading } = useAuth();
@@ -73,6 +77,24 @@ const AvailablePuppiesPage: React.FC = () => {
   useEffect(() => {
     setOptimisticFavorites({});
   }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verified]);
+
+  // Detect screen size and set initial collapse state
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 992; // lg breakpoint
+      setIsMobile(mobile);
+      // On mobile, start with filters collapsed
+      if (mobile && filtersCollapsed.length === 0) {
+        setFiltersCollapsed([]);
+      } else if (!mobile && filtersCollapsed.length === 0) {
+        setFiltersCollapsed(['filters']);
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Handle favorite toggle with optimistic updates
   const handleFavoriteToggle = async (puppyId: string) => {
@@ -186,7 +208,7 @@ const AvailablePuppiesPage: React.FC = () => {
       {/* Stats */}
       {stats && (
         <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-          <Col xs={24} sm={8}>
+          <Col xs={8} sm={8}>
             <Card>
               <Statistic
                 title="Available Puppies"
@@ -196,7 +218,7 @@ const AvailablePuppiesPage: React.FC = () => {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={8} sm={8}>
             <Card>
               <Statistic
                 title="Active Kennels"
@@ -205,7 +227,7 @@ const AvailablePuppiesPage: React.FC = () => {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={8}>
+          <Col xs={8} sm={8}>
             <Card>
               <Statistic
                 title="Breed Varieties"
@@ -220,104 +242,214 @@ const AvailablePuppiesPage: React.FC = () => {
       <Row gutter={24}>
         {/* Filters Sidebar */}
         <Col xs={24} lg={6}>
-          <Card
-            title={
-              <Space>
-                <FilterOutlined />
-                Filters
-                {hasActiveFilters && (
-                  <Badge count={[
-                    filters.country,
-                    filters.breed,
-                    filters.gender,
-                    selectedStates.length > 0 ? 'state' : null,
-                    filters.shipping ? 'shipping' : null,
-                    filters.verified ? 'verified' : null
-                  ].filter(Boolean).length} />
-                )}
-              </Space>
-            }
-            extra={
-              hasActiveFilters && (
-                <Button type="link" onClick={resetFilters} size="small">
-                  Clear All
-                </Button>
-              )
-            }
-            style={{ marginBottom: '24px' }}
-          >
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              {/* Country Filter */}
-              <div>
-                <Text strong>Country</Text>
-                <CountryFilter
-                  value={filters.country}
-                  onChange={(value) => handleFilterChange('country', value)}
-                  style={{ width: '100%', marginTop: '8px' }}
-                />
-              </div>
+          {isMobile ? (
+            <Card style={{ marginBottom: '24px' }}>
+              <Collapse
+                activeKey={filtersCollapsed}
+                onChange={setFiltersCollapsed}
+                ghost
+                expandIcon={({ isActive }) => <DownOutlined rotate={isActive ? 180 : 0} />}
+                items={[
+                  {
+                    key: 'filters',
+                    label: (
+                      <Space>
+                        <FilterOutlined />
+                        Filters
+                        {hasActiveFilters && (
+                          <Badge count={[
+                            filters.country,
+                            filters.breed,
+                            filters.gender,
+                            selectedStates.length > 0 ? 'state' : null,
+                            filters.shipping ? 'shipping' : null,
+                            filters.verified ? 'verified' : null
+                          ].filter(Boolean).length} />
+                        )}
+                        {hasActiveFilters && (
+                          <Button type="link" onClick={resetFilters} size="small" style={{ marginLeft: 'auto' }}>
+                            Clear All
+                          </Button>
+                        )}
+                      </Space>
+                    ),
+                    children: (
+                      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                        {/* Country Filter */}
+                        <div>
+                          <Text strong>Country</Text>
+                          <CountryFilter
+                            value={filters.country}
+                            onChange={(value) => handleFilterChange('country', value)}
+                            style={{ width: '100%', marginTop: '8px' }}
+                          />
+                        </div>
 
-              {/* State Filter */}
-              <div>
-                <Text strong>Location</Text>
-                <StateFilter
-                  value={selectedStates}
-                  onChange={handleStateChange}
-                  availableStates={availableFilters?.availableStates || []}
-                  style={{ width: '100%', marginTop: '8px' }}
-                />
-              </div>
+                        {/* State Filter */}
+                        <div>
+                          <Text strong>Location</Text>
+                          <StateFilter
+                            value={selectedStates}
+                            onChange={handleStateChange}
+                            availableStates={availableFilters?.availableStates || []}
+                            style={{ width: '100%', marginTop: '8px' }}
+                          />
+                        </div>
 
-              {/* Breed Filter */}
-              <div>
-                <Text strong>Breed</Text>
-                <BreedSelector
-                  style={{ width: '100%', marginTop: '8px' }}
-                  placeholder="Select breed"
-                  value={filters.breed || undefined}
-                  onChange={(value) => handleFilterChange('breed', value)}
-                  allowClear
-                  showSearch
-                  showBreedInfo={false}
-                  showBreederCount={false}
-                  includeOnlyBreeds={availableFilters?.availableBreeds}
-                />
-              </div>
+                        {/* Breed Filter */}
+                        <div>
+                          <Text strong>Breed</Text>
+                          <BreedSelector
+                            style={{ width: '100%', marginTop: '8px' }}
+                            placeholder="Select breed"
+                            value={filters.breed || undefined}
+                            onChange={(value) => handleFilterChange('breed', value)}
+                            allowClear
+                            showSearch
+                            showBreedInfo={false}
+                            showBreederCount={false}
+                            includeOnlyBreeds={availableFilters?.availableBreeds}
+                          />
+                        </div>
 
-              {/* Gender Filter */}
-              <div>
-                <Text strong>Gender</Text>
-                <Select
-                  style={{ width: '100%', marginTop: '8px' }}
-                  placeholder="Select gender"
-                  value={filters.gender}
-                  onChange={(value) => handleFilterChange('gender', value)}
-                  allowClear
-                >
-                  <Option value="male">Male</Option>
-                  <Option value="female">Female</Option>
-                </Select>
-              </div>
+                        {/* Gender Filter */}
+                        <div>
+                          <Text strong>Gender</Text>
+                          <Select
+                            style={{ width: '100%', marginTop: '8px' }}
+                            placeholder="Select gender"
+                            value={filters.gender}
+                            onChange={(value) => handleFilterChange('gender', value)}
+                            allowClear
+                          >
+                            <Option value="male">Male</Option>
+                            <Option value="female">Female</Option>
+                          </Select>
+                        </div>
 
-              {/* Checkboxes */}
-              <div>
-                <Space direction="vertical">
-                  <Checkbox
-                    checked={filters.shipping}
-                    onChange={(e) => handleFilterChange('shipping', e.target.checked)}
-                  >
-                    Shipping Available
-                  </Checkbox>
-                  <Checkbox
-                    checked={filters.verified}
-                    onChange={(e) => handleFilterChange('verified', e.target.checked)}
-                  >
-                    Verified Kennels Only
-                  </Checkbox>
+                        {/* Checkboxes */}
+                        <div>
+                          <Space direction="vertical">
+                            <Checkbox
+                              checked={filters.shipping}
+                              onChange={(e) => handleFilterChange('shipping', e.target.checked)}
+                            >
+                              Shipping Available
+                            </Checkbox>
+                            <Checkbox
+                              checked={filters.verified}
+                              onChange={(e) => handleFilterChange('verified', e.target.checked)}
+                            >
+                              Verified Kennels Only
+                            </Checkbox>
+                          </Space>
+                        </div>
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+          ) : (
+            <Card
+              title={
+                <Space>
+                  <FilterOutlined />
+                  Filters
+                  {hasActiveFilters && (
+                    <Badge count={[
+                      filters.country,
+                      filters.breed,
+                      filters.gender,
+                      selectedStates.length > 0 ? 'state' : null,
+                      filters.shipping ? 'shipping' : null,
+                      filters.verified ? 'verified' : null
+                    ].filter(Boolean).length} />
+                  )}
                 </Space>
-              </div>
-            </Space>
-          </Card>
+              }
+              extra={
+                hasActiveFilters && (
+                  <Button type="link" onClick={resetFilters} size="small">
+                    Clear All
+                  </Button>
+                )
+              }
+              style={{ marginBottom: '24px' }}
+            >
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                {/* Country Filter */}
+                <div>
+                  <Text strong>Country</Text>
+                  <CountryFilter
+                    value={filters.country}
+                    onChange={(value) => handleFilterChange('country', value)}
+                    style={{ width: '100%', marginTop: '8px' }}
+                  />
+                </div>
+
+                {/* State Filter */}
+                <div>
+                  <Text strong>Location</Text>
+                  <StateFilter
+                    value={selectedStates}
+                    onChange={handleStateChange}
+                    availableStates={availableFilters?.availableStates || []}
+                    style={{ width: '100%', marginTop: '8px' }}
+                  />
+                </div>
+
+                {/* Breed Filter */}
+                <div>
+                  <Text strong>Breed</Text>
+                  <BreedSelector
+                    style={{ width: '100%', marginTop: '8px' }}
+                    placeholder="Select breed"
+                    value={filters.breed || undefined}
+                    onChange={(value) => handleFilterChange('breed', value)}
+                    allowClear
+                    showSearch
+                    showBreedInfo={false}
+                    showBreederCount={false}
+                    includeOnlyBreeds={availableFilters?.availableBreeds}
+                  />
+                </div>
+
+                {/* Gender Filter */}
+                <div>
+                  <Text strong>Gender</Text>
+                  <Select
+                    style={{ width: '100%', marginTop: '8px' }}
+                    placeholder="Select gender"
+                    value={filters.gender}
+                    onChange={(value) => handleFilterChange('gender', value)}
+                    allowClear
+                  >
+                    <Option value="male">Male</Option>
+                    <Option value="female">Female</Option>
+                  </Select>
+                </div>
+
+                {/* Checkboxes */}
+                <div>
+                  <Space direction="vertical">
+                    <Checkbox
+                      checked={filters.shipping}
+                      onChange={(e) => handleFilterChange('shipping', e.target.checked)}
+                    >
+                      Shipping Available
+                    </Checkbox>
+                    <Checkbox
+                      checked={filters.verified}
+                      onChange={(e) => handleFilterChange('verified', e.target.checked)}
+                    >
+                      Verified Kennels Only
+                    </Checkbox>
+                  </Space>
+                </div>
+              </Space>
+            </Card>
+          )}
         </Col>
 
         {/* Puppies Grid */}
