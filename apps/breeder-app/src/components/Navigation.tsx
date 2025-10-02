@@ -98,12 +98,6 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
       label: 'Documentation',
       onClick: () => handleMenuClick('/docs'),
     },
-    {
-      key: '/dashboard/activity',
-      icon: <BarChartOutlined />,
-      label: 'Activity',
-      onClick: () => handleMenuClick('/dashboard/activity'),
-    },
   ];
 
   const drawerContent = (
@@ -144,9 +138,9 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
             type="text"
             icon={<SettingOutlined />}
             style={{ width: '100%', textAlign: 'left' }}
-            onClick={() => handleMenuClick('/settings')}
+            onClick={() => handleMenuClick('/users/${user?.userId}/edit')}
           >
-            Settings
+            Edit Profile
           </Button>
           <Button
             type="text"
@@ -181,18 +175,6 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
         }}
       />
       <Drawer
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img 
-              src="/logo.png" 
-              alt="HomeForPup Logo" 
-              style={{ height: '32px', width: 'auto' }} 
-            />
-            <span style={{ fontSize: '16px', fontWeight: 600 }}>
-              HomeForPup Breeders
-            </span>
-          </div>
-        }
         placement="left"
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}

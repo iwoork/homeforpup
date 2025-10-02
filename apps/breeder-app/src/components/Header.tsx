@@ -154,14 +154,7 @@ export const Header: React.FC = () => {
                 </Dropdown>
               </>
             )}
-            {/* Mobile: Just show avatar (user menu is in drawer) */}
-            {isMobile && (
-              <Avatar 
-                size="small" 
-                icon={<UserOutlined />} 
-                style={{ backgroundColor: '#52c41a' }}
-              />
-            )}
+          
           </Space>
         ) : (
           <Space>
