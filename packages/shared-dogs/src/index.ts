@@ -1,5 +1,6 @@
 // API and Types
 export * from './api';
+export * from './api-puppies';
 export * from './types';
 
 // Breeds functionality
@@ -14,6 +15,10 @@ export * from './hooks';
 // Components
 export { default as AddEditDogForm } from './components/AddEditDogForm';
 export type { AddEditDogFormProps } from './components/AddEditDogForm';
+export { default as PuppyCard } from './components/PuppyCard';
+export type { PuppyCardProps, PuppyWithKennel } from './components/PuppyCard';
+export { default as PuppyList } from './components/PuppyList';
+export type { PuppyListProps } from './components/PuppyList';
 
 // Form Components
 export { default as BreedSelector } from './components/forms/BreedSelector';

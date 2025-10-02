@@ -29,7 +29,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
       size={size}
     >
       <Option value="Canada">🇨🇦 Canada</Option>
-      <Option value="USA">🇺🇸 United States</Option>
+      <Option value="US">🇺🇸 United States</Option>
     </Select>
   );
 };
