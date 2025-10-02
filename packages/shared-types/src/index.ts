@@ -617,6 +617,65 @@ export * from './kennel';
 export * from './color';
 
 // ============================================================================
+// DOG HEALTH & TRAINING TYPES
+// ============================================================================
+
+export interface TrainingRecord {
+  id: string;
+  dogId: string;
+  sessionDate: string;
+  trainer?: {
+    name: string;
+    credentials?: string;
+    contact?: string;
+  };
+  trainingType: 'basic_obedience' | 'advanced_obedience' | 'agility' | 'therapy' | 'service' | 'protection' | 'hunting' | 'show' | 'custom';
+  customTrainingType?: string;
+  skills: string[];
+  duration?: number; // in minutes
+  location?: string;
+  notes?: string;
+  progress: 'excellent' | 'good' | 'fair' | 'needs_improvement';
+  nextSessionDate?: string;
+  attachments?: string[]; // URLs to photos/videos
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VeterinaryVisit {
+  id: string;
+  dogId: string;
+  visitDate: string;
+  veterinarian: {
+    name: string;
+    clinic: string;
+    phone?: string;
+    email?: string;
+    contact?: string;
+  };
+  visitType: 'routine_checkup' | 'vaccination' | 'illness' | 'injury' | 'surgery' | 'dental' | 'emergency' | 'follow_up' | 'other';
+  reason: string;
+  diagnosis?: string;
+  treatment?: string;
+  medications?: {
+    name: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+  }[];
+  followUpRequired?: boolean;
+  followUpDate?: string;
+  cost?: number;
+  weight?: number; // in pounds
+  temperature?: number; // in Fahrenheit
+  heartRate?: number; // beats per minute
+  notes?: string;
+  attachments?: string[]; // URLs to documents/photos
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================================
 // ACTIVITY TRACKING TYPES
 // ============================================================================
 
