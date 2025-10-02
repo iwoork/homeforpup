@@ -93,7 +93,7 @@ const UserTypeModal: React.FC<UserTypeModalProps> = ({
                 fontWeight: '500'
               }}
             >
-              Join as Adopter
+              Join as Dog Parent
             </Button>
           </Card>
         </Col>

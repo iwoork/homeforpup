@@ -172,22 +172,17 @@ const ClientHeader: React.FC = () => {
       {
         key: 'profile',
         icon: <UserOutlined />,
-        label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
+        label: <Link href={`/users/${user?.userId}`}>View Profile</Link>,
       },
       {
         key: 'settings',
         icon: <SettingOutlined />,
-        label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
+        label: <Link href={`/users/${user?.userId}/edit`}>Edit Profile</Link>,
       },
       {
         key: 'favorites',
         icon: <HeartOutlined />,
         label: <Link href="/dashboard/favorites">My Favorites</Link>,
-      },
-      {
-        key: 'activity',
-        icon: <BellOutlined />,
-        label: <Link href="/dashboard/activity">My Activity</Link>,
       },
       {
         type: 'divider' as const,
@@ -222,22 +217,17 @@ const ClientHeader: React.FC = () => {
       {
         key: 'profile',
         icon: <UserOutlined />,
-        label: <Link href={`/users/${user?.userId}`}>Profile</Link>,
+        label: <Link href={`/users/${user?.userId}`}>View Profile</Link>,
       },
       {
         key: 'settings',
         icon: <SettingOutlined />,
-        label: <Link href={`/users/${user?.userId}/edit`}>Settings</Link>,
+        label: <Link href={`/users/${user?.userId}/edit`}>Edit Profile</Link>,
       },
       {
         key: 'favorites',
         icon: <HeartOutlined />,
         label: <Link href="/dashboard/favorites">My Favorites</Link>,
-      },
-      {
-        key: 'activity',
-        icon: <BellOutlined />,
-        label: <Link href="/dashboard/activity">My Activity</Link>,
       },
       {
         key: 'messages',
@@ -403,25 +393,7 @@ const ClientHeader: React.FC = () => {
               </Dropdown>
             )}
 
-            {/* Mobile user info */}
-            {isMobile && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Avatar 
-                  size="small"
-                  src={user?.profileImage || undefined}
-                  icon={<UserOutlined />}
-                />
-                <span style={{ 
-                  fontSize: '12px',
-                  maxWidth: '80px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {displayName}
-                </span>
-              </div>
-            )}
+           
           </>
         ) : (
           <Button 
