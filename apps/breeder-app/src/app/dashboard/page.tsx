@@ -18,7 +18,6 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 // import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity'; // Temporarily disabled
 import useSWR from 'swr';
-import { BreedsTest } from '@/components/debug/BreedsTest';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -197,9 +196,6 @@ const BreederDashboard: React.FC = () => {
           Manage your kennel, dogs, and connect with potential families
         </Paragraph>
       </div>
-
-      {/* Debug component to test breeds API */}
-      <BreedsTest />
 
       {/* Quick Stats */}
       <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
