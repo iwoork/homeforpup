@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Modal, message } from 'antd';
-import { DogForm } from '@homeforpup/shared-components';
+import DogForm from '../forms/DogForm';
 import { useKennels } from '@/hooks/useKennels';
 import { mutate } from 'swr';
 import type { Dog } from '@/types';

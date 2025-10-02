@@ -1,3 +1,5 @@
 // API hooks will be exported from here
-export { useDogColors } from './useDogColors';
-export type { default as useDogColorsType } from './useDogColors';
+// Placeholder for now
+
+// Export empty object to make this a valid module
+export {};

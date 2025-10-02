@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import type { DogColor, DogColorCategory } from '@homeforpup/shared-types';
 

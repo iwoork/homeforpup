@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { breedsApiClient } from '@homeforpup/shared-breeds';
+import { breedsApiClient } from '@homeforpup/shared-dogs';
 
 export async function GET(request: NextRequest) {
   try {

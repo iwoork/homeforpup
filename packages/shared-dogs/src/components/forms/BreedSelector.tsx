@@ -8,14 +8,9 @@ import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 const { Option } = Select;
 const { Text } = Typography;
 
-export interface Breed {
-  id: number;
-  name: string;
-  altNames: string[];
-  category: string;
-  size: string;
-  breedType: string;
-  hybrid: boolean;
+// Use the shared Breed type from breeds-types
+import { Breed as SharedBreed } from '../../breeds-types';
+export interface Breed extends SharedBreed {
   breederCount?: number;
 }
 
@@ -175,7 +170,7 @@ const BreedSelector: React.FC<BreedSelectorProps> = ({
               <Space size={4}>
                 <Tag color="blue">{breed.category}</Tag>
                 <Tag color="green">{breed.size}</Tag>
-                {breed.hybrid && <Tag color="orange">Hybrid</Tag>}
+                {breed.breedType === 'hybrid' && <Tag color="orange">Hybrid</Tag>}
               </Space>
             </div>
           )}

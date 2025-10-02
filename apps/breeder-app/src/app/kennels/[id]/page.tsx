@@ -38,12 +38,9 @@ import {
   CalendarOutlined,
   CloseOutlined
 } from '@ant-design/icons';
-import { AddEditDogForm } from '@homeforpup/shared-components';
-import { useDogColors } from '@homeforpup/shared-hooks';
-import { useAllBreeds } from '@homeforpup/shared-breeds';
+import { AddEditDogForm, useDogColors, useAllBreeds, ColorSelector } from '@homeforpup/shared-dogs';
 import Link from 'next/link';
 import BreedSelector from '@/components/forms/BreedSelector';
-import { ColorSelector } from '@homeforpup/shared-components';
 import { PhotoUpload, setS3Operations } from '@homeforpup/shared-photo-upload';
 import { s3Operations } from '@/lib/api/s3';
 import { useParams } from 'next/navigation';

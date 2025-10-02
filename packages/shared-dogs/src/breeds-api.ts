@@ -1,6 +1,6 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { Breed, BreedsResponse, BreedItem, UseBreedsOptions } from './types';
+import { Breed, BreedsResponse, BreedItem, UseBreedsOptions } from './breeds-types';
 
 // Configure AWS SDK v3
 const createDynamoClient = () => {

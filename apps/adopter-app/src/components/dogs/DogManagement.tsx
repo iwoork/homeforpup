@@ -27,7 +27,7 @@ import dayjs from 'dayjs';
 import { Dog, Kennel } from '@/types';
 import { useDogs } from '@/hooks/api/useDogs';
 import { useKennels } from '@/hooks/useKennels';
-import { DogForm } from '@homeforpup/shared-components';
+import DogForm from '../forms/DogForm';
 import KennelForm from './KennelForm';
 
 const { Title, Text } = Typography;

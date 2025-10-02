@@ -4,7 +4,7 @@
 import React from 'react';
 import { Select, Spin, Empty, Typography, Tag, Space, Tooltip } from 'antd';
 import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { useAllBreeds, Breed } from '@homeforpup/shared-breeds';
+import { useAllBreeds, Breed } from '@homeforpup/shared-dogs';
 
 const { Option } = Select;
 const { Text } = Typography;

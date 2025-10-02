@@ -28,9 +28,7 @@ import {
   HeartOutlined,
   TeamOutlined
 } from '@ant-design/icons';
-import { AddEditDogForm } from '@homeforpup/shared-components';
-import { useDogColors } from '@homeforpup/shared-hooks';
-import { useAllBreeds } from '@homeforpup/shared-breeds';
+import { AddEditDogForm, useDogColors, useAllBreeds } from '@homeforpup/shared-dogs';
 import Link from 'next/link';
 import useSWR from 'swr';
 import type { Dog } from '@homeforpup/shared-types';

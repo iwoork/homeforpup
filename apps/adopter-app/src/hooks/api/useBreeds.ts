@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-import { Breed, BreedsResponse } from '@homeforpup/shared-breeds';
+import { Breed, BreedsResponse } from '@homeforpup/shared-dogs';
 
 interface UseBreedsOptions {
   search?: string;

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import {
   Form,
@@ -166,6 +168,8 @@ const AddEditDogForm: React.FC<AddEditDogFormProps> = ({
               breeds={breeds}
               loading={breedsLoading}
               error={breedsError}
+              showBreedInfo={true}
+              showBreederCount={true}
             />
           </Form.Item>
         </Col>

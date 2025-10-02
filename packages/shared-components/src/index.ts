@@ -1,11 +1,3 @@
 export { default as PuppyList } from './PuppyList';
 export type { PuppyWithBreeder } from './PuppyList';
 export { default as EthicalGuidelines } from './EthicalGuidelines';
-export { default as BreedSelector } from './forms/BreedSelector';
-export type { Breed, BreedSelectorProps } from './forms/BreedSelector';
-export { default as ColorSelector } from './forms/ColorSelector';
-export type { ColorSelectorProps } from './forms/ColorSelector';
-export { default as DogForm } from './forms/DogForm';
-export type { DogFormProps } from './forms/DogForm';
-export { default as AddEditDogForm } from './AddEditDogForm';
-export type { AddEditDogFormProps } from './AddEditDogForm';

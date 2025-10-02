@@ -1,7 +1,7 @@
 {
   "name": "@homeforpup/shared-dogs",
   "version": "1.0.0",
-  "description": "Shared dogs API and types for HomeForPup applications",
+  "description": "Comprehensive shared dogs functionality for HomeForPup applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -12,12 +12,18 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@aws-sdk/lib-dynamodb": "^3.0.0",
-    "@homeforpup/shared-types": "*"
+    "@homeforpup/shared-types": "*",
+    "@homeforpup/shared-photo-upload": "*",
+    "swr": "^2.0.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/uuid": "^9.0.0",
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
-    "react": ">=19.0.0"
+    "react": ">=19.0.0",
+    "antd": ">=5.0.0"
   }
 }

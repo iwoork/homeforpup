@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Breed, BreedsResponse, UseBreedsOptions } from './types';
+import { Breed, BreedsResponse, UseBreedsOptions } from '../breeds-types';
 
 export const useAllBreeds = (options: UseBreedsOptions = {}) => {
   const [breeds, setBreeds] = useState<Breed[]>([]);
