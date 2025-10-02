@@ -148,8 +148,12 @@ const DogDetailsPage: React.FC = () => {
     try {
       const { ...photoData } = values;
       
+      // Allow adding photo metadata without requiring actual photos
       if (!photoModalPhotos || photoModalPhotos.length === 0) {
-        message.error('Please upload at least one photo');
+        message.warning('No photos selected to upload');
+        setPhotoVisible(false);
+        photoForm.resetFields();
+        setPhotoModalPhotos([]);
         return;
       }
       
@@ -787,7 +791,7 @@ const DogDetailsPage: React.FC = () => {
         >
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-              Upload Photos *
+              Upload Photos
             </label>
             <PhotoUpload
               key={`photo-modal-${photoModalPhotos.length}`}

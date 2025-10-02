@@ -123,6 +123,7 @@ export interface Dog {
   ownerId: string; // User ID of the breeder (for backward compatibility)
   kennelId?: string; // Kennel ID - optional for backward compatibility
   name: string;
+  callName?: string; // Nickname or call name
   breed: string;
   gender: 'male' | 'female';
   birthDate: string;
@@ -132,6 +133,16 @@ export interface Dog {
   healthTests: string[]; // URLs to health test documents
   pedigree?: string; // URL to pedigree document
   description: string;
+  
+  // Physical characteristics
+  height?: number; // Height in inches
+  eyeColor?: string; // Eye color
+  markings?: string; // Physical markings description
+  
+  // Behavioral and care information
+  temperament?: string; // Temperament description
+  specialNeeds?: string; // Special needs or medical conditions
+  notes?: string; // Additional notes
   
   // Parent information
   sireId?: string; // Father's ID (reference to another dog)

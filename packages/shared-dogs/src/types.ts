@@ -37,6 +37,7 @@ export interface UseDogsOptions {
 // Create/Update dog request types
 export interface CreateDogRequest {
   name: string;
+  callName?: string;
   breed: string;
   gender: 'male' | 'female';
   birthDate: string;
@@ -44,7 +45,7 @@ export interface CreateDogRequest {
   color: string;
   kennelId?: string;
   description?: string;
-  dogType: 'parent' | 'puppy';
+  dogType?: 'parent' | 'puppy';
   breedingStatus?: 'available' | 'retired' | 'not_ready';
   healthStatus?: 'excellent' | 'good' | 'fair' | 'poor';
   sireId?: string;

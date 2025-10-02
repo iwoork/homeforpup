@@ -38,10 +38,12 @@ import {
   CalendarOutlined,
   CloseOutlined
 } from '@ant-design/icons';
-import { ColorSelector } from '@homeforpup/shared-components';
+import { AddEditDogForm } from '@homeforpup/shared-components';
 import { useDogColors } from '@homeforpup/shared-hooks';
+import { useAllBreeds } from '@homeforpup/shared-breeds';
 import Link from 'next/link';
 import BreedSelector from '@/components/forms/BreedSelector';
+import { ColorSelector } from '@homeforpup/shared-components';
 import { PhotoUpload, setS3Operations } from '@homeforpup/shared-photo-upload';
 import { s3Operations } from '@/lib/api/s3';
 import { useParams } from 'next/navigation';
@@ -68,6 +70,7 @@ const KennelDetailPage: React.FC = () => {
   const [editingDog, setEditingDog] = useState<any>(null);
   const [editingLitter, setEditingLitter] = useState<any>(null);
   const { colors, loading: colorsLoading, error: colorsError } = useDogColors();
+  const { breeds, loading: breedsLoading, error: breedsError } = useAllBreeds();
   const [selectedPuppies, setSelectedPuppies] = useState<any[]>([]);
   const [addPuppyVisible, setAddPuppyVisible] = useState(false);
   const [dogForm] = Form.useForm();
@@ -158,7 +161,7 @@ const KennelDetailPage: React.FC = () => {
       breed: dog.breed,
       gender: dog.gender,
       birthDate: dog.birthDate,
-      type: dog.type,
+      dogType: dog.dogType,
       color: dog.color,
       markings: dog.markings,
       weight: dog.weight,
@@ -175,11 +178,6 @@ const KennelDetailPage: React.FC = () => {
   const handleUpdateDog = async (values: any) => {
     if (!editingDog) return;
     
-    // Validate photos
-    if (photosRef.current.length === 0) {
-      message.error('Please upload at least one photo');
-      return;
-    }
     
     try {
       const response = await fetch(`/api/dogs/${editingDog.id}`, {
@@ -752,104 +750,21 @@ const KennelDetailPage: React.FC = () => {
         footer={null}
         width={600}
       >
-        <Form
+        <AddEditDogForm
           form={dogForm}
-          layout="vertical"
           onFinish={handleAddDog}
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="name"
-                label="Dog Name"
-                rules={[{ required: true, message: 'Please enter dog name' }]}
-              >
-                <Input placeholder="Enter dog name" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="callName"
-                label="Call Name (Nickname)"
-              >
-                <Input placeholder="Enter nickname" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="breed"
-                label="Breed"
-                rules={[{ required: true, message: 'Please select breed' }]}
-              >
-                <BreedSelector
-                  placeholder="Select breed"
-                  showSearch={true}
-                  allowClear={true}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="gender"
-                label="Gender"
-                rules={[{ required: true, message: 'Please select gender' }]}
-              >
-                <Select placeholder="Select gender">
-                  <Option value="male">Male</Option>
-                  <Option value="female">Female</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="type"
-                label="Type"
-                rules={[{ required: true, message: 'Please select type' }]}
-              >
-                <Select placeholder="Select type">
-                  <Option value="parent">Parent</Option>
-                  <Option value="puppy">Puppy</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="birthDate"
-                label="Birth Date"
-                rules={[{ required: true, message: 'Please enter birth date' }]}
-              >
-                <Input type="date" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="color"
-                label="Color"
-                rules={[{ required: true, message: 'Please select color' }]}
-                help="Select the primary color or pattern"
-              >
-                <ColorSelector
-                  colors={colors}
-                  loading={colorsLoading}
-                  error={colorsError || undefined}
-                  showColorSwatches={true}
-                  showDescription={true}
-                  placeholder="Select color or pattern"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <div style={{ textAlign: 'right' }}>
-            <Space>
-              <Button onClick={() => setAddDogVisible(false)}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Add Dog
-              </Button>
-            </Space>
-          </div>
-        </Form>
+          onCancel={() => setAddDogVisible(false)}
+          mode="add"
+          kennelId={kennelId}
+          colors={colors}
+          colorsLoading={colorsLoading}
+          colorsError={colorsError}
+          breeds={breeds}
+          breedsLoading={breedsLoading}
+          breedsError={breedsError}
+          layout="detailed"
+          showAdvancedFields={true}
+        />
       </Modal>
 
       {/* Add Litter Modal */}
@@ -956,217 +871,35 @@ const KennelDetailPage: React.FC = () => {
         footer={null}
         width={600}
       >
-        <Form
+        <AddEditDogForm
           form={editDogForm}
-          layout="vertical"
           onFinish={handleUpdateDog}
-        >
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="name"
-                label="Dog Name"
-                rules={[{ required: true, message: 'Please enter dog name' }]}
-              >
-                <Input placeholder="Enter dog name" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="callName"
-                label="Call Name (Nickname)"
-              >
-                <Input placeholder="Enter nickname" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="breed"
-                label="Breed"
-                rules={[{ required: true, message: 'Please select breed' }]}
-              >
-                <BreedSelector
-                  placeholder="Select breed"
-                  showSearch={true}
-                  allowClear={true}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="gender"
-                label="Gender"
-                rules={[{ required: true, message: 'Please select gender' }]}
-              >
-                <Select placeholder="Select gender">
-                  <Option value="male">Male</Option>
-                  <Option value="female">Female</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="type"
-                label="Type"
-                rules={[{ required: true, message: 'Please select type' }]}
-              >
-                <Select placeholder="Select type">
-                  <Option value="parent">Parent</Option>
-                  <Option value="puppy">Puppy</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="birthDate"
-                label="Birth Date"
-                rules={[{ required: true, message: 'Please enter birth date' }]}
-              >
-                <Input type="date" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="color"
-                label="Color"
-                rules={[{ required: true, message: 'Please select color' }]}
-                help="Select the primary color or pattern"
-              >
-                <ColorSelector
-                  colors={colors}
-                  loading={colorsLoading}
-                  error={colorsError || undefined}
-                  showColorSwatches={true}
-                  showDescription={true}
-                  placeholder="Select color or pattern"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="weight"
-                label="Weight (lbs)"
-              >
-                <InputNumber 
-                  min={0} 
-                  max={200} 
-                  style={{ width: '100%' }}
-                  placeholder="Weight"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="height"
-                label="Height (inches)"
-              >
-                <InputNumber 
-                  min={0} 
-                  max={50} 
-                  style={{ width: '100%' }}
-                  placeholder="Height"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="eyeColor"
-                label="Eye Color"
-              >
-                <Input placeholder="Enter eye color" />
-              </Form.Item>
-            </Col>
-            <Col xs={24}>
-              <Form.Item
-                name="markings"
-                label="Markings"
-              >
-                <Input placeholder="Describe any markings" />
-              </Form.Item>
-            </Col>
-            <Col xs={24}>
-              <Form.Item
-                name="temperament"
-                label="Temperament"
-              >
-                <Input.TextArea 
-                  rows={3} 
-                  placeholder="Describe the dog's temperament" 
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24}>
-              <Form.Item
-                name="specialNeeds"
-                label="Special Needs"
-              >
-                <Input.TextArea 
-                  rows={2} 
-                  placeholder="Any special needs or requirements" 
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24}>
-              <Form.Item
-                name="notes"
-                label="Notes"
-              >
-                <Input.TextArea 
-                  rows={3} 
-                  placeholder="Additional notes about this dog" 
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24}>
-              <Form.Item
-                name="photos"
-                label="Photos"
-                rules={[
-                  {
-                    validator: (_, value) => {
-                      const currentPhotos = photosRef.current.length > 0 ? photosRef.current : (value || []);
-                      if (currentPhotos.length === 0) {
-                        return Promise.reject(new Error('Please upload at least one photo'));
-                      }
-                      return Promise.resolve();
-                    }
-                  }
-                ]}
-              >
-                <PhotoUpload
-                  key={`photo-upload-${editDogPhotos.length}`}
-                  photos={editDogPhotos}
-                  onPhotosChange={(photos) => {
-                    photosRef.current = photos;
-                    setEditDogPhotos(photos);
-                    editDogForm.setFieldsValue({ photos });
-                    // Trigger validation after state update
-                    setTimeout(() => {
-                      editDogForm.validateFields(['photos']);
-                    }, 0);
-                  }}
-                  maxPhotos={10}
-                  aspect="standard"
-                  uploadPath="dog-photos"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <div style={{ textAlign: 'right' }}>
-            <Space>
-              <Button onClick={() => {
-                setEditDogVisible(false);
-                setEditingDog(null);
-                editDogForm.resetFields();
-              }}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Update Dog
-              </Button>
-            </Space>
-          </div>
-        </Form>
+          onCancel={() => {
+            setEditDogVisible(false);
+            setEditingDog(null);
+            editDogForm.resetFields();
+          }}
+          mode="edit"
+          initialValues={editingDog || undefined}
+          kennelId={kennelId}
+          colors={colors}
+          colorsLoading={colorsLoading}
+          colorsError={colorsError}
+          breeds={breeds}
+          breedsLoading={breedsLoading}
+          breedsError={breedsError}
+          layout="detailed"
+          showAdvancedFields={true}
+          showPhotos={true}
+          photos={editDogPhotos}
+          onPhotosChange={(photos) => {
+            photosRef.current = photos;
+            setEditDogPhotos(photos);
+            editDogForm.setFieldsValue({ photos });
+          }}
+          maxPhotos={10}
+          s3Operations={s3Operations}
+        />
       </Modal>
 
       {/* Edit Litter Modal */}

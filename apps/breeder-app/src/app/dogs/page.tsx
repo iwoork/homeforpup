@@ -16,8 +16,6 @@ import {
   Spin,
   Modal,
   Form,
-  InputNumber,
-  Divider,
   Statistic,
   App
 } from 'antd';
@@ -30,8 +28,9 @@ import {
   HeartOutlined,
   TeamOutlined
 } from '@ant-design/icons';
-import { ColorSelector } from '@homeforpup/shared-components';
+import { AddEditDogForm } from '@homeforpup/shared-components';
 import { useDogColors } from '@homeforpup/shared-hooks';
+import { useAllBreeds } from '@homeforpup/shared-breeds';
 import Link from 'next/link';
 import useSWR from 'swr';
 import type { Dog } from '@homeforpup/shared-types';
@@ -61,6 +60,7 @@ const DogsPage: React.FC = () => {
   const [addDogForm] = Form.useForm();
   const [editDogForm] = Form.useForm();
   const { colors, loading: colorsLoading, error: colorsError } = useDogColors();
+  const { breeds, loading: breedsLoading, error: breedsError } = useAllBreeds();
 
   // Build query parameters
   const buildQueryString = () => {
@@ -127,15 +127,6 @@ const DogsPage: React.FC = () => {
 
   const handleEditDog = (dog: Dog) => {
     setEditingDog(dog);
-    editDogForm.setFieldsValue({
-      name: dog.name,
-      breed: dog.breed,
-      gender: dog.gender,
-      birthDate: dog.birthDate,
-      type: dog.dogType,
-      color: dog.color,
-      weight: dog.weight,
-    });
     setEditDogVisible(true);
   };
 
@@ -430,131 +421,23 @@ const DogsPage: React.FC = () => {
         footer={null}
         width={600}
       >
-        <Form
+        <AddEditDogForm
           form={addDogForm}
-          layout="vertical"
           onFinish={handleAddDog}
-        >
-          <Form.Item
-            name="kennelId"
-            label="Kennel"
-            rules={[{ required: true, message: 'Please select a kennel' }]}
-          >
-            <Select placeholder="Select kennel">
-              {kennelsData?.kennels?.map((kennel: any) => (
-                <Option key={kennel.id} value={kennel.id}>
-                  {kennel.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="name"
-            label="Dog Name"
-            rules={[{ required: true, message: 'Please enter dog name' }]}
-          >
-            <Input placeholder="Dog name" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="breed"
-                label="Breed"
-                rules={[{ required: true, message: 'Please select breed' }]}
-              >
-                <BreedSelector
-                  placeholder="Select breed"
-                  showSearch={true}
-                  allowClear={true}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="gender"
-                label="Gender"
-                rules={[{ required: true, message: 'Please select gender' }]}
-              >
-                <Select placeholder="Select gender">
-                  <Option value="male">Male</Option>
-                  <Option value="female">Female</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="type"
-                label="Type"
-                rules={[{ required: true, message: 'Please select type' }]}
-              >
-                <Select placeholder="Select type">
-                  <Option value="parent">Parent</Option>
-                  <Option value="puppy">Puppy</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="birthDate"
-                label="Birth Date"
-              >
-                <Input type="date" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="color"
-            label="Color"
-            rules={[{ required: true, message: 'Please select color' }]}
-            help="Select the primary color or pattern"
-          >
-            <ColorSelector
-              colors={colors}
-              loading={colorsLoading}
-              error={colorsError || undefined}
-              showColorSwatches={true}
-              showDescription={true}
-              placeholder="Select color or pattern"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="weight"
-            label="Weight (lbs)"
-            rules={[{ required: true, message: 'Please enter weight' }]}
-          >
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-          >
-            <Input.TextArea rows={3} placeholder="Description and notes..." />
-          </Form.Item>
-
-          <Divider />
-
-          <div style={{ textAlign: 'right' }}>
-            <Space>
-              <Button onClick={() => {
-                setAddDogVisible(false);
-                addDogForm.resetFields();
-              }}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Add Dog
-              </Button>
-            </Space>
-          </div>
-        </Form>
+          onCancel={() => {
+            setAddDogVisible(false);
+            addDogForm.resetFields();
+          }}
+          mode="add"
+          kennels={kennelsData?.kennels}
+          colors={colors}
+          colorsLoading={colorsLoading}
+          colorsError={colorsError}
+          breeds={breeds}
+          breedsLoading={breedsLoading}
+          breedsError={breedsError}
+          layout="simple"
+        />
       </Modal>
 
       {/* Edit Dog Modal */}
@@ -569,118 +452,24 @@ const DogsPage: React.FC = () => {
         footer={null}
         width={600}
       >
-        <Form
+        <AddEditDogForm
           form={editDogForm}
-          layout="vertical"
           onFinish={handleUpdateDog}
-        >
-          <Form.Item
-            name="name"
-            label="Dog Name"
-            rules={[{ required: true, message: 'Please enter dog name' }]}
-          >
-            <Input placeholder="Dog name" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="breed"
-                label="Breed"
-                rules={[{ required: true, message: 'Please select breed' }]}
-              >
-                <BreedSelector
-                  placeholder="Select breed"
-                  showSearch={true}
-                  allowClear={true}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="gender"
-                label="Gender"
-                rules={[{ required: true, message: 'Please select gender' }]}
-              >
-                <Select placeholder="Select gender">
-                  <Option value="male">Male</Option>
-                  <Option value="female">Female</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="type"
-                label="Type"
-                rules={[{ required: true, message: 'Please select type' }]}
-              >
-                <Select placeholder="Select type">
-                  <Option value="parent">Parent</Option>
-                  <Option value="puppy">Puppy</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="birthDate"
-                label="Birth Date"
-              >
-                <Input type="date" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="color"
-            label="Color"
-            rules={[{ required: true, message: 'Please select color' }]}
-            help="Select the primary color or pattern"
-          >
-            <ColorSelector
-              colors={colors}
-              loading={colorsLoading}
-              error={colorsError || undefined}
-              showColorSwatches={true}
-              showDescription={true}
-              placeholder="Select color or pattern"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="weight"
-            label="Weight (lbs)"
-            rules={[{ required: true, message: 'Please enter weight' }]}
-          >
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item
-            name="description"
-            label="Description"
-          >
-            <Input.TextArea rows={3} placeholder="Description and notes..." />
-          </Form.Item>
-
-          <Divider />
-
-          <div style={{ textAlign: 'right' }}>
-            <Space>
-              <Button onClick={() => {
-                setEditDogVisible(false);
-                setEditingDog(null);
-                editDogForm.resetFields();
-              }}>
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                Update Dog
-              </Button>
-            </Space>
-          </div>
-        </Form>
+          onCancel={() => {
+            setEditDogVisible(false);
+            setEditingDog(null);
+            editDogForm.resetFields();
+          }}
+          mode="edit"
+          initialValues={editingDog || undefined}
+          colors={colors}
+          colorsLoading={colorsLoading}
+          colorsError={colorsError}
+          breeds={breeds}
+          breedsLoading={breedsLoading}
+          breedsError={breedsError}
+          layout="simple"
+        />
       </Modal>
     </div>
   );

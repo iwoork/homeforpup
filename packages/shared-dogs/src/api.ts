@@ -59,7 +59,7 @@ export class DogsApiClient {
 
     // Filter by user's dogs (for breeder app) or specific owner
     if (userId) {
-      filterExpressions.push('contains(kennelOwners, :userId)');
+      filterExpressions.push('ownerId = :userId');
       expressionAttributeValues[':userId'] = userId;
     } else if (ownerId) {
       filterExpressions.push('ownerId = :ownerId');
@@ -189,6 +189,7 @@ export class DogsApiClient {
       ...dogData,
       weight: dogData.weight || 0,
       description: dogData.description || '',
+      dogType: dogData.dogType || 'puppy',
       healthTests: [],
       breedingStatus: dogData.breedingStatus || 'not_ready',
       healthStatus: dogData.healthStatus || 'good',
@@ -221,7 +222,7 @@ export class DogsApiClient {
 
     // Add fields to update
     const fieldsToUpdate = [
-      'name', 'breed', 'gender', 'birthDate', 'weight', 'color', 
+      'name', 'callName', 'breed', 'gender', 'birthDate', 'weight', 'color', 
       'kennelId', 'description', 'dogType', 'breedingStatus', 
       'healthStatus', 'sireId', 'damId', 'photoUrl', 
       'registrationNumber', 'microchipNumber', 'notes'
