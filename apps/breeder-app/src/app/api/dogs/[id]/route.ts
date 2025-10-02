@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
+import { checkDogAccess } from '@/lib/auth/kennelAccess';
 
 // GET /api/dogs/[id] - Get dog details
 export async function GET(
@@ -22,12 +23,23 @@ export async function GET(
     }
 
     // Check if user has access to this dog (owns it or manages the kennel)
-    if (dog.ownerId !== session.user.id) {
-      // TODO: Add kennel ownership check
+    console.log('GET /api/dogs/[id] - Access check:');
+    console.log('- Dog ID:', dogId);
+    console.log('- Dog ownerId:', dog.ownerId);
+    console.log('- Session user ID:', session.user.id);
+    console.log('- Dog kennelId:', dog.kennelId);
+    
+    const accessResult = await checkDogAccess(session.user.id, dog);
+    console.log('- Access result:', accessResult);
+    
+    if (!accessResult.hasAccess) {
+      console.log('Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
+    
+    console.log(`Access granted via ${accessResult.accessType}${accessResult.kennelName ? ` (${accessResult.kennelName})` : ''}`);
 
-    return NextResponse.json(dog);
+    return NextResponse.json({ dog });
   } catch (error) {
     console.error('Error fetching dog:', error);
     return NextResponse.json(
@@ -59,10 +71,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    if (existingDog.ownerId !== session.user.id) {
-      // TODO: Add kennel ownership check
+    const accessResult = await checkDogAccess(session.user.id, existingDog);
+    if (!accessResult.hasAccess) {
+      console.log('PUT - Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
+    
+    console.log(`PUT - Access granted via ${accessResult.accessType}${accessResult.kennelName ? ` (${accessResult.kennelName})` : ''}`);
 
     const body = await request.json();
     const updatedDog = await dogsApiClient.updateDog({ id: dogId, ...body });
@@ -99,10 +114,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    if (existingDog.ownerId !== session.user.id) {
-      // TODO: Add kennel ownership check
+    const accessResult = await checkDogAccess(session.user.id, existingDog);
+    if (!accessResult.hasAccess) {
+      console.log('DELETE - Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
+    
+    console.log(`DELETE - Access granted via ${accessResult.accessType}${accessResult.kennelName ? ` (${accessResult.kennelName})` : ''}`);
 
     await dogsApiClient.deleteDog(dogId);
     

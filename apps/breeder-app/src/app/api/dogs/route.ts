@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
+import { getUserAccessibleDogs } from '@/lib/auth/kennelAccess';
 
 // GET /api/dogs - List dogs with filtering
 export async function GET(request: NextRequest) {
@@ -30,7 +31,8 @@ export async function GET(request: NextRequest) {
       sortBy: searchParams.get('sortBy') || 'updatedAt'
     };
 
-    const data = await dogsApiClient.getDogs(options, session.user.id);
+    // Use kennel-based access instead of the shared API
+    const data = await getUserAccessibleDogs(session.user.id, options);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching dogs:', error);
