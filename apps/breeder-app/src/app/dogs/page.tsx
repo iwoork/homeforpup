@@ -417,7 +417,7 @@ const DogsPage: React.FC = () => {
           addDogForm.resetFields();
         }}
         footer={null}
-        width={600}
+        width={800}
       >
         <AddEditDogForm
           form={addDogForm}
@@ -434,7 +434,8 @@ const DogsPage: React.FC = () => {
           breeds={breeds}
           breedsLoading={breedsLoading}
           breedsError={breedsError}
-          layout="simple"
+          layout="detailed"
+          showAdvancedFields={true}
         />
       </Modal>
 
@@ -448,7 +449,7 @@ const DogsPage: React.FC = () => {
           editDogForm.resetFields();
         }}
         footer={null}
-        width={600}
+        width={800}
       >
         <AddEditDogForm
           form={editDogForm}
@@ -466,7 +467,8 @@ const DogsPage: React.FC = () => {
           breeds={breeds}
           breedsLoading={breedsLoading}
           breedsError={breedsError}
-          layout="simple"
+          layout="detailed"
+          showAdvancedFields={true}
         />
       </Modal>
     </div>

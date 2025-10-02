@@ -88,6 +88,8 @@ const AddEditDogForm: React.FC<AddEditDogFormProps> = ({
         breed: initialValues.breed,
         gender: initialValues.gender,
         dogType: initialValues.dogType,
+        breedingStatus: initialValues.breedingStatus,
+        healthStatus: initialValues.healthStatus,
         birthDate: initialValues.birthDate,
         color: initialValues.color,
         weight: initialValues.weight,
@@ -196,6 +198,36 @@ const AddEditDogForm: React.FC<AddEditDogFormProps> = ({
             <Select placeholder="Select type">
               <Option value="parent">Parent</Option>
               <Option value="puppy">Puppy</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+
+        {/* Status Fields */}
+        <Col xs={24} md={isDetailed ? 12 : 24}>
+          <Form.Item
+            name="breedingStatus"
+            label="Breeding Status"
+            rules={[{ required: true, message: 'Please select breeding status' }]}
+          >
+            <Select placeholder="Select breeding status">
+              <Option value="available">Available</Option>
+              <Option value="not_ready">Not Ready</Option>
+              <Option value="retired">Retired</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+
+        <Col xs={24} md={isDetailed ? 12 : 24}>
+          <Form.Item
+            name="healthStatus"
+            label="Health Status"
+            rules={[{ required: true, message: 'Please select health status' }]}
+          >
+            <Select placeholder="Select health status">
+              <Option value="excellent">Excellent</Option>
+              <Option value="good">Good</Option>
+              <Option value="fair">Fair</Option>
+              <Option value="poor">Poor</Option>
             </Select>
           </Form.Item>
         </Col>

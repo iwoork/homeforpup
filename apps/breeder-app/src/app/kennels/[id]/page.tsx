@@ -340,10 +340,13 @@ const KennelDetailPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'green';
-      case 'inactive': return 'orange';
-      case 'suspended': return 'red';
-      case 'pending_approval': return 'blue';
+      case 'available': return 'green';
+      case 'not_ready': return 'orange';
+      case 'retired': return 'red';
+      case 'excellent': return 'green';
+      case 'good': return 'blue';
+      case 'fair': return 'orange';
+      case 'poor': return 'red';
       default: return 'default';
     }
   };
@@ -395,12 +398,22 @@ const KennelDetailPage: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)}>
-          {status}
+      title: 'Breeding Status',
+      dataIndex: 'breedingStatus',
+      key: 'breedingStatus',
+      render: (breedingStatus: string) => (
+        <Tag color={getStatusColor(breedingStatus)}>
+          {breedingStatus?.replace('_', ' ')}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Health Status',
+      dataIndex: 'healthStatus',
+      key: 'healthStatus',
+      render: (healthStatus: string) => (
+        <Tag color={getStatusColor(healthStatus)}>
+          {healthStatus}
         </Tag>
       ),
     },
