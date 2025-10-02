@@ -22,6 +22,8 @@
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeds-simple",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-messages",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-message-threads",
+        "arn:aws:dynamodb:us-east-1:*:table/puppy-platform-dev-messages",
+        "arn:aws:dynamodb:us-east-1:*:table/puppy-platform-dev-message-threads",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-favorites",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-activities",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-kennels",
@@ -31,7 +33,10 @@
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeders/index/*",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeds/index/*",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-breeds-simple/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/homeforpup-messages/index/*",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-message-threads/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/puppy-platform-dev-messages/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/puppy-platform-dev-message-threads/index/*",
         "arn:aws:dynamodb:us-east-1:*:table/homeforpup-favorites/index/*"
       ]
     },

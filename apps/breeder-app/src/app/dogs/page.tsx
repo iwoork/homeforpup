@@ -294,7 +294,7 @@ const DogsPage: React.FC = () => {
 
       {/* Stats Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={8} sm={12} md={6}>
           <Card>
             <Statistic
               title="Total Dogs"
@@ -303,7 +303,7 @@ const DogsPage: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={8} sm={12} md={6}>
           <Card>
             <Statistic
               title="Parents"
@@ -313,7 +313,7 @@ const DogsPage: React.FC = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={8} sm={12} md={6}>
           <Card>
             <Statistic
               title="Puppies"

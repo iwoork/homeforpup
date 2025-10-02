@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Button, Space, Avatar, Dropdown } from 'antd';
 import { 
   UserOutlined, 
@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useSession, signOut, signIn } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { MenuProps } from 'antd';
+import Navigation from './Navigation';
 
 const { Header: AntHeader } = Layout;
 
@@ -20,10 +21,22 @@ export const Header: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
 
   const user = session?.user;
   const isAuthenticated = status === 'authenticated';
   const loading = status === 'loading';
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleLogin = async () => {
     await signIn('cognito', { callbackUrl: '/dashboard' });
@@ -74,24 +87,32 @@ export const Header: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Logo and Brand */}
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-        <img 
-          src="/logo.png" 
-          alt="HomeForPup Logo" 
-          style={{ 
-            height: '40px', 
-            width: 'auto' 
-          }} 
-        />
-        <span className="brand-name" style={{ 
-          fontSize: '18px', 
-          fontWeight: 600, 
-          color: '#262626'
-        }}>
-          HomeForPup Breeders
-        </span>
-      </Link>
+      {/* Left Section - Navigation + Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Mobile Navigation Drawer - only show for authenticated users */}
+        {isMobile && isAuthenticated && (
+          <Navigation isMobile={true} />
+        )}
+        
+        {/* Logo and Brand */}
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+          <img 
+            src="/logo.png" 
+            alt="HomeForPup Logo" 
+            style={{ 
+              height: '40px', 
+              width: 'auto' 
+            }} 
+          />
+          <span className="brand-name" style={{ 
+            fontSize: '18px', 
+            fontWeight: 600, 
+            color: '#262626'
+          }}>
+            HomeForPup Breeders
+          </span>
+        </Link>
+      </div>
       <style jsx>{`
         @media (max-width: 768px) {
           .brand-name {
@@ -99,6 +120,11 @@ export const Header: React.FC = () => {
           }
           .user-name {
             display: none !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .brand-name {
+            display: none;
           }
         }
       `}</style>
@@ -111,18 +137,31 @@ export const Header: React.FC = () => {
           </Button>
         ) : isAuthenticated && user ? (
           <Space size="middle">
-            <span className="user-name" style={{ color: '#595959' }}>
-              {user.name || user.email}
-            </span>
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-              <Button icon={<UserOutlined />} type="text" style={{ padding: '4px 8px' }}>
-                <Avatar 
-                  size="small" 
-                  icon={<UserOutlined />} 
-                  style={{ backgroundColor: '#52c41a' }}
-                />
-              </Button>
-            </Dropdown>
+            {/* Desktop: Show user name and dropdown */}
+            {!isMobile && (
+              <>
+                <span className="user-name" style={{ color: '#595959' }}>
+                  {user.name || user.email}
+                </span>
+                <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+                  <Button icon={<UserOutlined />} type="text" style={{ padding: '4px 8px' }}>
+                    <Avatar 
+                      size="small" 
+                      icon={<UserOutlined />} 
+                      style={{ backgroundColor: '#52c41a' }}
+                    />
+                  </Button>
+                </Dropdown>
+              </>
+            )}
+            {/* Mobile: Just show avatar (user menu is in drawer) */}
+            {isMobile && (
+              <Avatar 
+                size="small" 
+                icon={<UserOutlined />} 
+                style={{ backgroundColor: '#52c41a' }}
+              />
+            )}
           </Space>
         ) : (
           <Space>
