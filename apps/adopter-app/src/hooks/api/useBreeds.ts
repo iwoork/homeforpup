@@ -3,35 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
-
-export interface Breed {
-  id: string;
-  name: string;
-  category: string;
-  size: string;
-  image: string;
-  breedType: string;
-  hybrid: boolean;
-  altNames: string[];
-  breederCount?: number;
-}
-
-export interface BreedsResponse {
-  breeds: Breed[];
-  count: number;
-  total: number;
-  page: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  totalPages: number;
-  filters: {
-    availableCategories: string[];
-    availableSizes: string[];
-    availableBreedTypes: string[];
-    totalBreeders: number;
-  };
-}
+import { Breed, BreedsResponse } from '@homeforpup/shared-breeds';
 
 interface UseBreedsOptions {
   search?: string;

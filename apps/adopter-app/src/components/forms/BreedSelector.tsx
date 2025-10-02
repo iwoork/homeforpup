@@ -4,8 +4,7 @@
 import React from 'react';
 import { Select, Spin, Empty, Typography, Tag, Space, Tooltip } from 'antd';
 import { SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { useAllBreeds } from '@/hooks/api/useBreeds';
-import { Breed } from '@/hooks/api/useBreeds';
+import { useAllBreeds, Breed } from '@homeforpup/shared-breeds';
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -166,7 +165,7 @@ const BreedSelector: React.FC<BreedSelectorProps> = ({
               <Space size={4}>
                 <Tag color="blue">{breed.category}</Tag>
                 <Tag color="green">{breed.size}</Tag>
-                {breed.hybrid && <Tag color="orange">Hybrid</Tag>}
+                {breed.breedType === 'hybrid' && <Tag color="orange">Hybrid</Tag>}
               </Space>
             </div>
           )}

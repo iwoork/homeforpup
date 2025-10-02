@@ -39,6 +39,7 @@ import {
 import Link from 'next/link';
 import { KennelsResponse, KennelFilter } from '@homeforpup/shared-types';
 import useSWR from 'swr';
+import BreedSelector from '@/components/forms/BreedSelector';
 
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
@@ -308,19 +309,14 @@ const KennelsPage: React.FC = () => {
             </Select>
           </Col>
           <Col xs={24} sm={12} md={4}>
-            <Select
+            <BreedSelector
               placeholder="Specialty"
               value={specialtyFilter}
-              onChange={setSpecialtyFilter}
+              onChange={(value) => setSpecialtyFilter(value as string)}
               style={{ width: '100%' }}
               allowClear
-            >
-              <Option value="Golden Retriever">Golden Retriever</Option>
-              <Option value="Labrador">Labrador</Option>
-              <Option value="German Shepherd">German Shepherd</Option>
-              <Option value="French Bulldog">French Bulldog</Option>
-              <Option value="Poodle">Poodle</Option>
-            </Select>
+              showSearch={true}
+            />
           </Col>
           <Col xs={24} sm={12} md={4}>
             <Button 

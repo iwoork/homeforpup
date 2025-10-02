@@ -36,6 +36,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import type { Dog } from '@homeforpup/shared-types';
 import { formatAge } from '@/lib/utils/ageDisplay';
+import BreedSelector from '@/components/forms/BreedSelector';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -461,9 +462,13 @@ const DogsPage: React.FC = () => {
               <Form.Item
                 name="breed"
                 label="Breed"
-                rules={[{ required: true, message: 'Please enter breed' }]}
+                rules={[{ required: true, message: 'Please select breed' }]}
               >
-                <Input placeholder="e.g., Golden Retriever" />
+                <BreedSelector
+                  placeholder="Select breed"
+                  showSearch={true}
+                  allowClear={true}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -582,9 +587,13 @@ const DogsPage: React.FC = () => {
               <Form.Item
                 name="breed"
                 label="Breed"
-                rules={[{ required: true, message: 'Please enter breed' }]}
+                rules={[{ required: true, message: 'Please select breed' }]}
               >
-                <Input placeholder="e.g., Golden Retriever" />
+                <BreedSelector
+                  placeholder="Select breed"
+                  showSearch={true}
+                  allowClear={true}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
