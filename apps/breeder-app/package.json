@@ -22,6 +22,7 @@
     "@homeforpup/shared-dog-api": "*",
     "@homeforpup/shared-api": "*",
     "@homeforpup/shared-breeds": "*",
+    "@homeforpup/shared-dogs": "*",
     "@ant-design/icons": "^5.4.0",
     "@aws-amplify/ui-react": "^6.5.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.895.0",

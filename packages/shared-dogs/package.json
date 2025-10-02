@@ -1,0 +1,23 @@
+{
+  "name": "@homeforpup/shared-dogs",
+  "version": "1.0.0",
+  "description": "Shared dogs API and types for HomeForPup applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@homeforpup/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0"
+  }
+}
