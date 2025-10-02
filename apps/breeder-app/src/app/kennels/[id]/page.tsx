@@ -175,7 +175,6 @@ const KennelDetailPage: React.FC = () => {
   const handleUpdateDog = async (values: any) => {
     if (!editingDog) return;
     
-    
     try {
       const response = await fetch(`/api/dogs/${editingDog.id}`, {
         method: 'PUT',
@@ -193,7 +192,7 @@ const KennelDetailPage: React.FC = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update dog');
       }
-
+      
       message.success('Dog updated successfully!');
       setEditDogVisible(false);
       setEditingDog(null);
@@ -387,11 +386,11 @@ const KennelDetailPage: React.FC = () => {
     },
     {
       title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: string) => (
-        <Tag color={type === 'parent' ? 'gold' : 'green'}>
-          {type}
+      dataIndex: 'dogType',
+      key: 'dogType',
+      render: (dogType: string) => (
+        <Tag color={dogType === 'parent' ? 'gold' : 'green'}>
+          {dogType}
         </Tag>
       ),
     },

@@ -233,6 +233,7 @@ export class DogsApiClient {
         updateExpressions.push(`#${field} = :${field}`);
         expressionAttributeNames[`#${field}`] = field;
         expressionAttributeValues[`:${field}`] = dogData[field as keyof UpdateDogRequest];
+        
       }
     });
 
