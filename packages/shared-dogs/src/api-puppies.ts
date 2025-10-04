@@ -155,10 +155,16 @@ export class PuppiesApiClient {
       const now = new Date();
       const ageWeeks = Math.floor((now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
+      // Extract profile photo from photoGallery if available
+      const profilePhoto = dog.photoGallery?.find((photo: any) => photo.isProfilePhoto)?.url;
+      const firstPhoto = dog.photoGallery?.[0]?.url;
+      const dogPhotoUrl = dog.photoUrl || profilePhoto || firstPhoto;
+      
       return {
         ...dog,
         kennel,
-        image: dog.photoUrl, // Map photoUrl to image for compatibility
+        image: dogPhotoUrl || this.generateDogImage(parseInt(dog.id.slice(-3)), 0), // Fallback to generated image if no photo
+        photoUrl: dogPhotoUrl, // Ensure photoUrl is also set for compatibility
         ageWeeks,
         location: kennel?.address ? `${kennel.address.city}, ${kennel.address.state}` : 'Location not specified',
         country: kennel?.address?.country || 'Country not specified',

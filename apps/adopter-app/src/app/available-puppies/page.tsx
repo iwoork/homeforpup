@@ -531,6 +531,11 @@ const AvailablePuppiesPage: React.FC = () => {
                               height: '100%',
                               objectFit: 'cover'
                             }}
+                            onError={(e) => {
+                              // Fallback to a generic puppy image if the current one fails
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://placedog.net/400/300';
+                            }}
                           />
                           <div style={{
                             position: 'absolute',

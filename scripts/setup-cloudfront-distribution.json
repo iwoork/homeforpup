@@ -1,0 +1,68 @@
+{
+  "CallerReference": "homeforpup-img-distribution-2024",
+  "Comment": "CloudFront distribution for img.homeforpup.com",
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "homeforpup-s3-origin",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "AllowedMethods": {
+      "Quantity": 7,
+      "Items": ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": ["GET", "HEAD"]
+      }
+    },
+    "ForwardedValues": {
+      "QueryString": false,
+      "Cookies": {
+        "Forward": "none"
+      },
+      "Headers": {
+        "Quantity": 4,
+        "Items": ["Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers", "Authorization"]
+      }
+    },
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    },
+    "MinTTL": 0,
+    "DefaultTTL": 86400,
+    "MaxTTL": 31536000,
+    "Compress": true
+  },
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "homeforpup-s3-origin",
+        "DomainName": "homeforpup-images.s3.us-east-1.amazonaws.com",
+        "OriginPath": "",
+        "CustomOriginConfig": null,
+        "S3OriginConfig": {
+          "OriginAccessIdentity": ""
+        },
+        "OriginAccessControlId": "REPLACE_WITH_OAC_ID"
+      }
+    ]
+  },
+  "Aliases": {
+    "Quantity": 1,
+    "Items": ["img.homeforpup.com"]
+  },
+  "ViewerCertificate": {
+    "ACMCertificateArn": "REPLACE_WITH_CERTIFICATE_ARN",
+    "SSLSupportMethod": "sni-only",
+    "MinimumProtocolVersion": "TLSv1.2_2021"
+  },
+  "Enabled": true,
+  "PriceClass": "PriceClass_100",
+  "HttpVersion": "http2",
+  "IsIPV6Enabled": true,
+  "Logging": {
+    "Enabled": false,
+    "IncludeCookies": false,
+    "Bucket": "",
+    "Prefix": ""
+  }
+}

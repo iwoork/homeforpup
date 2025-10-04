@@ -19,12 +19,17 @@
     "build:breeder": "turbo run build --filter=breeder-app"
   },
   "devDependencies": {
-    "turbo": "^1.10.12",
     "@types/node": "^22.7.5",
     "@typescript-eslint/eslint-plugin": "^8.12.2",
     "@typescript-eslint/parser": "^8.12.2",
     "eslint": "^9.14.0",
     "eslint-config-next": "^15.5.4",
+    "turbo": "^1.10.12",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-acm": "^3.901.0",
+    "@aws-sdk/client-cloudfront": "^3.901.0",
+    "@aws-sdk/client-s3": "^3.901.0"
   }
 }
