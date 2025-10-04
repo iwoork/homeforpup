@@ -13,14 +13,17 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 
-const SignupScreen: React.FC = () => {
+interface SignupScreenProps {
+  navigation: any;
+}
+
+const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
     phone: '',
-    location: '',
   });
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
@@ -29,37 +32,64 @@ const SignupScreen: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSignup = async () => {
-    const { name, email, password, confirmPassword, phone, location } = formData;
-
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      Alert.alert('Error', 'Please enter your full name');
+      return false;
     }
-
-    if (password !== confirmPassword) {
+    if (!formData.email.trim()) {
+      Alert.alert('Error', 'Please enter your email address');
+      return false;
+    }
+    if (!formData.email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return false;
+    }
+    if (!formData.password) {
+      Alert.alert('Error', 'Please enter a password');
+      return false;
+    }
+    if (formData.password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
-      return;
+      return false;
     }
+    if (!formData.phone.trim()) {
+      Alert.alert('Error', 'Please enter your phone number');
+      return false;
+    }
+    return true;
+  };
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+  const handleSignup = async () => {
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     try {
-      const userData = {
-        name,
-        email,
-        password,
-        phone,
-        location,
-        userType: 'breeder' as const,
-      };
+      const result = await signup({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        phone: formData.phone.trim(),
+      });
 
-      const result = await signup(userData);
-      if (!result.success) {
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          'Account created successfully! Please check your email for verification instructions.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('Login'),
+            },
+          ]
+        );
+      } else {
         Alert.alert('Signup Failed', result.error || 'Please try again');
       }
     } catch (error) {
@@ -82,18 +112,19 @@ const SignupScreen: React.FC = () => {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Full Name *</Text>
+            <Text style={styles.label}>Full Name</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your full name"
               value={formData.name}
               onChangeText={(value) => handleInputChange('name', value)}
               autoCapitalize="words"
+              autoCorrect={false}
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email *</Text>
+            <Text style={styles.label}>Email Address</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
@@ -113,22 +144,12 @@ const SignupScreen: React.FC = () => {
               value={formData.phone}
               onChangeText={(value) => handleInputChange('phone', value)}
               keyboardType="phone-pad"
+              autoCapitalize="none"
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Location</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="City, State"
-              value={formData.location}
-              onChangeText={(value) => handleInputChange('location', value)}
-              autoCapitalize="words"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password *</Text>
+            <Text style={styles.label}>Password</Text>
             <TextInput
               style={styles.input}
               placeholder="Create a password"
@@ -140,7 +161,7 @@ const SignupScreen: React.FC = () => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm Password *</Text>
+            <Text style={styles.label}>Confirm Password</Text>
             <TextInput
               style={styles.input}
               placeholder="Confirm your password"
@@ -160,11 +181,15 @@ const SignupScreen: React.FC = () => {
               {loading ? 'Creating Account...' : 'Create Account'}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.linkButton}>
+            <Text style={styles.linkText}>Terms of Service</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already have an account? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
             <Text style={styles.footerLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
@@ -233,6 +258,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  linkButton: {
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+  },
+  linkText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -250,4 +283,3 @@ const styles = StyleSheet.create({
 });
 
 export default SignupScreen;
-

@@ -13,7 +13,11 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 
-const LoginScreen: React.FC = () => {
+interface LoginScreenProps {
+  navigation: any;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,33 +37,6 @@ const LoginScreen: React.FC = () => {
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTestUser = async () => {
-    const testEmail = 'test@homeforpup.com';
-    const testPassword = 'TestPassword123!';
-    
-    setLoading(true);
-    try {
-      const result = await signup({
-        name: 'Test User',
-        email: testEmail,
-        password: testPassword,
-        phone: '+1234567890',
-      });
-      
-      if (result.success) {
-        Alert.alert('Success', 'Test user created! You can now login with: test@homeforpup.com / TestPassword123!');
-        setEmail(testEmail);
-        setPassword(testPassword);
-      } else {
-        Alert.alert('Error', result.error || 'Failed to create test user');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create test user');
     } finally {
       setLoading(false);
     }
@@ -112,16 +89,6 @@ const LoginScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.testButton, loading && styles.buttonDisabled]}
-            onPress={createTestUser}
-            disabled={loading}
-          >
-            <Text style={styles.testButtonText}>
-              Create Test User
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.linkButton}>
             <Text style={styles.linkText}>Forgot Password?</Text>
           </TouchableOpacity>
@@ -129,7 +96,7 @@ const LoginScreen: React.FC = () => {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text style={styles.footerLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -194,18 +161,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.textSecondary,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  testButton: {
-    backgroundColor: theme.colors.secondary,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    marginTop: theme.spacing.md,
-  },
-  testButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
