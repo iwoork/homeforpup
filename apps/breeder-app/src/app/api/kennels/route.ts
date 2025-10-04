@@ -5,6 +5,20 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { CreateKennelRequest, KennelsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
+// Create the verifier outside the handler function for better performance
+let verifier: any = null;
+
+async function getCognitoVerifier() {
+  if (!verifier) {
+    const { CognitoJwtVerifier } = await import('aws-jwt-verify');
+    verifier = CognitoJwtVerifier.create({
+      userPoolId: process.env.NEXT_PUBLIC_AWS_USER_POOL_ID!,
+      tokenUse: 'id',
+      clientId: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID!,
+    });
+  }
+  return verifier;
+}
 
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
@@ -21,56 +35,45 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient, {
 });
 const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 
+// Helper function to get user ID from either session or Bearer token
+async function getUserId(request: NextRequest): Promise<string | null> {
+  // Try NextAuth session first
+  const session = await getServerSession(authOptions);
+  if (session?.user?.id) {
+    return session.user.id;
+  }
+
+  // Try Bearer token authentication
+  const authHeader = request.headers.get('authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const cognitoVerifier = await getCognitoVerifier();
+      const payload = await cognitoVerifier.verify(token);
+      return payload.sub; // Cognito user ID
+    } catch (error) {
+      console.error('Bearer token verification failed:', error);
+    }
+  }
+
+  return null;
+}
+
 // GET /api/kennels - List kennels with filtering
 export async function GET(request: NextRequest) {
   try {
-    // Log cookies for debugging
-    const cookies = request.cookies.getAll();
-    console.log('Kennels API - Cookies:', cookies.map(c => ({ name: c.name, hasValue: !!c.value })));
+    // Get user ID from either session or Bearer token
+    const userId = await getUserId(request);
     
-    const session = await getServerSession(authOptions);
-    console.log('Kennels API - Session:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-      fullSession: session,
-      env: {
-        hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
-        hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
-        nextAuthUrl: process.env.NEXTAUTH_URL,
-        nodeEnv: process.env.NODE_ENV,
-        hasTrustHost: !!process.env.NEXTAUTH_TRUST_HOST,
-      }
-    });
-    
-    // Check if session exists but user.id is missing
-    if (session && !session.user?.id) {
-      console.error('Kennels API - Session exists but no user.id. Trying alternative fields...');
-      // Try alternative user ID fields
-      const userId = (session.user as any)?.sub || (session.user as any)?.email;
-      if (userId) {
-        console.log('Kennels API - Found alternative user ID:', userId);
-        // Continue with this userId
-        (session.user as any).id = userId;
-      }
-    }
-    
-    if (!session?.user?.id) {
-      console.error('Kennels API - Unauthorized: No session or user ID');
+    if (!userId) {
+      console.error('Kennels API - Unauthorized: No valid authentication');
       return NextResponse.json({ 
         error: 'Unauthorized',
         message: 'Please ensure you are logged in. If this issue persists, try logging out and logging back in.',
-        debug: {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          sessionKeys: session ? Object.keys(session) : [],
-          userKeys: session?.user ? Object.keys(session.user) : [],
-          timestamp: new Date().toISOString(),
-        }
       }, { status: 401 });
     }
+
+    console.log('Kennels API - Authenticated user:', userId);
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -89,7 +92,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by user's kennels (owners or managers)
     filterExpression = 'contains(owners, :userId) OR contains(managers, :userId)';
-    expressionAttributeValues[':userId'] = session.user.id;
+    expressionAttributeValues[':userId'] = userId;
 
     if (search) {
       filterExpression += ' AND (contains(#name, :search) OR contains(description, :search) OR contains(businessName, :search))';
@@ -153,8 +156,10 @@ export async function GET(request: NextRequest) {
 // POST /api/kennels - Create new kennel
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    // Get user ID from either session or Bearer token
+    const userId = await getUserId(request);
+    
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -198,9 +203,9 @@ export async function POST(request: NextRequest) {
         currentDogs: 0,
         currentLitters: 0,
       },
-      owners: [session.user.id],
-      managers: [session.user.id],
-      createdBy: session.user.id,
+      owners: [userId],
+      managers: [userId],
+      createdBy: userId,
       status: 'active',
       verified: false,
       createdAt: timestamp,

@@ -6,45 +6,43 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
+import { useDashboardStats } from '../../hooks/useApi';
 
 const DashboardScreen: React.FC = () => {
   const { user } = useAuth();
-  const [refreshing, setRefreshing] = React.useState(false);
+  const { data: stats, loading, error, refreshing, refresh } = useDashboardStats();
 
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    // TODO: Fetch dashboard data
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
+  const onRefresh = React.useCallback(async () => {
+    await refresh();
+  }, [refresh]);
 
-  const stats = [
+  const statsDisplay = [
     {
       title: 'Total Kennels',
-      value: '2',
+      value: stats?.totalKennels?.toString() || '0',
       icon: 'home',
       color: theme.colors.primary,
     },
     {
       title: 'Total Dogs',
-      value: '12',
+      value: stats?.totalDogs?.toString() || '0',
       icon: 'pets',
       color: theme.colors.secondary,
     },
     {
       title: 'Active Messages',
-      value: '5',
+      value: stats?.activeMessages?.toString() || '0',
       icon: 'message',
       color: theme.colors.warning,
     },
     {
       title: 'New Inquiries',
-      value: '3',
+      value: stats?.newInquiries?.toString() || '0',
       icon: 'inbox',
       color: theme.colors.success,
     },
@@ -88,7 +86,7 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.statsContainer}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsGrid}>
-          {stats.map((stat, index) => (
+          {statsDisplay.map((stat, index) => (
             <View key={index} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: stat.color }]}>
                 <Icon name={stat.icon} size={24} color="#fff" />

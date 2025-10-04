@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,71 +11,18 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { theme } from '../../utils/theme';
 import { Kennel } from '../../types';
+import { useKennels } from '../../hooks/useApi';
 
 const KennelsScreen: React.FC = () => {
-  const [kennels, setKennels] = useState<Kennel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: kennelsData, loading, error, refreshing, refresh } = useKennels({
+    page: 1,
+    limit: 20,
+  });
 
-  useEffect(() => {
-    fetchKennels();
-  }, []);
-
-  const fetchKennels = async () => {
-    try {
-      // TODO: Implement actual API call
-      // Simulate API call
-      setTimeout(() => {
-        setKennels([
-          {
-            id: '1',
-            name: 'Sunny Acres Kennel',
-            description: 'Specializing in Golden Retrievers and Labradors',
-            address: {
-              street: '123 Farm Road',
-              city: 'Springfield',
-              state: 'IL',
-              zipCode: '62701',
-              country: 'USA',
-            },
-            specialties: ['Golden Retriever', 'Labrador'],
-            isActive: true,
-            isPublic: true,
-            photoUrl: '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            name: 'Mountain View Kennels',
-            description: 'Premier breeding facility for German Shepherds',
-            address: {
-              street: '456 Mountain Drive',
-              city: 'Denver',
-              state: 'CO',
-              zipCode: '80202',
-              country: 'USA',
-            },
-            specialties: ['German Shepherd'],
-            isActive: true,
-            isPublic: true,
-            photoUrl: '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error fetching kennels:', error);
-      setLoading(false);
-    }
-  };
+  const kennels = kennelsData?.kennels || [];
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchKennels();
-    setRefreshing(false);
+    await refresh();
   };
 
   const renderKennelItem = ({ item }: { item: Kennel }) => (
@@ -93,28 +40,32 @@ const KennelsScreen: React.FC = () => {
       <View style={styles.kennelContent}>
         <Text style={styles.kennelName}>{item.name}</Text>
         <Text style={styles.kennelDescription} numberOfLines={2}>
-          {item.description}
+          {item.description || 'No description available'}
         </Text>
         
-        <View style={styles.kennelLocation}>
-          <Icon name="location-on" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.locationText}>
-            {item.address.city}, {item.address.state}
-          </Text>
-        </View>
-        
-        <View style={styles.specialtiesContainer}>
-          {item.specialties.slice(0, 2).map((specialty, index) => (
-            <View key={index} style={styles.specialtyTag}>
-              <Text style={styles.specialtyText}>{specialty}</Text>
-            </View>
-          ))}
-          {item.specialties.length > 2 && (
-            <Text style={styles.moreSpecialties}>
-              +{item.specialties.length - 2} more
+        {item.address && (
+          <View style={styles.kennelLocation}>
+            <Icon name="location-on" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.locationText}>
+              {item.address.city}, {item.address.state}
             </Text>
-          )}
-        </View>
+          </View>
+        )}
+        
+        {item.specialties && item.specialties.length > 0 && (
+          <View style={styles.specialtiesContainer}>
+            {item.specialties.slice(0, 2).map((specialty, index) => (
+              <View key={index} style={styles.specialtyTag}>
+                <Text style={styles.specialtyText}>{specialty}</Text>
+              </View>
+            ))}
+            {item.specialties.length > 2 && (
+              <Text style={styles.moreSpecialties}>
+                +{item.specialties.length - 2} more
+              </Text>
+            )}
+          </View>
+        )}
         
         <View style={styles.kennelStatus}>
           <View style={[
@@ -153,6 +104,17 @@ const KennelsScreen: React.FC = () => {
     return (
       <View style={styles.loadingContainer}>
         <Text>Loading kennels...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Error loading kennels: {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -321,6 +283,23 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
   },
   createButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 16,
+    color: theme.colors.error,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  retryButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  retryButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

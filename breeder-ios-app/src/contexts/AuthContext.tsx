@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, ApiResponse } from '../types';
 import authService from '../services/authService';
+import apiService from '../services/apiService';
 
 interface AuthContextType {
   user: User | null;
@@ -41,6 +42,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { user: storedUser, token } = await authService.loadStoredAuthData();
       
       if (storedUser && token) {
+        // Set the auth token in the API service
+        apiService.setAuthToken(token);
         // Verify the session is still valid
         const isValid = await authService.refreshSession();
         if (isValid) {
@@ -48,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           // Session expired, clear stored data
           await authService.logout();
+          apiService.setAuthToken(null);
         }
       }
     } catch (error) {
@@ -65,7 +69,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const result = await authService.login(email, password);
       
-      if (result.success && result.user) {
+      if (result.success && result.user && result.token) {
+        // Set the auth token in the API service
+        apiService.setAuthToken(result.token);
         setUser(result.user);
         return { success: true, data: result.user };
       } else {
@@ -111,6 +117,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       setError(null);
       await authService.logout();
+      // Clear the auth token from the API service
+      apiService.setAuthToken(null);
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
