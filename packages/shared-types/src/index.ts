@@ -1,5 +1,8 @@
 // Consolidated Types - Single source of truth for all type definitions
 
+// Import types from other modules
+import { DogPhoto } from './kennel';
+
 // ============================================================================
 // CORE ENTITIES
 // ============================================================================
@@ -130,6 +133,7 @@ export interface Dog {
   weight: number;
   color: string;
   photoUrl?: string;  
+  photoGallery?: DogPhoto[]; // Array of photos for this dog
   healthTests: string[]; // URLs to health test documents
   pedigree?: string; // URL to pedigree document
   description: string;
