@@ -79,19 +79,27 @@ export class AuthService {
         const currentUser = await getCurrentUser();
         const session = await fetchAuthSession();
         
-        // Create user object
+        // Get user attributes to extract the actual name
+        const userAttributes = session.tokens?.idToken?.payload;
+        const userName = userAttributes?.name as string || userAttributes?.email as string || currentUser.username;
+        const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
+        const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
+        
+        // Create user object with proper name from attributes
         const userData: User = {
           userId: currentUser.username,
-          email: currentUser.signInDetails?.loginId || email,
-          name: currentUser.username || 'User',
-          firstName: currentUser.username?.split(' ')[0],
-          lastName: currentUser.username?.split(' ').slice(1).join(' '),
+          email: userAttributes?.email as string || currentUser.signInDetails?.loginId || email,
+          name: userName,
+          firstName: firstName,
+          lastName: lastName,
           userType: 'breeder',
           verified: true,
           accountStatus: 'active',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
+
+        console.log('User data created:', { name: userData.name, email: userData.email });
 
         // Store user data and token
         const token = session.tokens?.accessToken?.toString() || '';
@@ -202,12 +210,19 @@ export class AuthService {
 
       const user = await getCurrentUser();
       if (user) {
+        // Get user attributes from session to extract the actual name
+        const session = await fetchAuthSession();
+        const userAttributes = session.tokens?.idToken?.payload;
+        const userName = userAttributes?.name as string || userAttributes?.email as string || user.username;
+        const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
+        const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
+
         const currentUser: User = {
           userId: user.username,
-          email: user.signInDetails?.loginId || '',
-          name: user.username || 'User',
-          firstName: user.username?.split(' ')[0],
-          lastName: user.username?.split(' ').slice(1).join(' '),
+          email: userAttributes?.email as string || user.signInDetails?.loginId || '',
+          name: userName,
+          firstName: firstName,
+          lastName: lastName,
           userType: 'breeder',
           verified: true,
           accountStatus: 'active',
