@@ -10,8 +10,10 @@ import {
   Modal,
   FlatList,
   Image,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Litter } from '../../types';
@@ -39,9 +41,9 @@ const CreateLitterScreen: React.FC = () => {
     breed: '',
     sireId: '',
     damId: '',
-    breedingDate: '',
-    expectedDate: '',
-    birthDate: '',
+    breedingDate: new Date(),
+    expectedDate: new Date(),
+    birthDate: new Date(),
     season: 'spring' as Season,
     description: '',
     puppyCount: '',
@@ -53,7 +55,34 @@ const CreateLitterScreen: React.FC = () => {
     status: 'planned' as LitterStatus,
   });
 
+  // Date picker states
+  const [showBreedingDatePicker, setShowBreedingDatePicker] = useState(false);
+  const [showExpectedDatePicker, setShowExpectedDatePicker] = useState(false);
+  const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Date picker handlers
+  const onBreedingDateChange = (event: any, selectedDate?: Date) => {
+    setShowBreedingDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setFormData({ ...formData, breedingDate: selectedDate });
+    }
+  };
+
+  const onExpectedDateChange = (event: any, selectedDate?: Date) => {
+    setShowExpectedDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setFormData({ ...formData, expectedDate: selectedDate });
+    }
+  };
+
+  const onBirthDateChange = (event: any, selectedDate?: Date) => {
+    setShowBirthDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setFormData({ ...formData, birthDate: selectedDate });
+    }
+  };
   const [showBreedPicker, setShowBreedPicker] = useState(false);
   const [showSirePicker, setShowSirePicker] = useState(false);
   const [showDamPicker, setShowDamPicker] = useState(false);
@@ -153,13 +182,13 @@ const CreateLitterScreen: React.FC = () => {
     }
 
     try {
-      const newLitter: Partial<Litter> = {
-        breed: formData.breed,
-        sireId: formData.sireId,
-        damId: formData.damId,
-        breedingDate: formData.breedingDate,
-        expectedDate: formData.expectedDate,
-        birthDate: formData.birthDate || undefined,
+        const newLitter: Partial<Litter> = {
+          breed: formData.breed,
+          sireId: formData.sireId,
+          damId: formData.damId,
+          breedingDate: formData.breedingDate.toISOString().split('T')[0],
+          expectedDate: formData.expectedDate.toISOString().split('T')[0],
+          birthDate: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : undefined,
         season: formData.season,
         description: formData.description,
         puppyCount: formData.puppyCount
@@ -280,6 +309,34 @@ const CreateLitterScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
+    </View>
+  );
+
+  const renderDatePicker = (
+    label: string,
+    value: Date,
+    onPress: () => void,
+    showPicker: boolean,
+    onChange: (event: any, selectedDate?: Date) => void,
+    maxDate?: Date,
+  ) => (
+    <View style={styles.inputGroup}>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity style={styles.dateButton} onPress={onPress} activeOpacity={0.7}>
+        <Icon name="calendar" size={20} color={theme.colors.primary} />
+        <Text style={styles.dateButtonText}>
+          {value.toLocaleDateString()}
+        </Text>
+      </TouchableOpacity>
+      {showPicker && (
+        <DateTimePicker
+          value={value}
+          mode="date"
+          display="default"
+          onChange={onChange}
+          maximumDate={maxDate}
+        />
+      )}
     </View>
   );
 
@@ -426,21 +483,29 @@ const CreateLitterScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Important Dates</Text>
 
-          {renderInput('Breeding Date *', 'breedingDate', 'YYYY-MM-DD', {
-            icon: 'calendar',
-          })}
+          {renderDatePicker(
+            'Breeding Date *',
+            formData.breedingDate,
+            () => setShowBreedingDatePicker(true),
+            showBreedingDatePicker,
+            onBreedingDateChange,
+          )}
 
-          {renderInput('Expected Birth Date *', 'expectedDate', 'YYYY-MM-DD', {
-            icon: 'calendar-outline',
-          })}
+          {renderDatePicker(
+            'Expected Birth Date *',
+            formData.expectedDate,
+            () => setShowExpectedDatePicker(true),
+            showExpectedDatePicker,
+            onExpectedDateChange,
+          )}
 
-          {renderInput(
+          {renderDatePicker(
             'Actual Birth Date',
-            'birthDate',
-            'YYYY-MM-DD (if born)',
-            {
-              icon: 'calendar',
-            },
+            formData.birthDate,
+            () => setShowBirthDatePicker(true),
+            showBirthDatePicker,
+            onBirthDateChange,
+            new Date(), // Max date is today for birth date
           )}
         </View>
 
@@ -980,6 +1045,23 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 16,
     fontWeight: '600',
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+    flex: 1,
   },
   pickerButtonText: {
     flex: 1,

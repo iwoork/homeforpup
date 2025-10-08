@@ -34,6 +34,7 @@ import EditLitterScreen from '../screens/forms/EditLitterScreen';
 import CreateDogScreen from '../screens/forms/CreateDogScreen';
 import EditDogScreen from '../screens/forms/EditDogScreen';
 import EditProfileScreen from '../screens/forms/EditProfileScreen';
+import ManageContractsScreen from '../screens/main/ManageContractsScreen';
 
 import LoadingScreen from '../screens/LoadingScreen';
 
@@ -189,6 +190,13 @@ const MainStack = () => (
       name="ManageKennels"
       component={ManageKennelsScreen}
       options={{ title: 'Manage Kennels' }}
+    />
+
+    {/* Contract Screens */}
+    <Stack.Screen
+      name="ManageContracts"
+      component={ManageContractsScreen}
+      options={{ title: 'Contract Management' }}
     />
     <Stack.Screen
       name="KennelDetail"

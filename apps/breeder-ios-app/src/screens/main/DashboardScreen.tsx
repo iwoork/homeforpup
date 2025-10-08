@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +16,7 @@ import { theme } from '../../utils/theme';
 import { useDashboardStats } from '../../hooks/useApi';
 
 const DashboardScreen: React.FC = () => {
+  const navigation = useNavigation();
   const { user } = useAuth();
   const { data: stats, loading, error, refreshing, refresh } = useDashboardStats(user?.userId);
 
@@ -24,9 +26,9 @@ const DashboardScreen: React.FC = () => {
 
   const statsDisplay = [
     {
-      title: 'Total Kennels',
-      value: stats?.totalKennels?.toString() || '0',
-      icon: 'home',
+      title: 'Total Litters',
+      value: stats?.totalLitters?.toString() || '0',
+      icon: 'albums',
       colors: [theme.colors.primary, theme.colors.primaryDark],
     },
     {
@@ -51,11 +53,11 @@ const DashboardScreen: React.FC = () => {
 
   const quickActions = [
     {
-      title: 'Add Kennel',
-      subtitle: 'Create a new kennel',
+      title: 'Add Litter',
+      subtitle: 'Create a new litter',
       icon: 'add-circle',
       iconColor: theme.colors.primary,
-      screen: 'CreateKennel',
+      screen: 'CreateLitter',
     },
     {
       title: 'Add Dog',
@@ -63,13 +65,6 @@ const DashboardScreen: React.FC = () => {
       icon: 'paw',
       iconColor: theme.colors.secondary,
       screen: 'CreateDog',
-    },
-    {
-      title: 'View Messages',
-      subtitle: 'Check your inbox',
-      icon: 'mail-open',
-      iconColor: '#10b981',
-      screen: 'Messages',
     },
   ];
 
@@ -88,7 +83,7 @@ const DashboardScreen: React.FC = () => {
           <Text style={styles.greeting}>
             Welcome back, {user?.name || 'Breeder'}!
           </Text>
-          <Text style={styles.subtitle}>Here's your kennel overview</Text>
+          <Text style={styles.subtitle}>Here's your breeding overview</Text>
         </View>
       </LinearGradient>
 
@@ -117,7 +112,12 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.actionsContainer}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         {quickActions.map((action, index) => (
-          <TouchableOpacity key={index} style={styles.actionCard} activeOpacity={0.7}>
+          <TouchableOpacity 
+            key={index} 
+            style={styles.actionCard} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate(action.screen as never)}
+          >
             <View style={[styles.actionIconContainer, { backgroundColor: `${action.iconColor}15` }]}>
               <Icon name={action.icon} size={24} color={action.iconColor} />
             </View>
@@ -136,7 +136,7 @@ const DashboardScreen: React.FC = () => {
           <Icon name="time-outline" size={48} color={theme.colors.textTertiary} />
           <Text style={styles.activityText}>No recent activity</Text>
           <Text style={styles.activitySubtext}>
-            Your recent kennel activities will appear here
+            Your recent breeding activities will appear here
           </Text>
         </View>
       </View>

@@ -30,12 +30,9 @@ const DogsScreen: React.FC = () => {
   // Refresh when screen comes into focus (returning from detail/edit screens)
   useFocusEffect(
     React.useCallback(() => {
-      // Skip refresh on initial mount (when loading is true)
-      if (!loading) {
-        console.log('DogsScreen focused - refreshing dogs list');
-        fetchDogs();
-      }
-    }, [])
+      console.log('DogsScreen focused - refreshing dogs list');
+      fetchDogs();
+    }, [user?.userId])
   );
 
   const fetchDogs = async () => {
@@ -125,25 +122,35 @@ const DogsScreen: React.FC = () => {
     return photoFromGallery || photoFromArray || dog.photoUrl;
   };
 
-  const renderDogItem = ({ item }: { item: Dog }) => (
-    <TouchableOpacity 
-      style={styles.dogCard}
-      onPress={() => navigation.navigate('DogDetail' as never, { dog: item } as never)}
-    >
-      <View style={styles.dogImageContainer}>
-        {getDogPhoto(item) ? (
-          <Image 
-            key={`dog-list-${item.id}`}
-            source={{ uri: getDogPhoto(item) }} 
-            style={styles.dogImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderIcon}>🐕</Text>
-          </View>
-        )}
-      </View>
+  const renderDogItem = ({ item }: { item: Dog }) => {
+    const photoUrl = getDogPhoto(item);
+    // Add timestamp to force cache refresh
+    const photoUrlWithCache = photoUrl 
+      ? `${photoUrl}${photoUrl.includes('?') ? '&' : '?'}t=${item.updatedAt || Date.now()}`
+      : null;
+
+    return (
+      <TouchableOpacity 
+        style={styles.dogCard}
+        onPress={() => navigation.navigate('DogDetail' as never, { dog: item } as never)}
+      >
+        <View style={styles.dogImageContainer}>
+          {photoUrlWithCache ? (
+            <Image 
+              key={`dog-${item.id}-${item.updatedAt}`}
+              source={{ 
+                uri: photoUrlWithCache,
+                cache: 'reload', // Force reload from server
+              }} 
+              style={styles.dogImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Text style={styles.placeholderIcon}>🐕</Text>
+            </View>
+          )}
+        </View>
       
       <View style={styles.dogContent}>
         <View style={styles.dogHeader}>
@@ -197,9 +204,10 @@ const DogsScreen: React.FC = () => {
         </View>
       </View>
       
-      <Text style={styles.chevronIcon}>›</Text>
-    </TouchableOpacity>
-  );
+        <Text style={styles.chevronIcon}>›</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>

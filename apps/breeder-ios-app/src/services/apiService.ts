@@ -10,7 +10,7 @@ export interface ApiResponse<T> {
 }
 
 export interface DashboardStats {
-  totalKennels: number;
+  totalLitters: number;
   totalDogs: number;
   activeMessages: number;
   newInquiries: number;
@@ -218,30 +218,22 @@ class ApiService {
   async getDashboardStats(
     userId?: string,
   ): Promise<ApiResponse<DashboardStats>> {
-    // For now, we'll fetch kennels and dogs to calculate stats
+    // For now, we'll fetch litters and dogs to calculate stats
     // In the future, this could be a dedicated endpoint
-    const [kennelsResponse, dogsResponse] = await Promise.all([
-      this.getKennels({ page: 1, limit: 100 }),
+    const [littersResponse, dogsResponse] = await Promise.all([
+      this.getLitters({ page: 1, limit: 100, breederId: userId }),
       this.getDogs({ page: 1, limit: 100, ownerId: userId }),
     ]);
 
-    if (!kennelsResponse.success || !dogsResponse.success) {
+    if (!littersResponse.success || !dogsResponse.success) {
       return {
         success: false,
         error: 'Failed to fetch dashboard data',
       };
     }
 
-    // Filter kennels by user if userId is provided
-    let userKennels = kennelsResponse.data?.kennels || [];
-    if (userId) {
-      userKennels = userKennels.filter(
-        (kennel: Kennel) => kennel.ownerId === userId,
-      );
-    }
-
     const stats: DashboardStats = {
-      totalKennels: userKennels.length,
+      totalLitters: littersResponse.data?.litters?.length || 0,
       totalDogs: dogsResponse.data?.dogs?.length || 0,
       activeMessages: 0, // TODO: Implement messages API
       newInquiries: 0, // TODO: Implement inquiries API

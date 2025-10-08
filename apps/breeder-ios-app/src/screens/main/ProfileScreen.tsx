@@ -56,6 +56,34 @@ const ProfileScreen: React.FC = () => {
       iconColor: theme.colors.primary,
       onPress: () => navigation.navigate('ManageKennels' as never),
     },
+    ...(subscriptionPlan === 'premium'
+      ? [
+          {
+            title: 'Manage Contracts',
+            subtitle: 'Create and track puppy contracts',
+            icon: 'document-text',
+            iconColor: '#8b5cf6',
+            onPress: () => navigation.navigate('ManageContracts' as never),
+          },
+        ]
+      : [
+          {
+            title: 'Manage Contracts',
+            subtitle: 'Premium feature - Upgrade to access',
+            icon: 'document-text',
+            iconColor: '#8b5cf6',
+            onPress: () => {
+              Alert.alert(
+                'Premium Feature',
+                'Contract management is available for Premium subscribers.\n\nUpgrade to Premium to:\n• Create custom contracts\n• Track contract lifecycle\n• Manage buyer agreements\n• Generate legal documents',
+                [
+                  { text: 'Maybe Later', style: 'cancel' },
+                  { text: 'Upgrade Now', onPress: () => {} }, // TODO: Navigate to upgrade flow
+                ],
+              );
+            },
+          },
+        ]),
   ];
 
   const profileMenuItems = [

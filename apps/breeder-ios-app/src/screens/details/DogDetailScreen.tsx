@@ -50,19 +50,39 @@ const DogDetailScreen: React.FC = () => {
     console.log('getPhotoUrl - photoGallery:', (dog as any)?.photoGallery);
     console.log('getPhotoUrl - photoUrl field:', dog?.photoUrl);
     console.log('getPhotoUrl - returning:', photo);
+    
+    // Add cache busting parameter
+    if (photo) {
+      return `${photo}${photo.includes('?') ? '&' : '?'}t=${dog?.updatedAt || Date.now()}`;
+    }
     return photo;
   };
 
-  // Update dog data when returning from edit screen
+  // Refresh dog data when returning from edit screen
   useFocusEffect(
     React.useCallback(() => {
-      // Check if we have updated params (coming back from edit)
-      const updatedDog = (route.params as DogDetailRouteParams)?.dog;
-      if (updatedDog && updatedDog !== initialDog) {
-        console.log('Dog data updated from navigation params');
-        setDog(updatedDog);
-      }
-    }, [route.params])
+      const refreshDogData = async () => {
+        // Check if we have updated params (coming back from edit)
+        const updatedDog = (route.params as DogDetailRouteParams)?.dog;
+        if (updatedDog) {
+          console.log('Dog data updated from navigation params');
+          setDog(updatedDog);
+        } else if (dog?.id) {
+          // Fetch fresh data from API
+          console.log('Refreshing dog data from API');
+          try {
+            const response = await apiService.getDogById(dog.id);
+            if (response.success && response.data) {
+              setDog(response.data as Dog);
+            }
+          } catch (error) {
+            console.error('Error refreshing dog data:', error);
+          }
+        }
+      };
+      
+      refreshDogData();
+    }, [route.params, dog?.id])
   );
 
   if (!dog) {
@@ -194,8 +214,11 @@ const DogDetailScreen: React.FC = () => {
       <View style={styles.heroSection}>
         {getPhotoUrl() ? (
           <Image 
-            key={`dog-photo-${dog?.id}`}
-            source={{ uri: getPhotoUrl() }} 
+            key={`dog-photo-${dog?.id}-${dog?.updatedAt}`}
+            source={{ 
+              uri: getPhotoUrl(),
+              cache: 'reload',
+            }} 
             style={styles.heroImage} 
           />
         ) : (
