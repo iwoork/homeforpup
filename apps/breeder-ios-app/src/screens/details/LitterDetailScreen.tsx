@@ -117,6 +117,13 @@ const LitterDetailScreen: React.FC = () => {
     );
   };
 
+  const handleManageWaitlist = () => {
+    navigation.navigate(
+      'ManageWaitlist' as never,
+      { litter } as never,
+    );
+  };
+
   const renderPuppyCard = ({ item }: { item: Dog }) => (
     <TouchableOpacity
       style={styles.puppyCard}
@@ -168,6 +175,14 @@ const LitterDetailScreen: React.FC = () => {
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.waitlistButton]}
+          onPress={handleManageWaitlist}
+          activeOpacity={0.8}
+        >
+          <Icon name="people-outline" size={20} color="#ffffff" />
+          <Text style={styles.actionButtonText}>Waitlist</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.editButton]}
           onPress={handleEdit}
@@ -401,6 +416,9 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm + 2,
     borderRadius: theme.borderRadius.lg,
     ...theme.shadows.sm,
+  },
+  waitlistButton: {
+    backgroundColor: '#8b5cf6',
   },
   editButton: {
     backgroundColor: theme.colors.primary,

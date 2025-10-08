@@ -116,7 +116,13 @@ const DashboardScreen: React.FC = () => {
             key={index} 
             style={styles.actionCard} 
             activeOpacity={0.7}
-            onPress={() => navigation.navigate(action.screen as never)}
+            onPress={() => {
+              if (action.screen === 'CreateDog') {
+                navigation.navigate('CreateDog' as never, { dogType: 'parent' } as never);
+              } else {
+                navigation.navigate(action.screen as never);
+              }
+            }}
           >
             <View style={[styles.actionIconContainer, { backgroundColor: `${action.iconColor}15` }]}>
               <Icon name={action.icon} size={24} color={action.iconColor} />
