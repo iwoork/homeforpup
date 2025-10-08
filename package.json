@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/adopter-app",
+    "apps/breeder-app",
     "packages/*"
   ],
   "scripts": {
