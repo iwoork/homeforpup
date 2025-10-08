@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,105 +7,53 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
+  Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../utils/theme';
-import { MessageThread } from '../../types';
+import { messageService, MessageThread } from '../../services/messageService';
+import authService from '../../services/authService';
 
 const MessagesScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   useEffect(() => {
+    loadCurrentUser();
     fetchMessageThreads();
-  }, []);
+
+    // Poll for new messages every 10 seconds
+    const pollInterval = setInterval(() => {
+      if (!loading && !refreshing) {
+        fetchMessageThreads();
+      }
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [loading, refreshing]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        setCurrentUserId(user.userId);
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+  };
 
   const fetchMessageThreads = async () => {
     try {
-      // TODO: Implement actual API call
-      // Simulate API call
-      setTimeout(() => {
-        setThreads([
-          {
-            id: '1',
-            subject: 'Inquiry about Golden Retriever puppies',
-            participants: ['user1', 'user2'],
-            participantNames: {
-              user1: 'John Smith',
-              user2: 'Jane Doe',
-            },
-            lastMessage: {
-              id: 'msg1',
-              senderId: 'user2',
-              senderName: 'Jane Doe',
-              receiverId: 'user1',
-              receiverName: 'John Smith',
-              subject: 'Inquiry about Golden Retriever puppies',
-              content: 'Thank you for your interest! I have 3 puppies available from my latest litter.',
-              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-              read: false,
-              messageType: 'inquiry',
-            },
-            messageCount: 5,
-            unreadCount: { user1: 2 },
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-            updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: '2',
-            subject: 'German Shepherd breeding inquiry',
-            participants: ['user1', 'user3'],
-            participantNames: {
-              user1: 'John Smith',
-              user3: 'Mike Johnson',
-            },
-            lastMessage: {
-              id: 'msg2',
-              senderId: 'user3',
-              senderName: 'Mike Johnson',
-              receiverId: 'user1',
-              receiverName: 'John Smith',
-              subject: 'German Shepherd breeding inquiry',
-              content: 'I would love to arrange a visit to see your breeding facility.',
-              timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
-              read: true,
-              messageType: 'business',
-            },
-            messageCount: 3,
-            unreadCount: { user1: 0 },
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-            updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: '3',
-            subject: 'Puppy care questions',
-            participants: ['user1', 'user4'],
-            participantNames: {
-              user1: 'John Smith',
-              user4: 'Sarah Wilson',
-            },
-            lastMessage: {
-              id: 'msg3',
-              senderId: 'user1',
-              senderName: 'John Smith',
-              receiverId: 'user4',
-              receiverName: 'Sarah Wilson',
-              subject: 'Puppy care questions',
-              content: 'Feel free to contact me anytime if you have more questions!',
-              timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
-              read: true,
-              messageType: 'general',
-            },
-            messageCount: 8,
-            unreadCount: { user1: 0 },
-            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-            updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-          },
-        ]);
-        setLoading(false);
-      }, 1000);
+      const fetchedThreads = await messageService.getThreads();
+      setThreads(fetchedThreads);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching message threads:', error);
+      Alert.alert('Error', 'Failed to load messages. Please try again.');
       setLoading(false);
     }
   };
@@ -157,13 +105,21 @@ const MessagesScreen: React.FC = () => {
     }
   };
 
+  const handleThreadPress = useCallback((thread: MessageThread) => {
+    navigation.navigate('MessageDetail' as never, { thread } as never);
+  }, [navigation]);
+
   const renderThreadItem = ({ item }: { item: MessageThread }) => {
-    const unreadCount = item.unreadCount.user1 || 0;
-    const otherParticipant = item.participants.find(id => id !== 'user1');
-    const otherParticipantName = otherParticipant && item.participantNames ? item.participantNames[otherParticipant] : 'Unknown';
+    const unreadCount = currentUserId ? (item.unreadCount[currentUserId] || 0) : 0;
+    const otherParticipant = item.participants.find(id => id !== currentUserId);
+    const otherParticipantName = item.otherParticipantName || 
+      (otherParticipant && item.participantNames ? item.participantNames[otherParticipant] : 'Unknown');
 
     return (
-      <TouchableOpacity style={styles.threadCard}>
+      <TouchableOpacity 
+        style={styles.threadCard}
+        onPress={() => handleThreadPress(item)}
+      >
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>

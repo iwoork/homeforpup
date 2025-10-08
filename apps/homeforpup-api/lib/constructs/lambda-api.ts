@@ -97,6 +97,19 @@ export class LambdaApi extends Construct {
    * Grant DynamoDB access to the Lambda function
    */
   public grantDynamoDBAccess(tableNames: string[]) {
+    const resources: string[] = [];
+    
+    // Add table ARNs and index ARNs
+    tableNames.forEach((tableName) => {
+      const tableArn = `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${
+        cdk.Stack.of(this).account
+      }:table/${tableName}`;
+      
+      resources.push(tableArn);
+      // Also grant access to all indexes on the table
+      resources.push(`${tableArn}/index/*`);
+    });
+    
     this.function.addToRolePolicy(
       new cdk.aws_iam.PolicyStatement({
         actions: [
@@ -109,12 +122,7 @@ export class LambdaApi extends Construct {
           'dynamodb:BatchGetItem',
           'dynamodb:BatchWriteItem',
         ],
-        resources: tableNames.map(
-          (tableName) =>
-            `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${
-              cdk.Stack.of(this).account
-            }:table/${tableName}`
-        ),
+        resources,
       })
     );
   }

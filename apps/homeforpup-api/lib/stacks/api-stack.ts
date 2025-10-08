@@ -427,8 +427,120 @@ export class ApiStack extends cdk.Stack {
   }
 
   private createMessagesApi() {
+    const { config } = this;
     const messagesResource = this.api.root.addResource('messages');
-    // Add message routes here
+    
+    // POST /messages/send - Send new message (create thread)
+    const sendMessageFunction = new LambdaApi(this, 'SendMessageFunction', {
+      functionName: 'send-message',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/messages/send'),
+      config,
+      environment: {
+        MESSAGES_TABLE: config.tables.messages,
+        THREADS_TABLE: 'homeforpup-message-threads',
+        USERS_TABLE: config.tables.users,
+      },
+    });
+    sendMessageFunction.grantDynamoDBAccess([
+      config.tables.messages,
+      'homeforpup-message-threads',
+      config.tables.users,
+    ]);
+
+    const sendResource = messagesResource.addResource('send');
+    sendResource.addMethod('POST', sendMessageFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // POST /messages/reply - Reply to existing thread
+    const replyMessageFunction = new LambdaApi(this, 'ReplyMessageFunction', {
+      functionName: 'reply-message',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/messages/reply'),
+      config,
+      environment: {
+        MESSAGES_TABLE: config.tables.messages,
+        THREADS_TABLE: 'homeforpup-message-threads',
+      },
+    });
+    replyMessageFunction.grantDynamoDBAccess([
+      config.tables.messages,
+      'homeforpup-message-threads',
+    ]);
+
+    const replyResource = messagesResource.addResource('reply');
+    replyResource.addMethod('POST', replyMessageFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // GET /messages/threads - List user's threads
+    const threadsResource = messagesResource.addResource('threads');
+    
+    const listThreadsFunction = new LambdaApi(this, 'ListThreadsFunction', {
+      functionName: 'list-threads',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/messages/threads/list'),
+      config,
+      environment: {
+        THREADS_TABLE: 'homeforpup-message-threads',
+      },
+    });
+    listThreadsFunction.grantDynamoDBAccess(['homeforpup-message-threads']);
+
+    threadsResource.addMethod('GET', listThreadsFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // GET /messages/threads/{threadId}/messages - Get messages in thread
+    const threadIdResource = threadsResource.addResource('{threadId}');
+    const threadMessagesResource = threadIdResource.addResource('messages');
+    
+    const getThreadMessagesFunction = new LambdaApi(this, 'GetThreadMessagesFunction', {
+      functionName: 'get-thread-messages',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/messages/threads/messages'),
+      config,
+      environment: {
+        MESSAGES_TABLE: config.tables.messages,
+        THREADS_TABLE: 'homeforpup-message-threads',
+      },
+    });
+    getThreadMessagesFunction.grantDynamoDBAccess([
+      config.tables.messages,
+      'homeforpup-message-threads',
+    ]);
+
+    threadMessagesResource.addMethod('GET', getThreadMessagesFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // PATCH /messages/threads/{threadId}/read - Mark thread as read
+    const readResource = threadIdResource.addResource('read');
+    
+    const markThreadReadFunction = new LambdaApi(this, 'MarkThreadReadFunction', {
+      functionName: 'mark-thread-read',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/messages/threads/read'),
+      config,
+      environment: {
+        MESSAGES_TABLE: config.tables.messages,
+        THREADS_TABLE: 'homeforpup-message-threads',
+      },
+    });
+    markThreadReadFunction.grantDynamoDBAccess([
+      config.tables.messages,
+      'homeforpup-message-threads',
+    ]);
+
+    readResource.addMethod('PATCH', markThreadReadFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
   }
 
   private createFavoritesApi() {

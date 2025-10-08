@@ -7,6 +7,7 @@ import {
   DeleteCommand,
   QueryCommand,
   ScanCommand,
+  TransactWriteCommand,
 } from '@aws-sdk/lib-dynamodb';
 
 // Create DynamoDB client
@@ -26,5 +27,5 @@ export const dynamodb = DynamoDBDocumentClient.from(client, {
 });
 
 // Export command types for convenience
-export { GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand };
+export { GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand, TransactWriteCommand };
 
