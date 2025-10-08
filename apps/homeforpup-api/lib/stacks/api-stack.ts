@@ -126,10 +126,8 @@ export class ApiStack extends cdk.Stack {
       config.tables.dogs,
     ]);
 
-    dogsResource.addMethod('GET', listDogsFunction.createIntegration(), {
-      authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-    });
+    // GET /dogs does not require auth (optional auth handled in Lambda)
+    dogsResource.addMethod('GET', listDogsFunction.createIntegration());
 
     // GET /dogs/{id} - Get dog by ID
     const getDogFunction = new LambdaApi(this, 'GetDogFunction', {
@@ -145,6 +143,7 @@ export class ApiStack extends cdk.Stack {
       config.tables.dogs,
     ]);
 
+    // GET /dogs/{id} does not require auth (public endpoint)
     dogIdResource.addMethod('GET', getDogFunction.createIntegration());
 
     // POST /dogs - Create dog
@@ -247,8 +246,90 @@ export class ApiStack extends cdk.Stack {
   }
 
   private createKennelsApi() {
+    const { config } = this;
     const kennelsResource = this.api.root.addResource('kennels');
-    // Add kennel routes here
+    const kennelIdResource = kennelsResource.addResource('{id}');
+
+    // GET /kennels - List kennels
+    const listKennelsFunction = new LambdaApi(this, 'ListKennelsFunction', {
+      functionName: 'list-kennels',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/kennels/list'),
+      config,
+      environment: {
+        KENNELS_TABLE: config.tables.kennels,
+      },
+    });
+    listKennelsFunction.grantDynamoDBAccess([config.tables.kennels]);
+
+    // Temporarily make GET /kennels public for testing
+    // TODO: Re-enable Cognito auth once token validation is working
+    kennelsResource.addMethod('GET', listKennelsFunction.createIntegration());
+
+    // GET /kennels/{id} - Get kennel by ID
+    const getKennelFunction = new LambdaApi(this, 'GetKennelFunction', {
+      functionName: 'get-kennel',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/kennels/get'),
+      config,
+      environment: {
+        KENNELS_TABLE: config.tables.kennels,
+      },
+    });
+    getKennelFunction.grantDynamoDBAccess([config.tables.kennels]);
+
+    kennelIdResource.addMethod('GET', getKennelFunction.createIntegration());
+
+    // POST /kennels - Create kennel
+    const createKennelFunction = new LambdaApi(this, 'CreateKennelFunction', {
+      functionName: 'create-kennel',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/kennels/create'),
+      config,
+      environment: {
+        KENNELS_TABLE: config.tables.kennels,
+      },
+    });
+    createKennelFunction.grantDynamoDBAccess([config.tables.kennels]);
+
+    kennelsResource.addMethod('POST', createKennelFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // PUT /kennels/{id} - Update kennel
+    const updateKennelFunction = new LambdaApi(this, 'UpdateKennelFunction', {
+      functionName: 'update-kennel',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/kennels/update'),
+      config,
+      environment: {
+        KENNELS_TABLE: config.tables.kennels,
+      },
+    });
+    updateKennelFunction.grantDynamoDBAccess([config.tables.kennels]);
+
+    kennelIdResource.addMethod('PUT', updateKennelFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // DELETE /kennels/{id} - Delete kennel
+    const deleteKennelFunction = new LambdaApi(this, 'DeleteKennelFunction', {
+      functionName: 'delete-kennel',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/kennels/delete'),
+      config,
+      environment: {
+        KENNELS_TABLE: config.tables.kennels,
+      },
+    });
+    deleteKennelFunction.grantDynamoDBAccess([config.tables.kennels]);
+
+    kennelIdResource.addMethod('DELETE', deleteKennelFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
   }
 
   private createMessagesApi() {

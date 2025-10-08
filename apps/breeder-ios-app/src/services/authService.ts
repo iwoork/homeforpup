@@ -102,7 +102,17 @@ export class AuthService {
         console.log('User data created:', { name: userData.name, email: userData.email });
 
         // Store user data and token
-        const token = session.tokens?.accessToken?.toString() || '';
+        // Use ID token for API authentication (not access token)
+        // The backend expects ID token for user identity verification
+        const tokenObj = session.tokens?.idToken;
+        const token = tokenObj ? String(tokenObj) : '';
+        
+        console.log('Token extracted:', { 
+          hasToken: !!token, 
+          tokenLength: token.length,
+          tokenType: 'idToken'
+        });
+        
         this.currentUser = userData;
         this.authToken = token;
         await this.storeAuthData(userData, token);
@@ -247,8 +257,19 @@ export class AuthService {
       }
 
       const session = await fetchAuthSession();
-      if (session) {
-        const token = session.tokens?.accessToken?.toString() || '';
+      if (session && session.tokens?.idToken) {
+        // Use ID token for API authentication (not access token)
+        // The backend expects ID token for user identity verification
+        const tokenObj = session.tokens.idToken;
+        const token = String(tokenObj);
+        
+        console.log('getAuthToken: Token extracted:', { 
+          hasToken: !!token, 
+          tokenLength: token.length,
+          tokenType: 'idToken',
+          startsWithBearer: token.startsWith('Bearer')
+        });
+        
         this.authToken = token;
         return token;
       }

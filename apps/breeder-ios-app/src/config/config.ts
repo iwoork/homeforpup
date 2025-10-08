@@ -16,27 +16,31 @@ export const config = {
     userPoolId: 'us-east-1_M6uzx1eFZ',
     userPoolWebClientId: '3d6m93u51ggssrc7t49cjnnk53',
   },
-  
+
   // API Configuration
   api: {
-    baseUrl: Config.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+    // Use direct API Gateway URL (custom domain has signature validation issues)
+    // TODO: Fix custom domain configuration to support Bearer tokens
+    baseUrl:
+      Config.NEXT_PUBLIC_API_BASE_URL ||
+      'https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development',
     timeout: 30000, // 30 seconds
   },
-  
+
   // App Configuration
   app: {
     name: 'HomeForPup Breeder',
     version: '1.0.0',
     buildNumber: '1',
   },
-  
+
   // Feature Flags
   features: {
     enablePushNotifications: true,
     enableBiometricAuth: false,
     enableOfflineMode: true,
   },
-  
+
   // UI Configuration
   ui: {
     enableDarkMode: false,

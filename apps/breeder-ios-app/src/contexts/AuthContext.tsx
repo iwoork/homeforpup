@@ -41,15 +41,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Load stored auth data
       const { user: storedUser, token } = await authService.loadStoredAuthData();
-      console.log('AuthContext: Loaded stored auth data:', { hasUser: !!storedUser, hasToken: !!token });
+      console.log('AuthContext: Loaded stored auth data:', { 
+        hasUser: !!storedUser, 
+        hasToken: !!token,
+        tokenLength: token?.length 
+      });
       
       if (storedUser && token) {
-        // Set the auth token in the API service
-        apiService.setAuthToken(token);
         // Verify the session is still valid
         const isValid = await authService.refreshSession();
         console.log('AuthContext: Session valid:', isValid);
+        
         if (isValid) {
+          // Get fresh token after refresh
+          const freshToken = await authService.getAuthToken();
+          console.log('AuthContext: Got fresh token:', { 
+            hasToken: !!freshToken,
+            tokenLength: freshToken?.length 
+          });
+          
+          // Set the fresh auth token in the API service
+          apiService.setAuthToken(freshToken);
           setUser(storedUser);
         } else {
           // Session expired, clear stored data
@@ -75,6 +87,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await authService.login(email, password);
       
       if (result.success && result.user && result.token) {
+        console.log('AuthContext: Login successful, setting token:', {
+          hasToken: !!result.token,
+          tokenLength: result.token.length
+        });
+        
         // Set the auth token in the API service
         apiService.setAuthToken(result.token);
         setUser(result.user);

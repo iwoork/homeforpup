@@ -121,3 +121,7 @@ export function useBreed(id: string) {
 export function useActivities(params: Parameters<typeof apiService.getActivities>[0] = {}) {
   return useApi(() => apiService.getActivities(params), [JSON.stringify(params)]);
 }
+
+export function useUser(id: string) {
+  return useApi(() => apiService.getUserById(id), [id]);
+}

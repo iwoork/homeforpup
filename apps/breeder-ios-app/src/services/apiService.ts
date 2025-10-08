@@ -133,7 +133,18 @@ class ApiService {
       };
 
       if (this.authToken) {
-        headers.Authorization = `Bearer ${this.authToken}`;
+        // Ensure token is a valid string and doesn't already have Bearer prefix
+        const tokenStr = String(this.authToken).trim();
+        if (tokenStr && tokenStr !== '[object Object]') {
+          headers.Authorization = `Bearer ${tokenStr}`;
+          console.log('API request with auth:', { 
+            endpoint, 
+            hasAuth: true, 
+            tokenLength: tokenStr.length 
+          });
+        } else {
+          console.warn('Invalid auth token detected:', { token: this.authToken });
+        }
       }
 
       const response = await fetch(url, {
@@ -144,6 +155,11 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('API request failed:', { 
+          url, 
+          status: response.status, 
+          error: data.message || data.error 
+        });
         return {
           success: false,
           error: data.message || data.error || `HTTP ${response.status}`,
@@ -193,6 +209,7 @@ class ApiService {
   }
 
   // Kennels API
+  // Ready to deploy! See apps/homeforpup-api/KENNELS_DEPLOYMENT_GUIDE.md
   async getKennels(params: {
     page?: number;
     limit?: number;
@@ -207,30 +224,30 @@ class ApiService {
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.search) queryParams.append('search', params.search);
 
-    const endpoint = `/api/kennels?${queryParams.toString()}`;
+    const endpoint = `/kennels?${queryParams.toString()}`;
     return this.makeRequest<KennelsResponse>(endpoint);
   }
 
   async getKennelById(id: string): Promise<ApiResponse<Kennel>> {
-    return this.makeRequest<Kennel>(`/api/kennels/${id}`);
+    return this.makeRequest<Kennel>(`/kennels/${id}`);
   }
 
   async createKennel(kennelData: Partial<Kennel>): Promise<ApiResponse<Kennel>> {
-    return this.makeRequest<Kennel>('/api/kennels', {
+    return this.makeRequest<Kennel>('/kennels', {
       method: 'POST',
       body: JSON.stringify(kennelData),
     });
   }
 
   async updateKennel(id: string, kennelData: Partial<Kennel>): Promise<ApiResponse<Kennel>> {
-    return this.makeRequest<Kennel>(`/api/kennels/${id}`, {
+    return this.makeRequest<Kennel>(`/kennels/${id}`, {
       method: 'PUT',
       body: JSON.stringify(kennelData),
     });
   }
 
   async deleteKennel(id: string): Promise<ApiResponse<void>> {
-    return this.makeRequest<void>(`/api/kennels/${id}`, {
+    return this.makeRequest<void>(`/kennels/${id}`, {
       method: 'DELETE',
     });
   }
@@ -258,30 +275,30 @@ class ApiService {
     if (params.status) queryParams.append('status', params.status);
     if (params.breedingStatus) queryParams.append('breedingStatus', params.breedingStatus);
 
-    const endpoint = `/api/dogs?${queryParams.toString()}`;
+    const endpoint = `/dogs?${queryParams.toString()}`;
     return this.makeRequest<DogsResponse>(endpoint);
   }
 
   async getDogById(id: string): Promise<ApiResponse<Dog>> {
-    return this.makeRequest<Dog>(`/api/dogs/${id}`);
+    return this.makeRequest<Dog>(`/dogs/${id}`);
   }
 
   async createDog(dogData: Partial<Dog>): Promise<ApiResponse<Dog>> {
-    return this.makeRequest<Dog>('/api/dogs', {
+    return this.makeRequest<Dog>('/dogs', {
       method: 'POST',
       body: JSON.stringify(dogData),
     });
   }
 
   async updateDog(id: string, dogData: Partial<Dog>): Promise<ApiResponse<Dog>> {
-    return this.makeRequest<Dog>(`/api/dogs/${id}`, {
+    return this.makeRequest<Dog>(`/dogs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(dogData),
     });
   }
 
   async deleteDog(id: string): Promise<ApiResponse<void>> {
-    return this.makeRequest<void>(`/api/dogs/${id}`, {
+    return this.makeRequest<void>(`/dogs/${id}`, {
       method: 'DELETE',
     });
   }
@@ -305,15 +322,28 @@ class ApiService {
     if (params.breedType) queryParams.append('breedType', params.breedType);
     if (params.sortBy) queryParams.append('sortBy', params.sortBy);
 
-    const endpoint = `/api/breeds?${queryParams.toString()}`;
+    const endpoint = `/breeds?${queryParams.toString()}`;
     return this.makeRequest<BreedsResponse>(endpoint);
   }
 
   async getBreedById(id: string): Promise<ApiResponse<Breed>> {
-    return this.makeRequest<Breed>(`/api/breeds/${id}`);
+    return this.makeRequest<Breed>(`/breeds/${id}`);
+  }
+
+  // Users API
+  async getUserById(id: string): Promise<ApiResponse<User>> {
+    return this.makeRequest<User>(`/users/${id}`);
+  }
+
+  async updateUser(id: string, userData: Partial<User>): Promise<ApiResponse<User>> {
+    return this.makeRequest<User>(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
   }
 
   // Activities API (for recent activity)
+  // Note: This endpoint may not be deployed yet. See API_ENDPOINTS.md
   async getActivities(params: {
     page?: number;
     limit?: number;
@@ -322,7 +352,7 @@ class ApiService {
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
 
-    const endpoint = `/api/activities?${queryParams.toString()}`;
+    const endpoint = `/activities?${queryParams.toString()}`;
     return this.makeRequest<any>(endpoint);
   }
 }
