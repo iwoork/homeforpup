@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:*",
+        "lambda:*",
+        "apigateway:*",
+        "iam:*",
+        "logs:*",
+        "s3:*",
+        "dynamodb:*",
+        "cognito-idp:*",
+        "sts:GetCallerIdentity",
+        "ssm:GetParameter",
+        "ssm:PutParameter",
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+

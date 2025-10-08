@@ -1,0 +1,12 @@
+
+> homeforpup-api@1.0.0 synth
+> cdk synth
+
+Another CLI (PID=81913) is currently synthing to cdk.out. Invoke the CLI in sequence, or use '--output' to synth into different directories.
+npm error Lifecycle script `synth` failed with error:
+npm error code 1
+npm error path /Users/Efren/repos/homeforpup/apps/homeforpup-api
+npm error workspace homeforpup-api@1.0.0
+npm error location /Users/Efren/repos/homeforpup/apps/homeforpup-api
+npm error command failed
+npm error command sh -c cdk synth

@@ -5,6 +5,7 @@
   "workspaces": [
     "apps/adopter-app",
     "apps/breeder-app",
+    "apps/homeforpup-api",
     "packages/*"
   ],
   "scripts": {

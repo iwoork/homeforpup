@@ -1,0 +1,51 @@
+{
+  "name": "homeforpup-api",
+  "version": "1.0.0",
+  "description": "AWS API Gateway infrastructure and Lambda functions for HomeForPup",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy",
+    "deploy:all": "cdk deploy --all",
+    "diff": "cdk diff",
+    "destroy": "cdk destroy",
+    "bootstrap": "cdk bootstrap",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.900.0",
+    "@aws-sdk/client-s3": "^3.900.0",
+    "@aws-sdk/client-ses": "^3.900.0",
+    "@aws-sdk/lib-dynamodb": "^3.900.0",
+    "@aws-sdk/s3-request-presigner": "^3.900.0",
+    "@homeforpup/shared-dogs": "*",
+    "@homeforpup/shared-lib": "*",
+    "@homeforpup/shared-messaging": "*",
+    "@homeforpup/shared-types": "*",
+    "aws-lambda": "^1.0.7",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0",
+    "source-map-support": "^0.5.21",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^22.18.8",
+    "@types/source-map-support": "^0.5.10",
+    "@types/uuid": "^9.0.8",
+    "aws-cdk": "^2.164.1",
+    "aws-cdk-lib": "^2.164.1",
+    "constructs": "^10.3.0",
+    "esbuild": "^0.24.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
