@@ -7,7 +7,7 @@ import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { requireAuth } from '../../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 
-const PHOTOS_BUCKET = process.env.PHOTOS_BUCKET || 'homeforpup-photos';
+const PHOTOS_BUCKET = process.env.PHOTOS_BUCKET || 'homeforpup-images';
 const CLOUDFRONT_DOMAIN = 'img.homeforpup.com';
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {

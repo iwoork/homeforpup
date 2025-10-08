@@ -75,7 +75,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
     cognitoClientId: process.env.COGNITO_CLIENT_ID!,
     uploadBucket: process.env.S3_UPLOAD_BUCKET || '',
     imageBucket: process.env.S3_IMAGE_BUCKET,
-    photosBucket: process.env.S3_PHOTOS_BUCKET || 'homeforpup-photos',
+    photosBucket: process.env.S3_PHOTOS_BUCKET || 'homeforpup-images',
   };
 
   switch (environment) {

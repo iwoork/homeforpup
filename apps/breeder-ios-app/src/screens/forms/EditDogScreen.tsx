@@ -105,6 +105,8 @@ const EditDogScreen: React.FC = () => {
 
       setUploading(true);
       try {
+        console.log('Starting photo upload...', { fileName: asset.fileName, type: asset.type });
+        
         // Get presigned upload URL
         const uploadResponse = await apiService.getUploadUrl({
           fileName: asset.fileName || 'photo.jpg',
@@ -112,29 +114,39 @@ const EditDogScreen: React.FC = () => {
           uploadPath: 'dog-photos',
         });
 
+        console.log('Upload URL response:', uploadResponse);
+
         if (!uploadResponse.success || !uploadResponse.data) {
-          Alert.alert('Error', 'Failed to get upload URL');
+          console.error('Failed to get upload URL:', uploadResponse.error);
+          Alert.alert('Error', uploadResponse.error || 'Failed to get upload URL');
           return;
         }
 
         const { uploadUrl, photoUrl } = uploadResponse.data;
+        console.log('Got upload URL and photo URL:', { uploadUrl: uploadUrl.substring(0, 50) + '...', photoUrl });
 
         // Read file as blob
+        console.log('Reading file from URI:', asset.uri);
         const fileResponse = await fetch(asset.uri);
         const blob = await fileResponse.blob();
+        console.log('File read as blob, size:', blob.size);
 
         // Upload to S3
+        console.log('Uploading to S3...');
         const uploadSuccess = await apiService.uploadToS3(uploadUrl, blob, asset.type || 'image/jpeg');
+        console.log('S3 upload result:', uploadSuccess);
 
         if (uploadSuccess) {
           setPhotos([...photos, photoUrl]);
+          console.log('Photo added to array, new count:', photos.length + 1);
           Alert.alert('Success', 'Photo uploaded successfully');
         } else {
-          Alert.alert('Error', 'Failed to upload photo');
+          console.error('S3 upload failed');
+          Alert.alert('Error', 'Failed to upload photo to S3');
         }
       } catch (error) {
         console.error('Upload error:', error);
-        Alert.alert('Error', 'An error occurred while uploading');
+        Alert.alert('Error', `Upload error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setUploading(false);
       }
@@ -190,17 +202,16 @@ const EditDogScreen: React.FC = () => {
       const response = await apiService.updateDog(dogIdentifier, updateData);
 
       if (response.success) {
-        // Update the dog object with new data and navigate back
-        const updatedDog = {
-          ...dog,
-          ...updateData,
-          updatedAt: new Date().toISOString(),
-        };
-        
         Alert.alert('Success', 'Dog updated successfully!', [
           {
             text: 'OK',
-            onPress: () => navigation.goBack(),
+            onPress: () => {
+              // Navigate back to Dogs screen to refresh the list
+              navigation.navigate('MainTabs' as never, { 
+                screen: 'Dogs',
+                params: { refresh: Date.now() }
+              } as never);
+            },
           },
         ]);
       } else {

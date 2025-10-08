@@ -401,6 +401,12 @@ class ApiService {
 
   async uploadToS3(uploadUrl: string, file: Blob | ArrayBuffer, contentType: string): Promise<boolean> {
     try {
+      console.log('uploadToS3 - Starting upload', {
+        urlLength: uploadUrl.length,
+        contentType,
+        fileSize: file instanceof Blob ? file.size : file.byteLength,
+      });
+
       const response = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
@@ -408,6 +414,22 @@ class ApiService {
         },
         body: file,
       });
+
+      console.log('uploadToS3 - Response:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('uploadToS3 - Upload failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        });
+      }
+
       return response.ok;
     } catch (error) {
       console.error('S3 upload error:', error);

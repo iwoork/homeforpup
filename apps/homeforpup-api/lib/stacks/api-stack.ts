@@ -382,7 +382,7 @@ export class ApiStack extends cdk.Stack {
       entry: path.join(__dirname, '../../src/functions/photos/upload-url'),
       config,
       environment: {
-        PHOTOS_BUCKET: config.photosBucket || 'homeforpup-photos',
+        PHOTOS_BUCKET: config.photosBucket || 'homeforpup-images',
       },
     });
     
@@ -390,7 +390,7 @@ export class ApiStack extends cdk.Stack {
     getUploadUrlFunction.function.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['s3:PutObject', 's3:PutObjectAcl'],
-        resources: [`arn:aws:s3:::${config.photosBucket || 'homeforpup-photos'}/*`],
+        resources: [`arn:aws:s3:::${config.photosBucket || 'homeforpup-images'}/*`],
       })
     );
 

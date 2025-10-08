@@ -27,14 +27,15 @@ const DogsScreen: React.FC = () => {
     fetchDogs();
   }, [user]);
 
-  // Refresh when screen comes into focus
+  // Refresh when screen comes into focus (returning from detail/edit screens)
   useFocusEffect(
     React.useCallback(() => {
-      // Only refresh if not initial load
+      // Skip refresh on initial mount (when loading is true)
       if (!loading) {
+        console.log('DogsScreen focused - refreshing dogs list');
         fetchDogs();
       }
-    }, [loading])
+    }, [])
   );
 
   const fetchDogs = async () => {
