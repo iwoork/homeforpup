@@ -122,7 +122,8 @@ class ApiService {
 
   private async makeRequest<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryOnAuth = true
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
@@ -160,6 +161,26 @@ class ApiService {
           status: response.status, 
           error: data.message || data.error 
         });
+
+        // Handle token expiration - refresh and retry once
+        if (response.status === 401 && retryOnAuth) {
+          console.log('Token expired, attempting to refresh...');
+          try {
+            const authService = require('./authService').default;
+            const isValid = await authService.refreshSession();
+            if (isValid) {
+              const newToken = await authService.getAuthToken();
+              if (newToken) {
+                this.authToken = newToken;
+                console.log('Token refreshed, retrying request...');
+                return this.makeRequest<T>(endpoint, options, false);
+              }
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+          }
+        }
+
         return {
           success: false,
           error: data.message || data.error || `HTTP ${response.status}`,
@@ -364,6 +385,34 @@ class ApiService {
 
     const endpoint = `/activities?${queryParams.toString()}`;
     return this.makeRequest<any>(endpoint);
+  }
+
+  // Photos API
+  async getUploadUrl(params: {
+    fileName: string;
+    contentType: string;
+    uploadPath?: string;
+  }): Promise<ApiResponse<{uploadUrl: string; photoUrl: string; key: string}>> {
+    return this.makeRequest('/photos/upload-url', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async uploadToS3(uploadUrl: string, file: Blob | ArrayBuffer, contentType: string): Promise<boolean> {
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+        },
+        body: file,
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('S3 upload error:', error);
+      return false;
+    }
   }
 }
 

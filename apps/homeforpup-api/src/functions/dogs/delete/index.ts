@@ -20,7 +20,7 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     // First, check if the dog exists and user has permission
     const getCommand = new GetCommand({
       TableName: DOGS_TABLE,
-      Key: { dogId },
+      Key: { id: dogId },
     });
 
     const existing = await dynamodb.send(getCommand);
@@ -29,15 +29,18 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
       throw new ApiError('Dog not found', 404);
     }
 
-    // Check ownership
-    if (existing.Item.ownerId !== userId) {
+    // Check ownership (support both ownerId and kennelOwners)
+    const hasOwnership = existing.Item.ownerId === userId || 
+                        (existing.Item.kennelOwners && existing.Item.kennelOwners.includes(userId));
+    
+    if (!hasOwnership) {
       throw new ApiError('Forbidden: You do not have permission to delete this dog', 403);
     }
 
     // Delete the dog
     const deleteCommand = new DeleteCommand({
       TableName: DOGS_TABLE,
-      Key: { dogId },
+      Key: { id: dogId },
     });
 
     await dynamodb.send(deleteCommand);

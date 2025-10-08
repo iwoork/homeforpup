@@ -24,7 +24,7 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     // First, check if the dog exists and user has permission
     const getCommand = new GetCommand({
       TableName: DOGS_TABLE,
-      Key: { dogId },
+      Key: { id: dogId },
     });
 
     const existing = await dynamodb.send(getCommand);
@@ -33,14 +33,18 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
       throw new ApiError('Dog not found', 404);
     }
 
-    // Check ownership (or admin permission in real implementation)
-    if (existing.Item.ownerId !== userId) {
+    // Check ownership (support both ownerId and kennelOwners)
+    const hasOwnership = existing.Item.ownerId === userId || 
+                        (existing.Item.kennelOwners && existing.Item.kennelOwners.includes(userId));
+    
+    if (!hasOwnership) {
       throw new ApiError('Forbidden: You do not have permission to update this dog', 403);
     }
 
     const updates = JSON.parse(event.body);
     
     // Don't allow updating certain fields
+    delete updates.id;
     delete updates.dogId;
     delete updates.ownerId;
     delete updates.createdAt;
@@ -63,7 +67,7 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
     const updateCommand = new UpdateCommand({
       TableName: DOGS_TABLE,
-      Key: { dogId },
+      Key: { id: dogId },
       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,

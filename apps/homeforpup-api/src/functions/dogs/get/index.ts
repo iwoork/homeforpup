@@ -15,7 +15,7 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   try {
     const command = new GetCommand({
       TableName: DOGS_TABLE,
-      Key: { dogId },
+      Key: { id: dogId },
     });
 
     const result = await dynamodb.send(command);

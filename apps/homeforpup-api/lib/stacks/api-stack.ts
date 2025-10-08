@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
@@ -82,6 +83,7 @@ export class ApiStack extends cdk.Stack {
     this.createFavoritesApi();
     this.createActivitiesApi();
     this.createBreedsApi();
+    this.createPhotosApi();
 
     // Add custom domain if configured
     if (config.apiDomainName && config.certificateArn) {
@@ -366,6 +368,37 @@ export class ApiStack extends cdk.Stack {
     ]);
 
     breedsResource.addMethod('GET', listBreedsFunction.createIntegration());
+  }
+
+  private createPhotosApi() {
+    const { config } = this;
+    const photosResource = this.api.root.addResource('photos');
+    const uploadUrlResource = photosResource.addResource('upload-url');
+    
+    // POST /photos/upload-url - Get presigned upload URL
+    const getUploadUrlFunction = new LambdaApi(this, 'GetUploadUrlFunction', {
+      functionName: 'get-upload-url',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/photos/upload-url'),
+      config,
+      environment: {
+        PHOTOS_BUCKET: config.photosBucket || 'homeforpup-photos',
+      },
+    });
+    
+    // Grant S3 permissions to generate presigned URLs
+    getUploadUrlFunction.function.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['s3:PutObject', 's3:PutObjectAcl'],
+        resources: [`arn:aws:s3:::${config.photosBucket || 'homeforpup-photos'}/*`],
+      })
+    );
+
+    // POST /photos/upload-url requires authentication
+    uploadUrlResource.addMethod('POST', getUploadUrlFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
   }
 
   private addCustomDomain(config: EnvironmentConfig) {

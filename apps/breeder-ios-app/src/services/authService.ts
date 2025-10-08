@@ -291,7 +291,20 @@ export class AuthService {
 
   async refreshSession(): Promise<boolean> {
     try {
-      await fetchAuthSession();
+      const session = await fetchAuthSession({ forceRefresh: true });
+      
+      // Update stored token if refresh succeeded
+      if (session && session.tokens?.idToken) {
+        const tokenObj = session.tokens.idToken;
+        const token = String(tokenObj);
+        this.authToken = token;
+        
+        // Update stored token
+        await AsyncStorage.setItem('auth_token', token);
+        
+        console.log('Session refreshed successfully, new token length:', token.length);
+      }
+      
       return true;
     } catch (error) {
       console.error('Refresh session error:', error);

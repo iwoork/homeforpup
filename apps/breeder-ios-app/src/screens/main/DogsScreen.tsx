@@ -9,12 +9,14 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { theme } from '../../utils/theme';
 import { Dog } from '../../types';
 import apiService from '../../services/apiService';
 import { useAuth } from '../../contexts/AuthContext';
 
 const DogsScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -24,6 +26,16 @@ const DogsScreen: React.FC = () => {
   useEffect(() => {
     fetchDogs();
   }, [user]);
+
+  // Refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Only refresh if not initial load
+      if (!loading) {
+        fetchDogs();
+      }
+    }, [loading])
+  );
 
   const fetchDogs = async () => {
     try {
@@ -105,11 +117,26 @@ const DogsScreen: React.FC = () => {
     }
   };
 
+  const getDogPhoto = (dog: Dog) => {
+    // Check photoGallery first, then photos array, then photoUrl
+    const photoFromGallery = (dog as any)?.photoGallery?.[0]?.url;
+    const photoFromArray = (dog as any)?.photos?.[0];
+    return photoFromGallery || photoFromArray || dog.photoUrl;
+  };
+
   const renderDogItem = ({ item }: { item: Dog }) => (
-    <TouchableOpacity style={styles.dogCard}>
+    <TouchableOpacity 
+      style={styles.dogCard}
+      onPress={() => navigation.navigate('DogDetail' as never, { dog: item } as never)}
+    >
       <View style={styles.dogImageContainer}>
-        {item.photoUrl ? (
-          <Image source={{ uri: item.photoUrl }} style={styles.dogImage} />
+        {getDogPhoto(item) ? (
+          <Image 
+            key={`dog-list-${item.id}`}
+            source={{ uri: getDogPhoto(item) }} 
+            style={styles.dogImage}
+            resizeMode="cover"
+          />
         ) : (
           <View style={styles.placeholderImage}>
             <Text style={styles.placeholderIcon}>🐕</Text>

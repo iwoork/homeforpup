@@ -26,7 +26,7 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
     // Create dog object
     const dog = {
-      dogId: uuidv4(),
+      id: uuidv4(),
       ...dogData,
       ownerId: userId,
       createdAt: new Date().toISOString(),

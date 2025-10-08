@@ -28,6 +28,7 @@ import MessageDetailScreen from '../screens/details/MessageDetailScreen';
 // Form Screens
 import CreateKennelScreen from '../screens/forms/CreateKennelScreen';
 import CreateDogScreen from '../screens/forms/CreateDogScreen';
+import EditDogScreen from '../screens/forms/EditDogScreen';
 import EditProfileScreen from '../screens/forms/EditProfileScreen';
 
 import LoadingScreen from '../screens/LoadingScreen';
@@ -201,6 +202,11 @@ const MainStack = () => (
       name="CreateDog" 
       component={CreateDogScreen}
       options={{ title: 'Add Dog' }}
+    />
+    <Stack.Screen 
+      name="EditDog" 
+      component={EditDogScreen}
+      options={{ title: 'Edit Dog' }}
     />
     
     {/* Message Screens */}
