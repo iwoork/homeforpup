@@ -1,13 +1,13 @@
 import React from 'react';
-import { Text } from 'react-native';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-// import { createDrawerNavigator } from '@react-navigation/drawer';
-// import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../utils/theme';
+import Logo from '../components/Logo';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -51,70 +51,104 @@ const MainTabs = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       tabBarIcon: ({ focused, color, size }) => {
-        // Temporary text-based icons until vector icons are configured
-        let iconText: string;
+        let iconName: string;
 
         switch (route.name) {
           case 'Dashboard':
-            iconText = '📊';
+            iconName = focused ? 'stats-chart' : 'stats-chart-outline';
             break;
           case 'Kennels':
-            iconText = '🏠';
+            iconName = focused ? 'home' : 'home-outline';
             break;
           case 'Dogs':
-            iconText = '🐕';
+            iconName = focused ? 'paw' : 'paw-outline';
             break;
           case 'Messages':
-            iconText = '💬';
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
             break;
           case 'Profile':
-            iconText = '👤';
+            iconName = focused ? 'person' : 'person-outline';
             break;
           default:
-            iconText = '●';
+            iconName = 'ellipse';
         }
 
-        return <Text style={{ fontSize: size, color }}>{iconText}</Text>;
+        return <Icon name={iconName} size={size} color={color} />;
       },
       tabBarActiveTintColor: theme.colors.primary,
       tabBarInactiveTintColor: theme.colors.textSecondary,
       tabBarStyle: {
         backgroundColor: theme.colors.surface,
         borderTopColor: theme.colors.border,
+        borderTopWidth: 1,
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+        ...theme.shadows.lg,
+      },
+      tabBarLabelStyle: {
+        fontSize: 12,
+        fontWeight: '600',
       },
       headerStyle: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: theme.colors.surface,
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
       },
-      headerTintColor: '#fff',
+      headerTintColor: theme.colors.text,
       headerTitleStyle: {
-        fontWeight: 'bold',
+        fontWeight: '700',
+        fontSize: 20,
       },
+      headerLeft: () => (
+        <View style={{ marginLeft: 16 }}>
+          <Logo size={32} />
+        </View>
+      ),
+      headerTitle: 'Home for Pup',
     })}
   >
     <Tab.Screen 
       name="Dashboard" 
       component={DashboardScreen}
-      options={{ title: 'Dashboard' }}
+      options={{ 
+        title: 'Dashboard',
+        tabBarLabel: 'Home'
+      }}
     />
     <Tab.Screen 
       name="Kennels" 
       component={KennelsScreen}
-      options={{ title: 'My Kennels' }}
+      options={{ 
+        title: 'Kennels',
+        tabBarLabel: 'Kennels'
+      }}
     />
     <Tab.Screen 
       name="Dogs" 
       component={DogsScreen}
-      options={{ title: 'My Dogs' }}
+      options={{ 
+        title: 'Dogs',
+        tabBarLabel: 'Dogs'
+      }}
     />
     <Tab.Screen 
       name="Messages" 
       component={MessagesScreen}
-      options={{ title: 'Messages' }}
+      options={{ 
+        title: 'Messages',
+        tabBarLabel: 'Messages'
+      }}
     />
     <Tab.Screen 
       name="Profile" 
       component={ProfileScreen}
-      options={{ title: 'Profile' }}
+      options={{ 
+        title: 'Profile',
+        tabBarLabel: 'Profile'
+      }}
     />
   </Tab.Navigator>
 );
@@ -123,12 +157,20 @@ const MainStack = () => (
   <Stack.Navigator
     screenOptions={{
       headerStyle: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: theme.colors.surface,
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
       },
-      headerTintColor: '#fff',
+      headerTintColor: theme.colors.primary,
       headerTitleStyle: {
-        fontWeight: 'bold',
+        fontWeight: '700',
+        fontSize: 18,
+        color: theme.colors.text,
       },
+      headerBackTitleVisible: false,
+      cardStyle: { backgroundColor: theme.colors.background },
     }}
   >
     <Stack.Screen 

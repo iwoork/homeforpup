@@ -8,6 +8,8 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 
@@ -46,31 +48,36 @@ const ProfileScreen: React.FC = () => {
     {
       title: 'Edit Profile',
       subtitle: 'Update your personal information',
-      icon: '✏️',
+      icon: 'person-outline',
+      iconColor: theme.colors.primary,
       screen: 'EditProfile',
     },
     {
       title: 'Account Settings',
       subtitle: 'Manage your account preferences',
-      icon: '⚙️',
+      icon: 'settings-outline',
+      iconColor: '#64748b',
       screen: 'AccountSettings',
     },
     {
       title: 'Notifications',
       subtitle: 'Configure notification preferences',
-      icon: '🔔',
+      icon: 'notifications-outline',
+      iconColor: '#f59e0b',
       screen: 'Notifications',
     },
     {
       title: 'Privacy & Security',
       subtitle: 'Manage your privacy settings',
-      icon: '🔒',
+      icon: 'shield-checkmark-outline',
+      iconColor: '#10b981',
       screen: 'PrivacySecurity',
     },
     {
       title: 'Help & Support',
       subtitle: 'Get help and contact support',
-      icon: '❓',
+      icon: 'help-circle-outline',
+      iconColor: theme.colors.secondary,
       screen: 'HelpSupport',
     },
   ];
@@ -79,67 +86,77 @@ const ProfileScreen: React.FC = () => {
     {
       title: 'Kennels',
       value: '2',
-      icon: '🏠',
-      color: theme.colors.primary,
+      icon: 'home',
+      colors: [theme.colors.primary, theme.colors.primaryDark],
     },
     {
       title: 'Dogs',
       value: '12',
-      icon: '🐕',
-      color: theme.colors.secondary,
+      icon: 'paw',
+      colors: [theme.colors.secondary, theme.colors.secondaryDark],
     },
     {
       title: 'Messages',
       value: '45',
-      icon: '💬',
-      color: theme.colors.warning,
+      icon: 'chatbubbles',
+      colors: ['#f59e0b', '#d97706'],
     },
     {
       title: 'Profile Views',
       value: '128',
-      icon: '👁️',
-      color: theme.colors.success,
+      icon: 'eye',
+      colors: ['#10b981', '#059669'],
     },
   ];
 
   return (
     <ScrollView style={styles.container}>
       {/* Profile Header */}
-      <View style={styles.profileHeader}>
-        <View style={styles.avatarContainer}>
-          {user?.profileImage ? (
-            <Image source={{ uri: user.profileImage }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarIcon}>👤</Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.editAvatarButton}>
-            <Text style={styles.cameraIcon}>📷</Text>
-          </TouchableOpacity>
+      <LinearGradient
+        colors={['#f0f9fa', '#ffffff']}
+        style={styles.profileHeaderGradient}
+      >
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            {user?.profileImage ? (
+              <Image source={{ uri: user.profileImage }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Icon name="person" size={48} color={theme.colors.primary} />
+              </View>
+            )}
+            <TouchableOpacity style={styles.editAvatarButton}>
+              <Icon name="camera" size={16} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+          
+          <Text style={styles.userName}>{user?.name || 'Breeder'}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
+          
+          <View style={styles.userTypeBadge}>
+            <Icon name="checkmark-circle" size={16} color={theme.colors.success} />
+            <Text style={styles.userTypeText}>Verified Breeder</Text>
+          </View>
         </View>
-        
-        <Text style={styles.userName}>{user?.name || 'Breeder'}</Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
-        
-        <View style={styles.userTypeBadge}>
-          <Text style={styles.badgeIcon}>✓</Text>
-          <Text style={styles.userTypeText}>Verified Breeder</Text>
-        </View>
-      </View>
+      </LinearGradient>
 
       {/* Stats Section */}
       <View style={styles.statsSection}>
         <Text style={styles.sectionTitle}>Your Statistics</Text>
         <View style={styles.statsGrid}>
           {statsData.map((stat, index) => (
-            <View key={index} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: stat.color }]}>
-                <Text style={styles.iconText}>{stat.icon}</Text>
-              </View>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statTitle}>{stat.title}</Text>
-            </View>
+            <TouchableOpacity key={index} style={styles.statCard} activeOpacity={0.8}>
+              <LinearGradient
+                colors={stat.colors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.statCardGradient}
+              >
+                <Icon name={stat.icon} size={24} color="#ffffff" />
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statTitle}>{stat.title}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           ))}
         </View>
       </View>
@@ -148,15 +165,15 @@ const ProfileScreen: React.FC = () => {
       <View style={styles.menuSection}>
         <Text style={styles.sectionTitle}>Account Management</Text>
         {profileMenuItems.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.menuItem}>
-            <View style={styles.menuIcon}>
-              <Text style={styles.menuIconText}>{item.icon}</Text>
+          <TouchableOpacity key={index} style={styles.menuItem} activeOpacity={0.7}>
+            <View style={[styles.menuIconContainer, { backgroundColor: `${item.iconColor}15` }]}>
+              <Icon name={item.icon} size={22} color={item.iconColor} />
             </View>
             <View style={styles.menuContent}>
               <Text style={styles.menuTitle}>{item.title}</Text>
               <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
             </View>
-            <Text style={styles.chevronIcon}>›</Text>
+            <Icon name="chevron-forward" size={24} color={theme.colors.textTertiary} />
           </TouchableOpacity>
         ))}
       </View>
@@ -182,8 +199,9 @@ const ProfileScreen: React.FC = () => {
           style={[styles.logoutButton, loading && styles.logoutButtonDisabled]}
           onPress={handleLogout}
           disabled={loading}
+          activeOpacity={0.8}
         >
-          <Text style={styles.logoutIcon}>🚪</Text>
+          <Icon name="log-out-outline" size={20} color="#ffffff" />
           <Text style={styles.logoutButtonText}>
             {loading ? 'Logging out...' : 'Logout'}
           </Text>
@@ -198,51 +216,52 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  profileHeaderGradient: {
+    marginBottom: theme.spacing.lg,
+  },
   profileHeader: {
-    backgroundColor: theme.colors.surface,
     alignItems: 'center',
-    padding: theme.spacing.xl,
-    marginBottom: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.xl,
   },
   avatarContainer: {
     position: 'relative',
     marginBottom: theme.spacing.lg,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 4,
+    borderColor: '#ffffff',
   },
   avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: theme.colors.background,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarIcon: {
-    fontSize: 40,
+    borderWidth: 3,
+    borderColor: theme.colors.primary,
   },
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: theme.colors.primary,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.surface,
-  },
-  cameraIcon: {
-    fontSize: 16,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    ...theme.shadows.md,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
@@ -254,30 +273,27 @@ const styles = StyleSheet.create({
   userTypeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-  },
-  badgeIcon: {
-    fontSize: 14,
-    color: theme.colors.secondary,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: theme.spacing.md + 4,
+    paddingVertical: theme.spacing.sm + 2,
+    borderRadius: theme.borderRadius.full,
+    ...theme.shadows.sm,
   },
   userTypeText: {
     fontSize: 14,
-    color: theme.colors.secondary,
-    fontWeight: '500',
+    color: theme.colors.success,
+    fontWeight: '600',
     marginLeft: theme.spacing.xs,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
   },
   statsSection: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -286,45 +302,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   statCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
     width: '48%',
     marginBottom: theme.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    overflow: 'hidden',
+    ...theme.shadows.md,
   },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  statCardGradient: {
+    padding: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  iconText: {
-    fontSize: 20,
+    minHeight: 110,
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginTop: theme.spacing.xs,
     marginBottom: theme.spacing.xs,
   },
   statTitle: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    color: '#ffffff',
     textAlign: 'center',
+    fontWeight: '600',
+    opacity: 0.95,
   },
   menuSection: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
   },
   menuItem: {
     backgroundColor: theme.colors.surface,
@@ -332,43 +337,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.lg,
     marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    marginBottom: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.sm,
   },
-  menuIcon: {
+  menuIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.md,
-  },
-  menuIconText: {
-    fontSize: 24,
   },
   menuContent: {
     flex: 1,
   },
   menuTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 2,
   },
   menuSubtitle: {
     fontSize: 14,
     color: theme.colors.textSecondary,
   },
-  chevronIcon: {
-    fontSize: 32,
-    color: theme.colors.textSecondary,
-    fontWeight: '300',
-  },
   appInfoSection: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
   },
   infoItem: {
     flexDirection: 'row',
@@ -376,16 +373,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.lg,
     marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   infoLabel: {
     fontSize: 16,
+    fontWeight: '600',
     color: theme.colors.text,
   },
   infoValue: {
-    fontSize: 16,
+    fontSize: 15,
     color: theme.colors.textSecondary,
     fontWeight: '500',
   },
@@ -398,19 +398,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md + 4,
+    borderRadius: theme.borderRadius.lg,
+    ...theme.shadows.md,
   },
   logoutButtonDisabled: {
-    backgroundColor: theme.colors.textSecondary,
-  },
-  logoutIcon: {
-    fontSize: 16,
+    opacity: 0.6,
   },
   logoutButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     marginLeft: theme.spacing.sm,
   },
 });

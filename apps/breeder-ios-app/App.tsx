@@ -35,7 +35,7 @@ function App(): React.JSX.Element {
     <ErrorBoundary>
       <SafeAreaProvider>
         <AuthProvider>
-          <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+          <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
           <AppNavigator />
         </AuthProvider>
       </SafeAreaProvider>

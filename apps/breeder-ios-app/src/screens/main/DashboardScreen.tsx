@@ -8,6 +8,8 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 import { useDashboardStats } from '../../hooks/useApi';
@@ -24,26 +26,26 @@ const DashboardScreen: React.FC = () => {
     {
       title: 'Total Kennels',
       value: stats?.totalKennels?.toString() || '0',
-      icon: '🏠',
-      color: theme.colors.primary,
+      icon: 'home',
+      colors: [theme.colors.primary, theme.colors.primaryDark],
     },
     {
       title: 'Total Dogs',
       value: stats?.totalDogs?.toString() || '0',
-      icon: '🐕',
-      color: theme.colors.secondary,
+      icon: 'paw',
+      colors: [theme.colors.secondary, theme.colors.secondaryDark],
     },
     {
       title: 'Active Messages',
       value: stats?.activeMessages?.toString() || '0',
-      icon: '💬',
-      color: theme.colors.warning,
+      icon: 'chatbubbles',
+      colors: ['#f59e0b', '#d97706'],
     },
     {
       title: 'New Inquiries',
       value: stats?.newInquiries?.toString() || '0',
-      icon: '📥',
-      color: theme.colors.success,
+      icon: 'mail',
+      colors: ['#10b981', '#059669'],
     },
   ];
 
@@ -51,19 +53,22 @@ const DashboardScreen: React.FC = () => {
     {
       title: 'Add Kennel',
       subtitle: 'Create a new kennel',
-      icon: '➕🏠',
+      icon: 'add-circle',
+      iconColor: theme.colors.primary,
       screen: 'CreateKennel',
     },
     {
       title: 'Add Dog',
       subtitle: 'Register a new dog',
-      icon: '➕🐕',
+      icon: 'paw',
+      iconColor: theme.colors.secondary,
       screen: 'CreateDog',
     },
     {
       title: 'View Messages',
       subtitle: 'Check your inbox',
-      icon: '💬',
+      icon: 'mail-open',
+      iconColor: '#10b981',
       screen: 'Messages',
     },
   ];
@@ -75,24 +80,36 @@ const DashboardScreen: React.FC = () => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
-          Welcome back, {user?.name || 'Breeder'}!
-        </Text>
-        <Text style={styles.subtitle}>Here's your kennel overview</Text>
-      </View>
+      <LinearGradient
+        colors={['#f0f9fa', '#ffffff']}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <Text style={styles.greeting}>
+            Welcome back, {user?.name || 'Breeder'}!
+          </Text>
+          <Text style={styles.subtitle}>Here's your kennel overview</Text>
+        </View>
+      </LinearGradient>
 
       <View style={styles.statsContainer}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsGrid}>
           {statsDisplay.map((stat, index) => (
-            <View key={index} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: stat.color }]}>
-                <Text style={styles.iconText}>{stat.icon}</Text>
-              </View>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statTitle}>{stat.title}</Text>
-            </View>
+            <TouchableOpacity key={index} style={styles.statCard} activeOpacity={0.8}>
+              <LinearGradient
+                colors={stat.colors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.statCardGradient}
+              >
+                <View style={styles.statIconContainer}>
+                  <Icon name={stat.icon} size={28} color="#ffffff" />
+                </View>
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statTitle}>{stat.title}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           ))}
         </View>
       </View>
@@ -100,15 +117,15 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.actionsContainer}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         {quickActions.map((action, index) => (
-          <TouchableOpacity key={index} style={styles.actionCard}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionIconText}>{action.icon}</Text>
+          <TouchableOpacity key={index} style={styles.actionCard} activeOpacity={0.7}>
+            <View style={[styles.actionIconContainer, { backgroundColor: `${action.iconColor}15` }]}>
+              <Icon name={action.icon} size={24} color={action.iconColor} />
             </View>
             <View style={styles.actionContent}>
               <Text style={styles.actionTitle}>{action.title}</Text>
               <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
             </View>
-            <Text style={styles.chevronIcon}>›</Text>
+            <Icon name="chevron-forward" size={24} color={theme.colors.textTertiary} />
           </TouchableOpacity>
         ))}
       </View>
@@ -116,6 +133,7 @@ const DashboardScreen: React.FC = () => {
       <View style={styles.recentActivity}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <View style={styles.activityCard}>
+          <Icon name="time-outline" size={48} color={theme.colors.textTertiary} />
           <Text style={styles.activityText}>No recent activity</Text>
           <Text style={styles.activitySubtext}>
             Your recent kennel activities will appear here
@@ -131,30 +149,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  headerGradient: {
+    marginBottom: theme.spacing.lg,
+  },
   header: {
-    padding: theme.spacing.lg,
-    backgroundColor: theme.colors.surface,
-    marginBottom: theme.spacing.md,
+    padding: theme.spacing.xl,
+    paddingTop: theme.spacing.lg,
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
     fontSize: 16,
     color: theme.colors.textSecondary,
+    fontWeight: '400',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
   },
   statsContainer: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -163,45 +184,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   statCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
     width: '48%',
     marginBottom: theme.spacing.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    overflow: 'hidden',
+    ...theme.shadows.md,
   },
-  statIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  statCardGradient: {
+    padding: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 140,
+  },
+  statIconContainer: {
     marginBottom: theme.spacing.sm,
   },
-  iconText: {
-    fontSize: 24,
-  },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#ffffff',
     marginBottom: theme.spacing.xs,
   },
   statTitle: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    color: '#ffffff',
     textAlign: 'center',
+    fontWeight: '600',
+    opacity: 0.95,
   },
   actionsContainer: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
   },
   actionCard: {
     backgroundColor: theme.colors.surface,
@@ -209,60 +221,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.lg,
     marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    marginBottom: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.sm,
   },
-  actionIcon: {
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: theme.spacing.md,
-  },
-  actionIconText: {
-    fontSize: 24,
   },
   actionContent: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: 2,
   },
   actionSubtitle: {
     fontSize: 14,
     color: theme.colors.textSecondary,
-  },
-  chevronIcon: {
-    fontSize: 32,
-    color: theme.colors.textSecondary,
-    fontWeight: '300',
   },
   recentActivity: {
     marginBottom: theme.spacing.xl,
   },
   activityCard: {
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.lg,
+    padding: theme.spacing.xl,
     marginHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
   },
   activityText: {
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: '600',
     color: theme.colors.text,
+    marginTop: theme.spacing.md,
     marginBottom: theme.spacing.xs,
   },
   activitySubtext: {
     fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

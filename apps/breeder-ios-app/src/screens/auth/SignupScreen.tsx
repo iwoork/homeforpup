@@ -10,8 +10,10 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
+import Logo from '../../components/Logo';
 
 interface SignupScreenProps {
   navigation: any;
@@ -100,15 +102,21 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient
+      colors={['#ffffff', '#f0f9fa', '#e8f5f6']}
+      style={styles.gradient}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join HomeForPup as a breeder</Text>
-        </View>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.header}>
+            <Logo size={80} style={styles.logo} />
+            <Text style={styles.appName}>Home for Pup</Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join the breeder community</Text>
+          </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
@@ -116,6 +124,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Enter your full name"
+              placeholderTextColor={theme.colors.textTertiary}
               value={formData.name}
               onChangeText={(value) => handleInputChange('name', value)}
               autoCapitalize="words"
@@ -128,6 +137,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
+              placeholderTextColor={theme.colors.textTertiary}
               value={formData.email}
               onChangeText={(value) => handleInputChange('email', value)}
               keyboardType="email-address"
@@ -141,6 +151,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Enter your phone number"
+              placeholderTextColor={theme.colors.textTertiary}
               value={formData.phone}
               onChangeText={(value) => handleInputChange('phone', value)}
               keyboardType="phone-pad"
@@ -153,6 +164,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Create a password"
+              placeholderTextColor={theme.colors.textTertiary}
               value={formData.password}
               onChangeText={(value) => handleInputChange('password', value)}
               secureTextEntry
@@ -165,6 +177,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Confirm your password"
+              placeholderTextColor={theme.colors.textTertiary}
               value={formData.confirmPassword}
               onChangeText={(value) => handleInputChange('confirmPassword', value)}
               secureTextEntry
@@ -177,9 +190,16 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             onPress={handleSignup}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </Text>
+            <LinearGradient
+              colors={loading ? [theme.colors.textSecondary, theme.colors.textSecondary] : [theme.colors.primary, theme.colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buttonGradient}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.linkButton}>
@@ -195,28 +215,42 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: theme.spacing.lg,
+    paddingTop: theme.spacing.xxl,
   },
   header: {
     alignItems: 'center',
     marginBottom: theme.spacing.xl,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+  logo: {
     marginBottom: theme.spacing.sm,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.md,
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
     fontSize: 16,
@@ -224,39 +258,43 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
-    marginBottom: theme.spacing.xl,
-  },
-  inputContainer: {
     marginBottom: theme.spacing.lg,
   },
+  inputContainer: {
+    marginBottom: theme.spacing.md,
+  },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
   input: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md + 2,
     fontSize: 16,
     backgroundColor: theme.colors.surface,
+    color: theme.colors.text,
   },
   button: {
-    backgroundColor: theme.colors.primary,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
     marginTop: theme.spacing.lg,
+    overflow: 'hidden',
+    ...theme.shadows.md,
   },
   buttonDisabled: {
-    backgroundColor: theme.colors.textSecondary,
+    opacity: 0.6,
+  },
+  buttonGradient: {
+    padding: theme.spacing.md + 2,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
   },
   linkButton: {
     alignItems: 'center',
@@ -264,21 +302,23 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: theme.colors.primary,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: theme.spacing.lg,
   },
   footerText: {
     color: theme.colors.textSecondary,
-    fontSize: 14,
+    fontSize: 15,
   },
   footerLink: {
     color: theme.colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
 

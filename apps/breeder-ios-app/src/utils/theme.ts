@@ -2,24 +2,24 @@ import { Theme } from '../types';
 
 export const theme: Theme = {
   colors: {
-    // Primary colors
-    primary: '#2563eb', // Modern blue
-    primaryLight: '#60a5fa',
-    primaryDark: '#1e40af',
-    secondary: '#10b981', // Fresh green
-    secondaryLight: '#34d399',
-    secondaryDark: '#059669',
+    // Primary colors - Teal from logo
+    primary: '#2d8a8f', // Teal from logo
+    primaryLight: '#4fa8ad',
+    primaryDark: '#1f6266',
+    secondary: '#ff8a7a', // Coral/salmon from heart
+    secondaryLight: '#ffb3a8',
+    secondaryDark: '#ff6b55',
     
     // Background colors
-    background: '#f8fafc', // Soft gray background
-    backgroundSecondary: '#f1f5f9',
+    background: '#f8fafb', // Soft blue-gray background
+    backgroundSecondary: '#f0f4f6',
     surface: '#ffffff',
     surfaceElevated: '#ffffff',
     
     // Text colors
-    text: '#1e293b', // Deep slate
-    textSecondary: '#64748b', // Muted slate
-    textTertiary: '#94a3b8',
+    text: '#1a3a3d', // Deep teal-gray
+    textSecondary: '#5f7c80', // Muted teal-gray
+    textTertiary: '#8fa5a8',
     textInverse: '#ffffff',
     
     // Status colors
@@ -29,13 +29,13 @@ export const theme: Theme = {
     successLight: '#6ee7b7',
     warning: '#f59e0b', // Warm amber
     warningLight: '#fbbf24',
-    info: '#3b82f6',
-    infoLight: '#93c5fd',
+    info: '#2d8a8f',
+    infoLight: '#7fc7cb',
     
     // Border and divider colors
-    border: '#e2e8f0', // Subtle border
-    borderLight: '#f1f5f9',
-    divider: '#e2e8f0',
+    border: '#e2eaec', // Subtle border
+    borderLight: '#f0f4f6',
+    divider: '#e2eaec',
     
     // Overlay colors
     overlay: 'rgba(0, 0, 0, 0.5)',

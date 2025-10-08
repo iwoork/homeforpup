@@ -10,8 +10,10 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
+import Logo from '../../components/Logo';
 
 interface LoginScreenProps {
   navigation: any;
@@ -43,72 +45,90 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <LinearGradient
+      colors={['#ffffff', '#f0f9fa', '#e8f5f6']}
+      style={styles.gradient}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your breeder account</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.header}>
+            <Logo variant="large" style={styles.logo} />
+            <Text style={styles.appName}>Home for Pup</Text>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Sign in to manage your kennels</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                placeholderTextColor={theme.colors.textTertiary}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                placeholderTextColor={theme.colors.textTertiary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={loading ? [theme.colors.textSecondary, theme.colors.textSecondary] : [theme.colors.primary, theme.colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.buttonText}>
+                  {loading ? 'Signing In...' : 'Sign In'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.linkButton}>
+              <Text style={styles.linkText}>Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Signing In...' : 'Sign In'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.linkButton}>
-            <Text style={styles.linkText}>Forgot Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-            <Text style={styles.footerLink}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -119,11 +139,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.xl * 2,
   },
+  logo: {
+    marginBottom: theme.spacing.md,
+  },
+  appName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.lg,
+    letterSpacing: 0.5,
+  },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 26,
+    fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
     fontSize: 16,
@@ -137,33 +167,37 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
   input: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md + 2,
     fontSize: 16,
     backgroundColor: theme.colors.surface,
+    color: theme.colors.text,
   },
   button: {
-    backgroundColor: theme.colors.primary,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
+    borderRadius: theme.borderRadius.lg,
     marginTop: theme.spacing.lg,
+    overflow: 'hidden',
+    ...theme.shadows.md,
   },
   buttonDisabled: {
-    backgroundColor: theme.colors.textSecondary,
+    opacity: 0.6,
+  },
+  buttonGradient: {
+    padding: theme.spacing.md + 2,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
   },
   linkButton: {
     alignItems: 'center',
@@ -171,7 +205,8 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: theme.colors.primary,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
@@ -180,12 +215,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: theme.colors.textSecondary,
-    fontSize: 14,
+    fontSize: 15,
   },
   footerLink: {
     color: theme.colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
 
