@@ -14,7 +14,7 @@ import { useDashboardStats } from '../../hooks/useApi';
 
 const DashboardScreen: React.FC = () => {
   const { user } = useAuth();
-  const { data: stats, loading, error, refreshing, refresh } = useDashboardStats();
+  const { data: stats, loading, error, refreshing, refresh } = useDashboardStats(user?.userId);
 
   const onRefresh = React.useCallback(async () => {
     await refresh();

@@ -7,66 +7,70 @@ import {
   TouchableOpacity,
   RefreshControl,
   Image,
+  Alert,
 } from 'react-native';
 import { theme } from '../../utils/theme';
 import { Dog } from '../../types';
+import apiService from '../../services/apiService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DogsScreen: React.FC = () => {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchDogs();
-  }, []);
+  }, [user]);
 
   const fetchDogs = async () => {
     try {
-      // TODO: Implement actual API call
-      // Simulate API call
-      setTimeout(() => {
-        setDogs([
-          {
-            id: '1',
-            ownerId: 'owner1',
-            kennelId: '1',
-            name: 'Bella',
-            breed: 'Golden Retriever',
-            gender: 'female',
-            birthDate: '2020-03-15',
-            color: 'Golden',
-            weight: 65,
-            dogType: 'parent',
-            breedingStatus: 'available',
-            healthStatus: 'excellent',
-            healthTests: [],
-            description: 'Beautiful Golden Retriever',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            ownerId: 'owner1',
-            kennelId: '2',
-            name: 'Max',
-            breed: 'German Shepherd',
-            gender: 'male',
-            birthDate: '2019-07-22',
-            color: 'Black and Tan',
-            weight: 80,
-            dogType: 'parent',
-            breedingStatus: 'available',
-            healthStatus: 'good',
-            healthTests: [],
-            description: 'Strong German Shepherd',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ]);
+      setError(null);
+      console.log('Fetching dogs for user:', user?.userId);
+      
+      if (!user?.userId) {
+        console.log('No user ID available, skipping fetch');
+        setDogs([]);
         setLoading(false);
-      }, 1000);
+        return;
+      }
+      
+      // Fetch dogs filtered by owner ID on the server
+      const response = await apiService.getDogs({ 
+        ownerId: user.userId,
+        limit: 100,
+        page: 1 
+      });
+
+      console.log('Dogs API response:', {
+        success: response.success,
+        count: response.data?.dogs?.length || 0,
+        error: response.error
+      });
+
+      if (response.success && response.data) {
+        console.log('User dogs fetched:', {
+          count: response.data.dogs.length,
+          userId: user?.userId
+        });
+        
+        setDogs(response.data.dogs);
+      } else {
+        console.error('Failed to fetch dogs:', response.error);
+        setError(response.error || 'Failed to fetch dogs');
+        Alert.alert(
+          'Error',
+          response.error || 'Failed to fetch dogs. Please try again.'
+        );
+      }
     } catch (error) {
       console.error('Error fetching dogs:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      setError(errorMessage);
+      Alert.alert('Error', 'Failed to fetch dogs. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -185,13 +189,21 @@ const DogsScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Loading dogs...</Text>
+        <Text style={styles.loadingText}>Loading your dogs...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <TouchableOpacity onPress={fetchDogs} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <FlatList
         data={dogs}
         renderItem={renderDogItem}
@@ -216,6 +228,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.background,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.md,
+  },
+  errorBanner: {
+    backgroundColor: '#fee',
+    padding: theme.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#fcc',
+  },
+  errorText: {
+    flex: 1,
+    color: '#c00',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  retryButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+    marginLeft: theme.spacing.md,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   listContainer: {
     padding: theme.spacing.md,

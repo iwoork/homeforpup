@@ -180,12 +180,12 @@ class ApiService {
   }
 
   // Dashboard API
-  async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+  async getDashboardStats(userId?: string): Promise<ApiResponse<DashboardStats>> {
     // For now, we'll fetch kennels and dogs to calculate stats
     // In the future, this could be a dedicated endpoint
     const [kennelsResponse, dogsResponse] = await Promise.all([
       this.getKennels({ page: 1, limit: 100 }),
-      this.getDogs({ page: 1, limit: 100 }),
+      this.getDogs({ page: 1, limit: 100, ownerId: userId }),
     ]);
 
     if (!kennelsResponse.success || !dogsResponse.success) {
@@ -195,9 +195,15 @@ class ApiService {
       };
     }
 
+    // Filter kennels by user if userId is provided
+    let userKennels = kennelsResponse.data?.kennels || [];
+    if (userId) {
+      userKennels = userKennels.filter((kennel: Kennel) => kennel.ownerId === userId);
+    }
+
     const stats: DashboardStats = {
-      totalKennels: kennelsResponse.data?.total || 0,
-      totalDogs: dogsResponse.data?.total || 0,
+      totalKennels: userKennels.length,
+      totalDogs: dogsResponse.data?.dogs?.length || 0,
       activeMessages: 0, // TODO: Implement messages API
       newInquiries: 0, // TODO: Implement inquiries API
     };
@@ -258,6 +264,8 @@ class ApiService {
     limit?: number;
     search?: string;
     kennelId?: string;
+    ownerId?: string;
+    breederId?: string;
     type?: string;
     gender?: string;
     breed?: string;
@@ -269,6 +277,8 @@ class ApiService {
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.search) queryParams.append('search', params.search);
     if (params.kennelId) queryParams.append('kennelId', params.kennelId);
+    if (params.ownerId) queryParams.append('ownerId', params.ownerId);
+    if (params.breederId) queryParams.append('breederId', params.breederId);
     if (params.type) queryParams.append('type', params.type);
     if (params.gender) queryParams.append('gender', params.gender);
     if (params.breed) queryParams.append('breed', params.breed);

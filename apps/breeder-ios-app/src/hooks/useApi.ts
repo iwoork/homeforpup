@@ -90,8 +90,8 @@ export function useApi<T>(
 }
 
 // Specific hooks for common API calls
-export function useDashboardStats() {
-  return useApi(() => apiService.getDashboardStats());
+export function useDashboardStats(userId?: string) {
+  return useApi(() => apiService.getDashboardStats(userId), [userId]);
 }
 
 export function useKennels(params: Parameters<typeof apiService.getKennels>[0] = {}) {

@@ -11,6 +11,8 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   const queryParams = event.queryStringParameters || {};
   const {
     kennelId,
+    ownerId,
+    breederId,
     type,
     gender,
     breed,
@@ -32,7 +34,19 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   try {
     let items = [];
     
-    if (kennelId) {
+    if (breederId) {
+      // Query by breeder ID using GSI (if data has breederId field)
+      const command = new QueryCommand({
+        TableName: DOGS_TABLE,
+        IndexName: 'BreederIndex',
+        KeyConditionExpression: 'breederId = :breederId',
+        ExpressionAttributeValues: {
+          ':breederId': breederId,
+        },
+      });
+      const result = await dynamodb.send(command);
+      items = result.Items || [];
+    } else if (kennelId) {
       // Query by kennel ID
       const command = new QueryCommand({
         TableName: DOGS_TABLE,
@@ -45,10 +59,9 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
       const result = await dynamodb.send(command);
       items = result.Items || [];
     } else {
-      // Full scan (in production, you'd want better filtering)
+      // Full scan to get all dogs
       const command = new ScanCommand({
         TableName: DOGS_TABLE,
-        Limit: parseInt(limit),
       });
       const result = await dynamodb.send(command);
       items = result.Items || [];
@@ -57,6 +70,15 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     // Apply filters
     let filteredItems = items;
 
+    // Filter by ownerId if provided (primary filter for breeder apps)
+    if (ownerId) {
+      filteredItems = filteredItems.filter((item: any) => {
+        // Check both ownerId and kennelOwners array
+        if (item.ownerId === ownerId) return true;
+        if (item.kennelOwners && Array.isArray(item.kennelOwners) && item.kennelOwners.includes(ownerId)) return true;
+        return false;
+      });
+    }
     if (type) {
       filteredItems = filteredItems.filter((item: any) => item.dogType === type);
     }
