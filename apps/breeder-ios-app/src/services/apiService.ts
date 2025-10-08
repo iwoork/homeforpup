@@ -1,4 +1,4 @@
-import { User } from '../types';
+import { User, Litter } from '../types';
 import config from '../config/config';
 
 // Types for API responses
@@ -108,6 +108,18 @@ export interface BreedsResponse {
   };
 }
 
+export interface LittersResponse {
+  litters: Litter[];
+  total: number;
+  count: number;
+  page: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  totalPages: number;
+  hasMore: boolean;
+}
+
 class ApiService {
   private baseUrl: string;
   private authToken: string | null = null;
@@ -123,11 +135,11 @@ class ApiService {
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {},
-    retryOnAuth = true
+    retryOnAuth = true,
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
-      
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...(options.headers as Record<string, string>),
@@ -138,13 +150,15 @@ class ApiService {
         const tokenStr = String(this.authToken).trim();
         if (tokenStr && tokenStr !== '[object Object]') {
           headers.Authorization = `Bearer ${tokenStr}`;
-          console.log('API request with auth:', { 
-            endpoint, 
-            hasAuth: true, 
-            tokenLength: tokenStr.length 
+          console.log('API request with auth:', {
+            endpoint,
+            hasAuth: true,
+            tokenLength: tokenStr.length,
           });
         } else {
-          console.warn('Invalid auth token detected:', { token: this.authToken });
+          console.warn('Invalid auth token detected:', {
+            token: this.authToken,
+          });
         }
       }
 
@@ -156,10 +170,10 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('API request failed:', { 
-          url, 
-          status: response.status, 
-          error: data.message || data.error 
+        console.error('API request failed:', {
+          url,
+          status: response.status,
+          error: data.message || data.error,
         });
 
         // Handle token expiration - refresh and retry once
@@ -201,7 +215,9 @@ class ApiService {
   }
 
   // Dashboard API
-  async getDashboardStats(userId?: string): Promise<ApiResponse<DashboardStats>> {
+  async getDashboardStats(
+    userId?: string,
+  ): Promise<ApiResponse<DashboardStats>> {
     // For now, we'll fetch kennels and dogs to calculate stats
     // In the future, this could be a dedicated endpoint
     const [kennelsResponse, dogsResponse] = await Promise.all([
@@ -219,7 +235,9 @@ class ApiService {
     // Filter kennels by user if userId is provided
     let userKennels = kennelsResponse.data?.kennels || [];
     if (userId) {
-      userKennels = userKennels.filter((kennel: Kennel) => kennel.ownerId === userId);
+      userKennels = userKennels.filter(
+        (kennel: Kennel) => kennel.ownerId === userId,
+      );
     }
 
     const stats: DashboardStats = {
@@ -237,11 +255,13 @@ class ApiService {
 
   // Kennels API
   // Ready to deploy! See apps/homeforpup-api/KENNELS_DEPLOYMENT_GUIDE.md
-  async getKennels(params: {
-    page?: number;
-    limit?: number;
-    search?: string;
-  } = {}): Promise<ApiResponse<KennelsResponse>> {
+  async getKennels(
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+    } = {},
+  ): Promise<ApiResponse<KennelsResponse>> {
     const queryParams = new URLSearchParams();
     if (params.page) {
       // Convert page to offset (page 1 = offset 0, page 2 = offset limit, etc.)
@@ -259,14 +279,19 @@ class ApiService {
     return this.makeRequest<Kennel>(`/kennels/${id}`);
   }
 
-  async createKennel(kennelData: Partial<Kennel>): Promise<ApiResponse<Kennel>> {
+  async createKennel(
+    kennelData: Partial<Kennel>,
+  ): Promise<ApiResponse<Kennel>> {
     return this.makeRequest<Kennel>('/kennels', {
       method: 'POST',
       body: JSON.stringify(kennelData),
     });
   }
 
-  async updateKennel(id: string, kennelData: Partial<Kennel>): Promise<ApiResponse<Kennel>> {
+  async updateKennel(
+    id: string,
+    kennelData: Partial<Kennel>,
+  ): Promise<ApiResponse<Kennel>> {
     return this.makeRequest<Kennel>(`/kennels/${id}`, {
       method: 'PUT',
       body: JSON.stringify(kennelData),
@@ -280,19 +305,21 @@ class ApiService {
   }
 
   // Dogs API
-  async getDogs(params: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    kennelId?: string;
-    ownerId?: string;
-    breederId?: string;
-    type?: string;
-    gender?: string;
-    breed?: string;
-    status?: string;
-    breedingStatus?: string;
-  } = {}): Promise<ApiResponse<DogsResponse>> {
+  async getDogs(
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      kennelId?: string;
+      ownerId?: string;
+      breederId?: string;
+      type?: string;
+      gender?: string;
+      breed?: string;
+      status?: string;
+      breedingStatus?: string;
+    } = {},
+  ): Promise<ApiResponse<DogsResponse>> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
@@ -304,7 +331,8 @@ class ApiService {
     if (params.gender) queryParams.append('gender', params.gender);
     if (params.breed) queryParams.append('breed', params.breed);
     if (params.status) queryParams.append('status', params.status);
-    if (params.breedingStatus) queryParams.append('breedingStatus', params.breedingStatus);
+    if (params.breedingStatus)
+      queryParams.append('breedingStatus', params.breedingStatus);
 
     const endpoint = `/dogs?${queryParams.toString()}`;
     return this.makeRequest<DogsResponse>(endpoint);
@@ -321,7 +349,10 @@ class ApiService {
     });
   }
 
-  async updateDog(id: string, dogData: Partial<Dog>): Promise<ApiResponse<Dog>> {
+  async updateDog(
+    id: string,
+    dogData: Partial<Dog>,
+  ): Promise<ApiResponse<Dog>> {
     return this.makeRequest<Dog>(`/dogs/${id}`, {
       method: 'PUT',
       body: JSON.stringify(dogData),
@@ -335,15 +366,17 @@ class ApiService {
   }
 
   // Breeds API
-  async getBreeds(params: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    category?: string;
-    size?: string;
-    breedType?: string;
-    sortBy?: string;
-  } = {}): Promise<ApiResponse<BreedsResponse>> {
+  async getBreeds(
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      category?: string;
+      size?: string;
+      breedType?: string;
+      sortBy?: string;
+    } = {},
+  ): Promise<ApiResponse<BreedsResponse>> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
@@ -366,7 +399,10 @@ class ApiService {
     return this.makeRequest<User>(`/users/${id}`);
   }
 
-  async updateUser(id: string, userData: Partial<User>): Promise<ApiResponse<User>> {
+  async updateUser(
+    id: string,
+    userData: Partial<User>,
+  ): Promise<ApiResponse<User>> {
     return this.makeRequest<User>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
@@ -375,10 +411,12 @@ class ApiService {
 
   // Activities API (for recent activity)
   // Note: This endpoint may not be deployed yet. See API_ENDPOINTS.md
-  async getActivities(params: {
-    page?: number;
-    limit?: number;
-  } = {}): Promise<ApiResponse<any>> {
+  async getActivities(
+    params: {
+      page?: number;
+      limit?: number;
+    } = {},
+  ): Promise<ApiResponse<any>> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
@@ -387,19 +425,79 @@ class ApiService {
     return this.makeRequest<any>(endpoint);
   }
 
+  // Litters API
+  async getLitters(
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      breederId?: string;
+      kennelId?: string;
+      breed?: string;
+      status?: string;
+    } = {},
+  ): Promise<ApiResponse<LittersResponse>> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.search) queryParams.append('search', params.search);
+    if (params.breederId) queryParams.append('breederId', params.breederId);
+    if (params.kennelId) queryParams.append('kennelId', params.kennelId);
+    if (params.breed) queryParams.append('breed', params.breed);
+    if (params.status) queryParams.append('status', params.status);
+
+    const endpoint = `/litters?${queryParams.toString()}`;
+    return this.makeRequest<LittersResponse>(endpoint);
+  }
+
+  async getLitterById(id: string): Promise<ApiResponse<Litter>> {
+    return this.makeRequest<Litter>(`/litters/${id}`);
+  }
+
+  async createLitter(
+    litterData: Partial<Litter>,
+  ): Promise<ApiResponse<Litter>> {
+    return this.makeRequest<Litter>('/litters', {
+      method: 'POST',
+      body: JSON.stringify(litterData),
+    });
+  }
+
+  async updateLitter(
+    id: string,
+    litterData: Partial<Litter>,
+  ): Promise<ApiResponse<Litter>> {
+    return this.makeRequest<Litter>(`/litters/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(litterData),
+    });
+  }
+
+  async deleteLitter(id: string): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(`/litters/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Photos API
   async getUploadUrl(params: {
     fileName: string;
     contentType: string;
     uploadPath?: string;
-  }): Promise<ApiResponse<{uploadUrl: string; photoUrl: string; key: string}>> {
+  }): Promise<
+    ApiResponse<{ uploadUrl: string; photoUrl: string; key: string }>
+  > {
     return this.makeRequest('/photos/upload-url', {
       method: 'POST',
       body: JSON.stringify(params),
     });
   }
 
-  async uploadToS3(uploadUrl: string, file: Blob | ArrayBuffer, contentType: string): Promise<boolean> {
+  async uploadToS3(
+    uploadUrl: string,
+    file: Blob | ArrayBuffer,
+    contentType: string,
+  ): Promise<boolean> {
     try {
       console.log('uploadToS3 - Starting upload', {
         urlLength: uploadUrl.length,

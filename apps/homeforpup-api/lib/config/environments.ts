@@ -16,6 +16,7 @@ export interface EnvironmentConfig {
     users: string;
     dogs: string;
     kennels: string;
+    litters: string;
     messages: string;
     favorites: string;
     activities: string;
@@ -89,6 +90,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
           users: 'homeforpup-users-prod',
           dogs: 'homeforpup-dogs-prod',
           kennels: 'homeforpup-kennels-prod',
+          litters: 'homeforpup-litters-prod',
           messages: 'homeforpup-messages-prod',
           favorites: 'homeforpup-favorites-prod',
           activities: 'homeforpup-activities-prod',
@@ -121,6 +123,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
           users: 'homeforpup-users-staging',
           dogs: 'homeforpup-dogs-staging',
           kennels: 'homeforpup-kennels-staging',
+          litters: 'homeforpup-litters-staging',
           messages: 'homeforpup-messages-staging',
           favorites: 'homeforpup-favorites-staging',
           activities: 'homeforpup-activities-staging',
@@ -151,6 +154,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
           users: 'homeforpup-users',
           dogs: 'homeforpup-dogs',
           kennels: 'homeforpup-kennels',
+          litters: 'homeforpup-litters',
           messages: 'homeforpup-messages',
           favorites: 'homeforpup-favorites',
           activities: 'homeforpup-activities',

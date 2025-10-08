@@ -17,10 +17,10 @@ interface UseApiOptions {
 export function useApi<T>(
   apiCall: () => Promise<ApiResponse<T>>,
   dependencies: any[] = [],
-  options: UseApiOptions = {}
+  options: UseApiOptions = {},
 ) {
   const { immediate = true, onSuccess, onError } = options;
-  
+
   const [state, setState] = useState<UseApiState<T>>({
     data: null,
     loading: false,
@@ -30,23 +30,24 @@ export function useApi<T>(
 
   const execute = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
-    
+
     try {
       const response = await apiCall();
-      
+
       if (response.success && response.data) {
         setState(prev => ({ ...prev, data: response.data!, loading: false }));
         onSuccess?.(response.data);
       } else {
-        setState(prev => ({ 
-          ...prev, 
-          error: response.error || 'API call failed', 
-          loading: false 
+        setState(prev => ({
+          ...prev,
+          error: response.error || 'API call failed',
+          loading: false,
         }));
         onError?.(response.error || 'API call failed');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       setState(prev => ({ ...prev, error: errorMessage, loading: false }));
       onError?.(errorMessage);
     }
@@ -54,23 +55,28 @@ export function useApi<T>(
 
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, refreshing: true, error: null }));
-    
+
     try {
       const response = await apiCall();
-      
+
       if (response.success && response.data) {
-        setState(prev => ({ ...prev, data: response.data!, refreshing: false }));
+        setState(prev => ({
+          ...prev,
+          data: response.data!,
+          refreshing: false,
+        }));
         onSuccess?.(response.data);
       } else {
-        setState(prev => ({ 
-          ...prev, 
-          error: response.error || 'API call failed', 
-          refreshing: false 
+        setState(prev => ({
+          ...prev,
+          error: response.error || 'API call failed',
+          refreshing: false,
         }));
         onError?.(response.error || 'API call failed');
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       setState(prev => ({ ...prev, error: errorMessage, refreshing: false }));
       onError?.(errorMessage);
     }
@@ -94,7 +100,9 @@ export function useDashboardStats(userId?: string) {
   return useApi(() => apiService.getDashboardStats(userId), [userId]);
 }
 
-export function useKennels(params: Parameters<typeof apiService.getKennels>[0] = {}) {
+export function useKennels(
+  params: Parameters<typeof apiService.getKennels>[0] = {},
+) {
   return useApi(() => apiService.getKennels(params), [JSON.stringify(params)]);
 }
 
@@ -102,7 +110,9 @@ export function useDogs(params: Parameters<typeof apiService.getDogs>[0] = {}) {
   return useApi(() => apiService.getDogs(params), [JSON.stringify(params)]);
 }
 
-export function useBreeds(params: Parameters<typeof apiService.getBreeds>[0] = {}) {
+export function useBreeds(
+  params: Parameters<typeof apiService.getBreeds>[0] = {},
+) {
   return useApi(() => apiService.getBreeds(params), [JSON.stringify(params)]);
 }
 
@@ -118,10 +128,26 @@ export function useBreed(id: string) {
   return useApi(() => apiService.getBreedById(id), [id]);
 }
 
-export function useActivities(params: Parameters<typeof apiService.getActivities>[0] = {}) {
-  return useApi(() => apiService.getActivities(params), [JSON.stringify(params)]);
+export function useActivities(
+  params: Parameters<typeof apiService.getActivities>[0] = {},
+) {
+  return useApi(
+    () => apiService.getActivities(params),
+    [JSON.stringify(params)],
+  );
 }
 
 export function useUser(id: string) {
   return useApi(() => apiService.getUserById(id), [id]);
+}
+
+// Litter-specific hooks
+export function useLitters(
+  params: Parameters<typeof apiService.getLitters>[0] = {},
+) {
+  return useApi(() => apiService.getLitters(params), [JSON.stringify(params)]);
+}
+
+export function useLitter(id: string) {
+  return useApi(() => apiService.getLitterById(id), [id]);
 }

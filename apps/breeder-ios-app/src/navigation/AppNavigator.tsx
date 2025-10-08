@@ -15,18 +15,22 @@ import SignupScreen from '../screens/auth/SignupScreen';
 
 // Main Screens
 import DashboardScreen from '../screens/main/DashboardScreen';
-import KennelsScreen from '../screens/main/KennelsScreen';
+import LittersScreen from '../screens/main/LittersScreen';
 import DogsScreen from '../screens/main/DogsScreen';
 import MessagesScreen from '../screens/main/MessagesScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 
 // Detail Screens
 import KennelDetailScreen from '../screens/details/KennelDetailScreen';
+import LitterDetailScreen from '../screens/details/LitterDetailScreen';
 import DogDetailScreen from '../screens/details/DogDetailScreen';
 import MessageDetailScreen from '../screens/details/MessageDetailScreen';
 
 // Form Screens
+import ManageKennelsScreen from '../screens/forms/ManageKennelsScreen';
 import CreateKennelScreen from '../screens/forms/CreateKennelScreen';
+import CreateLitterScreen from '../screens/forms/CreateLitterScreen';
+import EditLitterScreen from '../screens/forms/EditLitterScreen';
 import CreateDogScreen from '../screens/forms/CreateDogScreen';
 import EditDogScreen from '../screens/forms/EditDogScreen';
 import EditProfileScreen from '../screens/forms/EditProfileScreen';
@@ -58,8 +62,8 @@ const MainTabs = () => (
           case 'Dashboard':
             iconName = focused ? 'stats-chart' : 'stats-chart-outline';
             break;
-          case 'Kennels':
-            iconName = focused ? 'home' : 'home-outline';
+          case 'Litters':
+            iconName = focused ? 'albums' : 'albums-outline';
             break;
           case 'Dogs':
             iconName = focused ? 'paw' : 'paw-outline';
@@ -111,44 +115,44 @@ const MainTabs = () => (
       headerTitle: 'Home for Pup',
     })}
   >
-    <Tab.Screen 
-      name="Dashboard" 
+    <Tab.Screen
+      name="Dashboard"
       component={DashboardScreen}
-      options={{ 
+      options={{
         title: 'Dashboard',
-        tabBarLabel: 'Home'
+        tabBarLabel: 'Home',
       }}
     />
-    <Tab.Screen 
-      name="Kennels" 
-      component={KennelsScreen}
-      options={{ 
-        title: 'Kennels',
-        tabBarLabel: 'Kennels'
+    <Tab.Screen
+      name="Litters"
+      component={LittersScreen}
+      options={{
+        title: 'Litters',
+        tabBarLabel: 'Litters',
       }}
     />
-    <Tab.Screen 
-      name="Dogs" 
+    <Tab.Screen
+      name="Dogs"
       component={DogsScreen}
-      options={{ 
+      options={{
         title: 'Dogs',
-        tabBarLabel: 'Dogs'
+        tabBarLabel: 'Dogs',
       }}
     />
-    <Tab.Screen 
-      name="Messages" 
+    <Tab.Screen
+      name="Messages"
       component={MessagesScreen}
-      options={{ 
+      options={{
         title: 'Messages',
-        tabBarLabel: 'Messages'
+        tabBarLabel: 'Messages',
       }}
     />
-    <Tab.Screen 
-      name="Profile" 
+    <Tab.Screen
+      name="Profile"
       component={ProfileScreen}
-      options={{ 
+      options={{
         title: 'Profile',
-        tabBarLabel: 'Profile'
+        tabBarLabel: 'Profile',
       }}
     />
   </Tab.Navigator>
@@ -174,51 +178,73 @@ const MainStack = () => (
       cardStyle: { backgroundColor: theme.colors.background },
     }}
   >
-    <Stack.Screen 
-      name="MainTabs" 
+    <Stack.Screen
+      name="MainTabs"
       component={MainTabs}
       options={{ headerShown: false }}
     />
-    
+
     {/* Kennel Screens */}
-    <Stack.Screen 
-      name="KennelDetail" 
+    <Stack.Screen
+      name="ManageKennels"
+      component={ManageKennelsScreen}
+      options={{ title: 'Manage Kennels' }}
+    />
+    <Stack.Screen
+      name="KennelDetail"
       component={KennelDetailScreen}
       options={{ title: 'Kennel Details' }}
     />
-    <Stack.Screen 
-      name="CreateKennel" 
+    <Stack.Screen
+      name="CreateKennel"
       component={CreateKennelScreen}
       options={{ title: 'Create Kennel' }}
     />
-    
+
+    {/* Litter Screens */}
+    <Stack.Screen
+      name="LitterDetail"
+      component={LitterDetailScreen}
+      options={{ title: 'Litter Details' }}
+    />
+    <Stack.Screen
+      name="CreateLitter"
+      component={CreateLitterScreen}
+      options={{ title: 'Create Litter' }}
+    />
+    <Stack.Screen
+      name="EditLitter"
+      component={EditLitterScreen}
+      options={{ title: 'Edit Litter' }}
+    />
+
     {/* Dog Screens */}
-    <Stack.Screen 
-      name="DogDetail" 
+    <Stack.Screen
+      name="DogDetail"
       component={DogDetailScreen}
       options={{ title: 'Dog Details' }}
     />
-    <Stack.Screen 
-      name="CreateDog" 
+    <Stack.Screen
+      name="CreateDog"
       component={CreateDogScreen}
       options={{ title: 'Add Dog' }}
     />
-    <Stack.Screen 
-      name="EditDog" 
+    <Stack.Screen
+      name="EditDog"
       component={EditDogScreen}
       options={{ title: 'Edit Dog' }}
     />
-    
+
     {/* Message Screens */}
-    <Stack.Screen 
-      name="MessageDetail" 
+    <Stack.Screen
+      name="MessageDetail"
       component={MessageDetailScreen}
       options={{ title: 'Message' }}
     />
-    
+
     {/* Profile Screens */}
-    <Stack.Screen 
-      name="EditProfile" 
+    <Stack.Screen
+      name="EditProfile"
       component={EditProfileScreen}
       options={{ title: 'Edit Profile' }}
     />

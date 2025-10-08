@@ -79,6 +79,7 @@ export class ApiStack extends cdk.Stack {
     this.createDogsApi();
     this.createUsersApi();
     this.createKennelsApi();
+    this.createLittersApi();
     this.createMessagesApi();
     this.createFavoritesApi();
     this.createActivitiesApi();
@@ -329,6 +330,97 @@ export class ApiStack extends cdk.Stack {
     deleteKennelFunction.grantDynamoDBAccess([config.tables.kennels]);
 
     kennelIdResource.addMethod('DELETE', deleteKennelFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+  }
+
+  private createLittersApi() {
+    const { config } = this;
+    const littersResource = this.api.root.addResource('litters');
+    const litterIdResource = littersResource.addResource('{id}');
+
+    // GET /litters - List litters
+    const listLittersFunction = new LambdaApi(this, 'ListLittersFunction', {
+      functionName: 'list-litters',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/litters/list'),
+      config,
+      environment: {
+        LITTERS_TABLE: config.tables.litters,
+      },
+    });
+    listLittersFunction.grantDynamoDBAccess([config.tables.litters]);
+
+    littersResource.addMethod('GET', listLittersFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // GET /litters/{id} - Get litter by ID
+    const getLitterFunction = new LambdaApi(this, 'GetLitterFunction', {
+      functionName: 'get-litter',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/litters/get'),
+      config,
+      environment: {
+        LITTERS_TABLE: config.tables.litters,
+      },
+    });
+    getLitterFunction.grantDynamoDBAccess([config.tables.litters]);
+
+    litterIdResource.addMethod('GET', getLitterFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // POST /litters - Create litter
+    const createLitterFunction = new LambdaApi(this, 'CreateLitterFunction', {
+      functionName: 'create-litter',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/litters/create'),
+      config,
+      environment: {
+        LITTERS_TABLE: config.tables.litters,
+      },
+    });
+    createLitterFunction.grantDynamoDBAccess([config.tables.litters]);
+
+    littersResource.addMethod('POST', createLitterFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // PUT /litters/{id} - Update litter
+    const updateLitterFunction = new LambdaApi(this, 'UpdateLitterFunction', {
+      functionName: 'update-litter',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/litters/update'),
+      config,
+      environment: {
+        LITTERS_TABLE: config.tables.litters,
+      },
+    });
+    updateLitterFunction.grantDynamoDBAccess([config.tables.litters]);
+
+    litterIdResource.addMethod('PUT', updateLitterFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // DELETE /litters/{id} - Delete litter
+    const deleteLitterFunction = new LambdaApi(this, 'DeleteLitterFunction', {
+      functionName: 'delete-litter',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/litters/delete'),
+      config,
+      environment: {
+        LITTERS_TABLE: config.tables.litters,
+      },
+    });
+    deleteLitterFunction.grantDynamoDBAccess([config.tables.litters]);
+
+    litterIdResource.addMethod('DELETE', deleteLitterFunction.createIntegration(), {
       authorizer: this.authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
     });
