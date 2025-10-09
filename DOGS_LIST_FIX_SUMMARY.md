@@ -1,7 +1,7 @@
 # Dogs List Fix - Complete Summary
 
 ## Problem
-The breeder-ios-app was not showing your list of dogs. Instead, it was displaying mock/dummy data.
+The mobile-app was not showing your list of dogs. Instead, it was displaying mock/dummy data.
 
 ## Root Cause
 The `DogsScreen.tsx` component had a TODO comment on line 25 and was using hardcoded mock data with a `setTimeout()` instead of calling the actual API to fetch real dogs.
@@ -17,10 +17,10 @@ The `DogsScreen.tsx` component had a TODO comment on line 25 and was using hardc
 
 ### ✅ Frontend (Mobile App)
 **Files Updated:**
-1. `/apps/breeder-ios-app/src/screens/main/DogsScreen.tsx` - Main dogs list screen
-2. `/apps/breeder-ios-app/src/services/apiService.ts` - API service
-3. `/apps/breeder-ios-app/src/hooks/useApi.ts` - API hooks
-4. `/apps/breeder-ios-app/src/screens/main/DashboardScreen.tsx` - Dashboard stats
+1. `/apps/mobile-app/src/screens/main/DogsScreen.tsx` - Main dogs list screen
+2. `/apps/mobile-app/src/services/apiService.ts` - API service
+3. `/apps/mobile-app/src/hooks/useApi.ts` - API hooks
+4. `/apps/mobile-app/src/screens/main/DashboardScreen.tsx` - Dashboard stats
 
 **Changes:**
 - ✅ Removed mock data
@@ -37,7 +37,7 @@ The `DogsScreen.tsx` component had a TODO comment on line 25 and was using hardc
 ### 1. Start the Mobile App
 
 ```bash
-cd /Users/Efren/repos/homeforpup/apps/breeder-ios-app
+cd /Users/Efren/repos/homeforpup/apps/mobile-app
 npm start
 ```
 
@@ -169,10 +169,10 @@ setDogs(response.data.dogs);
 - ✅ `apps/homeforpup-api/src/functions/dogs/list/index.ts` (deployed)
 
 ### Frontend:
-- ✅ `apps/breeder-ios-app/src/screens/main/DogsScreen.tsx`
-- ✅ `apps/breeder-ios-app/src/services/apiService.ts`
-- ✅ `apps/breeder-ios-app/src/hooks/useApi.ts`
-- ✅ `apps/breeder-ios-app/src/screens/main/DashboardScreen.tsx`
+- ✅ `apps/mobile-app/src/screens/main/DogsScreen.tsx`
+- ✅ `apps/mobile-app/src/services/apiService.ts`
+- ✅ `apps/mobile-app/src/hooks/useApi.ts`
+- ✅ `apps/mobile-app/src/screens/main/DashboardScreen.tsx`
 
 ## Next Steps
 

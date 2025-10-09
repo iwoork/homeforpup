@@ -217,7 +217,7 @@ After deployment:
 ## 📚 More Information
 
 - Full guide: `/apps/homeforpup-api/KENNELS_DEPLOYMENT_GUIDE.md`
-- Mobile app fix: `/apps/breeder-ios-app/KENNELS_ENDPOINT_ISSUE.md`
+- Mobile app fix: `/apps/mobile-app/KENNELS_ENDPOINT_ISSUE.md`
 - API docs: `/apps/homeforpup-api/API_ENDPOINTS.md`
 
 ---

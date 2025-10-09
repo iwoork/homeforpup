@@ -269,7 +269,7 @@ npm install --save-dev @types/uuid
 
 **Solution:** Ensure you're using an ID token, not an access token
 
-See `/apps/breeder-ios-app/AUTH_TOKEN_FIX.md` for details.
+See `/apps/mobile-app/AUTH_TOKEN_FIX.md` for details.
 
 ### Issue: Custom domain not working
 

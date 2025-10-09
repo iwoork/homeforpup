@@ -13,7 +13,7 @@ Modified `/package.json` to exclude the iOS app from npm workspaces:
   "apps/adopter-app",     // ✅ In workspace
   "apps/breeder-app",     // ✅ In workspace
   "packages/*"            // ✅ In workspace
-  // "apps/breeder-ios-app" is NOT in workspace - isolated
+  // "apps/mobile-app" is NOT in workspace - isolated
 ]
 ```
 
@@ -25,7 +25,7 @@ This prevents npm from hoisting the iOS app's dependencies (including Babel) to 
 - Separately installed iOS app dependencies (1,196 packages locally)
 
 ### 3. **Simplified Metro Config**
-Updated `apps/breeder-ios-app/metro.config.js` to use default configuration since all dependencies are now local.
+Updated `apps/mobile-app/metro.config.js` to use default configuration since all dependencies are now local.
 
 ## Current State
 
@@ -37,7 +37,7 @@ runtime  # Only runtime helpers (used by Ant Design UI library)
 - **NO** `@babel/preset-env` ✅
 - **NO** React Native babel packages ✅
 
-### ✅ iOS App `/apps/breeder-ios-app/node_modules/@babel/`
+### ✅ iOS App `/apps/mobile-app/node_modules/@babel/`
 ```bash
 core                           # Babel compiler
 preset-env                     # ES6+ presets
@@ -96,7 +96,7 @@ npm run dev
 ### iOS App (standalone)
 ```bash
 # Navigate to iOS app
-cd apps/breeder-ios-app
+cd apps/mobile-app
 
 # Install dependencies (if needed)
 npm install
@@ -115,7 +115,7 @@ npm run android
 
 ### Modified Files
 1. `/package.json` - Updated workspaces array
-2. `/apps/breeder-ios-app/metro.config.js` - Simplified to use defaults
+2. `/apps/mobile-app/metro.config.js` - Simplified to use defaults
 3. All `node_modules` and `package-lock.json` - Regenerated
 
 ## Verification Commands
@@ -126,7 +126,7 @@ ls node_modules/@babel/ | grep -E "(core|preset-env)"
 # Should return nothing ✅
 
 # Check babel IS in iOS app
-ls apps/breeder-ios-app/node_modules/@babel/ | grep core
+ls apps/mobile-app/node_modules/@babel/ | grep core
 # Should return: core ✅
 
 # See what uses @babel/runtime in root
@@ -138,7 +138,7 @@ npm ls @babel/runtime
 
 To start the iOS app:
 ```bash
-cd apps/breeder-ios-app
+cd apps/mobile-app
 npm start
 # Then in another terminal:
 npm run ios
