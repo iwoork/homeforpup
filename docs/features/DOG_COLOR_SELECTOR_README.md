@@ -2,7 +2,7 @@
 
 ## Overview
 
-A generic, reusable color selection component has been created for both the **adopter-app** and **breeder-app**. This component provides a standardized way to select dog colors through an API-driven dropdown with visual swatches, search functionality, and category filtering.
+A generic, reusable color selection component has been created for both the **dog-parent-app** and **breeder-app**. This component provides a standardized way to select dog colors through an API-driven dropdown with visual swatches, search functionality, and category filtering.
 
 ## What Was Created
 
@@ -29,7 +29,7 @@ A generic, reusable color selection component has been created for both the **ad
   - Refetch capability
 
 ### 4. API Endpoints
-- **Adopter App**: `apps/adopter-app/src/app/api/dog-colors/route.ts`
+- **Dog Parent App**: `apps/dog-parent-app/src/app/api/dog-colors/route.ts`
 - **Breeder App**: `apps/breeder-app/src/app/api/dog-colors/route.ts`
   - GET endpoint with query parameter support
   - Filtering by category
@@ -101,7 +101,7 @@ function DogForm() {
 ✅ **API-Driven**: Centralized data through REST API  
 ✅ **Cached**: Optimized with HTTP caching for performance  
 ✅ **Type-Safe**: Full TypeScript support  
-✅ **Reusable**: Works in both adopter-app and breeder-app  
+✅ **Reusable**: Works in both dog-parent-app and breeder-app  
 ✅ **Accessible**: Built on Ant Design's Select component  
 
 ## Available Colors
@@ -166,7 +166,7 @@ curl http://localhost:3001/api/dog-colors?limit=10
 
 ### Test API Endpoints
 ```bash
-# Test adopter-app (port 3001)
+# Test dog-parent-app (port 3001)
 node scripts/test-color-api.js 3001
 
 # Test breeder-app (port 3002)
@@ -183,7 +183,7 @@ The test script will run 7 automated tests:
 7. Verify data structure
 
 ### Manual Testing
-1. Start your app (adopter or breeder)
+1. Start your app (dog-parent or breeder)
 2. Navigate to a form with dog color input
 3. Click on the color field
 4. Verify:
@@ -223,9 +223,9 @@ const { colors, loading } = useDogColors();
 
 ### Files to Update
 
-**Adopter App:**
-- `apps/adopter-app/src/components/dogs/DogForm.tsx`
-- `apps/adopter-app/src/components/forms/AddDogForm.tsx`
+**Dog Parent App:**
+- `apps/dog-parent-app/src/components/dogs/DogForm.tsx`
+- `apps/dog-parent-app/src/components/forms/AddDogForm.tsx`
 
 **Breeder App:**
 - Similar files in breeder app with color inputs
@@ -350,7 +350,7 @@ homeforpup/
 │           └── api/
 │               └── useDogColors.ts ................ React hook
 ├── apps/
-│   ├── adopter-app/
+│   ├── dog-parent-app/
 │   │   └── src/app/api/
 │   │       └── dog-colors/
 │   │           └── route.ts ....................... API endpoint

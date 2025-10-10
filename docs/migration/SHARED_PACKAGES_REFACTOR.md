@@ -1,6 +1,6 @@
 # Shared Packages Refactor
 
-This document outlines the refactoring of photo upload and dog management functionality into shared packages for better maintainability and consistency across both breeder-app and adopter-app.
+This document outlines the refactoring of photo upload and dog management functionality into shared packages for better maintainability and consistency across both breeder-app and dog-parent-app.
 
 ## 🎯 **Goals Achieved**
 

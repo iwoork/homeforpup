@@ -124,7 +124,7 @@ Save the API URL - you'll need it for testing.
 
 #### 1. Current Next.js Endpoint
 ```typescript
-// apps/adopter-app/src/app/api/dogs/route.ts
+// apps/dog-parent-app/src/app/api/dogs/route.ts
 export async function GET(request: NextRequest) {
   // ... logic
 }
@@ -167,7 +167,7 @@ curl -X POST "https://YOUR_API_URL/development/dogs" \
 
 Similar process to Dogs API:
 
-1. Copy logic from `apps/adopter-app/src/app/api/users/[id]/route.ts`
+1. Copy logic from `apps/dog-parent-app/src/app/api/users/[id]/route.ts`
 2. Adapt to Lambda handler format
 3. Update authentication to use Cognito
 4. Test endpoints
@@ -233,7 +233,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
 ### 2. Update Environment Variables
 
 ```bash
-# apps/adopter-app/.env.local
+# apps/dog-parent-app/.env.local
 NEXT_PUBLIC_API_URL=https://YOUR_API_URL/development
 
 # apps/breeder-app/.env.local

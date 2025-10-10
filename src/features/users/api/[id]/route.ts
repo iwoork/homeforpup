@@ -33,7 +33,7 @@ interface DatabaseUserItem {
   coverPhoto?: string;
   galleryPhotos?: string[];
   verified: boolean;
-  userType: 'adopter' | 'breeder' | 'both';
+  userType: 'dog-parent' | 'breeder' | 'both';
   accountStatus: 'active' | 'inactive' | 'pending'; // Required in database
   preferences: {
     notifications: {

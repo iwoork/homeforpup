@@ -37,7 +37,7 @@ dogsResource.addMethod('GET', listDogsFunction.createIntegration());
 
 The dogs listing endpoint should be **public** (browsable without authentication) because:
 
-1. ✅ Adopters need to browse dogs without logging in
+1. ✅ Dog Parents need to browse dogs without logging in
 2. ✅ SEO and discoverability
 3. ✅ Better user experience (browse first, login to contact)
 4. ✅ The Lambda already handles optional auth (shows more data if authenticated)

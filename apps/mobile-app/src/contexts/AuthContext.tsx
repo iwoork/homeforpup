@@ -12,6 +12,7 @@ interface AuthContextType {
   signup: (userData: any) => Promise<ApiResponse>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  updateUserType: (userType: 'breeder' | 'dog-parent') => Promise<boolean>;
   refreshSession: () => Promise<void>;
   confirmSignup: (email: string, code: string) => Promise<ApiResponse>;
   resetPassword: (email: string) => Promise<ApiResponse>;
@@ -117,9 +118,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const result = await authService.signup(userData);
       
-      if (result.success && result.user) {
-        setUser(result.user);
-        return { success: true, data: result.user };
+      if (result.success) {
+        if (result.user) {
+          // User is already verified and logged in
+          setUser(result.user);
+          return { success: true, data: result.user };
+        } else if (result.requiresVerification) {
+          // Signup successful, but email verification is required
+          return { 
+            success: true, 
+            message: result.message || 'Please check your email for verification code',
+            data: { requiresVerification: true }
+          };
+        } else {
+          // Success but unexpected state
+          return { success: true };
+        }
       } else {
         setError(result.error || 'Signup failed');
         return { success: false, error: result.error || 'Signup failed' };
@@ -160,6 +174,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Update user error:', error);
       setError('Failed to update user');
+    }
+  };
+
+  const updateUserType = async (userType: 'breeder' | 'dog-parent'): Promise<boolean> => {
+    try {
+      const success = await authService.updateUserType(userType);
+      if (success && user) {
+        // Update the user in state to trigger re-render
+        setUser({ ...user, userType });
+        console.log('✅ User type updated in context:', userType);
+      }
+      return success;
+    } catch (error) {
+      console.error('Update user type error:', error);
+      return false;
     }
   };
 
@@ -254,6 +283,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signup,
     logout,
     updateUser,
+    updateUserType,
     refreshSession,
     confirmSignup,
     resetPassword,

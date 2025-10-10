@@ -114,9 +114,9 @@ This document describes the new dog and kennel management system for breeders.
 - Can manage breeding programs
 
 ### Both Role (`userType: 'both'`)
-- Can switch between adopter and breeder profiles
+- Can switch between dog-parent and breeder profiles
 - When in breeder mode, has all breeder capabilities
-- When in adopter mode, sees matched puppies
+- When in dog-parent mode, sees matched puppies
 
 ## Dashboard Integration
 
@@ -134,7 +134,7 @@ The dog management system is integrated into the breeder dashboard with:
    - Manage your breeding program through the comprehensive interface
 
 2. **For Users with Both Roles**:
-   - Use the profile switcher in the header to switch between adopter and breeder views
+   - Use the profile switcher in the header to switch between dog-parent and breeder views
    - When in breeder mode, access all kennel and dog management features
 
 ## Future Enhancements

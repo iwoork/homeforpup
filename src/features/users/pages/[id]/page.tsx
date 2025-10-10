@@ -21,8 +21,8 @@ import { ComposeMessage } from '@/features/messaging';
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
 
-// Adopter interface based on your user table structure
-interface AdopterUser {
+// Dog Parent interface based on your user table structure
+interface Dog ParentUser {
   userId: string;
   name: string;
   displayName: string;
@@ -34,7 +34,7 @@ interface AdopterUser {
   bio?: string;
   profileImage?: string;
   verified: boolean;
-  userType: 'adopter' | 'both';
+  userType: 'dog-parent' | 'both';
   accountStatus: 'active' | 'inactive' | 'pending';
   preferences: {
     notifications: {
@@ -70,23 +70,23 @@ interface AdopterUser {
 
 
 // SWR fetchers
-const fetcher = async (url: string): Promise<{ user: AdopterUser }> => {
+const fetcher = async (url: string): Promise<{ user: Dog ParentUser }> => {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Failed to fetch adopter profile');
+    throw new Error('Failed to fetch dog parent profile');
   }
   return response.json();
 };
 
 
-const AdopterProfilePage: React.FC = () => {
+const Dog ParentProfilePage: React.FC = () => {
   const params = useParams();
   const adopterId = params?.id as string;
   const [activeTab, setActiveTab] = useState("about");
   const [composeVisible, setComposeVisible] = useState(false);
 
   // Fetch adopter data
-  const { data, error, isLoading } = useSWR<{ user: AdopterUser }>(
+  const { data, error, isLoading } = useSWR<{ user: Dog ParentUser }>(
     adopterId ? `/api/users/${adopterId}` : null,
     fetcher,
     {
@@ -162,13 +162,13 @@ const AdopterProfilePage: React.FC = () => {
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
         <Alert
           message="Profile Not Found"
-          description="The adopter profile you're looking for doesn't exist or couldn't be loaded."
+          description="The dog parent profile you're looking for doesn't exist or couldn't be loaded."
           type="error"
           showIcon
           style={{ marginTop: '50px' }}
           action={
             <Link href="/adopters">
-              <Button type="primary">Browse All Adopters</Button>
+              <Button type="primary">Browse All Dog Parents</Button>
             </Link>
           }
         />
@@ -196,7 +196,7 @@ const AdopterProfilePage: React.FC = () => {
       />
 
       <Row gutter={[24, 24]}>
-        {/* Left Sidebar - Adopter Info */}
+        {/* Left Sidebar - Dog Parent Info */}
         <Col xs={24} lg={8}>
           {/* Quick Info */}
           <Card title="At a Glance" style={cardStyle}>
@@ -692,4 +692,4 @@ const AdopterProfilePage: React.FC = () => {
   );
 };
 
-export default AdopterProfilePage;
+export default Dog ParentProfilePage;

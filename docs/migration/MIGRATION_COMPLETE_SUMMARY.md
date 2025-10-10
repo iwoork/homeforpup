@@ -1,6 +1,6 @@
 # DogForm Migration to Shared Component - STATUS REPORT
 
-## ✅ PHASE 1: COMPLETE (Adopter-App & Root App)
+## ✅ PHASE 1: COMPLETE (Dog Parent-App & Root App)
 
 ### What Was Done
 
@@ -18,7 +18,7 @@
 - ✅ Configurable (can show/hide sections)
 
 #### 2. Created Wrapper Components ✅
-- ✅ `apps/adopter-app/src/components/dogs/DogFormWrapper.tsx`
+- ✅ `apps/dog-parent-app/src/components/dogs/DogFormWrapper.tsx`
 - ✅ `src/components/dogs/DogFormWrapper.tsx`
 
 These wrappers:
@@ -29,14 +29,14 @@ These wrappers:
 - Refresh data after save
 
 #### 3. Updated Exports ✅
-- ✅ `apps/adopter-app/src/components/index.ts` - now exports DogFormWrapper
+- ✅ `apps/dog-parent-app/src/components/index.ts` - now exports DogFormWrapper
 - ✅ `src/components/index.ts` - now exports DogFormWrapper
 - ✅ Existing imports continue to work (backward compatible!)
 
 #### 4. Removed Duplicate Files ✅
 **Deleted**:
-- ✅ `apps/adopter-app/src/components/dogs/DogForm.tsx` (~320 lines)
-- ✅ `apps/adopter-app/src/components/forms/AddDogForm.tsx` (~400 lines)
+- ✅ `apps/dog-parent-app/src/components/dogs/DogForm.tsx` (~320 lines)
+- ✅ `apps/dog-parent-app/src/components/forms/AddDogForm.tsx` (~400 lines)
 - ✅ `src/components/dogs/DogForm.tsx` (~320 lines)
 - ✅ `src/components/forms/AddDogForm.tsx` (~400 lines)
 
@@ -93,7 +93,7 @@ After Phase 1:
 - 1 shared component
 - 2 wrapper components
 - ~1440 lines removed
-- Consistent UX in adopter-app & root app
+- Consistent UX in dog-parent-app & root app
 
 After Phase 2 (when complete):
 - ~2500+ lines removed total
@@ -105,7 +105,7 @@ After Phase 2 (when complete):
 
 | App | Status | Files Migrated | Lines Saved |
 |-----|--------|----------------|-------------|
-| **Adopter App** | ✅ Complete | 2/2 | ~720 lines |
+| **Dog Parent App** | ✅ Complete | 2/2 | ~720 lines |
 | **Root App** | ✅ Complete | 2/2 | ~720 lines |
 | **Breeder App** | 🚧 In Progress | 0/5 forms | ~1060 lines |
 | **TOTAL** | 🔄 57% | 4/9 | 1440/2500 |
@@ -133,11 +133,11 @@ Update each breeder-app form one-by-one to use shared DogForm:
 Since breeder-app forms already have ColorSelector:
 - Keep them as-is for now
 - Migrate gradually when you touch those files
-- Still saves 1440 lines and unifies adopter/root apps
+- Still saves 1440 lines and unifies dog-parent/root apps
 
 ## ✅ What's Working NOW
 
-### Adopter App
+### Dog Parent App
 - ✅ Add Dog - uses shared DogForm
 - ✅ Edit Dog - uses shared DogForm
 - ✅ ColorSelector integrated
@@ -156,7 +156,7 @@ Since breeder-app forms already have ColorSelector:
 
 ## 🧪 Testing Checklist
 
-### Adopter App
+### Dog Parent App
 - [ ] Restart dev server
 - [ ] Test Add Dog form
 - [ ] Test Edit Dog form
@@ -177,7 +177,7 @@ Since breeder-app forms already have ColorSelector:
 
 ## 📝 How to Use Migrated Components
 
-### In Adopter App
+### In Dog Parent App
 ```tsx
 // Usage remains the same!
 import { AddDogForm } from '@/components';
@@ -243,7 +243,7 @@ If you want to finish the migration:
 
 **DONE**:
 - ✅ Created shared DogForm component
-- ✅ Migrated adopter-app (2 forms)
+- ✅ Migrated dog-parent-app (2 forms)
 - ✅ Migrated root app (2 forms)
 - ✅ Removed 4 duplicate files
 - ✅ Saved 1440 lines of code
@@ -259,5 +259,5 @@ If you want to finish the migration:
 
 **All migrated apps are production-ready and using the shared component!**
 
-To see it in action, restart your dev servers and test the Add/Edit Dog forms in adopter-app and root app.
+To see it in action, restart your dev servers and test the Add/Edit Dog forms in dog-parent-app and root app.
 

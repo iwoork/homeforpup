@@ -7,7 +7,7 @@
  *   node scripts/test-color-api.js [port]
  * 
  * Examples:
- *   node scripts/test-color-api.js 3001  # Test adopter-app
+ *   node scripts/test-color-api.js 3001  # Test dog-parent-app
  *   node scripts/test-color-api.js 3002  # Test breeder-app
  */
 

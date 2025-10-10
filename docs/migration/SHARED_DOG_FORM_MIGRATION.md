@@ -60,19 +60,19 @@ interface DogFormProps {
 ### Files to Remove (After Migration)
 
 1. ❌ `src/components/dogs/DogForm.tsx` (root app)
-2. ❌ `apps/adopter-app/src/components/dogs/DogForm.tsx`
-3. ❌ `apps/adopter-app/src/components/forms/AddDogForm.tsx`
+2. ❌ `apps/dog-parent-app/src/components/dogs/DogForm.tsx`
+3. ❌ `apps/dog-parent-app/src/components/forms/AddDogForm.tsx`
 4. ❌ `src/components/forms/AddDogForm.tsx`
 5. ❌ Inline forms in `apps/breeder-app/src/app/kennels/[id]/page.tsx`
 6. ❌ Inline forms in `apps/breeder-app/src/app/dogs/page.tsx`
 
 ### Migration Steps
 
-#### 1. Adopter App - AddDogForm Modal
+#### 1. Dog Parent App - AddDogForm Modal
 
 **Before**:
 ```tsx
-// apps/adopter-app/src/components/forms/AddDogForm.tsx
+// apps/dog-parent-app/src/components/forms/AddDogForm.tsx
 import { AddDogForm } from '@/components/forms/AddDogForm';
 
 <AddDogForm
@@ -256,9 +256,9 @@ const handleSubmit = async (values: any) => {
 ### Before Migration
 ```
 Total Lines of Duplicate Code: ~3000+ lines
-- DogForm (adopter-app): ~320 lines
+- DogForm (dog-parent-app): ~320 lines
 - DogForm (root app): ~320 lines
-- AddDogForm (adopter-app): ~400 lines
+- AddDogForm (dog-parent-app): ~400 lines
 - AddDogForm (root app): ~400 lines
 - Breeder inline forms: ~1500+ lines
 ```
@@ -279,8 +279,8 @@ Total Savings: ~2500+ lines removed! 🎉
 - [x] Export from package
 
 ### Phase 2: Migration (To Do)
-- [ ] Replace adopter-app/AddDogForm with shared DogForm
-- [ ] Replace adopter-app/DogForm with shared DogForm
+- [ ] Replace dog-parent-app/AddDogForm with shared DogForm
+- [ ] Replace dog-parent-app/DogForm with shared DogForm
 - [ ] Replace root app/AddDogForm with shared DogForm
 - [ ] Replace root app/DogForm with shared DogForm
 - [ ] Replace breeder-app inline forms with shared DogForm
@@ -358,7 +358,7 @@ function MyDogManager() {
    ```
 
 2. **Start migrating** (one app at a time):
-   - Start with adopter-app
+   - Start with dog-parent-app
    - Then root app
    - Finally breeder-app
 

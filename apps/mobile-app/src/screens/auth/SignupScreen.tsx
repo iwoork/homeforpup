@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 import Logo from '../../components/Logo';
@@ -26,6 +27,7 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
     password: '',
     confirmPassword: '',
     phone: '',
+    userType: 'dog-parent' as 'dog-parent' | 'breeder',
   });
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
@@ -78,12 +80,14 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
         email: formData.email.trim(),
         password: formData.password,
         phone: formData.phone.trim(),
+        userType: formData.userType,
       });
 
       if (result.success) {
+        const message = result.message || 'Account created successfully! Please check your email for verification instructions.';
         Alert.alert(
           'Success',
-          'Account created successfully! Please check your email for verification instructions.',
+          message,
           [
             {
               text: 'OK',
@@ -115,10 +119,79 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
             <Logo size={80} style={styles.logo} />
             <Text style={styles.appName}>Home for Pup</Text>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join the breeder community</Text>
+            <Text style={styles.subtitle}>
+              {formData.userType === 'breeder' 
+                ? 'Join as a breeder and connect with families' 
+                : 'Find your perfect puppy companion'}
+            </Text>
           </View>
 
         <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>I am a...</Text>
+            <View style={styles.userTypeContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.userTypeButton,
+                  formData.userType === 'dog-parent' && styles.userTypeButtonActive,
+                ]}
+                onPress={() => handleInputChange('userType', 'dog-parent')}
+              >
+                <Icon
+                  name="heart"
+                  size={24}
+                  color={formData.userType === 'dog-parent' ? '#fff' : theme.colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.userTypeButtonText,
+                    formData.userType === 'dog-parent' && styles.userTypeButtonTextActive,
+                  ]}
+                >
+                  Dog Parent
+                </Text>
+                <Text
+                  style={[
+                    styles.userTypeDescription,
+                    formData.userType === 'dog-parent' && styles.userTypeDescriptionActive,
+                  ]}
+                >
+                  Looking for a puppy
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.userTypeButton,
+                  formData.userType === 'breeder' && styles.userTypeButtonActive,
+                ]}
+                onPress={() => handleInputChange('userType', 'breeder')}
+              >
+                <Icon
+                  name="paw"
+                  size={24}
+                  color={formData.userType === 'breeder' ? '#fff' : theme.colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.userTypeButtonText,
+                    formData.userType === 'breeder' && styles.userTypeButtonTextActive,
+                  ]}
+                >
+                  Breeder
+                </Text>
+                <Text
+                  style={[
+                    styles.userTypeDescription,
+                    formData.userType === 'breeder' && styles.userTypeDescriptionActive,
+                  ]}
+                >
+                  Breeding puppies
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Full Name</Text>
             <TextInput
@@ -319,6 +392,45 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 15,
     fontWeight: '700',
+  },
+  userTypeContainer: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    justifyContent: 'space-between',
+  },
+  userTypeButton: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 120,
+  },
+  userTypeButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  userTypeButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginTop: theme.spacing.sm,
+  },
+  userTypeButtonTextActive: {
+    color: '#fff',
+  },
+  userTypeDescription: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  userTypeDescriptionActive: {
+    color: '#fff',
+    opacity: 0.9,
   },
 });
 

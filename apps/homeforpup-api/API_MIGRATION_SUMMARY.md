@@ -345,7 +345,7 @@ npm run test:load
 
 **Before (Next.js):**
 ```typescript
-// apps/adopter-app/src/app/api/dogs/route.ts
+// apps/dog-parent-app/src/app/api/dogs/route.ts
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const limit = searchParams.get('limit') || '20';

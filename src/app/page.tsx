@@ -44,7 +44,7 @@ const BreederHomePage: React.FC = () => {
     }
   };
 
-  const handleUserTypeSelection = (_userType: 'breeder' | 'adopter') => {
+  const handleUserTypeSelection = (_userType: 'breeder' | 'dog-parent') => {
     setUserTypeModalVisible(false);
     // Call signIn without parameters to match Header component behavior
     signIn();

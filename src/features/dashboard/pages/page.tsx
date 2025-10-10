@@ -559,12 +559,12 @@ const DashboardPage: React.FC = () => {
             </Row>
           </Card>
 
-          {/* Connect with Adopters */}
+          {/* Connect with Dog Parents */}
           <Card 
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <MessageOutlined style={{ color: '#13C2C2', fontSize: '20px' }} />
-                <span>Connect with Adopters</span>
+                <span>Connect with Dog Parents</span>
                 {unreadCount > 0 && (
                   <Badge count={unreadCount} style={{ backgroundColor: '#ff4d4f' }} />
                 )}
@@ -606,7 +606,7 @@ const DashboardPage: React.FC = () => {
                     <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
                       <MessageOutlined style={{ fontSize: '32px', marginBottom: '8px' }} />
                       <div>No messages yet</div>
-                      <div style={{ fontSize: '12px' }}>Adopters will contact you here</div>
+                      <div style={{ fontSize: '12px' }}>Dog Parents will contact you here</div>
                     </div>
                   )}
                   <div style={{ marginTop: '16px' }}>
@@ -848,7 +848,7 @@ const DashboardPage: React.FC = () => {
                         icon={<UserOutlined />} 
                         style={{ width: '100%' }}
                       >
-                        Find Other Adopters
+                        Find Other Dog Parents
                       </Button>
                     </Link>
                   </Space>

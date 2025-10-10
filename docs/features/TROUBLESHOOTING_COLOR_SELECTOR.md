@@ -16,20 +16,20 @@ The issue is likely that your Next.js dev server needs to be restarted to pick u
 
 ### Steps to Fix:
 
-#### For Adopter App:
+#### For Dog Parent App:
 
 1. **Stop your current dev server** (if running)
    - Press `Ctrl + C` in the terminal where the app is running
 
 2. **Clear Next.js cache** (optional but recommended):
    ```bash
-   cd apps/adopter-app
+   cd apps/dog-parent-app
    rm -rf .next
    ```
 
 3. **Restart the dev server**:
    ```bash
-   cd apps/adopter-app
+   cd apps/dog-parent-app
    npm run dev
    ```
 
@@ -100,7 +100,7 @@ Check that the files have the ColorSelector:
 
 ```bash
 # Should show ColorSelector import
-grep "ColorSelector" apps/adopter-app/src/components/forms/AddDogForm.tsx
+grep "ColorSelector" apps/dog-parent-app/src/components/forms/AddDogForm.tsx
 
 # Should return: import { ColorSelector } from '@homeforpup/shared-components';
 ```
@@ -109,7 +109,7 @@ grep "ColorSelector" apps/adopter-app/src/components/forms/AddDogForm.tsx
 
 ```bash
 # Check if package.json has the workspace dependencies
-cat apps/adopter-app/package.json | grep "@homeforpup"
+cat apps/dog-parent-app/package.json | grep "@homeforpup"
 
 # Should show:
 # "@homeforpup/shared-components": "*",
@@ -125,7 +125,7 @@ cat apps/adopter-app/package.json | grep "@homeforpup"
 **Solution**:
 ```bash
 # Reinstall dependencies
-cd apps/adopter-app
+cd apps/dog-parent-app
 npm install
 npm run dev
 ```
@@ -145,9 +145,9 @@ npm run dev
 ```bash
 # Nuclear option - full rebuild
 cd /Users/Efren/repos/homeforpup
-rm -rf apps/adopter-app/.next
-rm -rf apps/adopter-app/node_modules
-cd apps/adopter-app
+rm -rf apps/dog-parent-app/.next
+rm -rf apps/dog-parent-app/node_modules
+cd apps/dog-parent-app
 npm install
 npm run dev
 ```
@@ -177,7 +177,7 @@ npm run dev
 Run this to verify the component is imported correctly:
 
 ```bash
-cd apps/adopter-app
+cd apps/dog-parent-app
 node -e "console.log(require('@homeforpup/shared-components'))"
 ```
 
@@ -209,6 +209,6 @@ After following these steps, the ColorSelector should:
 If none of these solutions work, please share:
 1. Browser console errors
 2. Terminal output from dev server
-3. Which app you're testing (adopter-app or root app)
+3. Which app you're testing (dog-parent-app or root app)
 4. Which form (Add Dog or Edit Dog)
 

@@ -95,7 +95,7 @@ curl "$API_URL/dogs/YOUR_DOG_ID"
 ## Step 7: Update Frontend
 
 ```bash
-# In adopter-app or breeder-app .env.local
+# In dog-parent-app or breeder-app .env.local
 echo "NEXT_PUBLIC_API_URL=$API_URL" >> .env.local
 ```
 

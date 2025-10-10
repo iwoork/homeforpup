@@ -30,7 +30,7 @@ const { RangePicker } = DatePicker;
 
 interface ActivityFeedProps {
   userId: string;
-  userType: 'adopter' | 'breeder';
+  userType: 'dog-parent' | 'breeder';
   limit?: number;
   showFilters?: boolean;
   showStats?: boolean;
@@ -108,7 +108,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   const getActivityIcon = (type: ActivityType) => {
     const iconMap: Record<ActivityType, React.ReactNode> = {
-      // Adopter activities
+      // Dog Parent activities
       puppy_favorited: <HeartOutlined style={{ color: '#f5222d' }} />,
       puppy_unfavorited: <HeartOutlined style={{ color: '#d9d9d9' }} />,
       breeder_contacted: <MessageOutlined style={{ color: '#1890ff' }} />,
@@ -138,12 +138,12 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       announcement_updated: <EditOutlined style={{ color: '#1890ff' }} />,
       inquiry_received: <MessageOutlined style={{ color: '#52c41a' }} />,
       inquiry_responded: <MessageOutlined style={{ color: '#1890ff' }} />,
-      profile_viewed_by_adopter: <EyeOutlined style={{ color: '#52c41a' }} />,
-      kennel_viewed_by_adopter: <TeamOutlined style={{ color: '#52c41a' }} />,
-      puppy_viewed_by_adopter: <EyeOutlined style={{ color: '#52c41a' }} />,
+      profile_viewed_by_dog_parent: <EyeOutlined style={{ color: '#52c41a' }} />,
+      kennel_viewed_by_dog_parent: <TeamOutlined style={{ color: '#52c41a' }} />,
+      puppy_viewed_by_dog_parent: <EyeOutlined style={{ color: '#52c41a' }} />,
       favorite_received: <HeartOutlined style={{ color: '#f5222d' }} />,
-      message_received_from_adopter: <MessageOutlined style={{ color: '#52c41a' }} />,
-      message_sent_to_adopter: <MessageOutlined style={{ color: '#1890ff' }} />,
+      message_received_from_dog_parent: <MessageOutlined style={{ color: '#52c41a' }} />,
+      message_sent_to_dog_parent: <MessageOutlined style={{ color: '#1890ff' }} />,
       health_record_updated: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
       litter_created: <PlusOutlined style={{ color: '#52c41a' }} />,
       litter_updated: <EditOutlined style={{ color: '#1890ff' }} />,

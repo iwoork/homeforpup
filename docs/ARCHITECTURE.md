@@ -8,7 +8,7 @@
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────┐    ┌─────────────────┐                    │
-│  │   Adopter App   │    │   Breeder App   │                    │
+│  │   Dog Parent App   │    │   Breeder App   │                    │
 │  │  (Port 3000)    │    │  (Port 3001)    │                    │
 │  │                 │    │                 │                    │
 │  │ • Browse Dogs   │    │ • Kennel Mgmt   │                    │
@@ -48,7 +48,7 @@
 ## 🌐 Domain Structure
 
 ```
-homeforpup.com (Adopter App)
+homeforpup.com (Dog Parent App)
 ├── /browse          - Browse available puppies
 ├── /favorites       - User's favorite puppies
 ├── /messages        - Messaging with breeders
@@ -69,7 +69,7 @@ breeders.homeforpup.com (Breeder App)
 
 ```
 ┌─────────────────┐    ┌─────────────────┐
-│   Adopter App   │    │   Breeder App   │
+│   Dog Parent App   │    │   Breeder App   │
 └─────────┬───────┘    └─────────┬───────┘
           │                      │
           └──────────┬───────────┘
@@ -97,7 +97,7 @@ User Login → NextAuth → AWS Cognito → JWT Token → Shared Auth Package
 
 ### Messaging Flow
 ```
-Adopter App → Shared Messaging Hook → API Route → DynamoDB
+Dog Parent App → Shared Messaging Hook → API Route → DynamoDB
 Breeder App → Shared Messaging Hook → API Route → DynamoDB
 ```
 
@@ -105,7 +105,7 @@ Breeder App → Shared Messaging Hook → API Route → DynamoDB
 ```
 Shared Components → Both Apps
 ├── BreedSelector (used in search/filter)
-├── ContactBreederModal (adopter app)
+├── ContactBreederModal (dog-parent app)
 ├── MessageThread (both apps)
 └── UserProfile (both apps)
 ```
@@ -118,7 +118,7 @@ Shared Components → Both Apps
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌─────────────────┐              ┌─────────────────┐      │
-│  │   Adopter App   │              │   Breeder App   │      │
+│  │   Dog Parent App   │              │   Breeder App   │      │
 │  │                 │              │                 │      │
 │  │ homeforpup.com  │              │breeders.homeforpup.com │
 │  │                 │              │                 │      │
@@ -151,8 +151,8 @@ Shared Components → Both Apps
 # Terminal 1: Start shared packages
 npm run dev --filter=shared-*
 
-# Terminal 2: Start adopter app
-npm run dev:adopter
+# Terminal 2: Start dog-parent app
+npm run dev:dog-parent
 
 # Terminal 3: Start breeder app  
 npm run dev:breeder
@@ -164,14 +164,14 @@ npm run dev:breeder
 npm run build --filter=shared-*
 
 # Then build apps
-npm run build:adopter
+npm run build:dog-parent
 npm run build:breeder
 ```
 
 ## 📊 Benefits of This Architecture
 
 ### 1. **Separation of Concerns**
-- Adopter and breeder features are completely separate
+- Dog Parent and breeder features are completely separate
 - Shared functionality is centralized
 - Easy to maintain and scale
 

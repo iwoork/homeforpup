@@ -21,13 +21,13 @@ npm run dev
 # 4. Hard refresh browser: Cmd + Shift + R (Mac) or Ctrl + Shift + R (Windows)
 ```
 
-#### If Testing Adopter App (port 3001):
+#### If Testing Dog Parent App (port 3001):
 ```bash
 # 1. Stop the server (in the terminal where it's running)
 #    Press: Ctrl + C
 
 # 2. Restart it
-cd /Users/Efren/repos/homeforpup/apps/adopter-app
+cd /Users/Efren/repos/homeforpup/apps/dog-parent-app
 npm run dev
 
 # 3. Wait for "Ready" message
@@ -59,10 +59,10 @@ rm -rf .next
 npm run dev
 ```
 
-#### For Adopter App:
+#### For Dog Parent App:
 ```bash
 # Stop server (Ctrl + C), then:
-cd /Users/Efren/repos/homeforpup/apps/adopter-app
+cd /Users/Efren/repos/homeforpup/apps/dog-parent-app
 rm -rf .next
 npm run dev
 ```
@@ -83,7 +83,7 @@ npm run dev
 - **Add Dog**: Kennel Management → Add Dog → Color field
 - **Edit Dog**: Kennel Management → Dogs List → Edit → Color field
 
-#### Adopter App (http://localhost:3001)
+#### Dog Parent App (http://localhost:3001)
 - **Add Dog**: Dashboard → Add Dog → Color field  
 - **Edit Dog**: Dashboard → Dogs → Edit → Color field
 
@@ -152,7 +152,7 @@ Before asking for help, make sure you've done:
 ### Test the API Directly
 Open your browser and go to:
 - Root App: http://localhost:3000/api/dog-colors
-- Adopter App: http://localhost:3001/api/dog-colors
+- Dog Parent App: http://localhost:3001/api/dog-colors
 - Breeder App: http://localhost:3002/api/dog-colors
 
 You should see JSON with 45+ colors.

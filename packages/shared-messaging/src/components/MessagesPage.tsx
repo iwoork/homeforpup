@@ -51,10 +51,10 @@ type MessageType = "general" | "inquiry" | "business" | "urgent";
 
 interface MessagesPageProps {
   userId?: string;
-  userType?: 'adopter' | 'breeder';
+  userType?: 'dog-parent' | 'breeder';
 }
 
-const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'adopter' }) => {
+const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-parent' }) => {
   const {
     messages,
     threads,

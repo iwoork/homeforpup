@@ -43,7 +43,9 @@ export interface AuthResult {
   success: boolean;
   user?: User;
   error?: string;
+  message?: string;
   token?: string;
+  requiresVerification?: boolean;
 }
 
 export class AuthService {
@@ -85,6 +87,21 @@ export class AuthService {
         const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
         const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
         
+        // Try to get userType from multiple sources:
+        // 1. From Cognito custom attribute (if configured)
+        // 2. From stored local data (fallback)
+        // 3. Default to 'breeder' (backward compatibility)
+        let userType = userAttributes?.['custom:userType'] as 'breeder' | 'dog-parent' | undefined;
+        
+        if (!userType) {
+          // Check if we have it stored locally from previous session
+          const storedUserType = await AsyncStorage.getItem('user_type') as 'breeder' | 'dog-parent' | null;
+          userType = storedUserType || 'breeder';
+          console.log('⚠️ userType not in Cognito token, using stored value:', userType);
+        } else {
+          console.log('✅ userType from Cognito:', userType);
+        }
+        
         // Create user object with proper name from attributes
         const userData: User = {
           userId: currentUser.username,
@@ -92,7 +109,7 @@ export class AuthService {
           name: userName,
           firstName: firstName,
           lastName: lastName,
-          userType: 'breeder',
+          userType: userType,
           verified: true,
           accountStatus: 'active',
           createdAt: new Date().toISOString(),
@@ -149,6 +166,7 @@ export class AuthService {
     password: string;
     phone?: string;
     location?: string;
+    userType?: 'breeder' | 'dog-parent';
   }): Promise<AuthResult> {
     try {
       const result = await signUp({
@@ -159,6 +177,7 @@ export class AuthService {
             email: userData.email,
             name: userData.name,
             phone_number: userData.phone,
+            'custom:userType': userData.userType || 'dog-parent',
           },
         },
       });
@@ -167,9 +186,11 @@ export class AuthService {
         // User is already confirmed, sign them in
         return await this.login(userData.email, userData.password);
       } else {
+        // Signup successful, but email verification is required
         return {
           success: true,
-          error: 'Please check your email for verification code',
+          requiresVerification: true,
+          message: 'Please check your email for verification code',
         };
       }
     } catch (error: any) {
@@ -226,6 +247,13 @@ export class AuthService {
         const userName = userAttributes?.name as string || userAttributes?.email as string || user.username;
         const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
         const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
+        
+        // Try to get userType from multiple sources (same as login)
+        let userType = userAttributes?.['custom:userType'] as 'breeder' | 'dog-parent' | undefined;
+        if (!userType) {
+          const storedUserType = await AsyncStorage.getItem('user_type') as 'breeder' | 'dog-parent' | null;
+          userType = storedUserType || 'breeder';
+        }
 
         const currentUser: User = {
           userId: user.username,
@@ -233,7 +261,7 @@ export class AuthService {
           name: userName,
           firstName: firstName,
           lastName: lastName,
-          userType: 'breeder',
+          userType: userType,
           verified: true,
           accountStatus: 'active',
           createdAt: new Date().toISOString(),
@@ -348,8 +376,13 @@ export class AuthService {
     try {
       await AsyncStorage.setItem('auth_token', token);
       await AsyncStorage.setItem('user_data', JSON.stringify(user));
+      // Store userType separately as a backup
+      if (user.userType) {
+        await AsyncStorage.setItem('user_type', user.userType);
+      }
       this.currentUser = user;
       this.authToken = token;
+      console.log('✅ Stored auth data with userType:', user.userType);
     } catch (error) {
       console.error('Store auth data error:', error);
     }
@@ -359,6 +392,7 @@ export class AuthService {
     try {
       await AsyncStorage.removeItem('auth_token');
       await AsyncStorage.removeItem('user_data');
+      await AsyncStorage.removeItem('user_type');
     } catch (error) {
       console.error('Clear auth data error:', error);
     }
@@ -382,6 +416,29 @@ export class AuthService {
     } catch (error) {
       console.error('Load stored auth data error:', error);
       return { user: null, token: null };
+    }
+  }
+
+  // Method to manually update userType (useful for existing users)
+  async updateUserType(userType: 'breeder' | 'dog-parent'): Promise<boolean> {
+    try {
+      console.log('📝 Manually updating userType to:', userType);
+      
+      // Store in AsyncStorage
+      await AsyncStorage.setItem('user_type', userType);
+      
+      // Update current user object
+      if (this.currentUser) {
+        this.currentUser.userType = userType;
+        await AsyncStorage.setItem('user_data', JSON.stringify(this.currentUser));
+        console.log('✅ UserType updated successfully');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error updating userType:', error);
+      return false;
     }
   }
 }

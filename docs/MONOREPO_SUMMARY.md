@@ -4,7 +4,7 @@
 
 ### 1. **Monorepo Structure Created**
 - Set up Turbo-based monorepo with workspaces
-- Created separate apps for adopters and breeders
+- Created separate apps for dog-parents and breeders
 - Organized shared packages for common functionality
 
 ### 2. **Package Architecture**
@@ -20,7 +20,7 @@ packages/
 ### 3. **Application Structure**
 ```
 apps/
-├── adopter-app/       🔄 In Progress - Main app for dog lovers
+├── dog-parent-app/       🔄 In Progress - Main app for dog lovers
 │   ├── Port 3000
 │   ├── Domain: homeforpup.com
 │   └── Features: Browse, search, favorites, messaging
@@ -33,7 +33,7 @@ apps/
 ## 🎯 Key Design Decisions
 
 ### **Separation of Concerns**
-- **Adopter App**: Focus on browsing, searching, and connecting with breeders
+- **Dog Parent App**: Focus on browsing, searching, and connecting with breeders
 - **Breeder App**: Focus on business management, kennel operations, and customer communication
 - **Shared Packages**: Common functionality used by both apps
 
@@ -71,7 +71,7 @@ apps/
    - Auth configuration
 
 ### Phase 2: Complete App Migration
-1. **Adopter App**: Migrate adopter-specific features
+1. **Dog Parent App**: Migrate dog-parent-specific features
    - Browse/search functionality
    - User profiles
    - Favorites management
@@ -92,7 +92,7 @@ apps/
 ## 📊 Benefits Achieved
 
 ### **For Users**
-- **Adopters**: Clean, focused interface for finding dogs
+- **Dog Parents**: Clean, focused interface for finding dogs
 - **Breeders**: Professional tools for business management
 - **Consistency**: Shared components ensure consistent UX
 
@@ -144,7 +144,7 @@ apps/
 
 ## 🎉 Conclusion
 
-The monorepo transformation provides a solid foundation for scaling HomeForPup into a comprehensive platform that serves both dog adopters and breeders effectively. The clear separation of concerns, shared packages, and independent deployment capabilities make it easy to maintain and extend the platform as it grows.
+The monorepo transformation provides a solid foundation for scaling HomeForPup into a comprehensive platform that serves both dog dog-parents and breeders effectively. The clear separation of concerns, shared packages, and independent deployment capabilities make it easy to maintain and extend the platform as it grows.
 
 The architecture supports:
 - ✅ **Scalability**: Easy to add new features and user types

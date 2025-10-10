@@ -125,7 +125,7 @@ apps/homeforpup-api/
 
 From your existing Next.js apps, you need to migrate:
 
-**Adopter App (30+ endpoints):**
+**Dog Parent App (30+ endpoints):**
 - Kennels API (5 endpoints)
 - Messages API (5 endpoints)
 - Favorites API (4 endpoints)
@@ -153,7 +153,7 @@ From your existing Next.js apps, you need to migrate:
 **1. Update your frontend to use the new API:**
 
 ```bash
-# In apps/adopter-app/.env.local
+# In apps/dog-parent-app/.env.local
 echo "NEXT_PUBLIC_API_URL=https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development" >> .env.local
 
 # In apps/breeder-app/.env.local

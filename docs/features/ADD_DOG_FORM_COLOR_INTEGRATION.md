@@ -2,12 +2,12 @@
 
 ## Summary
 
-Successfully integrated the **ColorSelector** component into the AddDogForm in both the adopter-app and root app. Users can now select from 45+ predefined dog colors with visual swatches and descriptions instead of typing free text.
+Successfully integrated the **ColorSelector** component into the AddDogForm in both the dog-parent-app and root app. Users can now select from 45+ predefined dog colors with visual swatches and descriptions instead of typing free text.
 
 ## Files Updated
 
-### 1. Adopter App - AddDogForm
-**File**: `apps/adopter-app/src/components/forms/AddDogForm.tsx`
+### 1. Dog Parent App - AddDogForm
+**File**: `apps/dog-parent-app/src/components/forms/AddDogForm.tsx`
 
 **Changes Made**:
 - ✅ Added `ColorSelector` import from `@homeforpup/shared-components`
@@ -125,8 +125,8 @@ const { colors, loading: colorsLoading, error: colorsError } = useDogColors();
 ## API Integration
 
 The ColorSelector fetches data from:
-- **Adopter App**: `http://localhost:3001/api/dog-colors`
-- **Root App**: Uses adopter-app API endpoint
+- **Dog Parent App**: `http://localhost:3001/api/dog-colors`
+- **Root App**: Uses dog-parent-app API endpoint
 
 ### API Features
 - Caching for performance (1 hour cache)
@@ -138,9 +138,9 @@ The ColorSelector fetches data from:
 
 ### Verification Steps
 
-1. **Start the adopter app**:
+1. **Start the dog-parent app**:
    ```bash
-   cd apps/adopter-app
+   cd apps/dog-parent-app
    npm run dev
    ```
 
@@ -181,7 +181,7 @@ curl http://localhost:3001/api/dog-colors
 
 ### Lint Check Results
 ```
-✅ apps/adopter-app/src/components/forms/AddDogForm.tsx - No errors
+✅ apps/dog-parent-app/src/components/forms/AddDogForm.tsx - No errors
 ✅ src/components/forms/AddDogForm.tsx - No errors
 ```
 
@@ -237,7 +237,7 @@ Color saved to database
 1. **Add to DogForm component** (view/edit existing dogs)
    ```tsx
    // Similar integration in:
-   // - apps/adopter-app/src/components/dogs/DogForm.tsx
+   // - apps/dog-parent-app/src/components/dogs/DogForm.tsx
    // - src/components/dogs/DogForm.tsx
    ```
 

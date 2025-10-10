@@ -1,6 +1,6 @@
 # ColorSelector Component Usage Guide
 
-The `ColorSelector` is a generic, reusable component for selecting dog colors in both the adopter-app and breeder-app. It provides a rich selection interface with color swatches, categories, and descriptions.
+The `ColorSelector` is a generic, reusable component for selecting dog colors in both the dog-parent-app and breeder-app. It provides a rich selection interface with color swatches, categories, and descriptions.
 
 ## Features
 
@@ -20,7 +20,7 @@ The component is already installed as part of the `@homeforpup/shared-components
 
 Both apps have the `/api/dog-colors` endpoint available:
 
-### Adopter App
+### Dog Parent App
 ```
 GET /api/dog-colors
 ```

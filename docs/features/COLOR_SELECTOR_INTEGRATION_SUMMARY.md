@@ -9,7 +9,7 @@ The ColorSelector component has been successfully integrated into **all dog form
 ### ✅ All 4 Dog Forms Now Use ColorSelector
 
 ```
-apps/adopter-app/
+apps/dog-parent-app/
 ├── src/components/
     ├── forms/
     │   └── AddDogForm.tsx ..................... ✅ UPDATED
@@ -59,7 +59,7 @@ src/components/
 ### Test Add Dog Form
 ```bash
 # Start app
-cd apps/adopter-app && npm run dev
+cd apps/dog-parent-app && npm run dev
 
 # Navigate to Add Dog
 # Click Color field → See dropdown with 45+ colors
@@ -75,8 +75,8 @@ cd apps/adopter-app && npm run dev
 ## 📊 Impact
 
 ### Forms Updated: 4
-- ✅ AddDogForm (Adopter App)
-- ✅ DogForm - Edit (Adopter App)
+- ✅ AddDogForm (Dog Parent App)
+- ✅ DogForm - Edit (Dog Parent App)
 - ✅ AddDogForm (Root App)
 - ✅ DogForm - Edit (Root App)
 

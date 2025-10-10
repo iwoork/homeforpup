@@ -1,9 +1,0 @@
-{
-  "framework": "nextjs",
-  "buildCommand": "cd ../.. && npm install --include=dev && npm run build --filter=\"@homeforpup/shared-*\" && cd apps/adopter-app && npm run build",
-  "installCommand": "cd ../.. && npm install --include=dev",
-  "outputDirectory": ".next",
-  "env": {
-    "NODE_ENV": "production"
-  }
-}

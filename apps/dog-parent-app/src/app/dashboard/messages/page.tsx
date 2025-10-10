@@ -1,0 +1,52 @@
+'use client';
+
+import React from 'react';
+import { useAuth } from '@homeforpup/shared-auth';
+import { MessagesPage } from '@homeforpup/shared-messaging';
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
+const Dog ParentMessagesPage: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  console.log('Dog ParentMessagesPage: user data:', { user, loading });
+
+  if (loading) {
+    return (
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '32px 16px'
+      }}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user?.userId) {
+    return (
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '32px 16px'
+      }}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <h2>No user ID found</h2>
+          <p>Please log in to access messages.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <MessagesPage 
+      userId={user.userId} 
+      userType="dog-parent"
+    />
+  );
+};
+
+export default Dog ParentMessagesPage;

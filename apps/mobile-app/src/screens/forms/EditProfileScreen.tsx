@@ -24,6 +24,7 @@ const EditProfileScreen: React.FC = () => {
   const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fetchingProfile, setFetchingProfile] = useState(true);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -35,7 +36,6 @@ const EditProfileScreen: React.FC = () => {
     location: user?.location || '',
     bio: user?.bio || '',
     website: user?.breederInfo?.website || '',
-    kennelName: user?.breederInfo?.kennelName || '',
     license: user?.breederInfo?.license || '',
     experience: user?.breederInfo?.experience?.toString() || '',
     specialties: user?.breederInfo?.specialties?.join(', ') || '',
@@ -54,6 +54,76 @@ const EditProfileScreen: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch latest user data from API when component mounts
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.userId) {
+        setFetchingProfile(false);
+        return;
+      }
+
+      try {
+        console.log('=== FETCHING USER PROFILE ===');
+        console.log('User ID:', user.userId);
+        
+        const response = await apiService.getUserById(user.userId);
+        
+        console.log('Profile fetch response:', JSON.stringify(response, null, 2));
+        
+        if (response.success && response.data) {
+          // API returns { user: {...} }
+          const userData = response.data.user;
+          
+          // Update form data with fresh data from API
+          setFormData({
+            name: userData.name || '',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            displayName: userData.displayName || '',
+            email: userData.email || '',
+            phone: userData.phone || '',
+            location: userData.location || '',
+            bio: userData.bio || '',
+            website: userData.breederInfo?.website || '',
+            license: userData.breederInfo?.license || '',
+            experience: userData.breederInfo?.experience?.toString() || '',
+            specialties: userData.breederInfo?.specialties?.join(', ') || '',
+            facebook: userData.socialLinks?.facebook || '',
+            instagram: userData.socialLinks?.instagram || '',
+            twitter: userData.socialLinks?.twitter || '',
+          });
+
+          // Update preferences with fresh data from API
+          setPreferences({
+            emailNotifications: userData.preferences?.notifications?.email ?? true,
+            smsNotifications: userData.preferences?.notifications?.sms ?? false,
+            pushNotifications: userData.preferences?.notifications?.push ?? true,
+            showEmail: userData.preferences?.privacy?.showEmail ?? false,
+            showPhone: userData.preferences?.privacy?.showPhone ?? false,
+            showLocation: userData.preferences?.privacy?.showLocation ?? true,
+          });
+
+          // Also update the local user context
+          if (updateUser) {
+            updateUser(userData);
+          }
+          
+          console.log('✅ Profile data loaded successfully');
+        } else {
+          console.error('Failed to fetch profile:', response.error);
+          Alert.alert('Error', 'Failed to load profile data. Using cached data.');
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        Alert.alert('Error', 'Failed to load profile data. Using cached data.');
+      } finally {
+        setFetchingProfile(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.userId]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -118,10 +188,9 @@ const EditProfileScreen: React.FC = () => {
       if (formData.location?.trim()) updateData.location = formData.location.trim();
       if (formData.bio?.trim()) updateData.bio = formData.bio.trim();
 
-      // Breeder info
+      // Breeder info (kennel info managed separately in Kennel Management)
       const breederInfo: any = {};
       if (formData.website?.trim()) breederInfo.website = formData.website.trim();
-      if (formData.kennelName?.trim()) breederInfo.kennelName = formData.kennelName.trim();
       if (formData.license?.trim()) breederInfo.license = formData.license.trim();
       if (formData.experience) breederInfo.experience = Number(formData.experience);
       if (formData.specialties?.trim()) {
@@ -153,6 +222,7 @@ const EditProfileScreen: React.FC = () => {
       }
 
       // Update local user state with the response from the API
+      // API returns { user: {...} }
       if (updateUser && response.data?.user) {
         console.log('Updating local user state with:', response.data.user);
         updateUser(response.data.user);
@@ -260,6 +330,7 @@ const EditProfileScreen: React.FC = () => {
         }
 
         // Update local user state with the response from the API
+        // API returns { user: {...} }
         if (updateUser && updateResponse.data?.user) {
           console.log('Updating local user state with photo');
           updateUser(updateResponse.data.user);
@@ -347,6 +418,16 @@ const EditProfileScreen: React.FC = () => {
     </View>
   );
 
+  // Show loading indicator while fetching profile
+  if (fetchingProfile) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       {/* Profile Photo Section */}
@@ -411,29 +492,68 @@ const EditProfileScreen: React.FC = () => {
         })}
       </View>
 
-      {/* Breeder Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Breeder Information</Text>
-        
-        {renderInput('Kennel Name', 'kennelName', 'Enter your kennel name', { icon: 'home' })}
-        
-        {renderInput('Website', 'website', 'https://your-website.com', { 
-          icon: 'globe',
-          keyboardType: 'email-address'
-        })}
-        
-        {renderInput('License Number', 'license', 'Breeding license number', { icon: 'card' })}
-        
-        {renderInput('Years of Experience', 'experience', 'Number of years', { 
-          icon: 'time',
-          keyboardType: 'numeric'
-        })}
-        
-        {renderInput('Specialties', 'specialties', 'Golden Retriever, Labrador, etc.', { 
-          icon: 'paw',
-          multiline: true
-        })}
-      </View>
+      {/* Breeder Information - Only show for breeders */}
+      {user?.userType === 'breeder' && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Breeder Information</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ManageKennels' as never)}
+              style={styles.editButton}
+            >
+              <Text style={styles.editButtonText}>Manage Kennels</Text>
+              <Icon name="arrow-forward" size={16} color={theme.colors.primary} />
+            </TouchableOpacity>
+          </View>
+          
+          {renderInput('Website', 'website', 'https://your-website.com', { 
+            icon: 'globe',
+            keyboardType: 'email-address'
+          })}
+          
+          {renderInput('License Number', 'license', 'Breeding license number', { icon: 'card' })}
+          
+          {renderInput('Years of Experience', 'experience', 'Number of years', { 
+            icon: 'time',
+            keyboardType: 'numeric'
+          })}
+          
+          {renderInput('Specialties', 'specialties', 'Golden Retriever, Labrador, etc.', { 
+            icon: 'paw',
+            multiline: true
+          })}
+          
+          <View style={styles.infoCard}>
+            <Icon name="information-circle" size={24} color={theme.colors.info} />
+            <Text style={styles.infoText}>
+              Kennel details are managed separately. Use "Manage Kennels" to create and edit your kennels.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Dog Parent Preferences - Only show for dog parents */}
+      {user?.userType === 'dog-parent' && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Adoption Preferences</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('DogParentPreferences' as never)}
+              style={styles.editButton}
+            >
+              <Text style={styles.editButtonText}>Edit Detailed Preferences</Text>
+              <Icon name="arrow-forward" size={16} color={theme.colors.primary} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.infoCard}>
+            <Icon name="information-circle" size={24} color={theme.colors.info} />
+            <Text style={styles.infoText}>
+              Set your detailed adoption preferences (breeds, housing, experience) in the dedicated preferences screen.
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Social Media */}
       <View style={styles.section}>
@@ -532,6 +652,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: theme.spacing.md,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
   section: {
     backgroundColor: theme.colors.surface,
@@ -694,6 +823,35 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 16,
     fontWeight: '600',
+  },
+  sectionHeader: {
+    marginBottom: theme.spacing.md,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: theme.spacing.sm,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.primary,
+  },
+  infoCard: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    backgroundColor: theme.colors.infoLight,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.info + '40',
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.text,
+    lineHeight: 20,
   },
 });
 

@@ -1,6 +1,6 @@
 # HomeForPup Monorepo
 
-A comprehensive dog adoption and breeding platform built as a monorepo with separate applications for adopters and breeders.
+A comprehensive dog adoption and breeding platform built as a monorepo with separate applications for dog-parents and breeders.
 
 ## 🏗️ Architecture
 
@@ -8,7 +8,7 @@ This monorepo is organized into two main applications and shared packages:
 
 ### Applications
 
-- **`apps/adopter-app`** - Main application for dog lovers and adopters
+- **`apps/dog-parent-app`** - Main application for dog lovers and dog-parents
   - Browse available puppies
   - Search and filter by breed, location, etc.
   - Contact breeders
@@ -61,14 +61,14 @@ npm run dev
 npm run dev
 
 # Start specific app
-npm run dev:adopter    # Adopter app on port 3000
+npm run dev:dog-parent    # Dog Parent app on port 3000
 npm run dev:breeder    # Breeder app on port 3001
 
 # Build all packages and apps
 npm run build
 
 # Build specific app
-npm run build:adopter
+npm run build:dog-parent
 npm run build:breeder
 
 # Lint all packages
@@ -86,7 +86,7 @@ npm run clean
 ```
 homeforpup/
 ├── apps/
-│   ├── adopter-app/          # Main adopter application
+│   ├── dog-parent-app/          # Main dog-parent application
 │   │   ├── src/
 │   │   │   ├── app/          # Next.js app directory
 │   │   │   ├── components/   # App-specific components
@@ -122,7 +122,7 @@ homeforpup/
 Create `.env.local` files in each app directory:
 
 ```bash
-# apps/adopter-app/.env.local
+# apps/dog-parent-app/.env.local
 NEXT_PUBLIC_AWS_REGION=us-east-1
 NEXT_PUBLIC_AWS_USER_POOL_ID=your_user_pool_id
 NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID=your_client_id
@@ -130,17 +130,17 @@ NEXT_PUBLIC_AWS_S3_BUCKET=your_s3_bucket
 # ... other AWS config
 
 # apps/breeder-app/.env.local
-# Same configuration as adopter app
+# Same configuration as dog-parent app
 ```
 
 ### Subdomain Configuration
 
-- **Adopter App**: `homeforpup.com` (main domain)
+- **Dog Parent App**: `homeforpup.com` (main domain)
 - **Breeder App**: `breeders.homeforpup.com` (subdomain)
 
 ## 🎯 Key Features
 
-### Adopter App Features
+### Dog Parent App Features
 - 🐕 Browse available puppies
 - 🔍 Advanced search and filtering
 - ❤️ Favorites management
@@ -183,7 +183,7 @@ NEXT_PUBLIC_AWS_S3_BUCKET=your_s3_bucket
 1. Connect your GitHub repository to Vercel
 2. Configure environment variables for each app
 3. Set up custom domains:
-   - Adopter app: `homeforpup.com`
+   - Dog Parent app: `homeforpup.com`
    - Breeder app: `breeders.homeforpup.com`
 
 ### Environment Setup
@@ -191,7 +191,7 @@ NEXT_PUBLIC_AWS_S3_BUCKET=your_s3_bucket
 Each app needs its own environment configuration:
 
 ```bash
-# Adopter app environment
+# Dog Parent app environment
 NEXT_PUBLIC_APP_URL=https://homeforpup.com
 NEXT_PUBLIC_BREEDER_APP_URL=https://breeders.homeforpup.com
 

@@ -24,7 +24,7 @@ const { Title, Text } = Typography;
 
 interface ActivityStatsProps {
   userId: string;
-  userType: 'adopter' | 'breeder';
+  userType: 'dog-parent' | 'breeder';
   period?: 'day' | 'week' | 'month' | 'year';
   onStatsChange?: (stats: ActivityStatsType) => void;
 }

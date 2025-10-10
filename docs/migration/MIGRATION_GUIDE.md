@@ -6,7 +6,7 @@ This guide outlines the steps to migrate the existing HomeForPup codebase to the
 
 The migration involves:
 1. Moving shared code to packages
-2. Creating separate apps for adopters and breeders
+2. Creating separate apps for dog-parents and breeders
 3. Updating import paths and dependencies
 4. Configuring build and deployment
 
@@ -83,13 +83,13 @@ cp src/lib/auth.ts packages/shared-lib/src/auth/
 
 ## 🏗️ App Migration
 
-### 1. Adopter App (`apps/adopter-app`)
+### 1. Dog Parent App (`apps/dog-parent-app`)
 
 **Status**: 🔄 In Progress
 
 **Features to include**:
 - Dog browsing and search
-- User profiles (adopter-focused)
+- User profiles (dog-parent-focused)
 - Favorites management
 - Messaging with breeders
 - Breed selection
@@ -97,14 +97,14 @@ cp src/lib/auth.ts packages/shared-lib/src/auth/
 **Migration steps**:
 ```bash
 # Copy relevant pages
-cp src/app/browse/ apps/adopter-app/src/app/
-cp src/app/favorites/ apps/adopter-app/src/app/
-cp src/app/users/ apps/adopter-app/src/app/
-cp src/app/auth/ apps/adopter-app/src/app/
+cp src/app/browse/ apps/dog-parent-app/src/app/
+cp src/app/favorites/ apps/dog-parent-app/src/app/
+cp src/app/users/ apps/dog-parent-app/src/app/
+cp src/app/auth/ apps/dog-parent-app/src/app/
 
 # Copy app-specific components
-cp src/components/PuppyList.tsx apps/adopter-app/src/components/
-cp src/components/ContactBreederModal.tsx apps/adopter-app/src/components/
+cp src/components/PuppyList.tsx apps/dog-parent-app/src/components/
+cp src/components/ContactBreederModal.tsx apps/dog-parent-app/src/components/
 
 # Update imports to use shared packages
 ```
@@ -162,7 +162,7 @@ import { BreedSelector } from '@homeforpup/shared-components';
 - [ ] Update component dependencies
 
 ### Phase 3: App Migration 🔄
-- [ ] Create adopter app structure
+- [ ] Create dog-parent app structure
 - [ ] Create breeder app structure
 - [ ] Migrate app-specific code
 - [ ] Update import paths
@@ -198,7 +198,7 @@ Each app now has its own build configuration and dependencies.
 npm run dev
 
 # Start specific app
-npm run dev:adopter
+npm run dev:dog-parent
 npm run dev:breeder
 
 # Build all packages

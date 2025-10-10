@@ -38,7 +38,7 @@ async function getUserInfo(userId: string) {
         name: result.Item.displayName || result.Item.name || result.Item.firstName || 'Unknown User',
         displayName: result.Item.displayName,
         profileImage: result.Item.profileImage,
-        userType: result.Item.userType || 'adopter'
+        userType: result.Item.userType || 'dog-parent'
       };
     }
     
@@ -46,7 +46,7 @@ async function getUserInfo(userId: string) {
       name: `User ${userId.slice(-4)}`,
       displayName: undefined,
       profileImage: undefined,
-      userType: 'adopter'
+      userType: 'dog-parent'
     };
   } catch (error) {
     console.error('Error fetching user info:', error);
@@ -54,7 +54,7 @@ async function getUserInfo(userId: string) {
       name: `User ${userId.slice(-4)}`,
       displayName: undefined,
       profileImage: undefined,
-      userType: 'adopter'
+      userType: 'dog-parent'
     };
   }
 }
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
             name: receiverName,
             displayName: receiverName,
             profileImage: undefined,
-            userType: 'adopter'
+            userType: 'dog-parent'
           })
         : getUserInfo(receiverId)
     ]);

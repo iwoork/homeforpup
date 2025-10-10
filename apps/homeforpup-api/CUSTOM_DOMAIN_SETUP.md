@@ -214,7 +214,7 @@ curl "https://api.homeforpup.com/development/breeds?limit=3"
 
 ```bash
 # Development
-# apps/adopter-app/.env.local
+# apps/dog-parent-app/.env.local
 NEXT_PUBLIC_API_URL=https://api.homeforpup.com/development
 
 # Production (when ready)

@@ -118,7 +118,7 @@ const MessageView: React.FC<MessageViewProps> = ({
   const getUserTypeBadgeColor = (userType?: string) => {
     switch (userType) {
       case 'breeder': return 'green';
-      case 'adopter': return 'blue';
+      case 'dog-parent': return 'blue';
       case 'both': return 'purple';
       default: return 'default';
     }

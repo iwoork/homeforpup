@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             userId,
             name: session?.user?.name || 'User',
             email: session?.user?.email || '',
-            userType: (session?.user as any)?.userType || 'adopter'
+            userType: (session?.user as any)?.userType || 'dog-parent'
           }),
         });
 
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           userId: userId,
           name: session.user.name || 'User',
           email: session.user.email || '',
-          userType: (session.user as any).userType || 'adopter',
+          userType: (session.user as any).userType || 'dog-parent',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           verified: (session.user as any).isVerified || false,

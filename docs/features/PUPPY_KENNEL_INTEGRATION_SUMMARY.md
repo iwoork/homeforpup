@@ -1,7 +1,7 @@
 # Puppy Kennel Integration Summary
 
 ## Overview
-Successfully implemented a shared UI component system for displaying available puppies with kennel information instead of breeder information, maintaining the current design while making it reusable between adopter-app and breeder-app.
+Successfully implemented a shared UI component system for displaying available puppies with kennel information instead of breeder information, maintaining the current design while making it reusable between dog-parent-app and breeder-app.
 
 ## What Was Implemented
 
@@ -43,14 +43,14 @@ Successfully implemented a shared UI component system for displaying available p
   - Returns statistics and available filter options
 
 #### API Endpoints
-- **Adopter App**: `/api/available-puppies`
+- **Dog Parent App**: `/api/available-puppies`
 - **Breeder App**: `/api/available-puppies`
 - Both use the shared `puppiesApiClient` for consistency
 
-### 3. Updated Adopter App
+### 3. Updated Dog Parent App
 
 #### New Browse Page
-- **Location**: `apps/adopter-app/src/app/browse-new/page.tsx`
+- **Location**: `apps/dog-parent-app/src/app/browse-new/page.tsx`
 - **Features**:
   - Uses the new shared PuppyList and PuppyCard components
   - Maintains existing filter functionality
@@ -59,7 +59,7 @@ Successfully implemented a shared UI component system for displaying available p
   - Responsive design with statistics display
 
 #### New Hook
-- **Location**: `apps/adopter-app/src/hooks/api/useAvailablePuppiesWithKennels.ts`
+- **Location**: `apps/dog-parent-app/src/hooks/api/useAvailablePuppiesWithKennels.ts`
 - **Features**:
   - SWR-based data fetching
   - Filter parameter management
@@ -85,7 +85,7 @@ Successfully implemented a shared UI component system for displaying available p
 
 ### 1. Maintainability
 - Single source of truth for puppy display components
-- Shared between adopter-app and breeder-app
+- Shared between dog-parent-app and breeder-app
 - Consistent design and functionality across apps
 
 ### 2. Data Accuracy
@@ -109,9 +109,9 @@ Successfully implemented a shared UI component system for displaying available p
 - `packages/shared-dogs/src/components/PuppyCard.tsx`
 - `packages/shared-dogs/src/components/PuppyList.tsx`
 - `packages/shared-dogs/src/api-puppies.ts`
-- `apps/adopter-app/src/app/api/available-puppies/route.ts`
-- `apps/adopter-app/src/hooks/api/useAvailablePuppiesWithKennels.ts`
-- `apps/adopter-app/src/app/browse-new/page.tsx`
+- `apps/dog-parent-app/src/app/api/available-puppies/route.ts`
+- `apps/dog-parent-app/src/hooks/api/useAvailablePuppiesWithKennels.ts`
+- `apps/dog-parent-app/src/app/browse-new/page.tsx`
 - `apps/breeder-app/src/app/api/available-puppies/route.ts`
 
 ### Modified Files
@@ -119,7 +119,7 @@ Successfully implemented a shared UI component system for displaying available p
 
 ## Usage
 
-### In Adopter App
+### In Dog Parent App
 ```typescript
 import { PuppyList, useAvailablePuppiesWithKennels } from '@homeforpup/shared-dogs';
 
@@ -145,7 +145,7 @@ The same components can be used in the breeder app for displaying available pupp
 - ✅ API endpoints created in both apps
 
 ## Next Steps
-1. Test the new `/browse-new` page in the adopter app
+1. Test the new `/browse-new` page in the dog-parent app
 2. Replace the old `/browse` page with the new implementation
 3. Add the shared components to the breeder app where needed
 4. Add price field to the Dog model for accurate pricing

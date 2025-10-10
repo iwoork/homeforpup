@@ -77,11 +77,11 @@ npm run android
    - Pull down on messages list to manually refresh
    - Or wait for auto-refresh (10 seconds)
 
-### For Adopters (Web App)
+### For Dog Parents (Web App)
 
-Adopters can send messages from the web app:
+Dog Parents can send messages from the web app:
 
-1. Browse puppies on adopter-app
+1. Browse puppies on dog-parent-app
 2. Click "Contact Breeder"
 3. Fill in message form
 4. Message delivered to breeder's mobile app

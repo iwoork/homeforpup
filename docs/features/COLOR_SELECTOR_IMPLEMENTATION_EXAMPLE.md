@@ -43,7 +43,7 @@ const { colors, loading, error } = useDogColors();
 ### Before (Current Implementation)
 
 ```tsx
-// src/components/dogs/DogForm.tsx or apps/adopter-app/src/components/dogs/DogForm.tsx
+// src/components/dogs/DogForm.tsx or apps/dog-parent-app/src/components/dogs/DogForm.tsx
 import { Form, Input, Select, DatePicker, InputNumber, Row, Col } from 'antd';
 
 const DogForm: React.FC<DogFormProps> = ({ dog, onSave, onCancel, loading }) => {
@@ -75,7 +75,7 @@ const DogForm: React.FC<DogFormProps> = ({ dog, onSave, onCancel, loading }) => 
 ### After (With ColorSelector)
 
 ```tsx
-// src/components/dogs/DogForm.tsx or apps/adopter-app/src/components/dogs/DogForm.tsx
+// src/components/dogs/DogForm.tsx or apps/dog-parent-app/src/components/dogs/DogForm.tsx
 import { Form, Input, Select, DatePicker, InputNumber, Row, Col } from 'antd';
 import { ColorSelector } from '@homeforpup/shared-components';
 import { useDogColors } from '@homeforpup/shared-hooks';
@@ -260,9 +260,9 @@ function DogColorForm() {
 
 ## Files to Update
 
-### Adopter App
-1. `/apps/adopter-app/src/components/dogs/DogForm.tsx` - Line 204-209
-2. `/apps/adopter-app/src/components/forms/AddDogForm.tsx` - Line 260-273
+### Dog Parent App
+1. `/apps/dog-parent-app/src/components/dogs/DogForm.tsx` - Line 204-209
+2. `/apps/dog-parent-app/src/components/forms/AddDogForm.tsx` - Line 260-273
 
 ### Breeder App
 Similar files in the breeder app that use color input fields
@@ -276,7 +276,7 @@ Similar files in the breeder app that use color input fields
 ### 1. Test the API Endpoint
 
 ```bash
-# In adopter-app (typically port 3001)
+# In dog-parent-app (typically port 3001)
 curl http://localhost:3001/api/dog-colors
 
 # In breeder-app (typically port 3002)
@@ -313,7 +313,7 @@ curl http://localhost:3002/api/dog-colors
 - [ ] Update imports in dog forms
 - [ ] Add `useDogColors` hook to components
 - [ ] Replace `Input` with `ColorSelector`
-- [ ] Test in adopter-app
+- [ ] Test in dog-parent-app
 - [ ] Test in breeder-app
 - [ ] Update any color validation rules
 - [ ] Test form submission with new color values

@@ -142,7 +142,7 @@ const ClientHeader: React.FC = () => {
     ];
 
     // Add profile-specific items based on user type
-    if (user.userType === 'adopter' || user.userType === 'both') {
+    if (user.userType === 'dog-parent' || user.userType === 'both') {
       baseItems.push(
         {
           key: 'breeds',

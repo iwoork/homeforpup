@@ -8,7 +8,7 @@ import { useCallback } from 'react';
 interface UseAuthReturn {
   user: any;
   loading: boolean;
-  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
+  signIn: (action?: 'login' | 'signup', userType?: 'breeder' | 'dog-parent') => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
   isAuthenticated: boolean;
@@ -17,10 +17,10 @@ interface UseAuthReturn {
   syncUser: (userData?: any, providedToken?: string) => Promise<any>;
   updateUser: (updates: any) => Promise<any>;
   // Legacy properties for backward compatibility
-  login: (action?: 'login' | 'signup', userType?: 'breeder' | 'adopter') => Promise<void>;
-  effectiveUserType: 'breeder' | 'adopter' | null;
+  login: (action?: 'login' | 'signup', userType?: 'breeder' | 'dog-parent') => Promise<void>;
+  effectiveUserType: 'breeder' | 'dog-parent' | null;
   canSwitchProfiles: boolean;
-  activeProfileType: 'breeder' | 'adopter' | null;
+  activeProfileType: 'breeder' | 'dog-parent' | null;
   isSwitchingProfile: boolean;
   clearAllAuthData: () => void;
   refreshUserData: () => Promise<void>;
@@ -85,7 +85,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [authContext]);
 
-  const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'adopter') => {
+  const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'dog-parent') => {
     try {
       // Store user type for after signup completion
       if (action === 'signup' && userType) {
@@ -117,7 +117,7 @@ export const useAuth = (): UseAuthReturn => {
   }, [authContext]);
 
   // Legacy properties for backward compatibility
-  const effectiveUserType = authContext.user?.userType === 'both' ? 'breeder' : (authContext.user?.userType as 'breeder' | 'adopter' | null) || null;
+  const effectiveUserType = authContext.user?.userType === 'both' ? 'breeder' : (authContext.user?.userType as 'breeder' | 'dog-parent' | null) || null;
   const canSwitchProfiles = authContext.user?.userType === 'both';
   const activeProfileType = effectiveUserType;
   const isSwitchingProfile = false; // Not implemented in current version

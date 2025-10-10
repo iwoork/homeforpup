@@ -278,7 +278,7 @@ export class DogsApiClient {
     }
 
     const user = userResult.Item;
-    const userCriteria = user.puppyParentInfo || user.adopterInfo || {};
+    const userCriteria = user.puppyParentInfo || user.dogParentInfo || {};
 
     // If user hasn't set any criteria, return empty array
     if (!userCriteria.preferredBreeds || userCriteria.preferredBreeds.length === 0) {

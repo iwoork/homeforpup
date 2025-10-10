@@ -14,7 +14,7 @@ export interface User {
   firstName?: string; // Optional: First name
   lastName?: string; // Optional: Last name
   displayName?: string; // Optional: Public display name
-  userType: 'breeder' | 'adopter' | 'both'; // User type
+  userType: 'breeder' | 'dog-parent' | 'both'; // User type
   phone?: string; // Optional: Phone number
   location?: string; // Location string (city, state)
   coordinates?: {
@@ -598,7 +598,7 @@ export interface AnnouncementFilters {
 // UTILITY TYPES
 // ============================================================================
 
-export type UserType = 'breeder' | 'adopter' | 'both';
+export type UserType = 'breeder' | 'dog-parent' | 'both';
 export type MessageType = 'inquiry' | 'general' | 'business' | 'urgent';
 export type AnnouncementType = 'litter' | 'general' | 'health' | 'achievement' | 'event' | 'available';
 export type LitterStatus = 'planned' | 'expecting' | 'born' | 'weaning' | 'ready' | 'sold_out';
@@ -697,7 +697,7 @@ export interface Activity {
 }
 
 export type ActivityType = 
-  // Adopter Activities
+  // Dog Parent Activities
   | 'puppy_favorited'
   | 'puppy_unfavorited'
   | 'breeder_contacted'
@@ -727,12 +727,12 @@ export type ActivityType =
   | 'announcement_updated'
   | 'inquiry_received'
   | 'inquiry_responded'
-  | 'profile_viewed_by_adopter'
-  | 'kennel_viewed_by_adopter'
-  | 'puppy_viewed_by_adopter'
+  | 'profile_viewed_by_dog_parent'
+  | 'kennel_viewed_by_dog_parent'
+  | 'puppy_viewed_by_dog_parent'
   | 'favorite_received'
-  | 'message_received_from_adopter'
-  | 'message_sent_to_adopter'
+  | 'message_received_from_dog_parent'
+  | 'message_sent_to_dog_parent'
   | 'health_record_updated'
   | 'litter_created'
   | 'litter_updated'
@@ -757,7 +757,7 @@ export interface ActivityMetadata {
   // Common fields
   actorId?: string;
   actorName?: string;
-  actorType?: 'adopter' | 'breeder';
+  actorType?: 'dog-parent' | 'breeder';
   targetId?: string;
   targetName?: string;
   targetType?: 'puppy' | 'breeder' | 'kennel' | 'message' | 'user' | 'announcement';

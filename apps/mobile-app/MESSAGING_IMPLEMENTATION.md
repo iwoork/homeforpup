@@ -2,7 +2,7 @@
 
 ## Overview
 
-The messaging system has been fully implemented for the mobile-app, allowing breeders to communicate with potential adopters in real-time. Messages are organized by sender (message threads) for easy information retrieval.
+The messaging system has been fully implemented for the mobile-app, allowing breeders to communicate with potential dog-parents in real-time. Messages are organized by sender (message threads) for easy information retrieval.
 
 ## Architecture
 
@@ -103,7 +103,7 @@ Messages are organized by sender to make it easy to find information:
 
 ### Data Consistency
 
-The messaging system uses the same DynamoDB tables as the web apps (breeder-app and adopter-app):
+The messaging system uses the same DynamoDB tables as the web apps (breeder-app and dog-parent-app):
 
 - `homeforpup-messages` - Stores all messages
 - `homeforpup-message-threads` - Stores thread metadata
@@ -111,7 +111,7 @@ The messaging system uses the same DynamoDB tables as the web apps (breeder-app 
 This ensures:
 
 - Breeders can respond on mobile or web
-- Adopters can message from any platform
+- Dog Parents can message from any platform
 - All conversations are synchronized
 
 ## WebSocket Support (Optional)

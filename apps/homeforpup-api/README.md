@@ -71,7 +71,7 @@ apps/homeforpup-api/
 
 ### Current API Endpoints to Migrate
 
-#### Adopter App APIs
+#### Dog Parent App APIs
 - `/api/auth/*` - NextAuth authentication
 - `/api/dogs/*` - Dog listings and details
 - `/api/users/*` - User profiles and management
@@ -205,7 +205,7 @@ npm run deploy:all
 - **SSL/TLS**: AWS Certificate Manager
 - **Authorization**: AWS Cognito authorizer
 - **Rate Limiting**: Per-user throttling
-- **CORS**: Configured for adopter and breeder apps
+- **CORS**: Configured for dog-parent and breeder apps
 - **Logging**: CloudWatch Logs with request/response logging
 - **Metrics**: CloudWatch Metrics and alarms
 - **Caching**: API Gateway caching for read operations

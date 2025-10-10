@@ -2,7 +2,7 @@
 
 ## Overview
 
-The messaging feature has been successfully implemented for the mobile-app. Breeders can now send and receive messages from potential adopters using a real-time messaging interface.
+The messaging feature has been successfully implemented for the mobile-app. Breeders can now send and receive messages from potential dog-parents using a real-time messaging interface.
 
 ## What Was Implemented
 
@@ -19,7 +19,7 @@ The messaging feature has been successfully implemented for the mobile-app. Bree
 **Database:**
 
 - Uses existing DynamoDB tables: `homeforpup-messages` and `homeforpup-message-threads`
-- Same tables used by breeder-app and adopter-app for consistency
+- Same tables used by breeder-app and dog-parent-app for consistency
 - Messages organized by sender for easy information retrieval
 
 **Files Created:**
@@ -95,7 +95,7 @@ The messaging feature has been successfully implemented for the mobile-app. Bree
 - Messages sync across all platforms:
   - Breeder mobile app (iOS)
   - Breeder web app
-  - Adopter web app
+  - Dog Parent web app
 - Breeders can respond from any device
 
 ### User Experience
@@ -409,7 +409,7 @@ All success criteria have been met:
 
 ## Conclusion
 
-The messaging feature is **complete and ready for use**. Breeders can now communicate with potential adopters directly from the mobile app. Messages are synchronized across all platforms (mobile and web), organized by sender for easy information retrieval.
+The messaging feature is **complete and ready for use**. Breeders can now communicate with potential dog-parents directly from the mobile app. Messages are synchronized across all platforms (mobile and web), organized by sender for easy information retrieval.
 
 ### Next Steps for Deployment:
 

@@ -60,7 +60,7 @@ export interface UpdateDogRequest extends Partial<CreateDogRequest> {
   id: string;
 }
 
-// Matched dogs response (for adopter app)
+// Matched dogs response (for dog parent app)
 export interface MatchedDogsResponse {
   matchedPuppies: Dog[];
   total?: number;

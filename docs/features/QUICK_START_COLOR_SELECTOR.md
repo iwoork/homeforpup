@@ -90,7 +90,7 @@ const { colors } = useDogColors({ search });
 ## 📡 API Usage
 
 ### Endpoints
-- Adopter App: `http://localhost:3001/api/dog-colors`
+- Dog Parent App: `http://localhost:3001/api/dog-colors`
 - Breeder App: `http://localhost:3002/api/dog-colors`
 
 ### Query Parameters
@@ -132,7 +132,7 @@ curl /api/dog-colors?limit=10
 
 ### Test API
 ```bash
-# Test adopter-app (port 3001)
+# Test dog-parent-app (port 3001)
 node scripts/test-color-api.js 3001
 
 # Test breeder-app (port 3002)  
@@ -185,7 +185,7 @@ cd ../shared-components && npm run build
 packages/shared-types/src/color.ts
 packages/shared-components/src/forms/ColorSelector.tsx
 packages/shared-hooks/src/api/useDogColors.ts
-apps/adopter-app/src/app/api/dog-colors/route.ts
+apps/dog-parent-app/src/app/api/dog-colors/route.ts
 apps/breeder-app/src/app/api/dog-colors/route.ts
 ```
 
@@ -244,5 +244,5 @@ cd ../shared-components && npm run build
 
 ## 🎉 You're Done!
 
-The ColorSelector is ready to use in both adopter-app and breeder-app. Enjoy better color selection! 🐕🎨
+The ColorSelector is ready to use in both dog-parent-app and breeder-app. Enjoy better color selection! 🐕🎨
 

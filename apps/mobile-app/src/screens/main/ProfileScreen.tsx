@@ -15,9 +15,48 @@ import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 
 const ProfileScreen: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserType } = useAuth();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+
+  const handleChangeUserType = () => {
+    const currentType = user?.userType || 'breeder';
+    const newType = currentType === 'breeder' ? 'dog-parent' : 'breeder';
+    const currentTypeLabel = currentType === 'breeder' ? 'Breeder' : 'Dog Parent';
+    const newTypeLabel = newType === 'breeder' ? 'Breeder' : 'Dog Parent';
+    
+    Alert.alert(
+      'Change Account Type',
+      `Change your account type from ${currentTypeLabel} to ${newTypeLabel}?\n\nThis will change your dashboard and available features.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Change',
+          onPress: async () => {
+            const success = await updateUserType(newType);
+            if (success) {
+              Alert.alert(
+                'Success',
+                `Your account type has been changed to ${newTypeLabel}. The app will now show ${newTypeLabel} features.`,
+                [{ 
+                  text: 'OK', 
+                  onPress: () => {
+                    // Reset to root and the app will show the correct tabs for the new user type
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: 'MainTabs' as never }],
+                    });
+                  }
+                }]
+              );
+            } else {
+              Alert.alert('Error', 'Failed to change account type. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Mock subscription data - will be replaced with real data
   type SubscriptionPlan = 'basic' | 'premium';
@@ -175,7 +214,7 @@ const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.userName}>{user?.name || 'Breeder'}</Text>
+          <Text style={styles.userName}>{user?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
 
           <View style={styles.userTypeBadge}>
@@ -184,37 +223,102 @@ const ProfileScreen: React.FC = () => {
               size={16}
               color={theme.colors.success}
             />
-            <Text style={styles.userTypeText}>Verified Breeder</Text>
+            <Text style={styles.userTypeText}>
+              Verified {user?.userType === 'dog-parent' ? 'Dog Parent' : 'Breeder'}
+            </Text>
           </View>
         </View>
       </LinearGradient>
 
-      {/* Stats Section */}
-      <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Your Statistics</Text>
-        <View style={styles.statsGrid}>
-          {statsData.map((stat, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.statCard}
-              activeOpacity={0.8}
-            >
+      {/* Account Type Switcher */}
+      <View style={styles.accountTypeSection}>
+        <TouchableOpacity
+          style={styles.accountTypeCard}
+          onPress={handleChangeUserType}
+        >
+          <View style={styles.accountTypeContent}>
+            <View style={styles.accountTypeIcon}>
+              <Icon
+                name={user?.userType === 'dog-parent' ? 'heart' : 'paw'}
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+            <View style={styles.accountTypeText}>
+              <Text style={styles.accountTypeTitle}>
+                Account Type: {user?.userType === 'dog-parent' ? 'Dog Parent' : 'Breeder'}
+              </Text>
+              <Text style={styles.accountTypeSubtitle}>
+                Tap to switch to {user?.userType === 'dog-parent' ? 'Breeder' : 'Dog Parent'} mode
+              </Text>
+            </View>
+            <Icon name="swap-horizontal" size={24} color={theme.colors.primary} />
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Stats Section - Breeder Only */}
+      {user?.userType === 'breeder' && (
+        <View style={styles.statsSection}>
+          <Text style={styles.sectionTitle}>Your Statistics</Text>
+          <View style={styles.statsGrid}>
+            {statsData.map((stat, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.statCard}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={stat.colors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.statCardGradient}
+                >
+                  <Icon name={stat.icon} size={24} color="#ffffff" />
+                  <Text style={styles.statValue}>{stat.value}</Text>
+                  <Text style={styles.statTitle}>{stat.title}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Dog Parent Stats Section */}
+      {user?.userType === 'dog-parent' && (
+        <View style={styles.statsSection}>
+          <Text style={styles.sectionTitle}>Your Activity</Text>
+          <View style={styles.statsGrid}>
+            <TouchableOpacity style={styles.statCard} activeOpacity={0.8}>
               <LinearGradient
-                colors={stat.colors}
+                colors={['#f59e0b', '#d97706']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.statCardGradient}
               >
-                <Icon name={stat.icon} size={24} color="#ffffff" />
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statTitle}>{stat.title}</Text>
+                <Icon name="star" size={24} color="#ffffff" />
+                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statTitle}>Favorites</Text>
               </LinearGradient>
             </TouchableOpacity>
-          ))}
+            <TouchableOpacity style={styles.statCard} activeOpacity={0.8}>
+              <LinearGradient
+                colors={[theme.colors.primary, theme.colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.statCardGradient}
+              >
+                <Icon name="chatbubbles" size={24} color="#ffffff" />
+                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statTitle}>Messages</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
 
-      {/* Subscription Section */}
+      {/* Subscription Section - Breeder Only */}
+      {user?.userType === 'breeder' && (
       <View style={styles.subscriptionSection}>
         <Text style={styles.sectionTitle}>Subscription Plan</Text>
         <View style={styles.subscriptionCard}>
@@ -301,17 +405,19 @@ const ProfileScreen: React.FC = () => {
           </LinearGradient>
         </View>
       </View>
+      )}
 
-      {/* Business Management Section */}
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Business Management</Text>
-        {businessMenuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.menuItem}
-            activeOpacity={0.7}
-            onPress={item.onPress}
-          >
+      {/* Business Management Section - Breeder Only */}
+      {user?.userType === 'breeder' && (
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Business Management</Text>
+          {businessMenuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={item.onPress}
+            >
             <View
               style={[
                 styles.menuIconContainer,
@@ -332,6 +438,39 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
+      )}
+
+      {/* Dog Parent Preferences Section - Dog Parent Only */}
+      {user?.userType === 'dog-parent' && (
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Adoption Preferences</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('DogParentPreferences' as never)}
+          >
+            <View
+              style={[
+                styles.menuIconContainer,
+                { backgroundColor: `${theme.colors.primary}15` },
+              ]}
+            >
+              <Icon name="options" size={22} color={theme.colors.primary} />
+            </View>
+            <View style={styles.menuContent}>
+              <Text style={styles.menuTitle}>My Preferences</Text>
+              <Text style={styles.menuSubtitle}>
+                Update your search criteria and preferences
+              </Text>
+            </View>
+            <Icon
+              name="chevron-forward"
+              size={24}
+              color={theme.colors.textTertiary}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Account Management Section */}
       <View style={styles.menuSection}>
@@ -665,6 +804,44 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     marginLeft: theme.spacing.sm,
+  },
+  accountTypeSection: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+  },
+  accountTypeCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary + '40',
+    ...theme.shadows.sm,
+  },
+  accountTypeContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  accountTypeIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  accountTypeText: {
+    flex: 1,
+  },
+  accountTypeTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  accountTypeSubtitle: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
   },
 });
 

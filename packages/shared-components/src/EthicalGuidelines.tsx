@@ -95,9 +95,9 @@ const EthicalGuidelines: React.FC<EthicalGuidelinesProps> = ({
       )}
 
       <Space direction="vertical" size="large" style={{ width: '100%', padding: '0 1rem' }}>
-        {/* For Adopters */}
+        {/* For Dog Parents */}
         <Card 
-          title="For Pet Adopters" 
+          title="For Dog Parents" 
           style={{ 
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             borderRadius: '8px',
@@ -309,7 +309,7 @@ const EthicalGuidelines: React.FC<EthicalGuidelinesProps> = ({
               "Maintain a transparent review and rating system",
               "Support rescue organizations and adoption initiatives",
               "Promote spaying and neutering to reduce overpopulation",
-              "Facilitate connections between responsible breeders and educated adopters",
+              "Facilitate connections between responsible breeders and educated dog parents",
               "Regularly audit and monitor platform activity for compliance"
             ]}
             renderItem={(item) => (

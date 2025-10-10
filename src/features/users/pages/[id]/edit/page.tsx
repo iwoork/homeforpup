@@ -36,7 +36,7 @@ interface UserProfile {
   coverPhoto?: string;
   galleryPhotos?: string[];
   verified: boolean;
-  userType: 'adopter' | 'breeder' | 'both';
+  userType: 'dog-parent' | 'breeder' | 'both';
   preferences: {
     notifications: {
       email: boolean;
@@ -230,7 +230,7 @@ const EditProfilePage: React.FC = () => {
         privacyShowEmail: profile.preferences?.privacy?.showEmail,
         privacyShowPhone: profile.preferences?.privacy?.showPhone,
         privacyShowLocation: profile.preferences?.privacy?.showLocation,
-        // Adopter Info
+        // Dog Parent Info
         housingType: profile.adopterInfo?.housingType,
         yardSize: profile.adopterInfo?.yardSize,
         hasOtherPets: profile.adopterInfo?.hasOtherPets,
@@ -286,7 +286,7 @@ const EditProfilePage: React.FC = () => {
       };
 
       // Add adopter-specific data if user is adopter or both
-      if (profile.userType === 'adopter' || profile.userType === 'both') {
+      if (profile.userType === 'dog-parent' || profile.userType === 'both') {
         updateData.adopterInfo = {
           housingType: values.housingType,
           yardSize: values.yardSize,
@@ -825,9 +825,9 @@ const EditProfilePage: React.FC = () => {
             </Row>
           </TabPane>
 
-          {/* Adopter Information */}
-          {(profile.userType === 'adopter' || profile.userType === 'both') && (
-            <TabPane tab="Adoption Preferences" key="adopter">
+          {/* Dog Parent Information */}
+          {(profile.userType === 'dog-parent' || profile.userType === 'both') && (
+            <TabPane tab="Adoption Preferences" key="dog-parent">
               <Row gutter={[16, 16]}>
                 <Col span={24}>
                   <Card title="Living Situation" style={cardStyle}>
@@ -1102,8 +1102,8 @@ const EditProfilePage: React.FC = () => {
             </TabPane>
           )}
 
-          {/* Additional Information for Adopters */}
-          {(profile.userType === 'adopter' || profile.userType === 'both') && (
+          {/* Additional Information for Dog Parents */}
+          {(profile.userType === 'dog-parent' || profile.userType === 'both') && (
             <TabPane tab="Additional Info" key="additional">
               <Row gutter={[16, 16]}>
                 {/* Previous Pets */}
@@ -1385,7 +1385,7 @@ const EditProfilePage: React.FC = () => {
               <Space wrap>
                 <Tag color="blue">{profile.userType}</Tag>
                 {profile.verified && <Tag color="green">Verified</Tag>}
-                {(profile.userType === 'adopter' || profile.userType === 'both') && (
+                {(profile.userType === 'dog-parent' || profile.userType === 'both') && (
                   <Tag color="purple">
                     {form.getFieldValue('experienceLevel')?.replace('-', ' ') || 
                      profile.adopterInfo?.experienceLevel?.replace('-', ' ') || 'Experience level not set'}

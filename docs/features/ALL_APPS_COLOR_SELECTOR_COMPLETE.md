@@ -10,16 +10,16 @@ The **ColorSelector** component has been successfully integrated into **ALL** do
 
 | App | Files | Forms | Status |
 |-----|-------|-------|--------|
-| **Adopter App** | 2 | 2 | ✅ Complete |
+| **Dog Parent App** | 2 | 2 | ✅ Complete |
 | **Root App** | 2 | 2 | ✅ Complete |
 | **Breeder App** | 1 | 3 | ✅ Complete |
 | **TOTAL** | **5** | **7** | ✅ **100% Complete** |
 
 ## 📁 All Files Updated
 
-### Adopter App (2 files)
-1. ✅ `apps/adopter-app/src/components/forms/AddDogForm.tsx` - Add Dog
-2. ✅ `apps/adopter-app/src/components/dogs/DogForm.tsx` - Edit Dog
+### Dog Parent App (2 files)
+1. ✅ `apps/dog-parent-app/src/components/forms/AddDogForm.tsx` - Add Dog
+2. ✅ `apps/dog-parent-app/src/components/dogs/DogForm.tsx` - Edit Dog
 
 ### Root App (2 files)
 3. ✅ `src/components/forms/AddDogForm.tsx` - Add Dog
@@ -46,9 +46,9 @@ The **ColorSelector** component has been successfully integrated into **ALL** do
 
 ## 🧪 Testing All Apps
 
-### Test Adopter App (Port 3001)
+### Test Dog Parent App (Port 3001)
 ```bash
-cd apps/adopter-app
+cd apps/dog-parent-app
 rm -rf .next
 npm run dev
 ```
@@ -102,13 +102,13 @@ All apps have the dog-colors API endpoint:
 
 | App | Endpoint | Port |
 |-----|----------|------|
-| Adopter App | `/api/dog-colors` | 3001 |
+| Dog Parent App | `/api/dog-colors` | 3001 |
 | Root App | `/api/dog-colors` | 3000 |
 | Breeder App | `/api/dog-colors` | 3002 |
 
 ### Test APIs
 ```bash
-# Adopter App
+# Dog Parent App
 curl http://localhost:3001/api/dog-colors
 
 # Root App  
@@ -154,7 +154,7 @@ Black and White, Black and Tan, Brown and White, Tricolor, Black Tan and White, 
 ## ✅ Validation - All Apps
 
 ```
-✅ Adopter App
+✅ Dog Parent App
    ✅ AddDogForm - No errors
    ✅ DogForm - No errors
    ✅ API endpoint exists
@@ -186,9 +186,9 @@ cd ../shared-components && npm run build
 
 ### 2. Test Each App
 
-#### Adopter App
+#### Dog Parent App
 ```bash
-cd /Users/Efren/repos/homeforpup/apps/adopter-app
+cd /Users/Efren/repos/homeforpup/apps/dog-parent-app
 rm -rf .next && npm run dev
 # Visit http://localhost:3001
 ```
@@ -221,7 +221,7 @@ In each app, when you click the Color field:
 
 ### Implementation Docs
 1. **This Summary**: `ALL_APPS_COLOR_SELECTOR_COMPLETE.md`
-2. **Adopter/Root Apps**: `DOG_FORMS_COLOR_INTEGRATION_COMPLETE.md`
+2. **Dog Parent/Root Apps**: `DOG_FORMS_COLOR_INTEGRATION_COMPLETE.md`
 3. **Breeder App**: `BREEDER_APP_COLOR_INTEGRATION_COMPLETE.md`
 4. **Quick Summary**: `COLOR_SELECTOR_INTEGRATION_SUMMARY.md`
 
@@ -242,7 +242,7 @@ In each app, when you click the Color field:
 | 2 | Build ColorSelector component | ✅ Done |
 | 3 | Create useDogColors hook | ✅ Done |
 | 4 | Create API endpoints | ✅ Done (3 apps) |
-| 5 | Update Adopter App forms | ✅ Done (2 forms) |
+| 5 | Update Dog Parent App forms | ✅ Done (2 forms) |
 | 6 | Update Root App forms | ✅ Done (2 forms) |
 | 7 | Update Breeder App forms | ✅ Done (3 forms) |
 | 8 | Build all packages | ✅ Done |

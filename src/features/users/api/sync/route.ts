@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { 
-      userType = 'adopter',
+      userType = 'dog-parent',
       phone,
       location,
       bio,
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       }) : existingUser?.breederInfo,
 
       // Handle adopter-specific info  
-      adopterInfo: userType === 'adopter' || userType === 'both' ? removeUndefinedValues({
+      adopterInfo: userType === 'dog-parent' || userType === 'both' ? removeUndefinedValues({
         housingType: adopterInfo?.housingType || existingUser?.adopterInfo?.housingType || undefined,
         yardSize: adopterInfo?.yardSize || existingUser?.adopterInfo?.yardSize || undefined,
         hasOtherPets: adopterInfo?.hasOtherPets || existingUser?.adopterInfo?.hasOtherPets || false,

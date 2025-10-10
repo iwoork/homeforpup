@@ -13,12 +13,20 @@ import Logo from '../components/Logo';
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
 
-// Main Screens
+// Main Screens - Breeder
 import DashboardScreen from '../screens/main/DashboardScreen';
 import LittersScreen from '../screens/main/LittersScreen';
 import DogsScreen from '../screens/main/DogsScreen';
 import MessagesScreen from '../screens/main/MessagesScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+
+// Main Screens - Dog Parent
+import DogParentDashboardScreen from '../screens/main/DogParentDashboardScreen';
+import SearchPuppiesScreen from '../screens/dog-parent/SearchPuppiesScreen';
+import MatchedPuppiesScreen from '../screens/dog-parent/MatchedPuppiesScreen';
+import FavoritePuppiesScreen from '../screens/dog-parent/FavoritePuppiesScreen';
+import DogParentPreferencesScreen from '../screens/dog-parent/DogParentPreferencesScreen';
+import ContactBreederScreen from '../screens/dog-parent/ContactBreederScreen';
 
 // Detail Screens
 import KennelDetailScreen from '../screens/details/KennelDetailScreen';
@@ -54,7 +62,7 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-const MainTabs = () => (
+const BreederTabs = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       tabBarIcon: ({ focused, color, size }) => {
@@ -160,9 +168,49 @@ const MainTabs = () => (
   </Tab.Navigator>
 );
 
-const MainStack = () => (
-  <Stack.Navigator
-    screenOptions={{
+const DogParentTabs = () => (
+  <Tab.Navigator
+    screenOptions={({ route }) => ({
+      tabBarIcon: ({ focused, color, size }) => {
+        let iconName: string;
+
+        switch (route.name) {
+          case 'DogParentDashboard':
+            iconName = focused ? 'home' : 'home-outline';
+            break;
+          case 'SearchPuppies':
+            iconName = focused ? 'search' : 'search-outline';
+            break;
+          case 'Favorites':
+            iconName = focused ? 'heart' : 'heart-outline';
+            break;
+          case 'Messages':
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+            break;
+          case 'Profile':
+            iconName = focused ? 'person' : 'person-outline';
+            break;
+          default:
+            iconName = 'ellipse';
+        }
+
+        return <Icon name={iconName} size={size} color={color} />;
+      },
+      tabBarActiveTintColor: theme.colors.primary,
+      tabBarInactiveTintColor: theme.colors.textSecondary,
+      tabBarStyle: {
+        backgroundColor: theme.colors.surface,
+        borderTopColor: theme.colors.border,
+        borderTopWidth: 1,
+        height: 60,
+        paddingBottom: 8,
+        paddingTop: 8,
+        ...theme.shadows.lg,
+      },
+      tabBarLabelStyle: {
+        fontSize: 12,
+        fontWeight: '600',
+      },
       headerStyle: {
         backgroundColor: theme.colors.surface,
         elevation: 0,
@@ -170,21 +218,91 @@ const MainStack = () => (
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
       },
-      headerTintColor: theme.colors.primary,
+      headerTintColor: theme.colors.text,
       headerTitleStyle: {
         fontWeight: '700',
-        fontSize: 18,
-        color: theme.colors.text,
+        fontSize: 20,
       },
-      headerBackTitleVisible: false,
-      cardStyle: { backgroundColor: theme.colors.background },
-    }}
+      headerLeft: () => (
+        <View style={{ marginLeft: 16 }}>
+          <Logo size={32} />
+        </View>
+      ),
+      headerTitle: 'Home for Pup',
+    })}
   >
-    <Stack.Screen
-      name="MainTabs"
-      component={MainTabs}
-      options={{ headerShown: false }}
+    <Tab.Screen
+      name="DogParentDashboard"
+      component={DogParentDashboardScreen}
+      options={{
+        title: 'Home',
+        tabBarLabel: 'Home',
+      }}
     />
+    <Tab.Screen
+      name="SearchPuppies"
+      component={SearchPuppiesScreen}
+      options={{
+        title: 'Search',
+        tabBarLabel: 'Search',
+      }}
+    />
+    <Tab.Screen
+      name="Favorites"
+      component={FavoritePuppiesScreen}
+      options={{
+        title: 'Favorites',
+        tabBarLabel: 'Favorites',
+      }}
+    />
+    <Tab.Screen
+      name="Messages"
+      component={MessagesScreen}
+      options={{
+        title: 'Messages',
+        tabBarLabel: 'Messages',
+      }}
+    />
+    <Tab.Screen
+      name="Profile"
+      component={ProfileScreen}
+      options={{
+        title: 'Profile',
+        tabBarLabel: 'Profile',
+      }}
+    />
+  </Tab.Navigator>
+);
+
+const MainStack = () => {
+  const { user } = useAuth();
+  const isDogParent = user?.userType === 'dog-parent';
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.surface,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
+        },
+        headerTintColor: theme.colors.primary,
+        headerTitleStyle: {
+          fontWeight: '700',
+          fontSize: 18,
+          color: theme.colors.text,
+        },
+        headerBackTitleVisible: false,
+        cardStyle: { backgroundColor: theme.colors.background },
+      }}
+    >
+      <Stack.Screen
+        name="MainTabs"
+        component={isDogParent ? DogParentTabs : BreederTabs}
+        options={{ headerShown: false }}
+      />
 
     {/* Kennel Screens */}
     <Stack.Screen
@@ -265,8 +383,26 @@ const MainStack = () => (
       component={EditProfileScreen}
       options={{ title: 'Edit Profile' }}
     />
+
+    {/* Dog Parent-specific Screens */}
+    <Stack.Screen
+      name="MatchedPuppies"
+      component={MatchedPuppiesScreen}
+      options={{ title: 'Matched Puppies' }}
+    />
+    <Stack.Screen
+      name="DogParentPreferences"
+      component={DogParentPreferencesScreen}
+      options={{ title: 'My Preferences' }}
+    />
+    <Stack.Screen
+      name="ContactBreeder"
+      component={ContactBreederScreen}
+      options={{ title: 'Send Message' }}
+    />
   </Stack.Navigator>
-);
+  );
+};
 
 const AppNavigator = () => {
   const { isAuthenticated, isLoading } = useAuth();

@@ -12,7 +12,7 @@ export interface Activity {
 }
 
 export type ActivityType = 
-  // Adopter Activities
+  // Dog Parent Activities
   | 'puppy_favorited'
   | 'puppy_unfavorited'
   | 'breeder_contacted'
@@ -42,12 +42,12 @@ export type ActivityType =
   | 'announcement_updated'
   | 'inquiry_received'
   | 'inquiry_responded'
-  | 'profile_viewed_by_adopter'
-  | 'kennel_viewed_by_adopter'
-  | 'puppy_viewed_by_adopter'
+  | 'profile_viewed_by_dog_parent'
+  | 'kennel_viewed_by_dog_parent'
+  | 'puppy_viewed_by_dog_parent'
   | 'favorite_received'
-  | 'message_received_from_adopter'
-  | 'message_sent_to_adopter'
+  | 'message_received_from_dog_parent'
+  | 'message_sent_to_dog_parent'
   | 'health_record_updated'
   | 'litter_created'
   | 'litter_updated'
@@ -72,7 +72,7 @@ export interface ActivityMetadata {
   // Common fields
   actorId?: string;
   actorName?: string;
-  actorType?: 'adopter' | 'breeder';
+  actorType?: 'dog-parent' | 'breeder';
   targetId?: string;
   targetName?: string;
   targetType?: 'puppy' | 'breeder' | 'kennel' | 'message' | 'user' | 'announcement';

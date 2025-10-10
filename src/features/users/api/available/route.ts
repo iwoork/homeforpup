@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);
-    const userType = searchParams.get('userType'); // 'breeder', 'adopter', 'both'
+    const userType = searchParams.get('userType'); // 'breeder', 'dog-parent', 'both'
     const search = searchParams.get('search');
     const location = searchParams.get('location');
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const attributeNames: Record<string, string> = {};
 
     // Add user type filter if specified
-    if (userType && ['breeder', 'adopter', 'both'].includes(userType)) {
+    if (userType && ['breeder', 'dog-parent', 'both'].includes(userType)) {
       scanParams.FilterExpression += ' AND userType = :userType';
       scanParams.ExpressionAttributeValues[':userType'] = userType;
     }

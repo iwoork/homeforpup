@@ -186,7 +186,7 @@ npm run android
 
 3. **Send a test message**
 
-   - You can use the web app (breeder-app or adopter-app) to send a message
+   - You can use the web app (breeder-app or dog-parent-app) to send a message
    - Should appear in mobile app within 10 seconds (polling interval)
 
 4. **Open a message thread**

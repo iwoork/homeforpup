@@ -15,26 +15,65 @@ import LinearGradient from 'react-native-linear-gradient';
 import { theme } from '../../utils/theme';
 import { Dog } from '../../types';
 import apiService from '../../services/apiService';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DogDetailRouteParams {
-  dog: Dog;
+  dog?: Dog;
+  id?: string;
 }
 
 const DogDetailScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const initialDog = (route.params as DogDetailRouteParams).dog;
+  const { user } = useAuth();
+  const params = route.params as DogDetailRouteParams;
+  const initialDog = params?.dog;
+  const dogId = params?.id || initialDog?.id;
   
   // Debug logging
-  console.log('DogDetailScreen - received dog:', initialDog);
-  console.log('DogDetailScreen - dog fields:', Object.keys(initialDog || {}));
+  console.log('DogDetailScreen - received params:', { hasDog: !!initialDog, dogId });
   
-  const [dog, setDog] = useState<Dog>(initialDog);
-  const [loading, setLoading] = useState(false);
+  const [dog, setDog] = useState<Dog | null>(initialDog || null);
+  const [loading, setLoading] = useState(!initialDog); // Load if we don't have initial dog
+  const [error, setError] = useState<string | null>(null);
   
-  console.log('Current dog state:', dog);
-  console.log('Dog name:', dog?.name);
-  console.log('Dog exists:', !!dog);
+  // Check if user can edit (is the owner)
+  const canEdit = dog?.ownerId === user?.userId;
+  
+  // Check if user can contact (not the owner)
+  const canContact = dog?.ownerId && dog?.ownerId !== user?.userId;
+  
+  // Fetch dog if we only have an ID
+  useEffect(() => {
+    const fetchDog = async () => {
+      if (!initialDog && dogId) {
+        console.log('Fetching dog by ID:', dogId);
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await apiService.getDogById(dogId);
+          console.log('API Response:', response);
+          
+          if (response.success && response.data) {
+            // Handle both formats: { dog: {...} } and direct dog object
+            const dogData = (response.data as any).dog || response.data;
+            console.log('Dog fetched successfully:', dogData);
+            setDog(dogData as Dog);
+          } else {
+            console.error('Failed to fetch dog:', response.error);
+            setError(response.error || 'Failed to load dog details');
+          }
+        } catch (err) {
+          console.error('Error fetching dog:', err);
+          setError('An error occurred while loading dog details');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchDog();
+  }, [dogId, initialDog]);
   
   // Get health status from nested object or top-level field
   const getHealthStatus = () => {
@@ -63,17 +102,21 @@ const DogDetailScreen: React.FC = () => {
     React.useCallback(() => {
       const refreshDogData = async () => {
         // Check if we have updated params (coming back from edit)
-        const updatedDog = (route.params as DogDetailRouteParams)?.dog;
+        const updatedParams = route.params as DogDetailRouteParams;
+        const updatedDog = updatedParams?.dog;
+        
         if (updatedDog) {
           console.log('Dog data updated from navigation params');
           setDog(updatedDog);
-        } else if (dog?.id) {
-          // Fetch fresh data from API
+        } else if (dogId && dog) {
+          // Fetch fresh data from API if we already have a dog loaded
           console.log('Refreshing dog data from API');
           try {
-            const response = await apiService.getDogById(dog.id);
+            const response = await apiService.getDogById(dogId);
             if (response.success && response.data) {
-              setDog(response.data as Dog);
+              // Handle both formats: { dog: {...} } and direct dog object
+              const dogData = (response.data as any).dog || response.data;
+              setDog(dogData as Dog);
             }
           } catch (error) {
             console.error('Error refreshing dog data:', error);
@@ -82,10 +125,27 @@ const DogDetailScreen: React.FC = () => {
       };
       
       refreshDogData();
-    }, [route.params, dog?.id])
+    }, [route.params, dogId, dog])
   );
 
-  if (!dog) {
+  // Show error state
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Icon name="alert-circle-outline" size={64} color={theme.colors.error} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Show not found state
+  if (!loading && !dog) {
     return (
       <View style={styles.errorContainer}>
         <Icon name="alert-circle-outline" size={64} color={theme.colors.error} />
@@ -237,17 +297,44 @@ const DogDetailScreen: React.FC = () => {
         </LinearGradient>
       </View>
 
-      {/* Action Buttons */}
-      <View style={styles.actionBar}>
-        <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-          <Icon name="pencil" size={20} color="#fff" />
-          <Text style={styles.editButtonText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Icon name="trash-outline" size={20} color="#fff" />
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Action Buttons - Only show for owners/breeders */}
+      {canEdit && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+            <Icon name="pencil" size={20} color="#fff" />
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Icon name="trash-outline" size={20} color="#fff" />
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Contact Owner Button - Show for non-owners (both dog parents and breeders) */}
+      {canContact && (
+        <View style={styles.actionBar}>
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={() => {
+              console.log('Contact owner from dog detail:', dog.ownerId, 'User type:', user?.userType);
+              (navigation as any).navigate('ContactBreeder', {
+                receiverId: dog.ownerId,
+                breederName: (dog as any).breederName,
+                puppyId: dog.id,
+                puppyName: dog.name,
+                puppyBreed: dog.breed,
+                puppyPhoto: dog.photoUrl,
+              });
+            }}
+          >
+            <Icon name="chatbubble" size={20} color="#fff" />
+            <Text style={styles.contactButtonText}>
+              {user?.userType === 'breeder' ? 'Contact Owner' : 'Contact Breeder'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Basic Info Card */}
       <View style={styles.card}>
@@ -493,6 +580,21 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  contactButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    gap: theme.spacing.sm,
+  },
+  contactButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

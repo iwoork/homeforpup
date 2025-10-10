@@ -1,7 +1,7 @@
 # Babel Isolation Complete ✅
 
 ## Summary
-Successfully isolated Babel to ONLY the React Native iOS app. The Next.js web apps (breeder-app, adopter-app) do NOT have Babel dependencies.
+Successfully isolated Babel to ONLY the React Native iOS app. The Next.js web apps (breeder-app, dog-parent-app) do NOT have Babel dependencies.
 
 ## What Was Done
 
@@ -10,7 +10,7 @@ Modified `/package.json` to exclude the iOS app from npm workspaces:
 
 ```json
 "workspaces": [
-  "apps/adopter-app",     // ✅ In workspace
+  "apps/dog-parent-app",     // ✅ In workspace
   "apps/breeder-app",     // ✅ In workspace
   "packages/*"            // ✅ In workspace
   // "apps/mobile-app" is NOT in workspace - isolated
@@ -57,7 +57,7 @@ plugin-transform-runtime       # Transform helper
 ## Dependency Breakdown
 
 ### Root Workspace Dependencies
-- **adopter-app** (Next.js) - uses built-in SWC, no Babel
+- **dog-parent-app** (Next.js) - uses built-in SWC, no Babel
 - **breeder-app** (Next.js) - uses built-in SWC, no Babel  
 - **Shared packages** - no Babel compiler
 - **Ant Design** - uses `@babel/runtime` (runtime helpers only, NOT compiler)
@@ -83,8 +83,8 @@ plugin-transform-runtime       # Transform helper
 
 ### Web Apps (from root)
 ```bash
-# Adopter app (Next.js) - Port 3000
-npm run dev:adopter
+# Dog Parent app (Next.js) - Port 3000
+npm run dev:dog-parent
 
 # Breeder app (Next.js) - Port 3001
 npm run dev:breeder

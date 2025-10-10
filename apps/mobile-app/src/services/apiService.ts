@@ -42,6 +42,10 @@ export interface Dog {
   healthStatus: 'good' | 'fair' | 'poor';
   photoUrl?: string;
   ownerId: string;
+  price?: number; // Price for puppies
+  location?: string; // Breeder location
+  breederName?: string; // Breeder's name (populated from owner)
+  age?: string; // Calculated age (e.g., "8 weeks")
   createdAt: string;
   updatedAt: string;
 }
@@ -167,7 +171,20 @@ class ApiService {
         headers,
       });
 
+      console.log('API Response Status:', {
+        url,
+        status: response.status,
+        ok: response.ok,
+      });
+
       const data = await response.json();
+      
+      console.log('API Response Data:', {
+        endpoint,
+        dataKeys: Object.keys(data),
+        hasData: !!data,
+        dataPreview: JSON.stringify(data).substring(0, 200),
+      });
 
       if (!response.ok) {
         console.error('API request failed:', {
@@ -357,6 +374,47 @@ class ApiService {
     });
   }
 
+  // Available Puppies API (for dog parents)
+  async getAvailablePuppies(
+    params: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      breed?: string;
+      gender?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      location?: string;
+      state?: string;
+    } = {},
+  ): Promise<ApiResponse<DogsResponse>> {
+    const queryParams = new URLSearchParams();
+    
+    // Core filters for available puppies
+    queryParams.append('type', 'puppy'); // Only puppies
+    queryParams.append('breedingStatus', 'available'); // Only available
+    
+    // Pagination
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    
+    // Search and filters
+    if (params.search) queryParams.append('search', params.search);
+    if (params.breed) queryParams.append('breed', params.breed);
+    if (params.gender) queryParams.append('gender', params.gender);
+    if (params.location) queryParams.append('location', params.location);
+    if (params.state) queryParams.append('state', params.state);
+    
+    // Price filters (if API supports them)
+    if (params.minPrice) queryParams.append('minPrice', params.minPrice.toString());
+    if (params.maxPrice) queryParams.append('maxPrice', params.maxPrice.toString());
+
+    const endpoint = `/dogs?${queryParams.toString()}`;
+    console.log('🔍 Fetching available puppies from endpoint:', endpoint);
+    console.log('🔍 Full URL:', this.baseUrl + endpoint);
+    return this.makeRequest<DogsResponse>(endpoint);
+  }
+
   // Breeds API
   async getBreeds(
     params: {
@@ -387,21 +445,21 @@ class ApiService {
   }
 
   // Users API
-  async getUserById(id: string): Promise<ApiResponse<User>> {
-    return this.makeRequest<User>(`/users/${id}`);
+  async getUserById(id: string): Promise<ApiResponse<{ user: User }>> {
+    return this.makeRequest<{ user: User }>(`/users/${id}`);
   }
 
   async updateUser(
     id: string,
     userData: Partial<User>,
-  ): Promise<ApiResponse<User>> {
+  ): Promise<ApiResponse<{ user: User }>> {
     console.log('🔄 ApiService.updateUser called');
     console.log('  - User ID:', id);
     console.log('  - Base URL:', this.baseUrl);
     console.log('  - Has Auth Token:', !!this.authToken);
     console.log('  - Update Data:', JSON.stringify(userData, null, 2));
     
-    const response = await this.makeRequest<User>(`/users/${id}`, {
+    const response = await this.makeRequest<{ user: User }>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
     });

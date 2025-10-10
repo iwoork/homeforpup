@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/adopter-app",
+    "apps/dog-parent-app",
     "apps/breeder-app",
     "apps/homeforpup-api",
     "packages/*"
@@ -15,9 +15,9 @@
     "lint": "turbo run lint --concurrency=20",
     "type-check": "turbo run type-check --concurrency=20",
     "clean": "turbo run clean --concurrency=20",
-    "dev:adopter": "turbo run dev --filter=adopter-app",
+    "dev:dog-parent": "turbo run dev --filter=dog-parent-app",
     "dev:breeder": "turbo run dev --filter=breeder-app",
-    "build:adopter": "turbo run build --filter=adopter-app",
+    "build:dog-parent": "turbo run build --filter=dog-parent-app",
     "build:breeder": "turbo run build --filter=breeder-app"
   },
   "devDependencies": {
