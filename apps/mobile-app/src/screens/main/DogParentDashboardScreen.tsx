@@ -46,7 +46,7 @@ const DogParentDashboardScreen: React.FC = () => {
       subtitle: 'Saved puppies',
       icon: 'star',
       iconColor: '#f59e0b',
-      screen: 'FavoritePuppies',
+      screen: 'Favorites',
       gradient: ['#f59e0b', '#d97706'],
     },
     {

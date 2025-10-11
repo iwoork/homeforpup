@@ -217,6 +217,29 @@ export class AuthService {
       }
     } catch (error: any) {
       console.error('Signup error:', error);
+      
+      // Handle case where user already exists but may not be verified
+      if (error.name === 'UsernameExistsException' || error.message?.includes('User already exists')) {
+        // User already signed up, they just need to verify their email
+        // Resend the verification code
+        try {
+          const { resendSignUpCode } = await import('aws-amplify/auth');
+          await resendSignUpCode({ username: userData.email });
+          
+          return {
+            success: true,
+            requiresVerification: true,
+            message: 'This email is already registered. We\'ve resent the verification code to your email.',
+          };
+        } catch (resendError: any) {
+          console.error('Error resending verification code:', resendError);
+          return {
+            success: false,
+            error: 'This email is already registered. Please try logging in or contact support if you need help.',
+          };
+        }
+      }
+      
       return {
         success: false,
         error: error.message || 'Signup failed',

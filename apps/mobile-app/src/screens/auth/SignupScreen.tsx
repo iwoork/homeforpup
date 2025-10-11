@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 import Logo from '../../components/Logo';
+
+const COUNTRIES = [
+  { code: 'US', name: 'United States', dialCode: '+1', flag: '🇺🇸', format: '(XXX) XXX-XXXX' },
+  { code: 'CA', name: 'Canada', dialCode: '+1', flag: '🇨🇦', format: '(XXX) XXX-XXXX' },
+];
 
 interface SignupScreenProps {
   navigation: any;
@@ -30,10 +36,60 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
     userType: 'dog-parent' as 'dog-parent' | 'breeder',
   });
   const [loading, setLoading] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]); // Default to US
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const { signup } = useAuth();
+
+  // Auto-detect country on mount
+  useEffect(() => {
+    detectCountry();
+  }, []);
+
+  const detectCountry = async () => {
+    try {
+      // Try to detect country from timezone or locale
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Simple detection based on timezone
+      if (timeZone.includes('America')) {
+        if (timeZone.includes('Toronto') || timeZone.includes('Vancouver') || 
+            timeZone.includes('Montreal') || timeZone.includes('Edmonton')) {
+          setSelectedCountry(COUNTRIES[1]); // Canada
+        } else {
+          setSelectedCountry(COUNTRIES[0]); // US (default)
+        }
+      }
+    } catch (error) {
+      console.log('Could not detect country, defaulting to US');
+      setSelectedCountry(COUNTRIES[0]);
+    }
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const formatPhoneNumber = (text: string) => {
+    // Remove all non-digit characters
+    const cleaned = text.replace(/\D/g, '');
+    
+    // Limit to 10 digits for US/Canada
+    const limited = cleaned.substring(0, 10);
+    
+    // Format as (XXX) XXX-XXXX
+    if (limited.length >= 6) {
+      return `(${limited.substring(0, 3)}) ${limited.substring(3, 6)}-${limited.substring(6)}`;
+    } else if (limited.length >= 3) {
+      return `(${limited.substring(0, 3)}) ${limited.substring(3)}`;
+    } else if (limited.length > 0) {
+      return `(${limited}`;
+    }
+    return limited;
+  };
+
+  const handlePhoneChange = (text: string) => {
+    const formatted = formatPhoneNumber(text);
+    handleInputChange('phone', formatted);
   };
 
   const validateForm = () => {
@@ -65,6 +121,12 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
       Alert.alert('Error', 'Please enter your phone number');
       return false;
     }
+    // Check if phone has 10 digits (for US/Canada)
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+      return false;
+    }
     return true;
   };
 
@@ -75,11 +137,15 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
     setLoading(true);
     try {
+      // Format phone with country code
+      const phoneDigits = formData.phone.replace(/\D/g, '');
+      const phoneWithCountryCode = `${selectedCountry.dialCode}${phoneDigits}`;
+      
       const result = await signup({
         name: formData.name.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        phone: formData.phone.trim(),
+        phone: phoneWithCountryCode,
         userType: formData.userType,
       });
 
@@ -88,7 +154,17 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
         if (result.data?.requiresVerification) {
           // Navigate to verification screen
           setLoading(false);
-          navigation.replace('VerifyEmail', { email: formData.email.trim() });
+          
+          // Show info message if user already exists
+          if (result.message?.includes('already registered')) {
+            Alert.alert(
+              'Account Found',
+              result.message,
+              [{ text: 'OK', onPress: () => navigation.replace('VerifyEmail', { email: formData.email.trim() }) }]
+            );
+          } else {
+            navigation.replace('VerifyEmail', { email: formData.email.trim() });
+          }
         } else {
           // User is already verified and logged in
           setLoading(false);
@@ -221,15 +297,25 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your phone number"
-              placeholderTextColor={theme.colors.textTertiary}
-              value={formData.phone}
-              onChangeText={(value) => handleInputChange('phone', value)}
-              keyboardType="phone-pad"
-              autoCapitalize="none"
-            />
+            <View style={styles.phoneInputContainer}>
+              <TouchableOpacity
+                style={styles.countrySelector}
+                onPress={() => setShowCountryPicker(true)}
+              >
+                <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
+                <Text style={styles.countryCode}>{selectedCountry.dialCode}</Text>
+                <Icon name="chevron-down" size={16} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.phoneInput}
+                placeholder={selectedCountry.format}
+                placeholderTextColor={theme.colors.textTertiary}
+                value={formData.phone}
+                onChangeText={handlePhoneChange}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+              />
+            </View>
           </View>
 
           <View style={styles.inputContainer}>
@@ -288,6 +374,48 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+
+    {/* Country Picker Modal */}
+    <Modal
+      visible={showCountryPicker}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowCountryPicker(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Country</Text>
+            <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
+              <Icon name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          {COUNTRIES.map((country) => (
+            <TouchableOpacity
+              key={country.code}
+              style={[
+                styles.countryOption,
+                selectedCountry.code === country.code && styles.countryOptionSelected
+              ]}
+              onPress={() => {
+                setSelectedCountry(country);
+                setShowCountryPicker(false);
+              }}
+            >
+              <Text style={styles.countryOptionFlag}>{country.flag}</Text>
+              <View style={styles.countryOptionInfo}>
+                <Text style={styles.countryOptionName}>{country.name}</Text>
+                <Text style={styles.countryOptionCode}>{country.dialCode}</Text>
+              </View>
+              {selectedCountry.code === country.code && (
+                <Icon name="checkmark-circle" size={24} color={theme.colors.primary} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </Modal>
     </LinearGradient>
   );
 };
@@ -431,6 +559,92 @@ const styles = StyleSheet.create({
   userTypeDescriptionActive: {
     color: '#fff',
     opacity: 0.9,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+  },
+  countryFlag: {
+    fontSize: 24,
+  },
+  countryCode: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  phoneInput: {
+    flex: 1,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md + 2,
+    fontSize: 16,
+    backgroundColor: theme.colors.surface,
+    color: theme.colors.text,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  countryOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.xs,
+  },
+  countryOptionSelected: {
+    backgroundColor: theme.colors.primaryLight,
+  },
+  countryOptionFlag: {
+    fontSize: 32,
+    marginRight: theme.spacing.md,
+  },
+  countryOptionInfo: {
+    flex: 1,
+  },
+  countryOptionName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  countryOptionCode: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
   },
 });
 
