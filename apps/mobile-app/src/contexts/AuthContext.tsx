@@ -113,7 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signup = async (userData: any): Promise<ApiResponse> => {
     try {
-      setIsLoading(true);
+      // DON'T set isLoading during signup - it interferes with navigation
+      // Only set loading for operations that should block the entire app
       setError(null);
       
       const result = await authService.signup(userData);
@@ -143,8 +144,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const errorMessage = error instanceof Error ? error.message : 'Signup failed';
       setError(errorMessage);
       return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
     }
   };
 

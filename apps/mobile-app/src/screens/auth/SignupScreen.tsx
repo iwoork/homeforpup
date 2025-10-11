@@ -84,24 +84,24 @@ const SignupScreen: React.FC<SignupScreenProps> = ({ navigation }) => {
       });
 
       if (result.success) {
-        const message = result.message || 'Account created successfully! Please check your email for verification instructions.';
-        Alert.alert(
-          'Success',
-          message,
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login'),
-            },
-          ]
-        );
+        // Check if verification is required
+        if (result.data?.requiresVerification) {
+          // Navigate to verification screen
+          setLoading(false);
+          navigation.replace('VerifyEmail', { email: formData.email.trim() });
+        } else {
+          // User is already verified and logged in
+          setLoading(false);
+          const message = result.message || 'Account created successfully!';
+          Alert.alert('Success', message);
+        }
       } else {
+        setLoading(false);
         Alert.alert('Signup Failed', result.error || 'Please try again');
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
       setLoading(false);
+      Alert.alert('Error', 'An unexpected error occurred');
     }
   };
 

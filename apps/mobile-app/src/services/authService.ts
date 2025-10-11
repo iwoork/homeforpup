@@ -169,16 +169,38 @@ export class AuthService {
     userType?: 'breeder' | 'dog-parent';
   }): Promise<AuthResult> {
     try {
+      // Format phone number for Cognito (E.164 format required)
+      let formattedPhone = userData.phone;
+      if (formattedPhone && !formattedPhone.startsWith('+')) {
+        // Remove any non-digit characters
+        const digitsOnly = formattedPhone.replace(/\D/g, '');
+        // Assume US number if 10 digits
+        if (digitsOnly.length === 10) {
+          formattedPhone = `+1${digitsOnly}`;
+        } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+          formattedPhone = `+${digitsOnly}`;
+        } else {
+          // For other formats, add + at the beginning
+          formattedPhone = `+${digitsOnly}`;
+        }
+      }
+
+      const userAttributes: any = {
+        email: userData.email,
+        name: userData.name,
+        'custom:userType': userData.userType || 'dog-parent',
+      };
+
+      // Only add phone if it's provided and properly formatted
+      if (formattedPhone) {
+        userAttributes.phone_number = formattedPhone;
+      }
+
       const result = await signUp({
         username: userData.email,
         password: userData.password,
         options: {
-          userAttributes: {
-            email: userData.email,
-            name: userData.name,
-            phone_number: userData.phone,
-            'custom:userType': userData.userType || 'dog-parent',
-          },
+          userAttributes,
         },
       });
 

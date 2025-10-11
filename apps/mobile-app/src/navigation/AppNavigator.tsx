@@ -12,6 +12,7 @@ import Logo from '../components/Logo';
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
+import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
 
 // Main Screens - Breeder
 import DashboardScreen from '../screens/main/DashboardScreen';
@@ -59,6 +60,11 @@ const AuthStack = () => (
   >
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Signup" component={SignupScreen} />
+    <Stack.Screen 
+      name="VerifyEmail" 
+      component={VerifyEmailScreen}
+      options={{ title: 'Verify Email' }}
+    />
   </Stack.Navigator>
 );
 

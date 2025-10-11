@@ -35,7 +35,27 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     try {
       const result = await login(email, password);
       if (!result.success) {
-        Alert.alert('Login Failed', result.error || 'Please try again');
+        // Check if the error is about unconfirmed user
+        const errorMsg = result.error || '';
+        if (errorMsg.toLowerCase().includes('not confirmed') || 
+            errorMsg.toLowerCase().includes('not verified')) {
+          Alert.alert(
+            'Email Not Verified',
+            'Your email address has not been verified yet. Please check your email for the verification code.',
+            [
+              {
+                text: 'Verify Now',
+                onPress: () => navigation.navigate('VerifyEmail', { email }),
+              },
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ]
+          );
+        } else {
+          Alert.alert('Login Failed', errorMsg || 'Please try again');
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
