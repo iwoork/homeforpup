@@ -45,6 +45,11 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
         placeholder={placeholder}
         enablePoweredByContainer={false}
         fetchDetails={true}
+        listViewDisplayed="auto"
+        flatListProps={{
+          nestedScrollEnabled: true,
+          scrollEnabled: false,
+        }}
         onPress={(data, details = null) => {
           // Extract city and state from the address components
           let city = '';
@@ -103,8 +108,9 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
           'locality',
           'administrative_area_level_1',
         ]}
-        listViewDisplayed="auto"
         keyboardShouldPersistTaps="handled"
+        enableHighAccuracyLocation={false}
+        suppressDefaultStyles={false}
         renderRow={(data: any) => (
           <View style={styles.suggestionRow}>
             <Icon name="location-outline" size={16} color={theme.colors.textSecondary} />

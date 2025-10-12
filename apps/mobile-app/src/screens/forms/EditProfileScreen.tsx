@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { launchImageLibrary, MediaType } from 'react-native-image-picker';
@@ -17,14 +20,16 @@ import { theme } from '../../utils/theme';
 import { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
-import { LocationAutocomplete } from '../../components';
+import { LocationAutocompleteModal } from '../../components';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, updateUser } = useAuth();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fetchingProfile, setFetchingProfile] = useState(true);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -65,6 +70,23 @@ const EditProfileScreen: React.FC = () => {
       });
     }
   }, [user]);
+
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   // Fetch latest user data from API when component mounts
   useEffect(() => {
@@ -414,8 +436,21 @@ const EditProfileScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Profile Photo Section */}
+    <View style={styles.keyboardAvoidingView}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.container} 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+        >
+        {/* Profile Photo Section */}
       <View style={[styles.section, styles.firstSection]}>
         <Text style={styles.sectionTitle}>Profile Photo</Text>
         <View style={styles.photoSection}>
@@ -469,10 +504,10 @@ const EditProfileScreen: React.FC = () => {
           keyboardType: 'phone-pad' 
         })}
         
-        {/* Location with Google Places Autocomplete */}
+        {/* Location with Modal Autocomplete */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Location</Text>
-          <LocationAutocomplete
+          <LocationAutocompleteModal
             value={formData.location}
             onLocationSelect={(address, details) => {
               setFormData({ ...formData, location: address });
@@ -562,14 +597,24 @@ const EditProfileScreen: React.FC = () => {
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xl * 3,
+    flexGrow: 1,
   },
   loadingContainer: {
     justifyContent: 'center',

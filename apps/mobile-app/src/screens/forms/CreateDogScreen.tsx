@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { launchImageLibrary, MediaType } from 'react-native-image-picker';
@@ -276,8 +277,20 @@ const CreateDogScreen: React.FC = () => {
   );
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Photo Upload */}
+    <View style={styles.keyboardAvoidingView}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          style={styles.container} 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+        >
+        {/* Photo Upload */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Dog Photo</Text>
         <View style={styles.photoSection}>
@@ -638,14 +651,24 @@ const CreateDogScreen: React.FC = () => {
           </View>
         </View>
       )}
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xl * 3,
+    flexGrow: 1,
   },
   section: {
     backgroundColor: theme.colors.surface,

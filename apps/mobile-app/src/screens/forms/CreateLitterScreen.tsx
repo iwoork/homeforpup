@@ -11,6 +11,7 @@ import {
   FlatList,
   Image,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -341,8 +342,20 @@ const CreateLitterScreen: React.FC = () => {
   );
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.header}>
+    <View style={styles.keyboardAvoidingView}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          style={styles.container} 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+        >
+        <View style={styles.header}>
         <Icon name="albums" size={48} color={theme.colors.primary} />
         <Text style={styles.headerTitle}>Create New Litter</Text>
         <Text style={styles.headerSubtitle}>
@@ -901,14 +914,24 @@ const CreateLitterScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.xl * 3,
+    flexGrow: 1,
   },
   header: {
     backgroundColor: theme.colors.surface,

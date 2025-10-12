@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -471,8 +473,14 @@ const EditKennelScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Combined Header with Navigation */}
+    <View style={styles.keyboardAvoidingView}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={styles.container}>
+        {/* Combined Header with Navigation */}
       <View style={styles.headerContainer}>
         <LinearGradient
           colors={[theme.colors.primary, theme.colors.primaryDark]}
@@ -505,7 +513,10 @@ const EditKennelScreen: React.FC = () => {
       {/* Content */}
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentContainer}>
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag">
         {activeSection === 'basic' && renderBasicInfo()}
         {activeSection === 'location' && renderLocation()}
         {activeSection === 'facilities' && renderFacilities()}
@@ -530,11 +541,17 @@ const EditKennelScreen: React.FC = () => {
           )}
         </TouchableOpacity>
       </View>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -598,6 +615,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl * 3,
+    flexGrow: 1,
   },
   section: {
     marginBottom: theme.spacing.xl,
