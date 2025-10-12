@@ -10,15 +10,18 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { useAvailablePuppies } from '../../hooks/useAvailablePuppies';
-import { Dog } from '../../services/apiService';
+import apiService, { Dog } from '../../services/apiService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SearchPuppiesScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBreed, setSelectedBreed] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -189,17 +192,124 @@ const SearchPuppiesScreen: React.FC = () => {
           ) : null}
           <TouchableOpacity
             style={styles.contactBreederButton}
-            onPress={e => {
+            onPress={async e => {
               e.stopPropagation();
-              console.log('Contact breeder for puppy:', item.id, item.ownerId);
-              (navigation as any).navigate('ContactBreeder', {
-                receiverId: item.ownerId,
-                breederName: item.breederName,
+
+              // Log EVERYTHING about this puppy
+              console.log('🔍 FULL PUPPY DATA:', JSON.stringify(item, null, 2));
+              console.log('🔍 Contact breeder clicked - summary:', {
                 puppyId: item.id,
                 puppyName: item.name,
-                puppyBreed: item.breed,
-                puppyPhoto: photoUrl,
+                kennelId: item.kennelId,
+                hasOwnerId: !!item.ownerId,
+                ownerId: item.ownerId,
+                allKeys: Object.keys(item),
               });
+
+              // Check for ownerId or kennelOwners array
+              const ownerId = item.ownerId || (item as any).kennelOwners?.[0];
+
+              if (ownerId) {
+                console.log('✅ Using ownerId from item:', ownerId);
+
+                // Prevent messaging yourself
+                if (ownerId === user?.userId) {
+                  Alert.alert(
+                    'Cannot Contact',
+                    'This is your own puppy. You cannot send a message to yourself.',
+                    [{ text: 'OK' }],
+                  );
+                  return;
+                }
+                (navigation as any).navigate('ContactBreeder', {
+                  receiverId: ownerId,
+                  breederName:
+                    (item as any).kennelName || item.breederName || 'Breeder',
+                  puppyId: item.id,
+                  puppyName: item.name,
+                  puppyBreed: item.breed,
+                  puppyPhoto: photoUrl,
+                });
+                return;
+              }
+
+              // Otherwise, fetch kennel info to get owner
+              console.log(
+                '⚠️ No ownerId or kennelOwners, checking kennelId...',
+              );
+
+              if (!item.kennelId) {
+                console.error('❌ No kennelId available for puppy!', item);
+                Alert.alert(
+                  'Unable to Contact',
+                  'Owner information is not available for this puppy. The puppy may not be properly assigned to a kennel. Please contact support.',
+                  [{ text: 'OK' }],
+                );
+                return;
+              }
+
+              try {
+                console.log(
+                  '📡 Fetching kennel info for kennelId:',
+                  item.kennelId,
+                );
+                const response = await apiService.getKennelById(item.kennelId);
+                console.log('📡 Kennel API response:', response);
+
+                if (response.success && response.data) {
+                  // The kennel data is nested in response.data.kennel
+                  const kennel = (response.data as any).kennel || response.data;
+                  console.log('✅ Got kennel data:', {
+                    id: kennel.id,
+                    name: kennel.name,
+                    ownerId: kennel.ownerId,
+                    owners: kennel.owners,
+                    allKeys: Object.keys(kennel),
+                  });
+
+                  // Get owner ID from ownerId or owners array
+                  const kennelOwnerId = kennel.ownerId || kennel.owners?.[0];
+
+                  if (!kennelOwnerId) {
+                    console.error('❌ No owner ID found in kennel data');
+                    Alert.alert(
+                      'Error',
+                      'Owner information is missing from kennel data. Please contact support.',
+                      [{ text: 'OK' }],
+                    );
+                    return;
+                  }
+
+                  (navigation as any).navigate('ContactBreeder', {
+                    receiverId: kennelOwnerId,
+                    breederName: kennel.name || 'Breeder',
+                    puppyId: item.id,
+                    puppyName: item.name,
+                    puppyBreed: item.breed,
+                    puppyPhoto: photoUrl,
+                  });
+                } else {
+                  console.error('❌ Kennel API failed:', response.error);
+                  Alert.alert(
+                    'Error',
+                    `Failed to load breeder information: ${
+                      response.error || 'Unknown error'
+                    }`,
+                    [{ text: 'OK' }],
+                  );
+                }
+              } catch (err) {
+                console.error('❌ Exception fetching kennel:', err);
+                console.error('❌ Exception details:', {
+                  message: err instanceof Error ? err.message : String(err),
+                  stack: err instanceof Error ? err.stack : undefined,
+                });
+                Alert.alert(
+                  'Error',
+                  'Failed to load breeder information. Please try again.',
+                  [{ text: 'OK' }],
+                );
+              }
             }}
           >
             <Icon name="chatbubble" size={16} color="#ffffff" />

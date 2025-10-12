@@ -28,7 +28,7 @@ const getUserInfo = async (userId: string) => {
   try {
     const command = new GetCommand({
       TableName: USERS_TABLE,
-      Key: { id: userId }
+      Key: { userId }
     });
     const result = await dynamodb.send(command);
     return result.Item;
@@ -54,6 +54,11 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     // Validation
     if (!recipientId || !subject || !content) {
       return errorResponse('Missing required fields: recipientId, subject, content', 400);
+    }
+
+    // Prevent users from messaging themselves
+    if (authenticatedUserId === recipientId) {
+      return errorResponse('Cannot send message to yourself', 400);
     }
 
     // Get sender info

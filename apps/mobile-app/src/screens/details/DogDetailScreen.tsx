@@ -38,12 +38,16 @@ const DogDetailScreen: React.FC = () => {
   const [dog, setDog] = useState<Dog | null>(initialDog || null);
   const [loading, setLoading] = useState(!initialDog); // Load if we don't have initial dog
   const [error, setError] = useState<string | null>(null);
+  const [litters, setLitters] = useState<any[]>([]);
+  const [littersLoading, setLittersLoading] = useState(false);
+  const [kennelOwner, setKennelOwner] = useState<{ id: string; name: string } | null>(null);
+  const [fetchingKennel, setFetchingKennel] = useState(false);
   
   // Check if user can edit (is the owner)
-  const canEdit = dog?.ownerId === user?.userId;
+  const canEdit = dog?.ownerId === user?.userId || kennelOwner?.id === user?.userId;
   
   // Check if user can contact (not the owner)
-  const canContact = dog?.ownerId && dog?.ownerId !== user?.userId;
+  const canContact = kennelOwner?.id && kennelOwner.id !== user?.userId;
   
   // Fetch dog if we only have an ID
   useEffect(() => {
@@ -98,6 +102,76 @@ const DogDetailScreen: React.FC = () => {
     }
     return photo;
   };
+
+  // Fetch litters for this dog
+  const fetchLitters = async () => {
+    if (!dog?.id || !dog?.ownerId) return;
+    
+    setLittersLoading(true);
+    try {
+      const response = await apiService.getLitters({
+        breederId: dog.ownerId,
+        limit: 100,
+      });
+      
+      if (response.success && response.data?.litters) {
+        // Filter litters where this dog is either dam or sire
+        const dogLitters = response.data.litters.filter((litter: any) => 
+          litter.damId === dog.id || litter.sireId === dog.id
+        );
+        setLitters(dogLitters);
+        console.log('Found litters for dog:', dogLitters.length);
+      }
+    } catch (error) {
+      console.error('Error fetching litters:', error);
+    } finally {
+      setLittersLoading(false);
+    }
+  };
+
+  // Fetch kennel owner information
+  const fetchKennelOwner = async () => {
+    if (!dog?.kennelId) {
+      console.log('No kennelId available for dog');
+      return;
+    }
+    
+    setFetchingKennel(true);
+    try {
+      // Fetch kennel information
+      const response = await apiService.getKennelById(dog.kennelId);
+      
+      if (response.success && response.data) {
+        const kennel = response.data;
+        console.log('Fetched kennel:', { id: kennel.id, name: kennel.name, ownerId: kennel.ownerId });
+        
+        // Set kennel owner info
+        setKennelOwner({
+          id: kennel.ownerId,
+          name: kennel.name || 'Kennel Owner'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching kennel:', error);
+      // Try fallback to ownerId on dog if kennel fetch fails
+      if (dog.ownerId) {
+        setKennelOwner({
+          id: dog.ownerId,
+          name: (dog as any).breederName || 'Dog Owner'
+        });
+      }
+    } finally {
+      setFetchingKennel(false);
+    }
+  };
+
+  // Fetch litters and kennel owner when dog is loaded
+  useEffect(() => {
+    if (dog?.id) {
+      fetchLitters();
+      fetchKennelOwner();
+    }
+  }, [dog?.id]);
 
   // Refresh dog data when returning from edit screen
   useFocusEffect(
@@ -320,14 +394,32 @@ const DogDetailScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.contactButton}
             onPress={() => {
-              console.log('Contact owner from dog detail:', dog.ownerId, 'User type:', user?.userType);
+              // Debug log to see what data we have
+              console.log('🔍 Contact info available:', {
+                hasKennelOwner: !!kennelOwner,
+                kennelOwnerId: kennelOwner?.id,
+                kennelName: kennelOwner?.name,
+                dogKennelId: dog?.kennelId,
+                dogId: dog?.id,
+                dogName: dog?.name,
+              });
+              
+              if (!kennelOwner?.id) {
+                Alert.alert(
+                  'Unable to Contact',
+                  'Owner information is not available for this dog. Please try again later or contact support.',
+                  [{ text: 'OK' }]
+                );
+                return;
+              }
+              
               (navigation as any).navigate('ContactBreeder', {
-                receiverId: dog.ownerId,
-                breederName: (dog as any).breederName,
-                puppyId: dog.id,
-                puppyName: dog.name,
-                puppyBreed: dog.breed,
-                puppyPhoto: dog.photoUrl,
+                receiverId: kennelOwner.id,
+                breederName: kennelOwner.name,
+                puppyId: dog?.id,
+                puppyName: dog?.name,
+                puppyBreed: dog?.breed,
+                puppyPhoto: dog?.photoUrl,
               });
             }}
           >
@@ -453,6 +545,64 @@ const DogDetailScreen: React.FC = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Description</Text>
           <Text style={styles.descriptionText}>{dog.description}</Text>
+        </View>
+      )}
+
+      {/* Litters Card */}
+      {litters.length > 0 && (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Litters ({litters.length})</Text>
+            <Icon name="albums" size={24} color={theme.colors.primary} />
+          </View>
+          {littersLoading ? (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          ) : (
+            <View style={styles.littersContainer}>
+              {litters.map((litter: any) => (
+                <TouchableOpacity
+                  key={litter.id}
+                  style={styles.litterCard}
+                  onPress={() => navigation.navigate('LitterDetail' as never, { litter } as never)}
+                >
+                  <View style={styles.litterHeader}>
+                    <View style={styles.litterIconContainer}>
+                      <Icon name="albums" size={20} color={theme.colors.primary} />
+                    </View>
+                    <View style={styles.litterInfo}>
+                      <Text style={styles.litterName}>
+                        {litter.damName || 'Unknown Dam'} × {litter.sireName || 'Unknown Sire'}
+                      </Text>
+                      <Text style={styles.litterRole}>
+                        {litter.damId === dog?.id ? '🐕 Mother' : '🐕 Father'}
+                      </Text>
+                    </View>
+                    <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+                  </View>
+                  <View style={styles.litterDetails}>
+                    <View style={styles.litterDetailItem}>
+                      <Icon name="calendar-outline" size={16} color={theme.colors.textSecondary} />
+                      <Text style={styles.litterDetailText}>
+                        {litter.birthDate ? new Date(litter.birthDate).toLocaleDateString() : 'Expected'}
+                      </Text>
+                    </View>
+                    <View style={styles.litterDetailItem}>
+                      <Icon name="paw-outline" size={16} color={theme.colors.textSecondary} />
+                      <Text style={styles.litterDetailText}>
+                        {litter.puppyCount || 0} {litter.puppyCount === 1 ? 'puppy' : 'puppies'}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.litterStatusBadge,
+                      { backgroundColor: litter.status === 'active' ? theme.colors.success : theme.colors.warning }
+                    ]}>
+                      <Text style={styles.litterStatusText}>{litter.status || 'planned'}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -722,6 +872,77 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.full,
     padding: theme.spacing.sm,
     ...theme.shadows.md,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  littersContainer: {
+    gap: theme.spacing.md,
+  },
+  litterCard: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  litterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  litterIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  litterInfo: {
+    flex: 1,
+  },
+  litterName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 2,
+  },
+  litterRole: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  litterDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
+  },
+  litterDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  litterDetailText: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  litterStatusBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.sm,
+    marginLeft: 'auto',
+  },
+  litterStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+    textTransform: 'capitalize',
   },
 });
 

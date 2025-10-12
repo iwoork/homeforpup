@@ -182,7 +182,7 @@ const MessagesScreen: React.FC = () => {
       <Text style={styles.emptyIcon}>💬</Text>
       <Text style={styles.emptyTitle}>No Messages Yet</Text>
       <Text style={styles.emptySubtitle}>
-        When potential families reach out about your puppies, their messages will appear here
+        Your conversations with breeders about available puppies will appear here
       </Text>
     </View>
   );

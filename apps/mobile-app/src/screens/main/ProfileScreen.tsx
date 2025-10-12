@@ -24,6 +24,7 @@ const ProfileScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [isVerifiedBreeder, setIsVerifiedBreeder] = useState(false);
 
   // Fetch fresh user data from API
   const fetchUserProfile = useCallback(async () => {
@@ -38,13 +39,27 @@ const ProfileScreen: React.FC = () => {
           hasProfileImage: !!response.data.user.profileImage,
           profileImageUrl: response.data.user.profileImage
         });
+        
+        // Check if user is a verified breeder (has breeder status in database)
+        const apiUserType = response.data.user.userType;
+        const isBreederInDb = apiUserType === 'breeder';
+        setIsVerifiedBreeder(isBreederInDb);
+        console.log('✅ Verified breeder status:', isBreederInDb);
+        
         // Update user in context with fresh data from API
-        await updateUser(response.data.user);
+        // BUT preserve the current userType (don't let API override it)
+        const currentUserType = user?.userType;
+        const updatedUserData = {
+          ...response.data.user,
+          userType: currentUserType, // Preserve local userType preference
+        };
+        await updateUser(updatedUserData);
+        console.log('✅ User profile updated, preserving userType:', currentUserType);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
-  }, [user?.userId, updateUser]);
+  }, [user?.userId, user?.userType, updateUser]);
 
   // Fetch user profile on mount
   useEffect(() => {
@@ -59,24 +74,36 @@ const ProfileScreen: React.FC = () => {
   }, [fetchUserProfile]);
 
   const handleChangeUserType = () => {
-    const currentType = user?.userType || 'breeder';
+    const currentType = user?.userType || 'dog-parent';
+    
+    // Only allow verified breeders to switch account types
+    if (!isVerifiedBreeder) {
+      Alert.alert(
+        'Not Available',
+        'To become a breeder, please contact support for verification and credentials.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    // Toggle between breeder and dog-parent for verified breeders
     const newType = currentType === 'breeder' ? 'dog-parent' : 'breeder';
-    const currentTypeLabel = currentType === 'breeder' ? 'Breeder' : 'Dog Parent';
-    const newTypeLabel = newType === 'breeder' ? 'Breeder' : 'Dog Parent';
+    const currentLabel = currentType === 'breeder' ? 'Breeder' : 'Dog Parent';
+    const newLabel = newType === 'breeder' ? 'Breeder' : 'Dog Parent';
     
     Alert.alert(
-      'Change Account Type',
-      `Change your account type from ${currentTypeLabel} to ${newTypeLabel}?\n\nThis will change your dashboard and available features.`,
+      'Switch Account Mode',
+      `Switch from ${currentLabel} to ${newLabel} mode?\n\nYou can switch back anytime.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Change',
+          text: 'Switch',
           onPress: async () => {
             const success = await updateUserType(newType);
             if (success) {
               Alert.alert(
                 'Success',
-                `Your account type has been changed to ${newTypeLabel}. The app will now show ${newTypeLabel} features.`,
+                `Your account has been switched to ${newLabel} mode!`,
                 [{ 
                   text: 'OK', 
                   onPress: () => {
@@ -89,7 +116,7 @@ const ProfileScreen: React.FC = () => {
                 }]
               );
             } else {
-              Alert.alert('Error', 'Failed to change account type. Please try again.');
+              Alert.alert('Error', 'Failed to switch account type. Please try again.');
             }
           },
         },
@@ -392,32 +419,34 @@ const ProfileScreen: React.FC = () => {
         </View>
       </LinearGradient>
 
-      {/* Account Type Switcher */}
-      <View style={styles.accountTypeSection}>
-        <TouchableOpacity
-          style={styles.accountTypeCard}
-          onPress={handleChangeUserType}
-        >
-          <View style={styles.accountTypeContent}>
-            <View style={styles.accountTypeIcon}>
-              <Icon
-                name={user?.userType === 'dog-parent' ? 'heart' : 'paw'}
-                size={24}
-                color={theme.colors.primary}
-              />
+      {/* Account Type Switcher - Verified Breeders Only */}
+      {isVerifiedBreeder && (
+        <View style={styles.accountTypeSection}>
+          <TouchableOpacity
+            style={styles.accountTypeCard}
+            onPress={handleChangeUserType}
+          >
+            <View style={styles.accountTypeContent}>
+              <View style={styles.accountTypeIcon}>
+                <Icon
+                  name={user?.userType === 'dog-parent' ? 'heart' : 'paw'}
+                  size={24}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <View style={styles.accountTypeText}>
+                <Text style={styles.accountTypeTitle}>
+                  Account Type: {user?.userType === 'dog-parent' ? 'Dog Parent' : 'Breeder'}
+                </Text>
+                <Text style={styles.accountTypeSubtitle}>
+                  Tap to switch to {user?.userType === 'dog-parent' ? 'Breeder' : 'Dog Parent'} mode
+                </Text>
+              </View>
+              <Icon name="swap-horizontal" size={24} color={theme.colors.primary} />
             </View>
-            <View style={styles.accountTypeText}>
-              <Text style={styles.accountTypeTitle}>
-                Account Type: {user?.userType === 'dog-parent' ? 'Dog Parent' : 'Breeder'}
-              </Text>
-              <Text style={styles.accountTypeSubtitle}>
-                Tap to switch to {user?.userType === 'dog-parent' ? 'Breeder' : 'Dog Parent'} mode
-              </Text>
-            </View>
-            <Icon name="swap-horizontal" size={24} color={theme.colors.primary} />
-          </View>
-        </TouchableOpacity>
-      </View>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Stats Section - Breeder Only */}
       {user?.userType === 'breeder' && (

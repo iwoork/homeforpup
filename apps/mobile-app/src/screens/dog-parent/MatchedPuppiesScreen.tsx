@@ -22,6 +22,7 @@ interface MatchedPuppy {
   location: string;
   imageUrl?: string;
   gender: 'male' | 'female';
+  breederId: string; // Breeder's user ID
   breederName: string;
   matchScore: number; // 0-100
   matchReasons: string[];
@@ -109,7 +110,7 @@ const MatchedPuppiesScreen: React.FC = () => {
             onPress={() => {
               console.log('Contact breeder for matched puppy:', puppy.id);
               (navigation as any).navigate('ContactBreeder', {
-                receiverId: puppy.breederName, // TODO: Need actual breeder ID from API
+                receiverId: puppy.breederId,
                 breederName: puppy.breederName,
                 puppyId: puppy.id,
                 puppyName: puppy.name,

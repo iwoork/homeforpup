@@ -90,13 +90,13 @@ export class AuthService {
         // Try to get userType from multiple sources:
         // 1. From Cognito custom attribute (if configured)
         // 2. From stored local data (fallback)
-        // 3. Default to 'breeder' (backward compatibility)
+        // 3. Default to 'dog-parent' (most users are looking for puppies)
         let userType = userAttributes?.['custom:userType'] as 'breeder' | 'dog-parent' | undefined;
         
         if (!userType) {
           // Check if we have it stored locally from previous session
           const storedUserType = await AsyncStorage.getItem('user_type') as 'breeder' | 'dog-parent' | null;
-          userType = storedUserType || 'breeder';
+          userType = storedUserType || 'dog-parent';
           console.log('⚠️ userType not in Cognito token, using stored value:', userType);
         } else {
           console.log('✅ userType from Cognito:', userType);
@@ -297,7 +297,7 @@ export class AuthService {
         let userType = userAttributes?.['custom:userType'] as 'breeder' | 'dog-parent' | undefined;
         if (!userType) {
           const storedUserType = await AsyncStorage.getItem('user_type') as 'breeder' | 'dog-parent' | null;
-          userType = storedUserType || 'breeder';
+          userType = storedUserType || 'dog-parent';
         }
 
         const currentUser: User = {

@@ -21,6 +21,7 @@ interface FavoritePuppy {
   location: string;
   imageUrl?: string;
   gender: 'male' | 'female';
+  breederId: string; // Breeder's user ID
   breederName: string;
   savedDate: string;
 }
@@ -110,7 +111,7 @@ const FavoritePuppiesScreen: React.FC = () => {
             onPress={() => {
               console.log('Contact breeder for favorite puppy:', item.id);
               (navigation as any).navigate('ContactBreeder', {
-                receiverId: item.breederName, // TODO: Need actual breeder ID from API
+                receiverId: item.breederId,
                 breederName: item.breederName,
                 puppyId: item.id,
                 puppyName: item.name,

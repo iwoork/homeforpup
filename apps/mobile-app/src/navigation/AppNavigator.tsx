@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useFocusEffect } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../utils/theme';
 import Logo from '../components/Logo';
+import { useUnreadMessageCount } from '../hooks/useUnreadMessageCount';
 
 // Auth Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -71,6 +72,7 @@ const AuthStack = () => (
 
 const BreederTabs = () => {
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useUnreadMessageCount();
   
   return (
     <Tab.Navigator
@@ -165,6 +167,17 @@ const BreederTabs = () => {
       options={{
         title: 'Messages',
         tabBarLabel: 'Messages',
+        tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+        tabBarBadgeStyle: {
+          backgroundColor: theme.colors.error,
+          color: '#fff',
+          fontSize: 10,
+          fontWeight: '700',
+          minWidth: 18,
+          height: 18,
+          borderRadius: 9,
+          marginTop: 2,
+        },
       }}
     />
     <Tab.Screen
@@ -181,6 +194,7 @@ const BreederTabs = () => {
 
 const DogParentTabs = () => {
   const insets = useSafeAreaInsets();
+  const { unreadCount } = useUnreadMessageCount();
   
   return (
     <Tab.Navigator
@@ -275,6 +289,17 @@ const DogParentTabs = () => {
       options={{
         title: 'Messages',
         tabBarLabel: 'Messages',
+        tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+        tabBarBadgeStyle: {
+          backgroundColor: theme.colors.error,
+          color: '#fff',
+          fontSize: 10,
+          fontWeight: '700',
+          minWidth: 18,
+          height: 18,
+          borderRadius: 9,
+          marginTop: 2,
+        },
       }}
     />
     <Tab.Screen

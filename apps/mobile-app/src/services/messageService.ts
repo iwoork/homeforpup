@@ -129,9 +129,23 @@ class MessageService {
    */
   async sendMessage(request: SendMessageRequest): Promise<{ thread: MessageThread; message: Message }> {
     try {
+      console.log('📧 messageService.sendMessage called with:', {
+        recipientId: request.recipientId,
+        recipientName: request.recipientName,
+        subject: request.subject,
+        contentLength: request.content?.length,
+        messageType: request.messageType,
+        hasRecipientId: !!request.recipientId,
+        hasSubject: !!request.subject,
+        hasContent: !!request.content,
+      });
+      
+      const requestBody = JSON.stringify(request);
+      console.log('📦 Request body:', requestBody);
+      
       return await this.makeRequest('/messages/send', {
         method: 'POST',
-        body: JSON.stringify(request),
+        body: requestBody,
       });
     } catch (error) {
       console.error('Error sending message:', error);

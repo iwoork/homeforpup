@@ -18,6 +18,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Dog } from '../../types';
 import apiService from '../../services/apiService';
+import { useBreeds } from '../../hooks/useApi';
 
 interface EditDogRouteParams {
   dog: Dog;
@@ -31,6 +32,9 @@ const EditDogScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { dog } = route.params as EditDogRouteParams;
+
+  const { data: breedsData } = useBreeds();
+  const breeds = breedsData?.breeds || [];
 
   // Get health status from nested object or top-level field
   const initialHealthStatus = (dog as any)?.health?.currentHealthStatus || dog?.healthStatus || 'good';
@@ -53,6 +57,8 @@ const EditDogScreen: React.FC = () => {
   const initialPhotos = ((dog as any).photoGallery?.map((p: any) => p.url) || (dog as any).photos || []);
   const [photos, setPhotos] = useState<string[]>(initialPhotos);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showBreedPicker, setShowBreedPicker] = useState(false);
+  const [breedSearchQuery, setBreedSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -265,21 +271,26 @@ const EditDogScreen: React.FC = () => {
           />
         </View>
 
-        {/* Breed */}
+        {/* Breed Selector */}
         <View style={styles.inputGroup}>
           <Text style={styles.label}>
             Breed <Text style={styles.required}>*</Text>
           </Text>
-          <TextInput
-            style={[styles.input, errors.breed && styles.inputError]}
-            value={formData.breed}
-            onChangeText={(text) => {
-              setFormData({ ...formData, breed: text });
-              if (errors.breed) setErrors({ ...errors, breed: '' });
-            }}
-            placeholder="Enter breed"
-            placeholderTextColor={theme.colors.textTertiary}
-          />
+          <TouchableOpacity
+            style={[styles.pickerButton, errors.breed && { borderColor: theme.colors.error }]}
+            onPress={() => setShowBreedPicker(true)}
+          >
+            <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
+            <Text
+              style={[
+                styles.pickerButtonText,
+                !formData.breed && styles.placeholderText,
+              ]}
+            >
+              {formData.breed || 'Select breed'}
+            </Text>
+            <Icon name="chevron-down" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
           {errors.breed && <Text style={styles.errorText}>{errors.breed}</Text>}
         </View>
 
@@ -613,6 +624,55 @@ const EditDogScreen: React.FC = () => {
       </View>
 
       <View style={styles.bottomSpacer} />
+
+      {/* Breed Picker Modal */}
+      {showBreedPicker && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Breed</Text>
+              <TouchableOpacity onPress={() => setShowBreedPicker(false)}>
+                <Icon name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchContainer}>
+              <Icon name="search" size={20} color={theme.colors.textSecondary} />
+              <TextInput
+                style={styles.searchInput}
+                value={breedSearchQuery}
+                onChangeText={setBreedSearchQuery}
+                placeholder="Search breeds..."
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+            </View>
+            <ScrollView style={styles.modalBody}>
+              {breeds
+                .filter(breed => breed.name.toLowerCase().includes(breedSearchQuery.toLowerCase()))
+                .map(breed => {
+                  const breedImageUrl = `https://homeforpup.com/breeds/${breed.name}.jpg`;
+                  return (
+                    <TouchableOpacity
+                      key={breed.id}
+                      style={styles.breedItem}
+                      onPress={() => {
+                        setFormData({ ...formData, breed: breed.name });
+                        setShowBreedPicker(false);
+                        setBreedSearchQuery('');
+                        if (errors.breed) setErrors({ ...errors, breed: '' });
+                      }}
+                    >
+                      <Image
+                        source={{ uri: breedImageUrl }}
+                        style={styles.breedItemImage}
+                      />
+                      <Text style={styles.breedItemText}>{breed.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+            </ScrollView>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -816,6 +876,99 @@ const styles = StyleSheet.create({
     right: theme.spacing.xs,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 12,
+  },
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    minHeight: 50,
+  },
+  inputIcon: {
+    marginRight: theme.spacing.sm,
+  },
+  pickerButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  placeholderText: {
+    color: theme.colors.textTertiary,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    marginHorizontal: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+    padding: 0,
+  },
+  modalBody: {
+    padding: theme.spacing.lg,
+    maxHeight: 400,
+  },
+  breedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  breedItemImage: {
+    width: 50,
+    height: 50,
+    borderRadius: theme.borderRadius.sm,
+    marginRight: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+  },
+  breedItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.colors.text,
   },
 });
 

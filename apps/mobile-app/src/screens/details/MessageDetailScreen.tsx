@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../utils/theme';
 import { messageService, Message, MessageThread } from '../../services/messageService';
 import authService from '../../services/authService';
@@ -19,6 +20,7 @@ import authService from '../../services/authService';
 const MessageDetailScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
   
   const { thread } = (route.params as { thread: MessageThread }) || {};
@@ -212,7 +214,10 @@ const MessageDetailScreen: React.FC = () => {
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
-      <View style={styles.inputContainer}>
+      <View style={[
+        styles.inputContainer,
+        { paddingBottom: Math.max(insets.bottom, theme.spacing.md) }
+      ]}>
         <TextInput
           style={styles.input}
           value={replyText}
@@ -321,7 +326,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    // paddingBottom will be set dynamically with safe area insets
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,

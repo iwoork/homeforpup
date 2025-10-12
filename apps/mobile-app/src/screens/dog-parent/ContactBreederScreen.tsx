@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
@@ -31,6 +32,7 @@ const ContactBreederScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const params = route.params as ContactBreederRouteParams;
 
   const [breederInfo, setBreederInfo] = useState<any>(null);
@@ -82,6 +84,13 @@ const ContactBreederScreen: React.FC = () => {
   }, [params, user]);
 
   const handleSend = async () => {
+    // Validate recipient ID first
+    if (!params?.receiverId) {
+      Alert.alert('Error', 'Recipient information is missing. Please try again.');
+      console.error('❌ Missing receiverId:', params);
+      return;
+    }
+
     if (!subject.trim()) {
       Alert.alert('Required', 'Please enter a subject');
       return;
@@ -94,22 +103,29 @@ const ContactBreederScreen: React.FC = () => {
 
     setSending(true);
     try {
-      console.log('📤 Sending message:', {
-        from: user?.userId,
-        to: params?.receiverId,
+      // Get the breeder name before using it
+      const recipientName = params?.breederName || breederInfo?.name || breederInfo?.displayName || 'Breeder';
+      
+      const messagePayload = {
+        recipientId: params.receiverId,
+        recipientName,
         subject: subject.trim(),
-        contentLength: message.trim().length,
+        content: message.trim(),
+        messageType: user?.userType === 'breeder' ? 'business' : 'inquiry',
+      };
+      
+      console.log('📤 Sending message with payload:', {
+        recipientId: messagePayload.recipientId,
+        recipientName: messagePayload.recipientName,
+        subject: messagePayload.subject,
+        contentLength: messagePayload.content.length,
+        messageType: messagePayload.messageType,
+        from: user?.userId,
         puppyId: params?.puppyId,
       });
 
       // Send message using the messageService
-      const response = await messageService.sendMessage({
-        recipientId: params?.receiverId || '',
-        recipientName: breederName,
-        subject: subject.trim(),
-        content: message.trim(),
-        messageType: user?.userType === 'breeder' ? 'business' : 'inquiry',
-      });
+      const response = await messageService.sendMessage(messagePayload);
 
       console.log('✅ Message sent successfully:', {
         threadId: response.thread.id,
@@ -124,7 +140,7 @@ const ContactBreederScreen: React.FC = () => {
             text: 'View Message',
             onPress: () => {
               navigation.navigate('MessageDetail' as never, {
-                threadId: response.thread.id,
+                thread: response.thread,
               } as never);
             },
           },
@@ -345,7 +361,7 @@ const ContactBreederScreen: React.FC = () => {
       </ScrollView>
 
       {/* Send Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, theme.spacing.lg) }]}>
         <TouchableOpacity
           style={styles.cancelButton}
           onPress={() => navigation.goBack()}
@@ -633,7 +649,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    padding: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    // paddingBottom will be set dynamically with safe area insets
     backgroundColor: theme.colors.surface,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
