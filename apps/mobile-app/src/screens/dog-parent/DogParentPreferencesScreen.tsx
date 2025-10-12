@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
+import { LocationAutocompleteModal } from '../../components';
 
 const DogParentPreferencesScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -88,7 +91,17 @@ const DogParentPreferencesScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+        >
         {/* Preferred Breeds */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -288,17 +301,19 @@ const DogParentPreferencesScreen: React.FC = () => {
             <Icon name="location" size={24} color={theme.colors.primary} />
             <Text style={styles.sectionTitle}>Location</Text>
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter city, state or zip code"
-            placeholderTextColor={theme.colors.textTertiary}
+          <LocationAutocompleteModal
             value={preferences.location}
-            onChangeText={(text) =>
-              setPreferences((prev) => ({ ...prev, location: text }))
-            }
+            onLocationSelect={(address) => {
+              console.log('Preference location selected:', address);
+              setPreferences((prev) => ({ ...prev, location: address }));
+            }}
+            placeholder="City, State"
+            error={false}
+            editable={true}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Save Button */}
       <View style={styles.footer}>
@@ -328,7 +343,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: theme.spacing.xl * 4,
+    flexGrow: 1,
   },
   section: {
     marginBottom: theme.spacing.xl,

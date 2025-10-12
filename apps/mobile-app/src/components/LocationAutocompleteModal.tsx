@@ -9,6 +9,8 @@ import {
   FlatList,
   ActivityIndicator,
   Platform,
+  Keyboard,
+  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../utils/theme';
@@ -43,10 +45,32 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [manualEntry, setManualEntry] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     setSearchText(value);
   }, [value]);
+
+  // Listen to keyboard events
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   // Simplified city database for common locations
   const generateCityPredictions = (input: string): PlacePrediction[] => {
@@ -200,20 +224,44 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
   };
 
   const handleSelectLocation = (prediction: PlacePrediction) => {
+    console.log('=== LOCATION SELECTION START ===');
+    console.log('Prediction:', prediction);
+    console.log('Description:', prediction.description);
+    
     const formattedAddress = prediction.description;
-    setSearchText(formattedAddress);
+    console.log('Formatted address:', formattedAddress);
+    
+    // Update the form value first
+    console.log('Calling onLocationSelect with:', formattedAddress);
     onLocationSelect(formattedAddress, null);
+    
+    // Then close modal and cleanup
+    console.log('Closing modal...');
     setIsModalVisible(false);
     setPredictions([]);
     setManualEntry(false);
+    
+    // Dismiss keyboard last
+    setTimeout(() => {
+      console.log('Dismissing keyboard...');
+      Keyboard.dismiss();
+    }, 100);
+    
+    console.log('=== LOCATION SELECTION END ===');
   };
 
   const handleManualEntry = () => {
     if (searchText.trim()) {
-      onLocationSelect(searchText.trim(), null);
+      // Dismiss keyboard first
+      Keyboard.dismiss();
+      
+      // Close modal and update form
       setIsModalVisible(false);
       setPredictions([]);
       setManualEntry(false);
+      
+      // Update the form value
+      onLocationSelect(searchText.trim(), null);
     }
   };
 
@@ -223,9 +271,14 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
   };
 
   const handleCancel = () => {
+    // Dismiss keyboard
+    Keyboard.dismiss();
+    
+    // Reset to original value and close
     setSearchText(value);
     setIsModalVisible(false);
     setPredictions([]);
+    setManualEntry(false);
   };
 
   return (
@@ -271,9 +324,22 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
         animationType="slide"
         transparent={true}
         onRequestClose={handleCancel}
+        presentationStyle="overFullScreen"
+        statusBarTranslucent={true}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <TouchableOpacity 
+            style={styles.overlayTouchable}
+            activeOpacity={1} 
+            onPress={handleCancel}
+          />
+          <View style={[
+            styles.modalContent,
+            keyboardHeight > 0 && {
+              marginBottom: keyboardHeight,
+              maxHeight: Dimensions.get('window').height - keyboardHeight - 100,
+            }
+          ]}>
             {/* Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Location</Text>
@@ -301,10 +367,17 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
             <FlatList
               data={predictions}
               keyExtractor={(item) => item.place_id}
+              keyboardShouldPersistTaps="always"
+              scrollEnabled={true}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.predictionItem}
-                  onPress={() => handleSelectLocation(item)}
+                  onPress={() => {
+                    console.log('City tapped:', item.description);
+                    handleSelectLocation(item);
+                  }}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Icon
                     name="location-outline"
@@ -388,8 +461,17 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+    zIndex: 9999,
+    elevation: 9999,
+  },
+  overlayTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: theme.colors.surface,
@@ -397,6 +479,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: theme.borderRadius.xl,
     maxHeight: '80%',
     paddingBottom: Platform.OS === 'ios' ? 34 : theme.spacing.lg,
+    zIndex: 10000,
+    elevation: 10000,
   },
   modalHeader: {
     flexDirection: 'row',
