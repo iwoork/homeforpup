@@ -19,6 +19,7 @@ const dynamodb = DynamoDBDocumentClient.from(client);
 const USERS_TABLE = process.env.USERS_TABLE_NAME || 'puppy-platform-dev-users';
 
 // Base user interface for database storage (all required fields)
+// Note: userType is stored in Cognito only, not in database
 interface DatabaseUserItem {
   userId: string;
   name: string;
@@ -33,7 +34,6 @@ interface DatabaseUserItem {
   coverPhoto?: string;
   galleryPhotos?: string[];
   verified: boolean;
-  userType: 'dog-parent' | 'breeder' | 'both';
   accountStatus: 'active' | 'inactive' | 'pending'; // Required in database
   preferences: {
     notifications: {

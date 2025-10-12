@@ -353,9 +353,9 @@ const BreederDashboard: React.FC = () => {
               <Col xs={24} sm={12}>
                 <div style={{ textAlign: 'center', padding: '16px' }}>
                   <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏠</div>
-                  <Title level={4}>Complete Your Kennel Profile</Title>
+                  <Title level={4}>Manage Your Kennel Profile</Title>
                   <Paragraph>
-                    Add more details to help families understand your breeding practices
+                    Your kennel profile contains all your business information including contact details, social media, facilities, and breeding specialties
                   </Paragraph>
                   <Link href="/kennels">
                     <Button type="primary">Manage Kennels</Button>

@@ -29,7 +29,8 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     const updates = JSON.parse(event.body);
     
     // Don't allow updating certain fields
-    const disallowedFields = ['userId', 'email', 'createdAt', 'passwordHash', 'refreshToken'];
+    // userType is stored in Cognito only, not in database
+    const disallowedFields = ['userId', 'email', 'createdAt', 'passwordHash', 'refreshToken', 'userType'];
     disallowedFields.forEach(field => delete updates[field]);
 
     // Build update expression

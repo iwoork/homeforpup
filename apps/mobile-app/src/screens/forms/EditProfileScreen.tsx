@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  Switch,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -18,6 +17,7 @@ import { theme } from '../../utils/theme';
 import { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
+import { LocationAutocomplete } from '../../components';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -35,30 +35,47 @@ const EditProfileScreen: React.FC = () => {
     phone: user?.phone || '',
     location: user?.location || '',
     bio: user?.bio || '',
-    website: user?.breederInfo?.website || '',
-    license: user?.breederInfo?.license || '',
-    experience: user?.breederInfo?.experience?.toString() || '',
-    specialties: user?.breederInfo?.specialties?.join(', ') || '',
-    facebook: user?.socialLinks?.facebook || '',
-    instagram: user?.socialLinks?.instagram || '',
-    twitter: user?.socialLinks?.twitter || '',
-  });
-
-  const [preferences, setPreferences] = useState({
-    emailNotifications: user?.preferences?.notifications?.email ?? true,
-    smsNotifications: user?.preferences?.notifications?.sms ?? false,
-    pushNotifications: user?.preferences?.notifications?.push ?? true,
-    showEmail: user?.preferences?.privacy?.showEmail ?? false,
-    showPhone: user?.preferences?.privacy?.showPhone ?? false,
-    showLocation: user?.preferences?.privacy?.showLocation ?? true,
+    // Social media only for non-breeders (breeders manage in kennels)
+    facebook: user?.userType !== 'breeder' ? user?.socialLinks?.facebook || '' : '',
+    instagram: user?.userType !== 'breeder' ? user?.socialLinks?.instagram || '' : '',
+    twitter: user?.userType !== 'breeder' ? user?.socialLinks?.twitter || '' : '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Update form data when user context changes (for initial load)
+  useEffect(() => {
+    if (user) {
+      console.log('=== Updating form from user context ===');
+      console.log('User data:', JSON.stringify(user, null, 2));
+      
+      setFormData({
+        name: user.name || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        displayName: user.displayName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        location: user.location || '',
+        bio: user.bio || '',
+        // Social media only for non-breeders (breeders manage in kennels)
+        facebook: user.userType !== 'breeder' ? user.socialLinks?.facebook || '' : '',
+        instagram: user.userType !== 'breeder' ? user.socialLinks?.instagram || '' : '',
+        twitter: user.userType !== 'breeder' ? user.socialLinks?.twitter || '' : '',
+      });
+    }
+  }, [user]);
+
   // Fetch latest user data from API when component mounts
   useEffect(() => {
     const fetchUserProfile = async () => {
+      console.log('=== EditProfileScreen useEffect ===');
+      console.log('User object:', JSON.stringify(user, null, 2));
+      console.log('User ID:', user?.userId);
+      console.log('User type:', user?.userType);
+      
       if (!user?.userId) {
+        console.warn('⚠️ No userId found in user object, skipping API fetch');
         setFetchingProfile(false);
         return;
       }
@@ -85,28 +102,21 @@ const EditProfileScreen: React.FC = () => {
             phone: userData.phone || '',
             location: userData.location || '',
             bio: userData.bio || '',
-            website: userData.breederInfo?.website || '',
-            license: userData.breederInfo?.license || '',
-            experience: userData.breederInfo?.experience?.toString() || '',
-            specialties: userData.breederInfo?.specialties?.join(', ') || '',
-            facebook: userData.socialLinks?.facebook || '',
-            instagram: userData.socialLinks?.instagram || '',
-            twitter: userData.socialLinks?.twitter || '',
-          });
-
-          // Update preferences with fresh data from API
-          setPreferences({
-            emailNotifications: userData.preferences?.notifications?.email ?? true,
-            smsNotifications: userData.preferences?.notifications?.sms ?? false,
-            pushNotifications: userData.preferences?.notifications?.push ?? true,
-            showEmail: userData.preferences?.privacy?.showEmail ?? false,
-            showPhone: userData.preferences?.privacy?.showPhone ?? false,
-            showLocation: userData.preferences?.privacy?.showLocation ?? true,
+            // Social media only for non-breeders (breeders manage in kennels)
+            // Check Cognito userType (from context), not database
+            facebook: user?.userType !== 'breeder' ? userData.socialLinks?.facebook || '' : '',
+            instagram: user?.userType !== 'breeder' ? userData.socialLinks?.instagram || '' : '',
+            twitter: user?.userType !== 'breeder' ? userData.socialLinks?.twitter || '' : '',
           });
 
           // Also update the local user context
+          // IMPORTANT: Preserve the current userType preference (don't let API override it)
           if (updateUser) {
-            updateUser(userData);
+            const updatedUserData = {
+              ...userData,
+              userType: user?.userType || userData.userType, // Preserve current userType preference
+            };
+            updateUser(updatedUserData);
           }
           
           console.log('✅ Profile data loaded successfully');
@@ -142,10 +152,6 @@ const EditProfileScreen: React.FC = () => {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
-    if (formData.experience && isNaN(Number(formData.experience))) {
-      newErrors.experience = 'Experience must be a number';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -166,18 +172,6 @@ const EditProfileScreen: React.FC = () => {
       // Build update data - only include fields that have values
       const updateData: any = {
         name: formData.name,
-        preferences: {
-          notifications: {
-            email: preferences.emailNotifications,
-            sms: preferences.smsNotifications,
-            push: preferences.pushNotifications,
-          },
-          privacy: {
-            showEmail: preferences.showEmail,
-            showPhone: preferences.showPhone,
-            showLocation: preferences.showLocation,
-          },
-        },
       };
 
       // Add optional fields only if they have values
@@ -188,22 +182,14 @@ const EditProfileScreen: React.FC = () => {
       if (formData.location?.trim()) updateData.location = formData.location.trim();
       if (formData.bio?.trim()) updateData.bio = formData.bio.trim();
 
-      // Breeder info (kennel info managed separately in Kennel Management)
-      const breederInfo: any = {};
-      if (formData.website?.trim()) breederInfo.website = formData.website.trim();
-      if (formData.license?.trim()) breederInfo.license = formData.license.trim();
-      if (formData.experience) breederInfo.experience = Number(formData.experience);
-      if (formData.specialties?.trim()) {
-        breederInfo.specialties = formData.specialties.split(',').map(s => s.trim()).filter(Boolean);
+      // Social links (only for non-breeders - breeders manage via kennels)
+      if (user?.userType !== 'breeder') {
+        const socialLinks: any = {};
+        if (formData.facebook?.trim()) socialLinks.facebook = formData.facebook.trim();
+        if (formData.instagram?.trim()) socialLinks.instagram = formData.instagram.trim();
+        if (formData.twitter?.trim()) socialLinks.twitter = formData.twitter.trim();
+        if (Object.keys(socialLinks).length > 0) updateData.socialLinks = socialLinks;
       }
-      if (Object.keys(breederInfo).length > 0) updateData.breederInfo = breederInfo;
-
-      // Social links
-      const socialLinks: any = {};
-      if (formData.facebook?.trim()) socialLinks.facebook = formData.facebook.trim();
-      if (formData.instagram?.trim()) socialLinks.instagram = formData.instagram.trim();
-      if (formData.twitter?.trim()) socialLinks.twitter = formData.twitter.trim();
-      if (Object.keys(socialLinks).length > 0) updateData.socialLinks = socialLinks;
 
       // Call the API to update the profile
       console.log('=== PROFILE UPDATE START ===');
@@ -223,9 +209,14 @@ const EditProfileScreen: React.FC = () => {
 
       // Update local user state with the response from the API
       // API returns { user: {...} }
+      // IMPORTANT: Preserve the current userType preference (don't let API override it)
       if (updateUser && response.data?.user) {
         console.log('Updating local user state with:', response.data.user);
-        updateUser(response.data.user);
+        const updatedUserData = {
+          ...response.data.user,
+          userType: user.userType, // Preserve current userType preference
+        };
+        updateUser(updatedUserData);
       } else {
         console.warn('No user data in response to update local state');
       }
@@ -331,9 +322,14 @@ const EditProfileScreen: React.FC = () => {
 
         // Update local user state with the response from the API
         // API returns { user: {...} }
+        // IMPORTANT: Preserve the current userType preference (don't let API override it)
         if (updateUser && updateResponse.data?.user) {
           console.log('Updating local user state with photo');
-          updateUser(updateResponse.data.user);
+          const updatedUserData = {
+            ...updateResponse.data.user,
+            userType: user.userType, // Preserve current userType preference
+          };
+          updateUser(updatedUserData);
         } else {
           console.warn('No user data in photo update response');
         }
@@ -362,16 +358,20 @@ const EditProfileScreen: React.FC = () => {
       keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
       maxLength?: number;
       icon?: string;
+      editable?: boolean;
     }
   ) => (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputContainer}>
+      <View style={[
+        styles.inputContainer,
+        options?.editable === false && styles.inputContainerDisabled
+      ]}>
         {options?.icon && (
           <Icon
             name={options.icon}
             size={20}
-            color={theme.colors.textSecondary}
+            color={options?.editable === false ? theme.colors.textTertiary : theme.colors.textSecondary}
             style={styles.inputIcon}
           />
         )}
@@ -380,6 +380,7 @@ const EditProfileScreen: React.FC = () => {
             styles.input,
             options?.multiline && styles.textArea,
             errors[key] && styles.inputError,
+            options?.editable === false && styles.inputDisabled,
           ]}
           value={formData[key]}
           onChangeText={text => {
@@ -393,37 +394,21 @@ const EditProfileScreen: React.FC = () => {
           multiline={options?.multiline}
           keyboardType={options?.keyboardType || 'default'}
           maxLength={options?.maxLength}
+          editable={options?.editable !== false}
         />
       </View>
       {errors[key] && <Text style={styles.errorText}>{errors[key]}</Text>}
     </View>
   );
 
-  const renderSwitch = (
-    label: string,
-    key: keyof typeof preferences,
-    description?: string
-  ) => (
-    <View style={styles.switchGroup}>
-      <View style={styles.switchHeader}>
-        <Text style={styles.switchLabel}>{label}</Text>
-        <Switch
-          value={preferences[key]}
-          onValueChange={value => setPreferences({ ...preferences, [key]: value })}
-          trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-          thumbColor={preferences[key] ? '#ffffff' : theme.colors.textSecondary}
-        />
-      </View>
-      {description && <Text style={styles.switchDescription}>{description}</Text>}
-    </View>
-  );
-
-  // Show loading indicator while fetching profile
-  if (fetchingProfile) {
+  // Show loading indicator while fetching profile or if no user data
+  if (fetchingProfile || !user) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading profile...</Text>
+        <Text style={styles.loadingText}>
+          {!user ? 'Loading user data...' : 'Loading profile...'}
+        </Text>
       </View>
     );
   }
@@ -475,7 +460,8 @@ const EditProfileScreen: React.FC = () => {
         
         {renderInput('Email *', 'email', 'Enter your email address', { 
           icon: 'mail', 
-          keyboardType: 'email-address' 
+          keyboardType: 'email-address',
+          editable: false
         })}
         
         {renderInput('Phone', 'phone', 'Enter your phone number', { 
@@ -483,7 +469,23 @@ const EditProfileScreen: React.FC = () => {
           keyboardType: 'phone-pad' 
         })}
         
-        {renderInput('Location', 'location', 'City, State', { icon: 'location' })}
+        {/* Location with Google Places Autocomplete */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Location</Text>
+          <LocationAutocomplete
+            value={formData.location}
+            onLocationSelect={(address, details) => {
+              setFormData({ ...formData, location: address });
+              if (errors.location) {
+                setErrors({ ...errors, location: '' });
+              }
+            }}
+            placeholder="City, State"
+            error={!!errors.location}
+            editable={true}
+          />
+          {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
+        </View>
         
         {renderInput('Bio', 'bio', 'Tell us about yourself...', { 
           icon: 'document-text',
@@ -491,46 +493,6 @@ const EditProfileScreen: React.FC = () => {
           maxLength: 500
         })}
       </View>
-
-      {/* Breeder Information - Only show for breeders */}
-      {user?.userType === 'breeder' && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Breeder Information</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ManageKennels' as never)}
-              style={styles.editButton}
-            >
-              <Text style={styles.editButtonText}>Manage Kennels</Text>
-              <Icon name="arrow-forward" size={16} color={theme.colors.primary} />
-            </TouchableOpacity>
-          </View>
-          
-          {renderInput('Website', 'website', 'https://your-website.com', { 
-            icon: 'globe',
-            keyboardType: 'email-address'
-          })}
-          
-          {renderInput('License Number', 'license', 'Breeding license number', { icon: 'card' })}
-          
-          {renderInput('Years of Experience', 'experience', 'Number of years', { 
-            icon: 'time',
-            keyboardType: 'numeric'
-          })}
-          
-          {renderInput('Specialties', 'specialties', 'Golden Retriever, Labrador, etc.', { 
-            icon: 'paw',
-            multiline: true
-          })}
-          
-          <View style={styles.infoCard}>
-            <Icon name="information-circle" size={24} color={theme.colors.info} />
-            <Text style={styles.infoText}>
-              Kennel details are managed separately. Use "Manage Kennels" to create and edit your kennels.
-            </Text>
-          </View>
-        </View>
-      )}
 
       {/* Dog Parent Preferences - Only show for dog parents */}
       {user?.userType === 'dog-parent' && (
@@ -555,69 +517,25 @@ const EditProfileScreen: React.FC = () => {
         </View>
       )}
 
-      {/* Social Media */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Social Media</Text>
-        
-        {renderInput('Facebook', 'facebook', 'https://facebook.com/yourpage', { 
-          icon: 'logo-facebook',
-          keyboardType: 'email-address'
-        })}
-        
-        {renderInput('Instagram', 'instagram', '@yourusername', { 
-          icon: 'logo-instagram'
-        })}
-        
-        {renderInput('Twitter', 'twitter', '@yourusername', { 
-          icon: 'logo-twitter'
-        })}
-      </View>
-
-      {/* Privacy Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Privacy Settings</Text>
-        
-        {renderSwitch(
-          'Show Email',
-          'showEmail',
-          'Allow others to see your email address'
-        )}
-        
-        {renderSwitch(
-          'Show Phone',
-          'showPhone',
-          'Allow others to see your phone number'
-        )}
-        
-        {renderSwitch(
-          'Show Location',
-          'showLocation',
-          'Allow others to see your location'
-        )}
-      </View>
-
-      {/* Notification Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
-        
-        {renderSwitch(
-          'Email Notifications',
-          'emailNotifications',
-          'Receive notifications via email'
-        )}
-        
-        {renderSwitch(
-          'SMS Notifications',
-          'smsNotifications',
-          'Receive notifications via text message'
-        )}
-        
-        {renderSwitch(
-          'Push Notifications',
-          'pushNotifications',
-          'Receive push notifications on your device'
-        )}
-      </View>
+      {/* Social Media - Only for dog parents, breeders manage in kennels */}
+      {user?.userType !== 'breeder' && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Social Media</Text>
+          
+          {renderInput('Facebook', 'facebook', 'https://facebook.com/yourpage', { 
+            icon: 'logo-facebook',
+            keyboardType: 'email-address'
+          })}
+          
+          {renderInput('Instagram', 'instagram', '@yourusername', { 
+            icon: 'logo-instagram'
+          })}
+          
+          {renderInput('Twitter', 'twitter', '@yourusername', { 
+            icon: 'logo-twitter'
+          })}
+        </View>
+      )}
 
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
@@ -762,30 +680,17 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: theme.colors.error,
   },
+  inputContainerDisabled: {
+    backgroundColor: theme.colors.backgroundSecondary,
+    borderColor: theme.colors.borderLight,
+  },
+  inputDisabled: {
+    color: theme.colors.textSecondary,
+  },
   errorText: {
     color: theme.colors.error,
     fontSize: 14,
     marginTop: theme.spacing.xs,
-  },
-  switchGroup: {
-    marginBottom: theme.spacing.lg,
-  },
-  switchHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.xs,
-  },
-  switchLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: theme.colors.text,
-    flex: 1,
-  },
-  switchDescription: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    lineHeight: 20,
   },
   buttonContainer: {
     paddingHorizontal: theme.spacing.lg,

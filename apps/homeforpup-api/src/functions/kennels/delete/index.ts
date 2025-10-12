@@ -39,8 +39,27 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
     const existingKennel = result.Item;
 
-    // Check if user is owner (only owners can delete)
-    const isOwner = existingKennel.owners?.includes(userId);
+    // Log kennel ownership for debugging
+    console.log('Checking kennel ownership for deletion:', {
+      userId,
+      kennelId,
+      owners: existingKennel.owners,
+      ownerId: existingKennel.ownerId,
+      createdBy: existingKennel.createdBy,
+    });
+
+    // Check if user is owner (only owners can delete) - check multiple ownership fields for backward compatibility
+    // Handle both array and string cases for owners
+    const ownersArray = Array.isArray(existingKennel.owners) 
+      ? existingKennel.owners 
+      : (existingKennel.owners ? [existingKennel.owners] : []);
+
+    const isOwner = 
+      ownersArray.includes(userId) || 
+      existingKennel.ownerId === userId || 
+      existingKennel.createdBy === userId;
+
+    console.log('Authorization check for deletion:', { isOwner });
 
     if (!isOwner) {
       return errorResponse('Forbidden: Only kennel owners can delete kennels', 403);

@@ -140,7 +140,7 @@ const SignupContent: React.FC = () => {
           <ul style={{ paddingLeft: '20px', margin: '16px 0' }}>
             <li>Manage multiple kennels and breeding programs</li>
             <li>Track your dogs, litters, and breeding records</li>
-            <li>Connect with potential families and adopters</li>
+            <li>Connect with potential families and future dog parents</li>
             <li>Professional breeder tools and resources</li>
             <li>Secure messaging and communication</li>
           </ul>

@@ -2,10 +2,11 @@
 
 import React, { useCallback, useEffect } from 'react';
 import { Card, Row, Col, Typography, Button, Form, Input, Space, Alert, Spin, App } from 'antd';
-import { SaveOutlined, LoadingOutlined } from '@ant-design/icons';
+import { SaveOutlined, LoadingOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks';
+import { LocationAutocomplete } from '@/components';
 
 const { Title } = Typography;
 
@@ -138,7 +139,10 @@ const BreederEditPage: React.FC = () => {
           </Row>
 
           <Form.Item label="Location" name="location">
-            <Input placeholder="City, State" />
+            <LocationAutocomplete 
+              placeholder="City, State"
+              prefix={<EnvironmentOutlined />}
+            />
           </Form.Item>
 
           <Form.Item label="Business Hours" name="businessHours">

@@ -19,11 +19,14 @@ import {
   GlobalOutlined,
   CalendarOutlined,
   TeamOutlined,
+  CrownOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useMemo } from 'react';
 import { BreedSelector } from '@/components';
+import { useAuth } from '@/hooks';
+import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -122,6 +125,10 @@ const sortOptions = [
 const pageSizeOptions = [10, 20, 30, 50];
 
 const BreederDirectoryPage: React.FC = () => {
+  // Get current user for premium access check
+  const { user } = useAuth();
+  const hasPremiumAccess = canSeeVerifiedBadges(user);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedBreed, setSelectedBreed] = useState('');
@@ -274,10 +281,17 @@ const BreederDirectoryPage: React.FC = () => {
               gap: '8px',
               flexWrap: 'wrap'
             }}>
-              {breeder.verified && (
+              {breeder.verified && hasPremiumAccess && (
                 <Tag color="green" icon={<CheckCircleOutlined />}>
                   Verified
                 </Tag>
+              )}
+              {breeder.verified && !hasPremiumAccess && (
+                <Tooltip title="Upgrade to Premium to see verified breeders">
+                  <Tag color="gold" icon={<CrownOutlined />}>
+                    Premium
+                  </Tag>
+                </Tooltip>
               )}
               {breeder.availablePuppies > 0 && (
                 <Tag color="red">

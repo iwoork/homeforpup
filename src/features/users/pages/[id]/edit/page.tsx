@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/hooks';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR, { mutate } from 'swr';
-import { ProfilePhotoUpload, CoverPhotoUpload, PhotoUpload, BreedSelector } from '@/components';
+import { ProfilePhotoUpload, CoverPhotoUpload, PhotoUpload, BreedSelector, LocationAutocomplete } from '@/components';
 
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
@@ -703,7 +703,7 @@ const EditProfilePage: React.FC = () => {
                       { max: 100, message: 'Location must be less than 100 characters' }
                     ]}
                   >
-                    <Input 
+                    <LocationAutocomplete
                       placeholder="City, State or general area"
                       prefix={<EnvironmentOutlined />}
                     />

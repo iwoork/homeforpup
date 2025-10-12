@@ -28,11 +28,13 @@ import {
   CheckCircleOutlined, 
   TruckOutlined, 
   HomeOutlined,
-  EyeOutlined
+  EyeOutlined,
+  CrownOutlined
 } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
 import { activityTracker } from '@homeforpup/shared-activity';
+import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
 
 const { Text } = Typography;
 
@@ -124,6 +126,9 @@ const PuppyList: React.FC<PuppyListProps> = ({
   
   // Get current user ID for activity tracking
   const currentUserId = user?.userId || user?.id;
+  
+  // Check if the current viewer has premium access to see verified badges
+  const hasPremiumAccess = canSeeVerifiedBadges(user);
 
   // Helper function to get current favorite status
   const getCurrentFavoriteStatus = (puppyId: string): boolean => {
@@ -256,10 +261,17 @@ const PuppyList: React.FC<PuppyListProps> = ({
                 Favorited
               </Tag>
             )}
-            {puppy.breeder.verified && (
+            {puppy.breeder.verified && hasPremiumAccess && (
               <Tag color="green" icon={<CheckCircleOutlined />}>
                 Verified
               </Tag>
+            )}
+            {puppy.breeder.verified && !hasPremiumAccess && (
+              <Tooltip title="Upgrade to Premium to see verified breeders">
+                <Tag color="gold" icon={<CrownOutlined />}>
+                  Premium
+                </Tag>
+              </Tooltip>
             )}
             {puppy.breeder.shipping && (
               <Tag color="blue" icon={<TruckOutlined />}>

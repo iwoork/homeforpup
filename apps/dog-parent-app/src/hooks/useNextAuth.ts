@@ -32,21 +32,22 @@ export const useNextAuth = (): {
 
   // Debug user data processing (only when data changes)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && userData?.userType) {
+    const sessionUserType = session?.user ? (session.user as any)?.userType : null;
+    if (process.env.NODE_ENV === 'development' && sessionUserType) {
       console.log('User data processing:', {
-        userDataUserType: userData?.userType,
-        sessionUserType: session?.user ? (session.user as any)?.userType : 'no session',
-        finalUserType: userData?.userType || (session?.user ? (session.user as any).userType : null) || 'dog-parent'
+        sessionUserType,
+        finalUserType: sessionUserType || 'dog-parent'
       });
     }
-  }, [userData?.userType]);
+  }, [session?.user]);
 
   // Use database user data when available, fallback to session data
+  // Note: userType is stored in Cognito session only, not in User database
   const user = session?.user ? {
     userId: (session.user as any).id || session.user.email || '',
     name: userData?.name || session.user.name || '',
     email: session.user.email || '',
-    userType: userData?.userType || (session.user as any)?.userType || 'dog-parent', // Use database userType
+    userType: (session.user as any)?.userType || 'dog-parent', // userType from Cognito session
     isVerified: userData?.verified || (session.user as any)?.isVerified || false,
     profileImage: userData?.profileImage || session.user.image || '',
     puppyParentInfo: userData?.puppyParentInfo || null,

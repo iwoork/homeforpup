@@ -7,10 +7,10 @@ import { MessagesPage } from '@homeforpup/shared-messaging';
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-const Dog ParentMessagesPage: React.FC = () => {
+const DogParentMessagesPage: React.FC = () => {
   const { user, loading } = useAuth();
 
-  console.log('Dog ParentMessagesPage: user data:', { user, loading });
+  console.log('DogParentMessagesPage: user data:', { user, loading });
 
   if (loading) {
     return (
@@ -49,4 +49,4 @@ const Dog ParentMessagesPage: React.FC = () => {
   );
 };
 
-export default Dog ParentMessagesPage;
+export default DogParentMessagesPage;

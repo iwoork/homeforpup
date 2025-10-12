@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           userId: userId,
           name: session.user.name || 'User',
           email: session.user.email || '',
-          userType: (session.user as any).userType || 'dog-parent',
+          // Note: userType is stored in Cognito session, not in User database object
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           verified: (session.user as any).isVerified || false,

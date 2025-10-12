@@ -15,6 +15,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { theme } from '../../utils/theme';
 import { Kennel } from '../../types';
 import { useKennels } from '../../hooks/useApi';
+import { apiService } from '../../services/apiService';
 
 const ManageKennelsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -47,9 +48,19 @@ const ManageKennelsScreen: React.FC = () => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement API call to delete kennel
-            Alert.alert('Success', 'Kennel deleted successfully');
+          onPress: async () => {
+            try {
+              const response = await apiService.deleteKennel(kennel.id);
+              if (response.success) {
+                Alert.alert('Success', 'Kennel deleted successfully');
+                await refresh(); // Refresh the list
+              } else {
+                Alert.alert('Error', response.error || 'Failed to delete kennel');
+              }
+            } catch (error) {
+              console.error('Error deleting kennel:', error);
+              Alert.alert('Error', 'Failed to delete kennel. Please try again.');
+            }
           },
         },
       ],
@@ -125,7 +136,7 @@ const ManageKennelsScreen: React.FC = () => {
           style={styles.actionButton}
           onPress={() =>
             navigation.navigate(
-              'KennelDetail' as never,
+              'EditKennel' as never,
               { kennel: item } as never,
             )
           }

@@ -18,6 +18,7 @@ import {
   Divider
 } from 'antd';
 import BreedSelector from '@/components/forms/BreedSelector';
+import LocationAutocomplete from '@/components/forms/LocationAutocomplete';
 import { 
   HomeOutlined, 
   EnvironmentOutlined, 
@@ -273,6 +274,40 @@ const CreateKennelPage: React.FC = () => {
       case 1:
         return (
           <Row gutter={[24, 24]}>
+            <Col xs={24}>
+              <Form.Item
+                label="Search Location"
+                help="Start typing to search and auto-fill your address"
+              >
+                <LocationAutocomplete
+                  placeholder="Search for your address or location"
+                  prefix={<EnvironmentOutlined />}
+                  onChange={(value: string, details?: any) => {
+                    if (details) {
+                      // Auto-fill the address fields based on Google Places details
+                      const addressComponents = details.fullAddress?.split(',') || [];
+                      
+                      if (addressComponents.length > 0) {
+                        form.setFieldValue('street', addressComponents[0].trim());
+                      }
+                      if (details.city) {
+                        form.setFieldValue('city', details.city);
+                      }
+                      if (details.state) {
+                        form.setFieldValue('state', details.state);
+                      }
+                      if (details.country) {
+                        form.setFieldValue('country', details.country);
+                      }
+                      if (details.lat && details.lng) {
+                        form.setFieldValue('latitude', details.lat);
+                        form.setFieldValue('longitude', details.lng);
+                      }
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
             <Col xs={24}>
               <Form.Item
                 name="street"

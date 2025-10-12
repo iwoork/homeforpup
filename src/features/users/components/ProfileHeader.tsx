@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { Card, Row, Col, Space, Avatar, Typography, Tag, Tooltip, Button } from 'antd';
-import { CheckCircleOutlined, EnvironmentOutlined, UserOutlined, EditOutlined, MessageOutlined, HeartOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, EnvironmentOutlined, UserOutlined, EditOutlined, MessageOutlined, HeartOutlined, CrownOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
+import { User } from '@/types';
 
 const { Title, Text } = Typography;
 
@@ -42,9 +44,15 @@ type Props = {
   isOwnProfile: boolean;
   editHref?: string;
   onMessageClick?: () => void;
+  currentViewer?: User | null; // The currently logged-in user viewing this profile
 };
 
-const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessageClick }) => {
+const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessageClick, currentViewer }) => {
+  // Check if the current viewer has premium access to see verified badges
+  const hasPremiumAccess = canSeeVerifiedBadges(currentViewer);
+  
+  // Show verified badge only if viewer has premium OR if it's their own profile
+  const showVerifiedBadge = user.verified && (hasPremiumAccess || isOwnProfile);
   return (
     <Card 
       style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden' }}
@@ -83,9 +91,14 @@ const ProfileHeader: React.FC<Props> = ({ user, isOwnProfile, editHref, onMessag
                     }}>
                       {user.displayName || user.name}
                     </Title>
-                    {user.verified && (
+                    {showVerifiedBadge && (
                       <Tooltip title="Verified User">
                         <CheckCircleOutlined style={{ color: '#8fbc8f', fontSize: '24px' }} />
+                      </Tooltip>
+                    )}
+                    {user.verified && !hasPremiumAccess && !isOwnProfile && (
+                      <Tooltip title="Upgrade to Premium to see verified badges">
+                        <Tag icon={<CrownOutlined />} color="gold">Premium Feature</Tag>
                       </Tooltip>
                     )}
                   </div>

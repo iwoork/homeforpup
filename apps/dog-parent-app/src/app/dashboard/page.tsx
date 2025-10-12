@@ -27,7 +27,7 @@ interface DashboardStats {
 }
 
 
-const Dog ParentDashboard: React.FC = () => {
+const DogParentDashboard: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalFavorites: 0,
@@ -388,4 +388,4 @@ const Dog ParentDashboard: React.FC = () => {
   );
 };
 
-export default Dog ParentDashboard;
+export default DogParentDashboard;

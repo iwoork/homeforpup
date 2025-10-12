@@ -13,9 +13,10 @@ import {
   message,
   Typography,
 } from 'antd';
-import { UploadOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { UploadOutlined, SaveOutlined, CloseOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { Kennel } from '@/types';
 import { useKennels } from '@/hooks/useKennels';
+import { LocationAutocomplete } from '@/components';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -117,6 +118,29 @@ const KennelForm: React.FC<KennelFormProps> = ({
 
         {/* Address Information */}
         <Title level={4}>Address Information</Title>
+        
+        {/* Location Autocomplete to help fill address */}
+        <Form.Item 
+          label="Search Location" 
+          help="Start typing to search and auto-fill your address"
+        >
+          <LocationAutocomplete
+            placeholder="Search for your address or location"
+            prefix={<EnvironmentOutlined />}
+            onChange={(value, details) => {
+              if (details) {
+                // Auto-fill the address fields based on Google Places details
+                const updates: any = {};
+                
+                details.fullAddress && form.setFieldValue(['address', 'street'], details.fullAddress.split(',')[0]);
+                details.city && form.setFieldValue(['address', 'city'], details.city);
+                details.state && form.setFieldValue(['address', 'state'], details.state);
+                details.country && form.setFieldValue(['address', 'country'], details.country);
+              }
+            }}
+          />
+        </Form.Item>
+        
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item label="Street Address" name={['address', 'street']}>

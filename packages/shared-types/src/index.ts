@@ -14,7 +14,7 @@ export interface User {
   firstName?: string; // Optional: First name
   lastName?: string; // Optional: Last name
   displayName?: string; // Optional: Public display name
-  userType: 'breeder' | 'dog-parent' | 'both'; // User type
+  // Note: userType is stored in Cognito only, not in database
   phone?: string; // Optional: Phone number
   location?: string; // Location string (city, state)
   coordinates?: {
@@ -27,6 +27,14 @@ export interface User {
   bio?: string; // Optional: Biography
   verified: boolean; // Email/phone verification status
   accountStatus: 'active' | 'suspended' | 'pending'; // Account status
+  
+  // Premium subscription
+  isPremium?: boolean; // Whether user has premium subscription
+  subscriptionPlan?: 'basic' | 'premium' | 'pro'; // Subscription tier
+  subscriptionStatus?: 'active' | 'cancelled' | 'expired' | 'trial'; // Subscription status
+  subscriptionStartDate?: string; // When subscription started
+  subscriptionEndDate?: string; // When subscription ends/renews
+  
   preferences?: {
     notifications: {
       email: boolean;
@@ -341,7 +349,7 @@ export interface MessageThread {
   subject: string;
   participants: string[]; // Array of user IDs
   participantNames?: Record<string, string>; // userId -> name mapping
-  participantInfo?: Record<string, Pick<User, 'name' | 'displayName' | 'profileImage' | 'userType'>>; // Enhanced participant info
+  participantInfo?: Record<string, Pick<User, 'name' | 'displayName' | 'profileImage'>>; // Enhanced participant info
   lastMessage: Message;
   messageCount: number;
   unreadCount: Record<string, number>; // userId -> unread count

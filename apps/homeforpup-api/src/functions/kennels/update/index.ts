@@ -43,9 +43,32 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
     const existingKennel = result.Item;
 
-    // Check if user is owner or manager
-    const isOwner = existingKennel.owners?.includes(userId);
-    const isManager = existingKennel.managers?.includes(userId);
+    // Log kennel ownership for debugging
+    console.log('Checking kennel ownership:', {
+      userId,
+      kennelId,
+      owners: existingKennel.owners,
+      ownerId: existingKennel.ownerId,
+      createdBy: existingKennel.createdBy,
+      managers: existingKennel.managers,
+    });
+
+    // Check if user is owner or manager - check multiple ownership fields for backward compatibility
+    // Handle both array and string cases for owners/managers
+    const ownersArray = Array.isArray(existingKennel.owners) 
+      ? existingKennel.owners 
+      : (existingKennel.owners ? [existingKennel.owners] : []);
+    const managersArray = Array.isArray(existingKennel.managers) 
+      ? existingKennel.managers 
+      : (existingKennel.managers ? [existingKennel.managers] : []);
+
+    const isOwner = 
+      ownersArray.includes(userId) || 
+      existingKennel.ownerId === userId || 
+      existingKennel.createdBy === userId;
+    const isManager = managersArray.includes(userId);
+
+    console.log('Authorization check:', { isOwner, isManager });
 
     if (!isOwner && !isManager) {
       return errorResponse('Forbidden: You do not have permission to update this kennel', 403);

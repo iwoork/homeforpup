@@ -27,13 +27,10 @@ export async function GET(
     const getParams = {
       TableName: KENNELS_TABLE,
       Key: {
-        ownerId: 'temp', // We'll need to find the ownerId
         id: kennelId,
       },
     };
 
-    // For now, we'll need to scan to find the kennel
-    // In production, you might want to add a GSI on id
     const result = await docClient.send(new GetCommand(getParams));
     
     if (!result.Item) {
@@ -68,7 +65,6 @@ export async function PUT(
     const getParams = {
       TableName: KENNELS_TABLE,
       Key: {
-        ownerId: userId,
         id: kennelId,
       },
     };
@@ -76,6 +72,12 @@ export async function PUT(
     const existingKennel = await docClient.send(new GetCommand(getParams));
     if (!existingKennel.Item) {
       return NextResponse.json({ error: 'Kennel not found' }, { status: 404 });
+    }
+
+    // Check if user is authorized to update
+    const kennel = existingKennel.Item as any;
+    if (kennel.ownerId !== userId && kennel.createdBy !== userId) {
+      return NextResponse.json({ error: 'Unauthorized to update this kennel' }, { status: 403 });
     }
 
     // Build update expression
@@ -107,7 +109,6 @@ export async function PUT(
     const updateParams = {
       TableName: KENNELS_TABLE,
       Key: {
-        ownerId: userId,
         id: kennelId,
       },
       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
@@ -144,7 +145,6 @@ export async function DELETE(
     const getParams = {
       TableName: KENNELS_TABLE,
       Key: {
-        ownerId: userId,
         id: kennelId,
       },
     };
@@ -154,11 +154,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Kennel not found' }, { status: 404 });
     }
 
+    // Check if user is authorized (must be owner or creator)
+    const kennel = existingKennel.Item as any;
+    if (kennel.ownerId !== userId && kennel.createdBy !== userId) {
+      return NextResponse.json({ error: 'Unauthorized to delete this kennel' }, { status: 403 });
+    }
+
     // Delete the kennel
     const deleteParams = {
       TableName: KENNELS_TABLE,
       Key: {
-        ownerId: userId,
         id: kennelId,
       },
     };

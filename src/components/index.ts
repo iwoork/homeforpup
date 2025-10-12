@@ -9,6 +9,7 @@ export { default as PhotoUpload } from './forms/Upload/PhotoUpload';
 export { default as ImageCropperModal } from './forms/Upload/ImageCropperModal';
 export { default as DocumentUpload } from './forms/Upload/DocumentUpload';
 export { default as BreedSelector } from './forms/BreedSelector';
+export { default as LocationAutocomplete } from './forms/LocationAutocomplete';
 
 // Core components
 export { Providers } from './Providers';

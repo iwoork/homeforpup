@@ -13,6 +13,7 @@
   "dependencies": {
     "@homeforpup/shared-types": "*",
     "@homeforpup/shared-activity": "*",
+    "@homeforpup/shared-hooks": "*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "antd": "^5.21.2",

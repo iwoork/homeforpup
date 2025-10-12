@@ -10,7 +10,6 @@ import {
   MessageOutlined,
   BookOutlined,
   BarChartOutlined,
-  SettingOutlined,
   LogoutOutlined,
   UserOutlined,
   PlusOutlined,
@@ -134,14 +133,6 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
       {/* Footer Actions */}
       <div style={{ padding: '16px', borderTop: '1px solid #f0f0f0' }}>
         <Space direction="vertical" style={{ width: '100%' }}>
-          <Button
-            type="text"
-            icon={<SettingOutlined />}
-            style={{ width: '100%', textAlign: 'left' }}
-            onClick={() => handleMenuClick('/users/${user?.userId}/edit')}
-          >
-            Edit Profile
-          </Button>
           <Button
             type="text"
             danger

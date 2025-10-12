@@ -7,14 +7,16 @@ import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
 const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-  // Temporarily make authentication optional for testing
-  // TODO: Re-enable required auth once Cognito authorizer is working
+  // Require authentication to list user's kennels
   let userId: string | null = null;
   try {
     userId = getUserIdFromEvent(event as any);
   } catch (error: any) {
-    // Continue without user context if not authenticated
-    console.log('No authenticated user, showing all kennels');
+    return errorResponse('Unauthorized: Please log in to view your kennels', 401);
+  }
+
+  if (!userId) {
+    return errorResponse('Unauthorized: Please log in to view your kennels', 401);
   }
 
   // Parse query parameters
@@ -31,46 +33,68 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   } = queryParams;
 
   try {
+    console.log('Listing kennels for user:', userId);
+
     // Build filter expression
     let filterExpression = '';
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {};
 
-    // Filter by user's kennels only if authenticated
-    if (userId) {
-      filterExpression = 'contains(owners, :userId) OR contains(managers, :userId)';
-      expressionAttributeValues[':userId'] = userId;
-    }
+    // Filter by user's kennels - check multiple ownership fields for backward compatibility
+    filterExpression = 'ownerId = :userId OR createdBy = :userId OR contains(owners, :userId) OR contains(managers, :userId)';
+    expressionAttributeValues[':userId'] = userId;
 
+    // Wrap additional filters in parentheses for proper operator precedence
     if (search) {
-      filterExpression += ' AND (contains(#name, :search) OR contains(description, :search) OR contains(businessName, :search))';
+      const searchFilter = ' AND (contains(#name, :search) OR contains(description, :search) OR contains(businessName, :search))';
+      filterExpression = `(${filterExpression})${searchFilter}`;
       expressionAttributeNames['#name'] = 'name';
       expressionAttributeValues[':search'] = search;
     }
 
     if (status) {
-      filterExpression += ' AND #status = :status';
+      if (search) {
+        filterExpression += ' AND #status = :status';
+      } else {
+        filterExpression = `(${filterExpression}) AND #status = :status`;
+      }
       expressionAttributeNames['#status'] = 'status';
       expressionAttributeValues[':status'] = status;
     }
 
     if (verified !== undefined) {
-      filterExpression += ' AND verified = :verified';
+      if (search || status) {
+        filterExpression += ' AND verified = :verified';
+      } else {
+        filterExpression = `(${filterExpression}) AND verified = :verified`;
+      }
       expressionAttributeValues[':verified'] = verified === 'true';
     }
 
     if (specialty) {
-      filterExpression += ' AND contains(specialties, :specialty)';
+      if (search || status || verified !== undefined) {
+        filterExpression += ' AND contains(specialties, :specialty)';
+      } else {
+        filterExpression = `(${filterExpression}) AND contains(specialties, :specialty)`;
+      }
       expressionAttributeValues[':specialty'] = specialty;
     }
 
     if (city) {
-      filterExpression += ' AND address.city = :city';
+      if (search || status || verified !== undefined || specialty) {
+        filterExpression += ' AND address.city = :city';
+      } else {
+        filterExpression = `(${filterExpression}) AND address.city = :city`;
+      }
       expressionAttributeValues[':city'] = city;
     }
 
     if (state) {
-      filterExpression += ' AND address.#state = :state';
+      if (search || status || verified !== undefined || specialty || city) {
+        filterExpression += ' AND address.#state = :state';
+      } else {
+        filterExpression = `(${filterExpression}) AND address.#state = :state`;
+      }
       expressionAttributeNames['#state'] = 'state';
       expressionAttributeValues[':state'] = state;
     }

@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { useAvailablePuppies } from '../../hooks/useAvailablePuppies';
+import { useFavorites } from '../../hooks/useFavorites';
 import apiService, { Dog } from '../../services/apiService';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -29,6 +30,9 @@ const SearchPuppiesScreen: React.FC = () => {
   // Use the hook to fetch real data
   const { puppies, loading, error, total, refresh, loadMore, updateFilters } =
     useAvailablePuppies({ autoFetch: true });
+
+  // Favorites management
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   // Update filters when selections change
   useEffect(() => {
@@ -141,17 +145,39 @@ const SearchPuppiesScreen: React.FC = () => {
           )}
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={() => {
-              // TODO: Implement favorites
-              console.log('Add to favorites:', item.id);
+            onPress={async e => {
+              e.stopPropagation();
+              const success = await toggleFavorite(item);
+              if (success) {
+                console.log(
+                  isFavorite(item.id)
+                    ? 'Removed from favorites:'
+                    : 'Added to favorites:',
+                  item.id,
+                );
+              }
             }}
           >
-            <Icon name="heart-outline" size={24} color="#ffffff" />
+            <Icon
+              name={isFavorite(item.id) ? 'heart' : 'heart-outline'}
+              size={24}
+              color={isFavorite(item.id) ? '#ef4444' : '#ffffff'}
+            />
           </TouchableOpacity>
         </View>
         <View style={styles.puppyInfo}>
           <Text style={styles.puppyName}>{item.name}</Text>
           <Text style={styles.puppyBreed}>{item.breed}</Text>
+          {item.breederName && (
+            <View style={styles.breederRow}>
+              <Icon
+                name="person-outline"
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.breederText}>{item.breederName}</Text>
+            </View>
+          )}
           <View style={styles.puppyDetails}>
             <View style={styles.detailItem}>
               <Icon
@@ -185,9 +211,6 @@ const SearchPuppiesScreen: React.FC = () => {
           {item.price ? (
             <View style={styles.priceRow}>
               <Text style={styles.price}>${item.price.toLocaleString()}</Text>
-              {item.breederName && (
-                <Text style={styles.breeder}>by {item.breederName}</Text>
-              )}
             </View>
           ) : null}
           <TouchableOpacity
@@ -580,7 +603,18 @@ const styles = StyleSheet.create({
   puppyBreed: {
     fontSize: 13,
     color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  breederRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginBottom: theme.spacing.sm,
+  },
+  breederText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
   },
   puppyDetails: {
     flexDirection: 'row',
@@ -608,19 +642,12 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
   price: {
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.primary,
-  },
-  breeder: {
-    fontSize: 11,
-    color: theme.colors.textTertiary,
   },
   contactBreederButton: {
     flexDirection: 'row',

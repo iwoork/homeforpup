@@ -72,7 +72,7 @@ const ContactBreederScreen: React.FC = () => {
           }. I'd like to learn more about potential breeding opportunities, stud services, or collaboration.\n\nLooking forward to connecting with you.\n\nBest regards,\n${user.name}`
         );
       } else {
-        // Message template for adopters
+        // Message template for future dog parents
         setSubject(`Inquiry about ${params.puppyName}`);
         setMessage(
           `Hi,\n\nI'm interested in learning more about ${params.puppyName}${

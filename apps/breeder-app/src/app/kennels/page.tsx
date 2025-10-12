@@ -19,7 +19,8 @@ import {
   Spin,
   Empty,
   Popconfirm,
-  Tooltip
+  Tooltip,
+  Alert
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -252,7 +253,7 @@ const KennelsPage: React.FC = () => {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
       {/* Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: '24px' }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
         <Col>
           <Title level={2} style={{ margin: 0 }}>
             My Kennels
@@ -269,6 +270,16 @@ const KennelsPage: React.FC = () => {
           </Link>
         </Col>
       </Row>
+
+      {/* Info Alert */}
+      <Alert
+        message="Your Kennel Profile"
+        description="Your kennel contains all your business information including contact details, social media links, facilities, and breeding specialties. Edit any kennel to update this information."
+        type="info"
+        showIcon
+        closable
+        style={{ marginBottom: '24px' }}
+      />
 
       {/* Filters */}
       <Card style={{ marginBottom: '24px' }}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,34 +7,56 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
+import { useFavorites } from '../../hooks/useFavorites';
+import { Dog } from '../../services/apiService';
+import { messageService, MessageThread } from '../../services/messageService';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface FavoritePuppy {
-  id: string;
-  name: string;
-  breed: string;
-  age: string;
-  price: number;
-  location: string;
-  imageUrl?: string;
-  gender: 'male' | 'female';
-  breederId: string; // Breeder's user ID
-  breederName: string;
+interface FavoritePuppy extends Dog {
   savedDate: string;
 }
 
 const FavoritePuppiesScreen: React.FC = () => {
   const navigation = useNavigation();
-  
-  // Mock data - replace with actual API call
-  const [favorites, setFavorites] = useState<FavoritePuppy[]>([
-    // This will be populated from API/local storage
-  ]);
+  const { user } = useAuth();
+  const { favorites, loading, removeFavorite, refresh } = useFavorites();
+  const [messageThreads, setMessageThreads] = useState<MessageThread[]>([]);
+  const [loadingThreads, setLoadingThreads] = useState(true);
 
-  const removeFavorite = (puppyId: string) => {
+  // Refresh favorites and threads when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refresh();
+      loadMessageThreads();
+    }, [refresh])
+  );
+
+  const loadMessageThreads = async () => {
+    try {
+      setLoadingThreads(true);
+      const threads = await messageService.getThreads();
+      setMessageThreads(threads);
+    } catch (error) {
+      console.error('Error loading message threads:', error);
+    } finally {
+      setLoadingThreads(false);
+    }
+  };
+
+  // Check if there's an existing thread with a breeder
+  const findThreadWithBreeder = (breederId: string): MessageThread | undefined => {
+    return messageThreads.find(thread => 
+      thread.participants.includes(breederId) || 
+      thread.otherParticipant === breederId
+    );
+  };
+
+  const handleRemoveFavorite = (puppyId: string) => {
     Alert.alert(
       'Remove Favorite',
       'Are you sure you want to remove this puppy from your favorites?',
@@ -43,90 +65,167 @@ const FavoritePuppiesScreen: React.FC = () => {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => {
-            setFavorites(favorites.filter((p) => p.id !== puppyId));
+          onPress: async () => {
+            await removeFavorite(puppyId);
           },
         },
       ]
     );
   };
 
-  const renderFavoritePuppy = ({ item }: { item: FavoritePuppy }) => (
-    <TouchableOpacity
-      style={styles.puppyCard}
-      onPress={() => navigation.navigate('DogDetail' as never, { id: item.id } as never)}
-    >
-      <View style={styles.imageContainer}>
-        {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} style={styles.puppyImage} />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Icon name="paw" size={32} color={theme.colors.textTertiary} />
-          </View>
-        )}
-      </View>
-      
-      <View style={styles.puppyInfo}>
-        <View style={styles.puppyHeader}>
-          <View style={styles.puppyTitleContainer}>
-            <Text style={styles.puppyName}>{item.name}</Text>
-            <Text style={styles.puppyBreed}>{item.breed}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => removeFavorite(item.id)}
-          >
-            <Icon name="heart" size={24} color="#ef4444" />
-          </TouchableOpacity>
-        </View>
+  // Calculate age from birthDate
+  const calculateAge = (birthDate: string): string => {
+    const birth = new Date(birthDate);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - birth.getTime());
+    const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
 
-        <View style={styles.detailsRow}>
-          <View style={styles.detailItem}>
-            <Icon name="calendar-outline" size={14} color={theme.colors.textSecondary} />
-            <Text style={styles.detailText}>{item.age}</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Icon
-              name={item.gender === 'male' ? 'male' : 'female'}
-              size={14}
-              color={theme.colors.textSecondary}
-            />
-            <Text style={styles.detailText}>{item.gender}</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Icon name="location-outline" size={14} color={theme.colors.textSecondary} />
-            <Text style={styles.detailText}>{item.location}</Text>
-          </View>
-        </View>
+    if (diffWeeks < 1) {
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+    } else if (diffWeeks < 52) {
+      return `${diffWeeks} week${diffWeeks !== 1 ? 's' : ''}`;
+    } else {
+      const years = Math.floor(diffWeeks / 52);
+      return `${years} year${years !== 1 ? 's' : ''}`;
+    }
+  };
 
-        <View style={styles.footer}>
-          <View>
+  // Helper function to get photo URL from multiple possible fields
+  const getPhotoUrl = (dog: Dog): string | undefined => {
+    const photoFromUrl = dog.photoUrl;
+    const photoFromArray = (dog as any).photos?.[0];
+    const photoFromGallery = (dog as any).photoGallery?.[0]?.url;
+    return photoFromUrl || photoFromArray || photoFromGallery;
+  };
+
+  const renderFavoritePuppy = ({ item }: { item: FavoritePuppy }) => {
+    const photoUrl = getPhotoUrl(item);
+    const displayAge = item.age || calculateAge(item.birthDate);
+
+    return (
+      <TouchableOpacity
+        style={styles.puppyCard}
+        onPress={() => navigation.navigate('DogDetail' as never, { id: item.id } as never)}
+      >
+        <View style={styles.imageContainer}>
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.puppyImage} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Icon name="paw" size={32} color={theme.colors.textTertiary} />
+            </View>
+          )}
+        </View>
+        
+        <View style={styles.puppyInfo}>
+          <View style={styles.puppyHeader}>
+            <View style={styles.puppyTitleContainer}>
+              <Text style={styles.puppyName}>{item.name}</Text>
+              <Text style={styles.puppyBreed}>{item.breed}</Text>
+              {item.breederName && (
+                <View style={styles.breederRow}>
+                  <Icon
+                    name="person-outline"
+                    size={12}
+                    color={theme.colors.textSecondary}
+                  />
+                  <Text style={styles.breederText}>{item.breederName}</Text>
+                </View>
+              )}
+            </View>
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={() => handleRemoveFavorite(item.id)}
+            >
+              <Icon name="heart" size={24} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.detailsRow}>
+            <View style={styles.detailItem}>
+              <Icon name="calendar-outline" size={14} color={theme.colors.textSecondary} />
+              <Text style={styles.detailText}>{displayAge}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Icon
+                name={item.gender === 'male' ? 'male' : 'female'}
+                size={14}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.detailText}>{item.gender}</Text>
+            </View>
+            {item.location && (
+              <View style={styles.detailItem}>
+                <Icon name="location-outline" size={14} color={theme.colors.textSecondary} />
+                <Text style={styles.detailText}>{item.location}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.footer}>
             {item.price && (
               <Text style={styles.price}>${item.price.toLocaleString()}</Text>
             )}
-            <Text style={styles.breeder}>by {item.breederName}</Text>
+            {(() => {
+              const ownerId = item.ownerId || (item as any).kennelOwners?.[0];
+              if (!ownerId) return null;
+
+              const existingThread = findThreadWithBreeder(ownerId);
+              
+              if (existingThread) {
+                // Show "View Messages" button if thread exists
+                return (
+                  <TouchableOpacity
+                    style={[styles.messageButton, styles.viewMessagesButton]}
+                    onPress={() => {
+                      (navigation as any).navigate('MessageDetail', { 
+                        thread: existingThread 
+                      });
+                    }}
+                  >
+                    <Icon name="chatbubbles" size={16} color="#ffffff" />
+                    <Text style={styles.messageButtonText}>View Messages</Text>
+                  </TouchableOpacity>
+                );
+              } else {
+                // Show "Contact Breeder" button if no thread exists
+                return (
+                  <TouchableOpacity
+                    style={styles.messageButton}
+                    onPress={() => {
+                      (navigation as any).navigate('ContactBreeder', {
+                        receiverId: ownerId,
+                        breederName: (item as any).kennelName || item.breederName || 'Breeder',
+                        puppyId: item.id,
+                        puppyName: item.name,
+                        puppyBreed: item.breed,
+                        puppyPhoto: photoUrl,
+                      });
+                    }}
+                  >
+                    <Icon name="chatbubble" size={16} color="#ffffff" />
+                    <Text style={styles.messageButtonText}>Contact Breeder</Text>
+                  </TouchableOpacity>
+                );
+              }
+            })()}
           </View>
-          <TouchableOpacity
-            style={styles.messageButton}
-            onPress={() => {
-              console.log('Contact breeder for favorite puppy:', item.id);
-              (navigation as any).navigate('ContactBreeder', {
-                receiverId: item.breederId,
-                breederName: item.breederName,
-                puppyId: item.id,
-                puppyName: item.name,
-                puppyBreed: item.breed,
-                puppyPhoto: item.imageUrl,
-              });
-            }}
-          >
-            <Icon name="chatbubble" size={16} color="#ffffff" />
-            <Text style={styles.messageButtonText}>Contact Breeder</Text>
-          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.emptyText}>Loading favorites...</Text>
         </View>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  }
 
   if (favorites.length === 0) {
     return (
@@ -237,6 +336,18 @@ const styles = StyleSheet.create({
   puppyBreed: {
     fontSize: 13,
     color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  breederRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  breederText: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
   },
   removeButton: {
     padding: 4,
@@ -265,11 +376,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.primary,
-    marginBottom: 2,
-  },
-  breeder: {
-    fontSize: 11,
-    color: theme.colors.textTertiary,
   },
   messageButton: {
     flexDirection: 'row',
@@ -279,6 +385,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.md,
+  },
+  viewMessagesButton: {
+    backgroundColor: '#10b981', // Green color to indicate existing conversation
   },
   messageButtonText: {
     color: '#ffffff',

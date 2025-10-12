@@ -40,11 +40,12 @@ const ProfileScreen: React.FC = () => {
           profileImageUrl: response.data.user.profileImage
         });
         
-        // Check if user is a verified breeder (has breeder status in database)
-        const apiUserType = response.data.user.userType;
-        const isBreederInDb = apiUserType === 'breeder';
-        setIsVerifiedBreeder(isBreederInDb);
-        console.log('✅ Verified breeder status:', isBreederInDb);
+        // Check if user is a verified breeder (check Cognito userType, not database)
+        // userType is stored in Cognito only
+        const cognitoUserType = user?.userType;
+        const isBreederInCognito = cognitoUserType === 'breeder';
+        setIsVerifiedBreeder(isBreederInCognito);
+        console.log('✅ Verified breeder status from Cognito:', isBreederInCognito);
         
         // Update user in context with fresh data from API
         // BUT preserve the current userType (don't let API override it)
@@ -312,21 +313,21 @@ const ProfileScreen: React.FC = () => {
       subtitle: 'Configure notification preferences',
       icon: 'notifications-outline',
       iconColor: '#f59e0b',
-      onPress: () => {}, // TODO: Navigate to notifications
+      onPress: () => navigation.navigate('NotificationsScreen' as never),
     },
     {
       title: 'Privacy & Security',
       subtitle: 'Manage your privacy settings',
       icon: 'shield-checkmark-outline',
       iconColor: '#10b981',
-      onPress: () => {}, // TODO: Navigate to privacy settings
+      onPress: () => navigation.navigate('PrivacySettingsScreen' as never),
     },
     {
       title: 'Help & Support',
       subtitle: 'Get help and contact support',
       icon: 'help-circle-outline',
       iconColor: theme.colors.secondary,
-      onPress: () => {}, // TODO: Navigate to help
+      onPress: () => navigation.navigate('HelpSupportScreen' as never),
     },
   ];
 

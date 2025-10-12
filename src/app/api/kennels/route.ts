@@ -26,11 +26,12 @@ export async function GET(request: NextRequest) {
 
     const userId = (session.user as any).id;
 
+    // Filter kennels where user is owner, manager, or creator
     const params = {
       TableName: KENNELS_TABLE,
-      FilterExpression: 'ownerId = :ownerId',
+      FilterExpression: 'ownerId = :userId OR createdBy = :userId OR contains(owners, :userId) OR contains(managers, :userId)',
       ExpressionAttributeValues: {
-        ':ownerId': userId,
+        ':userId': userId,
       },
     };
 
@@ -84,7 +85,10 @@ export async function POST(request: NextRequest) {
 
     const kennel = {
       id: kennelId,
-      ownerId: userId,
+      ownerId: userId, // Legacy field for backward compatibility
+      owners: [userId], // New array field for multiple owners
+      managers: [userId], // User is also a manager
+      createdBy: userId,
       name,
       description,
       address,

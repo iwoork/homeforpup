@@ -22,6 +22,9 @@ import LittersScreen from '../screens/main/LittersScreen';
 import DogsScreen from '../screens/main/DogsScreen';
 import MessagesScreen from '../screens/main/MessagesScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import NotificationsScreen from '../screens/main/NotificationsScreen';
+import PrivacySettingsScreen from '../screens/main/PrivacySettingsScreen';
+import HelpSupportScreen from '../screens/main/HelpSupportScreen';
 
 // Main Screens - Dog Parent
 import DogParentDashboardScreen from '../screens/main/DogParentDashboardScreen';
@@ -40,6 +43,7 @@ import MessageDetailScreen from '../screens/details/MessageDetailScreen';
 // Form Screens
 import ManageKennelsScreen from '../screens/forms/ManageKennelsScreen';
 import CreateKennelScreen from '../screens/forms/CreateKennelScreen';
+import EditKennelScreen from '../screens/forms/EditKennelScreen';
 import CreateLitterScreen from '../screens/forms/CreateLitterScreen';
 import EditLitterScreen from '../screens/forms/EditLitterScreen';
 import CreateDogScreen from '../screens/forms/CreateDogScreen';
@@ -350,13 +354,6 @@ const MainStack = () => {
       component={ManageKennelsScreen}
       options={{ title: 'Manage Kennels' }}
     />
-
-    {/* Contract Screens */}
-    <Stack.Screen
-      name="ManageContracts"
-      component={ManageContractsScreen}
-      options={{ title: 'Contract Management' }}
-    />
     <Stack.Screen
       name="KennelDetail"
       component={KennelDetailScreen}
@@ -366,6 +363,18 @@ const MainStack = () => {
       name="CreateKennel"
       component={CreateKennelScreen}
       options={{ title: 'Create Kennel' }}
+    />
+    <Stack.Screen
+      name="EditKennel"
+      component={EditKennelScreen}
+      options={{ headerShown: false }}
+    />
+
+    {/* Contract Screens */}
+    <Stack.Screen
+      name="ManageContracts"
+      component={ManageContractsScreen}
+      options={{ title: 'Contract Management' }}
     />
 
     {/* Litter Screens */}
@@ -422,6 +431,21 @@ const MainStack = () => {
       name="EditProfile"
       component={EditProfileScreen}
       options={{ title: 'Edit Profile' }}
+    />
+    <Stack.Screen
+      name="NotificationsScreen"
+      component={NotificationsScreen}
+      options={{ title: 'Notifications' }}
+    />
+    <Stack.Screen
+      name="PrivacySettingsScreen"
+      component={PrivacySettingsScreen}
+      options={{ title: 'Privacy & Security' }}
+    />
+    <Stack.Screen
+      name="HelpSupportScreen"
+      component={HelpSupportScreen}
+      options={{ title: 'Help & Support' }}
     />
 
     {/* Dog Parent-specific Screens */}
