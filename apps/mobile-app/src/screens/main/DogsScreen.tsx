@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,22 @@ import {
   RefreshControl,
   Image,
   Alert,
+  ScrollView,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Dog } from '../../types';
 import apiService from '../../services/apiService';
 import { useAuth } from '../../contexts/AuthContext';
+
+const placeholderImage = require('../../assets/placeholder.png');
+
+type FilterType = 'all' | 'puppy' | 'adult' | 'breeding';
+type GenderFilter = 'all' | 'male' | 'female';
+type BreedingStatusFilter = 'all' | 'available' | 'not_ready' | 'retired';
 
 const DogsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -22,6 +32,13 @@ const DogsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<FilterType>('all');
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
+  const [breedingStatusFilter, setBreedingStatusFilter] = useState<BreedingStatusFilter>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchDogs();
@@ -91,6 +108,45 @@ const DogsScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  // Filter dogs based on selected filters and search query
+  const filteredDogs = useMemo(() => {
+    return dogs.filter(dog => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = dog.name.toLowerCase().includes(query);
+        const matchesBreed = dog.breed?.toLowerCase().includes(query);
+        const matchesColor = dog.color?.toLowerCase().includes(query);
+        
+        if (!matchesName && !matchesBreed && !matchesColor) return false;
+      }
+      
+      // Type filter
+      if (typeFilter !== 'all') {
+        if (typeFilter === 'puppy' && dog.dogType !== 'puppy') return false;
+        if (typeFilter === 'adult' && dog.dogType !== 'adult') return false;
+        if (typeFilter === 'breeding' && !dog.breeding?.isBreedingDog) return false;
+      }
+      
+      // Gender filter
+      if (genderFilter !== 'all' && dog.gender !== genderFilter) return false;
+      
+      // Breeding status filter
+      if (breedingStatusFilter !== 'all' && dog.breedingStatus !== breedingStatusFilter) return false;
+      
+      return true;
+    });
+  }, [dogs, searchQuery, typeFilter, genderFilter, breedingStatusFilter]);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setTypeFilter('all');
+    setGenderFilter('all');
+    setBreedingStatusFilter('all');
+  };
+
+  const hasActiveFilters = searchQuery.trim() !== '' || typeFilter !== 'all' || genderFilter !== 'all' || breedingStatusFilter !== 'all';
+
   const getAgeFromBirthDate = (birthDate: string) => {
     const birth = new Date(birthDate);
     const today = new Date();
@@ -146,9 +202,11 @@ const DogsScreen: React.FC = () => {
               resizeMode="cover"
             />
           ) : (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderIcon}>🐕</Text>
-            </View>
+            <Image 
+              source={placeholderImage}
+              style={styles.dogImage}
+              resizeMode="cover"
+            />
           )}
         </View>
       
@@ -165,7 +223,12 @@ const DogsScreen: React.FC = () => {
         
         <View style={styles.dogDetails}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailIcon}>🐕</Text>
+            <Icon 
+              name={item.gender === 'male' ? 'male' : 'female'} 
+              size={16} 
+              color={item.gender === 'male' ? '#3b82f6' : '#ec4899'} 
+              style={styles.genderIcon}
+            />
             <Text style={styles.detailText}>
               {item.gender === 'male' ? 'Male' : 'Female'} • {getAgeFromBirthDate(item.birthDate)}
             </Text>
@@ -173,12 +236,12 @@ const DogsScreen: React.FC = () => {
           
           <View style={styles.detailRow}>
             <Text style={styles.detailIcon}>🎨</Text>
-            <Text style={styles.detailText}>{item.color}</Text>
+            <Text style={[styles.detailText, { marginLeft: theme.spacing.xs }]}>{item.color}</Text>
           </View>
           
           <View style={styles.detailRow}>
             <Text style={styles.detailIcon}>⚖️</Text>
-            <Text style={styles.detailText}>{item.weight} lbs</Text>
+            <Text style={[styles.detailText, { marginLeft: theme.spacing.xs }]}>{item.weight} lbs</Text>
           </View>
         </View>
         
@@ -240,11 +303,254 @@ const DogsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputWrapper}>
+          <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, breed, or color..."
+            placeholderTextColor={theme.colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.trim() !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchButton}>
+              <Icon name="close-circle" size={20} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* Filter Bar */}
+      <View style={styles.filterBar}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollContent}
+        >
+          <TouchableOpacity
+            style={[styles.filterButton, showFilters && styles.filterButtonActive]}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Icon 
+              name="options-outline" 
+              size={18} 
+              color={showFilters ? '#fff' : theme.colors.primary} 
+            />
+            <Text style={[styles.filterButtonText, showFilters && styles.filterButtonTextActive]}>
+              Filters
+            </Text>
+            {hasActiveFilters && <View style={styles.filterBadge} />}
+          </TouchableOpacity>
+
+          {hasActiveFilters && (
+            <>
+              {searchQuery.trim() !== '' && (
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText} numberOfLines={1}>
+                    🔍 "{searchQuery.length > 15 ? searchQuery.substring(0, 15) + '...' : searchQuery}"
+                  </Text>
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Icon name="close-circle" size={16} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              )}
+              
+              {typeFilter !== 'all' && (
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText}>
+                    {typeFilter === 'puppy' ? '🐕 Puppy' : typeFilter === 'adult' ? '🐶 Adult' : '💫 Breeding'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setTypeFilter('all')}>
+                    <Icon name="close-circle" size={16} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              )}
+              
+              {genderFilter !== 'all' && (
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText}>
+                    {genderFilter === 'male' ? '♂️ Male' : '♀️ Female'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setGenderFilter('all')}>
+                    <Icon name="close-circle" size={16} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              )}
+              
+              {breedingStatusFilter !== 'all' && (
+                <View style={styles.activeFilterChip}>
+                  <Text style={styles.activeFilterText}>
+                    {breedingStatusFilter === 'available' ? '✓ Available' : 
+                     breedingStatusFilter === 'not_ready' ? '⏳ Not Ready' : '🏖️ Retired'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setBreedingStatusFilter('all')}>
+                    <Icon name="close-circle" size={16} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <TouchableOpacity style={styles.clearFiltersButton} onPress={clearFilters}>
+                <Text style={styles.clearFiltersText}>Clear All</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilters}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowFilters(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Dogs</Text>
+              <TouchableOpacity onPress={() => setShowFilters(false)}>
+                <Icon name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.filterOptionsContainer}>
+              {/* Type Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Type</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, typeFilter === 'all' && styles.filterOptionActive]}
+                    onPress={() => setTypeFilter('all')}
+                  >
+                    <Text style={[styles.filterOptionText, typeFilter === 'all' && styles.filterOptionTextActive]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, typeFilter === 'puppy' && styles.filterOptionActive]}
+                    onPress={() => setTypeFilter('puppy')}
+                  >
+                    <Text style={[styles.filterOptionText, typeFilter === 'puppy' && styles.filterOptionTextActive]}>
+                      🐕 Puppies
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, typeFilter === 'adult' && styles.filterOptionActive]}
+                    onPress={() => setTypeFilter('adult')}
+                  >
+                    <Text style={[styles.filterOptionText, typeFilter === 'adult' && styles.filterOptionTextActive]}>
+                      🐶 Adults
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, typeFilter === 'breeding' && styles.filterOptionActive]}
+                    onPress={() => setTypeFilter('breeding')}
+                  >
+                    <Text style={[styles.filterOptionText, typeFilter === 'breeding' && styles.filterOptionTextActive]}>
+                      💫 Breeding Dogs
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Gender Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Gender</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, genderFilter === 'all' && styles.filterOptionActive]}
+                    onPress={() => setGenderFilter('all')}
+                  >
+                    <Text style={[styles.filterOptionText, genderFilter === 'all' && styles.filterOptionTextActive]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, genderFilter === 'male' && styles.filterOptionActive]}
+                    onPress={() => setGenderFilter('male')}
+                  >
+                    <Text style={[styles.filterOptionText, genderFilter === 'male' && styles.filterOptionTextActive]}>
+                      ♂️ Male
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, genderFilter === 'female' && styles.filterOptionActive]}
+                    onPress={() => setGenderFilter('female')}
+                  >
+                    <Text style={[styles.filterOptionText, genderFilter === 'female' && styles.filterOptionTextActive]}>
+                      ♀️ Female
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Breeding Status Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Breeding Status</Text>
+                <View style={styles.filterOptions}>
+                  <TouchableOpacity
+                    style={[styles.filterOption, breedingStatusFilter === 'all' && styles.filterOptionActive]}
+                    onPress={() => setBreedingStatusFilter('all')}
+                  >
+                    <Text style={[styles.filterOptionText, breedingStatusFilter === 'all' && styles.filterOptionTextActive]}>
+                      All
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, breedingStatusFilter === 'available' && styles.filterOptionActive]}
+                    onPress={() => setBreedingStatusFilter('available')}
+                  >
+                    <Text style={[styles.filterOptionText, breedingStatusFilter === 'available' && styles.filterOptionTextActive]}>
+                      ✓ Available
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, breedingStatusFilter === 'not_ready' && styles.filterOptionActive]}
+                    onPress={() => setBreedingStatusFilter('not_ready')}
+                  >
+                    <Text style={[styles.filterOptionText, breedingStatusFilter === 'not_ready' && styles.filterOptionTextActive]}>
+                      ⏳ Not Ready
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.filterOption, breedingStatusFilter === 'retired' && styles.filterOptionActive]}
+                    onPress={() => setBreedingStatusFilter('retired')}
+                  >
+                    <Text style={[styles.filterOptionText, breedingStatusFilter === 'retired' && styles.filterOptionTextActive]}>
+                      🏖️ Retired
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                <Text style={styles.clearButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.applyButton} 
+                onPress={() => setShowFilters(false)}
+              >
+                <Text style={styles.applyButtonText}>
+                  Apply ({filteredDogs.length} dogs)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <FlatList
-        data={dogs}
+        data={filteredDogs}
         renderItem={renderDogItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={dogs.length === 0 ? styles.emptyContainer : styles.listContainer}
+        contentContainerStyle={filteredDogs.length === 0 ? styles.emptyContainer : styles.listContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -328,17 +634,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: theme.borderRadius.sm,
-  },
-  placeholderImage: {
-    width: 80,
-    height: 80,
-    borderRadius: theme.borderRadius.sm,
     backgroundColor: theme.colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderIcon: {
-    fontSize: 40,
   },
   dogContent: {
     flex: 1,
@@ -377,10 +673,12 @@ const styles = StyleSheet.create({
   detailIcon: {
     fontSize: 14,
   },
+  genderIcon: {
+    marginRight: 4,
+  },
   detailText: {
     fontSize: 14,
     color: theme.colors.textSecondary,
-    marginLeft: theme.spacing.xs,
   },
   dogTags: {
     flexDirection: 'row',
@@ -430,6 +728,200 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
   },
   createButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Search Bar Styles
+  searchContainer: {
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.md,
+    height: 48,
+  },
+  searchIcon: {
+    marginRight: theme.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.colors.text,
+    paddingVertical: 0,
+  },
+  clearSearchButton: {
+    padding: theme.spacing.xs,
+    marginLeft: theme.spacing.sm,
+  },
+  // Filter Bar Styles
+  filterBar: {
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingVertical: theme.spacing.sm,
+  },
+  filterScrollContent: {
+    paddingHorizontal: theme.spacing.md,
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.surface,
+    marginRight: theme.spacing.sm,
+  },
+  filterButtonActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  filterButtonText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: theme.spacing.xs,
+  },
+  filterButtonTextActive: {
+    color: '#fff',
+  },
+  filterBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.error,
+    marginLeft: theme.spacing.xs,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.primary + '20',
+    marginRight: theme.spacing.sm,
+    gap: theme.spacing.xs,
+  },
+  activeFilterText: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  clearFiltersButton: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.error + '20',
+    marginRight: theme.spacing.sm,
+  },
+  clearFiltersText: {
+    color: theme.colors.error,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  filterOptionsContainer: {
+    padding: theme.spacing.lg,
+  },
+  filterSection: {
+    marginBottom: theme.spacing.xl,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  filterOption: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+  },
+  filterOptionActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
+  },
+  filterOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  filterOptionTextActive: {
+    color: '#fff',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  clearButton: {
+    flex: 1,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: theme.colors.error,
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    color: theme.colors.error,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  applyButton: {
+    flex: 2,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+  },
+  applyButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

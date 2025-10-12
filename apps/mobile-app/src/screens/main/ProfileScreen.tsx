@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,56 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { launchImageLibrary, MediaType } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
+import apiService from '../../services/apiService';
 
 const ProfileScreen: React.FC = () => {
-  const { user, logout, updateUserType } = useAuth();
+  const { user, logout, updateUserType, updateUser } = useAuth();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch fresh user data from API
+  const fetchUserProfile = useCallback(async () => {
+    if (!user?.userId) return;
+
+    try {
+      console.log('Fetching fresh user profile from API...');
+      const response = await apiService.getUserById(user.userId);
+      
+      if (response.success && response.data?.user) {
+        console.log('✅ Fresh user data received:', {
+          hasProfileImage: !!response.data.user.profileImage,
+          profileImageUrl: response.data.user.profileImage
+        });
+        // Update user in context with fresh data from API
+        await updateUser(response.data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  }, [user?.userId, updateUser]);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  // Pull to refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchUserProfile();
+    setRefreshing(false);
+  }, [fetchUserProfile]);
 
   const handleChangeUserType = () => {
     const currentType = user?.userType || 'breeder';
@@ -85,6 +124,107 @@ const ProfileScreen: React.FC = () => {
         },
       },
     ]);
+  };
+
+  const handlePhotoUpload = () => {
+    const options = {
+      mediaType: 'photo' as MediaType,
+      quality: 0.8,
+      selectionLimit: 1,
+    };
+
+    launchImageLibrary(options, async (result) => {
+      if (result.didCancel || result.errorCode) {
+        return;
+      }
+
+      const asset = result.assets?.[0];
+      if (!asset || !asset.uri) {
+        return;
+      }
+
+      if (!user?.userId) {
+        Alert.alert('Error', 'User not found. Please log in again.');
+        return;
+      }
+
+      setUploading(true);
+      try {
+        // Get presigned upload URL
+        const uploadResponse = await apiService.getUploadUrl({
+          fileName: asset.fileName || 'profile-photo.jpg',
+          contentType: asset.type || 'image/jpeg',
+          uploadPath: 'profile-photos',
+        });
+
+        if (!uploadResponse.success || !uploadResponse.data) {
+          throw new Error(uploadResponse.error || 'Failed to get upload URL');
+        }
+
+        const { uploadUrl, photoUrl } = uploadResponse.data;
+
+        console.log('=== PHOTO UPLOAD TO S3 START ===');
+        console.log('Upload URL (presigned):', uploadUrl?.substring(0, 100) + '...');
+        console.log('Final Photo URL (S3):', photoUrl);
+
+        // Upload file to S3
+        const uploadResult = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: asset as any,
+          headers: {
+            'Content-Type': asset.type || 'image/jpeg',
+          },
+        });
+
+        console.log('S3 Upload Result:', {
+          ok: uploadResult.ok,
+          status: uploadResult.status,
+          statusText: uploadResult.statusText
+        });
+
+        if (!uploadResult.ok) {
+          const errorText = await uploadResult.text();
+          console.error('S3 Upload Failed:', errorText);
+          throw new Error(`Failed to upload photo: ${uploadResult.statusText}`);
+        }
+
+        console.log('✅ Photo uploaded to S3 successfully!');
+
+        // Update user profile in the API with new photo URL
+        console.log('=== PHOTO UPDATE START ===');
+        console.log('User ID:', user.userId);
+        console.log('Photo URL to save in DB:', photoUrl);
+        
+        const updateResponse = await apiService.updateUser(user.userId, {
+          profileImage: photoUrl,
+        });
+
+        console.log('Photo Update API Response:', JSON.stringify(updateResponse, null, 2));
+        
+        if (!updateResponse.success) {
+          console.error('Photo Update API Error:', updateResponse.error);
+          throw new Error(updateResponse.error || 'Failed to save profile photo');
+        }
+
+        // Update local user state with the response from the API
+        if (updateUser && updateResponse.data?.user) {
+          console.log('Updating local user state with photo');
+          updateUser(updateResponse.data.user);
+        }
+        
+        console.log('=== PHOTO UPDATE COMPLETE ===');
+
+        Alert.alert('Success', 'Profile photo updated successfully!');
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Failed to upload photo. Please try again.'
+        );
+      } finally {
+        setUploading(false);
+      }
+    });
   };
 
   const businessMenuItems = [
@@ -191,7 +331,17 @@ const ProfileScreen: React.FC = () => {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[theme.colors.primary]}
+          tintColor={theme.colors.primary}
+        />
+      }
+    >
       {/* Profile Header */}
       <LinearGradient
         colors={['#f0f9fa', '#ffffff']}
@@ -201,7 +351,10 @@ const ProfileScreen: React.FC = () => {
           <View style={styles.avatarContainer}>
             {user?.profileImage ? (
               <Image
-                source={{ uri: user.profileImage }}
+                source={{ 
+                  uri: `${user.profileImage}?t=${Date.now()}`,
+                  cache: 'reload'
+                }}
                 style={styles.avatar}
               />
             ) : (
@@ -209,7 +362,16 @@ const ProfileScreen: React.FC = () => {
                 <Icon name="person" size={48} color={theme.colors.primary} />
               </View>
             )}
-            <TouchableOpacity style={styles.editAvatarButton}>
+            {uploading && (
+              <View style={styles.uploadingOverlay}>
+                <ActivityIndicator size="large" color="#ffffff" />
+              </View>
+            )}
+            <TouchableOpacity 
+              style={styles.editAvatarButton}
+              onPress={handlePhotoUpload}
+              disabled={uploading}
+            >
               <Icon name="camera" size={16} color="#ffffff" />
             </TouchableOpacity>
           </View>
@@ -570,6 +732,18 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: theme.colors.primary,
   },
+  uploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 55,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
   editAvatarButton: {
     position: 'absolute',
     bottom: 0,
@@ -583,6 +757,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#ffffff',
     ...theme.shadows.md,
+    zIndex: 2,
   },
   userName: {
     fontSize: 26,

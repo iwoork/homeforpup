@@ -17,6 +17,8 @@ import { Dog } from '../../types';
 import apiService from '../../services/apiService';
 import { useAuth } from '../../contexts/AuthContext';
 
+const placeholderImage = require('../../assets/placeholder.png');
+
 interface DogDetailRouteParams {
   dog?: Dog;
   id?: string;
@@ -282,9 +284,10 @@ const DogDetailScreen: React.FC = () => {
             style={styles.heroImage} 
           />
         ) : (
-          <View style={styles.placeholderHero}>
-            <Icon name="paw" size={80} color={theme.colors.primary} />
-          </View>
+          <Image 
+            source={placeholderImage}
+            style={styles.heroImage} 
+          />
         )}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.7)']}
@@ -516,13 +519,6 @@ const styles = StyleSheet.create({
   heroImage: {
     width: '100%',
     height: '100%',
-  },
-  placeholderHero: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: theme.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   heroOverlay: {
     position: 'absolute',

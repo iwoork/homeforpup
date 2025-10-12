@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../utils/theme';
@@ -68,49 +69,52 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-const BreederTabs = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      tabBarIcon: ({ focused, color, size }) => {
-        let iconName: string;
+const BreederTabs = () => {
+  const insets = useSafeAreaInsets();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: string;
 
-        switch (route.name) {
-          case 'Dashboard':
-            iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-            break;
-          case 'Litters':
-            iconName = focused ? 'albums' : 'albums-outline';
-            break;
-          case 'Dogs':
-            iconName = focused ? 'paw' : 'paw-outline';
-            break;
-          case 'Messages':
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-            break;
-          case 'Profile':
-            iconName = focused ? 'person' : 'person-outline';
-            break;
-          default:
-            iconName = 'ellipse';
-        }
+          switch (route.name) {
+            case 'Dashboard':
+              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+              break;
+            case 'Litters':
+              iconName = focused ? 'albums' : 'albums-outline';
+              break;
+            case 'Dogs':
+              iconName = focused ? 'paw' : 'paw-outline';
+              break;
+            case 'Messages':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+              break;
+            case 'Profile':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
+            default:
+              iconName = 'ellipse';
+          }
 
-        return <Icon name={iconName} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: theme.colors.primary,
-      tabBarInactiveTintColor: theme.colors.textSecondary,
-      tabBarStyle: {
-        backgroundColor: theme.colors.surface,
-        borderTopColor: theme.colors.border,
-        borderTopWidth: 1,
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
-        ...theme.shadows.lg,
-      },
-      tabBarLabelStyle: {
-        fontSize: 12,
-        fontWeight: '600',
-      },
+          return <Icon name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+          borderTopWidth: 1,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 8,
+          ...theme.shadows.lg,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
       headerStyle: {
         backgroundColor: theme.colors.surface,
         elevation: 0,
@@ -172,51 +176,55 @@ const BreederTabs = () => (
       }}
     />
   </Tab.Navigator>
-);
+  );
+};
 
-const DogParentTabs = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      tabBarIcon: ({ focused, color, size }) => {
-        let iconName: string;
+const DogParentTabs = () => {
+  const insets = useSafeAreaInsets();
+  
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: string;
 
-        switch (route.name) {
-          case 'DogParentDashboard':
-            iconName = focused ? 'home' : 'home-outline';
-            break;
-          case 'SearchPuppies':
-            iconName = focused ? 'search' : 'search-outline';
-            break;
-          case 'Favorites':
-            iconName = focused ? 'heart' : 'heart-outline';
-            break;
-          case 'Messages':
-            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-            break;
-          case 'Profile':
-            iconName = focused ? 'person' : 'person-outline';
-            break;
-          default:
-            iconName = 'ellipse';
-        }
+          switch (route.name) {
+            case 'DogParentDashboard':
+              iconName = focused ? 'home' : 'home-outline';
+              break;
+            case 'SearchPuppies':
+              iconName = focused ? 'search' : 'search-outline';
+              break;
+            case 'Favorites':
+              iconName = focused ? 'heart' : 'heart-outline';
+              break;
+            case 'Messages':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+              break;
+            case 'Profile':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
+            default:
+              iconName = 'ellipse';
+          }
 
-        return <Icon name={iconName} size={size} color={color} />;
-      },
-      tabBarActiveTintColor: theme.colors.primary,
-      tabBarInactiveTintColor: theme.colors.textSecondary,
-      tabBarStyle: {
-        backgroundColor: theme.colors.surface,
-        borderTopColor: theme.colors.border,
-        borderTopWidth: 1,
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
-        ...theme.shadows.lg,
-      },
-      tabBarLabelStyle: {
-        fontSize: 12,
-        fontWeight: '600',
-      },
+          return <Icon name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surface,
+          borderTopColor: theme.colors.border,
+          borderTopWidth: 1,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 8,
+          ...theme.shadows.lg,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
       headerStyle: {
         backgroundColor: theme.colors.surface,
         elevation: 0,
@@ -278,7 +286,8 @@ const DogParentTabs = () => (
       }}
     />
   </Tab.Navigator>
-);
+  );
+};
 
 const MainStack = () => {
   const { user } = useAuth();
