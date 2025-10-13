@@ -7,26 +7,28 @@ import { DogPhoto } from './kennel';
 // CORE ENTITIES
 // ============================================================================
 
-export interface User {
-  userId: string; // Primary Key - UUID from Cognito
-  email: string; // Unique email address
-  name: string; // Full name or display name
-  firstName?: string; // Optional: First name
-  lastName?: string; // Optional: Last name
-  displayName?: string; // Optional: Public display name
-  // Note: userType is stored in Cognito only, not in database
-  phone?: string; // Optional: Phone number
-  location?: string; // Location string (city, state)
+// Profile - Application-specific profile data (extends Cognito user identity)
+// Note: Identity fields (firstName, lastName, username, picture, phone, address, bio)
+// are stored in Cognito only and should be fetched from Cognito user attributes
+export interface Profile {
+  userId: string; // Primary Key - UUID from Cognito sub
+  email: string; // For reference (also in Cognito)
+  name: string; // Display name override (can differ from Cognito name)
+  displayName?: string; // Optional: Public display name override
+  
+  // Geolocation (coordinates only - address text is in Cognito)
   coordinates?: {
     latitude: number;
     longitude: number;
   };
-  profileImage?: string; // Optional: Profile picture URL
+  
+  // Additional profile imagery (picture/profileImage is in Cognito)
   coverPhoto?: string; // Optional: Cover photo URL
   galleryPhotos?: string[]; // Optional: Array of gallery photo URLs
-  bio?: string; // Optional: Biography
-  verified: boolean; // Email/phone verification status
-  accountStatus: 'active' | 'suspended' | 'pending'; // Account status
+  
+  // Application-level verification and status
+  verified: boolean; // Application verification status (separate from Cognito email verification)
+  accountStatus: 'active' | 'suspended' | 'pending'; // Application-level account status
   
   // Premium subscription
   isPremium?: boolean; // Whether user has premium subscription
@@ -35,6 +37,7 @@ export interface User {
   subscriptionStartDate?: string; // When subscription started
   subscriptionEndDate?: string; // When subscription ends/renews
   
+  // Preferences
   preferences?: {
     notifications: {
       email: boolean;
@@ -47,11 +50,12 @@ export interface User {
       showLocation: boolean;
     };
   };
+  
+  // Role-specific extended information
   breederInfo?: {
-    kennelName?: string;
     license?: string;
     specialties?: string[];
-    experience?: number;
+    experience?: number; // Years of experience
     website?: string;
   };
   puppyParentInfo?: {
@@ -61,15 +65,32 @@ export interface User {
     experienceLevel?: 'first-time' | 'some' | 'experienced';
     preferredBreeds?: string[];
   };
+  
+  // Social links
   socialLinks?: {
     facebook?: string;
     instagram?: string;
     twitter?: string;
   };
+  
+  // Metadata
   createdAt: string; // ISO timestamp
   updatedAt: string; // ISO timestamp
   lastActiveAt?: string; // Last login/activity
   profileViews?: number; // Number of profile views
+}
+
+// User - Deprecated: Use Profile instead
+// Kept for backward compatibility only
+// @deprecated Use Profile interface instead
+export interface User extends Profile {
+  // Legacy fields - these should come from Cognito now
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  location?: string;
+  profileImage?: string;
+  bio?: string;
 }
 
 // Kennel interface for breeders

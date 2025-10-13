@@ -1,10 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, QueryCommand, ScanCommand } from '../../../shared/dynamodb';
+import { dynamodb, QueryCommand, ScanCommand, BatchGetCommand } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
 
 const DOGS_TABLE = process.env.DOGS_TABLE!;
+const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   // Parse query parameters
@@ -71,13 +72,12 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     let filteredItems = items;
 
     // Filter by ownerId if provided (primary filter for breeder apps)
+    // Note: This checks direct ownership. Dogs can also be managed through kennel
+    // ownership/management, but that requires fetching kennel data for each dog.
+    // For list operations, we rely on direct ownerId match for performance.
+    // TODO: Consider adding a secondary filter that checks kennel ownership
     if (ownerId) {
-      filteredItems = filteredItems.filter((item: any) => {
-        // Check both ownerId and kennelOwners array
-        if (item.ownerId === ownerId) return true;
-        if (item.kennelOwners && Array.isArray(item.kennelOwners) && item.kennelOwners.includes(ownerId)) return true;
-        return false;
-      });
+      filteredItems = filteredItems.filter((item: any) => item.ownerId === ownerId);
     }
     if (type) {
       filteredItems = filteredItems.filter((item: any) => item.dogType === type);
@@ -111,8 +111,51 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     const endIndex = startIndex + limitNum;
     const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
+    // Fetch kennel information for all dogs in this page
+    const kennelIds = [...new Set(
+      paginatedItems
+        .map((dog: any) => dog.kennelId)
+        .filter((id: string | undefined) => id)
+    )];
+
+    let kennelsMap: Record<string, any> = {};
+    
+    if (kennelIds.length > 0) {
+      try {
+        // Batch fetch kennels (DynamoDB BatchGet supports up to 100 items)
+        const batchSize = 100;
+        for (let i = 0; i < kennelIds.length; i += batchSize) {
+          const batch = kennelIds.slice(i, i + batchSize);
+          const batchCommand = new BatchGetCommand({
+            RequestItems: {
+              [KENNELS_TABLE]: {
+                Keys: batch.map(id => ({ id })),
+              },
+            },
+          });
+          
+          const batchResult = await dynamodb.send(batchCommand);
+          const kennels = batchResult.Responses?.[KENNELS_TABLE] || [];
+          
+          // Build kennels map
+          kennels.forEach((kennel: any) => {
+            kennelsMap[kennel.id] = kennel;
+          });
+        }
+      } catch (kennelError) {
+        console.warn('Failed to batch fetch kennels:', kennelError);
+        // Continue without kennel data - don't fail the entire request
+      }
+    }
+
+    // Attach kennel information to each dog
+    const dogsWithKennels = paginatedItems.map((dog: any) => ({
+      ...dog,
+      kennel: dog.kennelId ? kennelsMap[dog.kennelId] || null : null,
+    }));
+
     return successResponse({
-      dogs: paginatedItems,
+      dogs: dogsWithKennels,
       pagination: {
         page: pageNum,
         limit: limitNum,

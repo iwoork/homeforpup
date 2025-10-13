@@ -3,7 +3,7 @@ import { dynamodb, GetCommand } from '../../../shared/dynamodb';
 import { successResponse } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 
-const USERS_TABLE = process.env.USERS_TABLE!;
+const PROFILES_TABLE = process.env.PROFILES_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const userId = event.pathParameters?.id;
@@ -14,30 +14,34 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
   try {
     const command = new GetCommand({
-      TableName: USERS_TABLE,
+      TableName: PROFILES_TABLE,
       Key: { userId },
     });
 
     const result = await dynamodb.send(command);
 
     if (!result.Item) {
-      throw new ApiError('User not found', 404);
+      throw new ApiError('Profile not found', 404);
     }
 
-    // Remove sensitive fields for public view
-    const user = { ...result.Item };
-    delete user.passwordHash;
-    delete user.refreshToken;
+    // Profile data (application-specific data)
+    // Note: Identity fields (firstName, lastName, username, picture, phone, address, bio)
+    // should be fetched from Cognito user attributes separately
+    const profile = { ...result.Item };
+    
+    // Remove any sensitive fields that shouldn't be exposed
+    delete profile.passwordHash;
+    delete profile.refreshToken;
 
     return successResponse({
-      user,
+      profile,
     });
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
-    console.error('Error getting user:', error);
-    throw new ApiError('Failed to get user', 500);
+    console.error('Error getting profile:', error);
+    throw new ApiError('Failed to get profile', 500);
   }
 }
 

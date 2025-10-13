@@ -15,12 +15,16 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
-import { LocationAutocompleteModal } from '../../components';
+import { LocationAutocompleteModal, BreedSelectorModal } from '../../components';
+import { useBreeds } from '../../hooks/useApi';
 
 const DogParentPreferencesScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, updateUser } = useAuth();
+  const { data: breedsData } = useBreeds({ limit: 200 });
   const [loading, setLoading] = useState(false);
+  
+  const breeds = breedsData?.breeds || [];
 
   // Initialize with user's current preferences
   const [preferences, setPreferences] = useState({
@@ -36,29 +40,6 @@ const DogParentPreferencesScreen: React.FC = () => {
     maxDistance: 50, // miles
   });
 
-  const popularBreeds = [
-    'Golden Retriever',
-    'Labrador Retriever',
-    'German Shepherd',
-    'French Bulldog',
-    'Beagle',
-    'Poodle',
-    'Bulldog',
-    'Rottweiler',
-    'Yorkshire Terrier',
-    'Boxer',
-    'Dachshund',
-    'Siberian Husky',
-  ];
-
-  const toggleBreed = (breed: string) => {
-    setPreferences((prev) => ({
-      ...prev,
-      preferredBreeds: prev.preferredBreeds.includes(breed)
-        ? prev.preferredBreeds.filter((b) => b !== breed)
-        : [...prev.preferredBreeds, breed],
-    }));
-  };
 
   const handleSave = async () => {
     if (preferences.preferredBreeds.length === 0) {
@@ -111,31 +92,18 @@ const DogParentPreferencesScreen: React.FC = () => {
           <Text style={styles.sectionDescription}>
             Select one or more breeds you're interested in
           </Text>
-          <View style={styles.breedGrid}>
-            {popularBreeds.map((breed) => (
-              <TouchableOpacity
-                key={breed}
-                style={[
-                  styles.breedChip,
-                  preferences.preferredBreeds.includes(breed) && styles.breedChipSelected,
-                ]}
-                onPress={() => toggleBreed(breed)}
-              >
-                {preferences.preferredBreeds.includes(breed) && (
-                  <Icon name="checkmark-circle" size={18} color="#ffffff" />
-                )}
-                <Text
-                  style={[
-                    styles.breedChipText,
-                    preferences.preferredBreeds.includes(breed) &&
-                      styles.breedChipTextSelected,
-                  ]}
-                >
-                  {breed}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <BreedSelectorModal
+            selectedBreeds={preferences.preferredBreeds}
+            onBreedsChange={(breeds) => {
+              console.log('Breeds updated:', breeds);
+              setPreferences((prev) => ({ ...prev, preferredBreeds: breeds }));
+            }}
+            availableBreeds={breeds}
+            placeholder="Tap to select breeds"
+            error={false}
+            editable={true}
+            multiSelect={true}
+          />
         </View>
 
         {/* Experience Level */}
@@ -365,34 +333,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.md,
   },
-  breedGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.sm,
-  },
-  breedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-  },
-  breedChipSelected: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  breedChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.text,
-  },
-  breedChipTextSelected: {
-    color: '#ffffff',
-  },
   optionsRow: {
     flexDirection: 'row',
     gap: theme.spacing.sm,
@@ -486,15 +426,6 @@ const styles = StyleSheet.create({
   },
   toggleThumbActive: {
     alignSelf: 'flex-end',
-  },
-  input: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    fontSize: 16,
-    color: theme.colors.text,
   },
   footer: {
     position: 'absolute',

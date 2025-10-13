@@ -18,7 +18,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Dog } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
 import { useBreeds, useKennels } from '../../hooks/useApi';
 import apiService from '../../services/apiService';
 
@@ -30,12 +29,12 @@ interface RouteParams {
 const CreateDogScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { user } = useAuth();
   const params = route.params as RouteParams;
 
   const { data: breedsData } = useBreeds();
-  const { data: kennelsData } = useKennels({ ownerId: user?.userId });
-  
+  // useKennels automatically filters to kennels where user is owner or manager
+  const { data: kennelsData } = useKennels();
+
   const breeds = breedsData?.breeds || [];
   const kennels = kennelsData?.kennels || [];
 
@@ -81,6 +80,10 @@ const CreateDogScreen: React.FC = () => {
       newErrors.breed = 'Breed is required';
     }
 
+    if (!formData.kennelId) {
+      newErrors.kennelId = 'Kennel is required';
+    }
+
     if (!formData.color.trim()) {
       newErrors.color = 'Color is required';
     }
@@ -108,7 +111,7 @@ const CreateDogScreen: React.FC = () => {
       selectionLimit: 1,
     };
 
-    launchImageLibrary(options, async (result) => {
+    launchImageLibrary(options, async result => {
       if (result.didCancel || result.errorCode) {
         return;
       }
@@ -211,7 +214,9 @@ const CreateDogScreen: React.FC = () => {
       console.error('Error adding dog:', error);
       Alert.alert(
         'Error',
-        error instanceof Error ? error.message : 'Failed to add dog. Please try again.',
+        error instanceof Error
+          ? error.message
+          : 'Failed to add dog. Please try again.',
       );
     } finally {
       setLoading(false);
@@ -235,7 +240,7 @@ const CreateDogScreen: React.FC = () => {
       keyboardType?: 'default' | 'numeric' | 'email-address';
       maxLength?: number;
       icon?: string;
-    }
+    },
   ) => (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>{label}</Text>
@@ -273,7 +278,7 @@ const CreateDogScreen: React.FC = () => {
   );
 
   const filteredBreeds = breeds.filter(breed =>
-    breed.name.toLowerCase().includes(breedSearchQuery.toLowerCase())
+    breed.name.toLowerCase().includes(breedSearchQuery.toLowerCase()),
   );
 
   return (
@@ -283,374 +288,590 @@ const CreateDogScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ScrollView 
-          style={styles.container} 
+        <ScrollView
+          style={styles.container}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           keyboardDismissMode="on-drag"
         >
-        {/* Photo Upload */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dog Photo</Text>
-        <View style={styles.photoSection}>
-          <TouchableOpacity 
-            style={styles.photoContainer}
-            onPress={handlePhotoUpload}
-            activeOpacity={0.8}
-          >
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.dogPhoto} />
-            ) : (
-              <View style={styles.photoPlaceholder}>
-                <Icon name="camera" size={40} color={theme.colors.textSecondary} />
-                <Text style={styles.photoPlaceholderText}>Add Photo</Text>
-              </View>
-            )}
-            {uploading && (
-              <View style={styles.uploadOverlay}>
-                <ActivityIndicator color="#ffffff" />
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Basic Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Basic Information</Text>
-        
-        {renderInput('Dog Name *', 'name', 'Enter dog name', { icon: 'paw' })}
-        
-        {renderInput('Call Name', 'callName', 'Nickname or call name', { icon: 'megaphone' })}
-        
-        {/* Breed Selector */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Breed *</Text>
-          <TouchableOpacity
-            style={[
-              styles.pickerButton,
-              errors.breed && styles.inputError,
-            ]}
-            onPress={() => setShowBreedPicker(true)}
-          >
-            <Icon name="search" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
-            <Text
-              style={[
-                styles.pickerButtonText,
-                !formData.breed && styles.placeholderText,
-              ]}
-            >
-              {formData.breed || 'Select breed'}
-            </Text>
-            <Icon name="chevron-down" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-          {errors.breed && <Text style={styles.errorText}>{errors.breed}</Text>}
-        </View>
-
-        {/* Gender */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Gender *</Text>
-          <View style={styles.genderButtons}>
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                formData.gender === 'male' && styles.genderButtonActive,
-              ]}
-              onPress={() => setFormData({ ...formData, gender: 'male' })}
-            >
-              <Icon
-                name="male"
-                size={20}
-                color={formData.gender === 'male' ? '#ffffff' : '#3b82f6'}
-              />
-              <Text
-                style={[
-                  styles.genderButtonText,
-                  formData.gender === 'male' && styles.genderButtonTextActive,
-                ]}
-              >
-                Male
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                formData.gender === 'female' && styles.genderButtonActive,
-              ]}
-              onPress={() => setFormData({ ...formData, gender: 'female' })}
-            >
-              <Icon
-                name="female"
-                size={20}
-                color={formData.gender === 'female' ? '#ffffff' : '#ec4899'}
-              />
-              <Text
-                style={[
-                  styles.genderButtonText,
-                  formData.gender === 'female' && styles.genderButtonTextActive,
-                ]}
-              >
-                Female
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Birth Date */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Birth Date *</Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowBirthDatePicker(true)}
-          >
-            <Icon name="calendar" size={20} color={theme.colors.textSecondary} style={styles.inputIcon} />
-            <Text style={styles.dateButtonText}>
-              {formData.birthDate.toLocaleDateString()}
-            </Text>
-          </TouchableOpacity>
-          {showBirthDatePicker && (
-            <DateTimePicker
-              value={formData.birthDate}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={onBirthDateChange}
-              maximumDate={new Date()}
-            />
-          )}
-        </View>
-
-        {/* Dog Type */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Dog Type *</Text>
-          <View style={styles.genderButtons}>
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                formData.dogType === 'parent' && styles.genderButtonActive,
-              ]}
-              onPress={() => setFormData({ ...formData, dogType: 'parent' })}
-            >
-              <Icon
-                name="shield-checkmark"
-                size={20}
-                color={formData.dogType === 'parent' ? '#ffffff' : theme.colors.primary}
-              />
-              <Text
-                style={[
-                  styles.genderButtonText,
-                  formData.dogType === 'parent' && styles.genderButtonTextActive,
-                ]}
-              >
-                Parent Dog
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.genderButton,
-                formData.dogType === 'puppy' && styles.genderButtonActive,
-              ]}
-              onPress={() => setFormData({ ...formData, dogType: 'puppy' })}
-            >
-              <Icon
-                name="heart"
-                size={20}
-                color={formData.dogType === 'puppy' ? '#ffffff' : '#ec4899'}
-              />
-              <Text
-                style={[
-                  styles.genderButtonText,
-                  formData.dogType === 'puppy' && styles.genderButtonTextActive,
-                ]}
-              >
-                Puppy
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {renderInput('Color *', 'color', 'e.g., Golden, Black, White', { icon: 'color-palette' })}
-        
-        {renderInput('Weight (lbs)', 'weight', 'Enter weight', { 
-          icon: 'fitness',
-          keyboardType: 'numeric' 
-        })}
-        
-        {renderInput('Height (inches)', 'height', 'Enter height', { 
-          icon: 'resize',
-          keyboardType: 'numeric' 
-        })}
-      </View>
-
-      {/* Physical Characteristics */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Physical Characteristics</Text>
-        
-        {renderInput('Eye Color', 'eyeColor', 'e.g., Brown, Blue', { icon: 'eye' })}
-        
-        {renderInput('Markings', 'markings', 'Describe any markings', { 
-          icon: 'brush',
-          multiline: true 
-        })}
-      </View>
-
-      {/* Description & Temperament */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description & Temperament</Text>
-        
-        {renderInput('Description *', 'description', 'Describe this dog...', { 
-          icon: 'document-text',
-          multiline: true,
-          maxLength: 500
-        })}
-        
-        {renderInput('Temperament', 'temperament', 'Describe temperament...', { 
-          icon: 'happy',
-          multiline: true,
-          maxLength: 300
-        })}
-        
-        {renderInput('Special Needs', 'specialNeeds', 'Any special needs or medical conditions', { 
-          icon: 'medical',
-          multiline: true 
-        })}
-        
-        {renderInput('Notes', 'notes', 'Additional notes...', { 
-          icon: 'create',
-          multiline: true 
-        })}
-      </View>
-
-      {/* Status */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Status</Text>
-        
-        {/* Breeding Status */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Breeding Status</Text>
-          <View style={styles.statusButtons}>
-            {['available', 'not_ready', 'retired'].map(status => (
+          {/* Photo Upload */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Dog Photo</Text>
+            <View style={styles.photoSection}>
               <TouchableOpacity
-                key={status}
-                style={[
-                  styles.statusButton,
-                  formData.breedingStatus === status && styles.statusButtonActive,
-                ]}
-                onPress={() => setFormData({ ...formData, breedingStatus: status as any })}
+                style={styles.photoContainer}
+                onPress={handlePhotoUpload}
+                activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.statusButtonText,
-                    formData.breedingStatus === status && styles.statusButtonTextActive,
-                  ]}
-                >
-                  {status.replace('_', ' ').charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Health Status */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Health Status</Text>
-          <View style={styles.statusButtons}>
-            {['excellent', 'good', 'fair', 'poor'].map(status => (
-              <TouchableOpacity
-                key={status}
-                style={[
-                  styles.statusButton,
-                  formData.healthStatus === status && styles.statusButtonActive,
-                ]}
-                onPress={() => setFormData({ ...formData, healthStatus: status as any })}
-              >
-                <Text
-                  style={[
-                    styles.statusButtonText,
-                    formData.healthStatus === status && styles.statusButtonTextActive,
-                  ]}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.saveButton, (loading || uploading) && styles.saveButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading || uploading}
-        >
-          {loading || uploading ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <>
-              <Icon name="checkmark" size={20} color="#ffffff" />
-              <Text style={styles.saveButtonText}>
-                {uploading ? 'Uploading...' : 'Add Dog'}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-          disabled={loading || uploading}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Breed Picker Modal */}
-      {showBreedPicker && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Breed</Text>
-              <TouchableOpacity onPress={() => setShowBreedPicker(false)}>
-                <Icon name="close" size={24} color={theme.colors.text} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.searchContainer}>
-              <Icon name="search" size={20} color={theme.colors.textSecondary} />
-              <TextInput
-                style={styles.searchInput}
-                value={breedSearchQuery}
-                onChangeText={setBreedSearchQuery}
-                placeholder="Search breeds..."
-                placeholderTextColor={theme.colors.textSecondary}
-              />
-            </View>
-            <ScrollView style={styles.modalBody}>
-              {filteredBreeds.map(breed => {
-                const breedImageUrl = `https://homeforpup.com/breeds/${breed.name}.jpg`;
-                return (
-                  <TouchableOpacity
-                    key={breed.id}
-                    style={styles.breedItem}
-                    onPress={() => {
-                      setFormData({ ...formData, breed: breed.name });
-                      setShowBreedPicker(false);
-                      setBreedSearchQuery('');
-                    }}
-                  >
-                    <Image
-                      source={{ uri: breedImageUrl }}
-                      style={styles.breedItemImage}
+                {photoUri ? (
+                  <Image source={{ uri: photoUri }} style={styles.dogPhoto} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Icon
+                      name="camera"
+                      size={40}
+                      color={theme.colors.textSecondary}
                     />
-                    <Text style={styles.breedItemText}>{breed.name}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+                    <Text style={styles.photoPlaceholderText}>Add Photo</Text>
+                  </View>
+                )}
+                {uploading && (
+                  <View style={styles.uploadOverlay}>
+                    <ActivityIndicator color="#ffffff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
+
+          {/* Basic Information */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Basic Information</Text>
+
+            {renderInput('Dog Name *', 'name', 'Enter dog name', {
+              icon: 'paw',
+            })}
+
+            {renderInput('Call Name', 'callName', 'Nickname or call name', {
+              icon: 'megaphone',
+            })}
+
+            {/* Breed Selector */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Breed *</Text>
+              <TouchableOpacity
+                style={[styles.pickerButton, errors.breed && styles.inputError]}
+                onPress={() => setShowBreedPicker(true)}
+              >
+                <Icon
+                  name="search"
+                  size={20}
+                  color={theme.colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <Text
+                  style={[
+                    styles.pickerButtonText,
+                    !formData.breed && styles.placeholderText,
+                  ]}
+                >
+                  {formData.breed || 'Select breed'}
+                </Text>
+                <Icon
+                  name="chevron-down"
+                  size={20}
+                  color={theme.colors.textSecondary}
+                />
+              </TouchableOpacity>
+              {errors.breed && (
+                <Text style={styles.errorText}>{errors.breed}</Text>
+              )}
+            </View>
+
+            {/* Kennel Selector */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Kennel *</Text>
+              {kennels.length === 0 ? (
+                <View style={styles.warningContainer}>
+                  <Icon
+                    name="warning"
+                    size={20}
+                    color={theme.colors.warning}
+                    style={styles.inputIcon}
+                  />
+                  <Text style={styles.warningText}>
+                    You need to create a kennel first before adding dogs.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.pickerButton,
+                      errors.kennelId && styles.inputError,
+                      kennels.length === 1 && styles.pickerButtonDisabled,
+                    ]}
+                    onPress={() => {
+                      if (kennels.length > 1) {
+                        setShowKennelPicker(true);
+                      }
+                    }}
+                    disabled={kennels.length === 1}
+                  >
+                    <Icon
+                      name="business"
+                      size={20}
+                      color={
+                        kennels.length === 1
+                          ? theme.colors.textTertiary
+                          : theme.colors.textSecondary
+                      }
+                      style={styles.inputIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.pickerButtonText,
+                        !formData.kennelId && styles.placeholderText,
+                        kennels.length === 1 && styles.disabledText,
+                      ]}
+                    >
+                      {formData.kennelId
+                        ? kennels.find(k => k.id === formData.kennelId)?.name ||
+                          'Select kennel'
+                        : 'Select kennel'}
+                    </Text>
+                    {kennels.length > 1 && (
+                      <Icon
+                        name="chevron-down"
+                        size={20}
+                        color={theme.colors.textSecondary}
+                      />
+                    )}
+                    {kennels.length === 1 && (
+                      <Icon
+                        name="lock-closed"
+                        size={16}
+                        color={theme.colors.textTertiary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                  {kennels.length === 1 && (
+                    <Text style={styles.helperText}>
+                      Only one kennel available. All dogs will be added to this
+                      kennel.
+                    </Text>
+                  )}
+                  {errors.kennelId && (
+                    <Text style={styles.errorText}>{errors.kennelId}</Text>
+                  )}
+                </>
+              )}
+            </View>
+
+            {/* Gender */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Gender *</Text>
+              <View style={styles.genderButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    formData.gender === 'male' && styles.genderButtonActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, gender: 'male' })}
+                >
+                  <Icon
+                    name="male"
+                    size={20}
+                    color={formData.gender === 'male' ? '#ffffff' : '#3b82f6'}
+                  />
+                  <Text
+                    style={[
+                      styles.genderButtonText,
+                      formData.gender === 'male' &&
+                        styles.genderButtonTextActive,
+                    ]}
+                  >
+                    Male
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    formData.gender === 'female' && styles.genderButtonActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, gender: 'female' })}
+                >
+                  <Icon
+                    name="female"
+                    size={20}
+                    color={formData.gender === 'female' ? '#ffffff' : '#ec4899'}
+                  />
+                  <Text
+                    style={[
+                      styles.genderButtonText,
+                      formData.gender === 'female' &&
+                        styles.genderButtonTextActive,
+                    ]}
+                  >
+                    Female
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Birth Date */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Birth Date *</Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowBirthDatePicker(true)}
+              >
+                <Icon
+                  name="calendar"
+                  size={20}
+                  color={theme.colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <Text style={styles.dateButtonText}>
+                  {formData.birthDate.toLocaleDateString()}
+                </Text>
+              </TouchableOpacity>
+              {showBirthDatePicker && (
+                <DateTimePicker
+                  value={formData.birthDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={onBirthDateChange}
+                  maximumDate={new Date()}
+                />
+              )}
+            </View>
+
+            {/* Dog Type */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Dog Type *</Text>
+              <View style={styles.genderButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    formData.dogType === 'parent' && styles.genderButtonActive,
+                  ]}
+                  onPress={() =>
+                    setFormData({ ...formData, dogType: 'parent' })
+                  }
+                >
+                  <Icon
+                    name="shield-checkmark"
+                    size={20}
+                    color={
+                      formData.dogType === 'parent'
+                        ? '#ffffff'
+                        : theme.colors.primary
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.genderButtonText,
+                      formData.dogType === 'parent' &&
+                        styles.genderButtonTextActive,
+                    ]}
+                  >
+                    Parent Dog
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.genderButton,
+                    formData.dogType === 'puppy' && styles.genderButtonActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, dogType: 'puppy' })}
+                >
+                  <Icon
+                    name="heart"
+                    size={20}
+                    color={formData.dogType === 'puppy' ? '#ffffff' : '#ec4899'}
+                  />
+                  <Text
+                    style={[
+                      styles.genderButtonText,
+                      formData.dogType === 'puppy' &&
+                        styles.genderButtonTextActive,
+                    ]}
+                  >
+                    Puppy
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {renderInput('Color *', 'color', 'e.g., Golden, Black, White', {
+              icon: 'color-palette',
+            })}
+
+            {renderInput('Weight (lbs)', 'weight', 'Enter weight', {
+              icon: 'fitness',
+              keyboardType: 'numeric',
+            })}
+
+            {renderInput('Height (inches)', 'height', 'Enter height', {
+              icon: 'resize',
+              keyboardType: 'numeric',
+            })}
+          </View>
+
+          {/* Physical Characteristics */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Physical Characteristics</Text>
+
+            {renderInput('Eye Color', 'eyeColor', 'e.g., Brown, Blue', {
+              icon: 'eye',
+            })}
+
+            {renderInput('Markings', 'markings', 'Describe any markings', {
+              icon: 'brush',
+              multiline: true,
+            })}
+          </View>
+
+          {/* Description & Temperament */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Description & Temperament</Text>
+
+            {renderInput(
+              'Description *',
+              'description',
+              'Describe this dog...',
+              {
+                icon: 'document-text',
+                multiline: true,
+                maxLength: 500,
+              },
+            )}
+
+            {renderInput(
+              'Temperament',
+              'temperament',
+              'Describe temperament...',
+              {
+                icon: 'happy',
+                multiline: true,
+                maxLength: 300,
+              },
+            )}
+
+            {renderInput(
+              'Special Needs',
+              'specialNeeds',
+              'Any special needs or medical conditions',
+              {
+                icon: 'medical',
+                multiline: true,
+              },
+            )}
+
+            {renderInput('Notes', 'notes', 'Additional notes...', {
+              icon: 'create',
+              multiline: true,
+            })}
+          </View>
+
+          {/* Status */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Status</Text>
+
+            {/* Breeding Status */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Breeding Status</Text>
+              <View style={styles.statusButtons}>
+                {['available', 'not_ready', 'retired'].map(status => (
+                  <TouchableOpacity
+                    key={status}
+                    style={[
+                      styles.statusButton,
+                      formData.breedingStatus === status &&
+                        styles.statusButtonActive,
+                    ]}
+                    onPress={() =>
+                      setFormData({
+                        ...formData,
+                        breedingStatus: status as any,
+                      })
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.statusButtonText,
+                        formData.breedingStatus === status &&
+                          styles.statusButtonTextActive,
+                      ]}
+                    >
+                      {status.replace('_', ' ').charAt(0).toUpperCase() +
+                        status.slice(1).replace('_', ' ')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Health Status */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Health Status</Text>
+              <View style={styles.statusButtons}>
+                {['excellent', 'good', 'fair', 'poor'].map(status => (
+                  <TouchableOpacity
+                    key={status}
+                    style={[
+                      styles.statusButton,
+                      formData.healthStatus === status &&
+                        styles.statusButtonActive,
+                    ]}
+                    onPress={() =>
+                      setFormData({ ...formData, healthStatus: status as any })
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.statusButtonText,
+                        formData.healthStatus === status &&
+                          styles.statusButtonTextActive,
+                      ]}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                (loading || uploading) && styles.saveButtonDisabled,
+              ]}
+              onPress={handleSubmit}
+              disabled={loading || uploading}
+            >
+              {loading || uploading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Icon name="checkmark" size={20} color="#ffffff" />
+                  <Text style={styles.saveButtonText}>
+                    {uploading ? 'Uploading...' : 'Add Dog'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => navigation.goBack()}
+              disabled={loading || uploading}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Breed Picker Modal */}
+          {showBreedPicker && (
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Select Breed</Text>
+                  <TouchableOpacity onPress={() => setShowBreedPicker(false)}>
+                    <Icon name="close" size={24} color={theme.colors.text} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.searchContainer}>
+                  <Icon
+                    name="search"
+                    size={20}
+                    color={theme.colors.textSecondary}
+                  />
+                  <TextInput
+                    style={styles.searchInput}
+                    value={breedSearchQuery}
+                    onChangeText={setBreedSearchQuery}
+                    placeholder="Search breeds..."
+                    placeholderTextColor={theme.colors.textSecondary}
+                  />
+                </View>
+                <ScrollView style={styles.modalBody}>
+                  {filteredBreeds.map(breed => {
+                    const breedImageUrl = `https://homeforpup.com/breeds/${breed.name}.jpg`;
+                    return (
+                      <TouchableOpacity
+                        key={breed.id}
+                        style={styles.breedItem}
+                        onPress={() => {
+                          setFormData({ ...formData, breed: breed.name });
+                          setShowBreedPicker(false);
+                          setBreedSearchQuery('');
+                        }}
+                      >
+                        <Image
+                          source={{ uri: breedImageUrl }}
+                          style={styles.breedItemImage}
+                        />
+                        <Text style={styles.breedItemText}>{breed.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
+          )}
+
+          {/* Kennel Picker Modal */}
+          {showKennelPicker && (
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Select Kennel</Text>
+                  <TouchableOpacity onPress={() => setShowKennelPicker(false)}>
+                    <Icon name="close" size={24} color={theme.colors.text} />
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.modalBody}>
+                  {kennels.map(kennel => (
+                    <TouchableOpacity
+                      key={kennel.id}
+                      style={[
+                        styles.kennelItem,
+                        formData.kennelId === kennel.id &&
+                          styles.kennelItemSelected,
+                      ]}
+                      onPress={() => {
+                        setFormData({ ...formData, kennelId: kennel.id });
+                        setShowKennelPicker(false);
+                        if (errors.kennelId) {
+                          setErrors({ ...errors, kennelId: '' });
+                        }
+                      }}
+                    >
+                      <Icon
+                        name="business"
+                        size={24}
+                        color={
+                          formData.kennelId === kennel.id
+                            ? theme.colors.primary
+                            : theme.colors.textSecondary
+                        }
+                        style={styles.kennelItemIcon}
+                      />
+                      <View style={styles.kennelItemContent}>
+                        <Text
+                          style={[
+                            styles.kennelItemText,
+                            formData.kennelId === kennel.id &&
+                              styles.kennelItemTextSelected,
+                          ]}
+                        >
+                          {kennel.name}
+                        </Text>
+                        {kennel.location && (
+                          <Text style={styles.kennelItemLocation}>
+                            {kennel.location}
+                          </Text>
+                        )}
+                      </View>
+                      {formData.kennelId === kennel.id && (
+                        <Icon
+                          name="checkmark-circle"
+                          size={24}
+                          color={theme.colors.primary}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -945,8 +1166,66 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.text,
   },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff3cd',
+    borderWidth: 1,
+    borderColor: '#ffc107',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#856404',
+    marginLeft: theme.spacing.sm,
+  },
+  helperText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+    fontStyle: 'italic',
+  },
+  pickerButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: theme.colors.border,
+  },
+  disabledText: {
+    color: theme.colors.textTertiary,
+  },
+  kennelItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  kennelItemSelected: {
+    backgroundColor: `${theme.colors.primary}10`,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+  },
+  kennelItemIcon: {
+    marginRight: theme.spacing.md,
+  },
+  kennelItemContent: {
+    flex: 1,
+  },
+  kennelItemText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  kennelItemTextSelected: {
+    color: theme.colors.primary,
+  },
+  kennelItemLocation: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
 });
 
 export default CreateDogScreen;
-
-

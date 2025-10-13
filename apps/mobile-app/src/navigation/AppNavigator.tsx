@@ -51,6 +51,7 @@ import EditDogScreen from '../screens/forms/EditDogScreen';
 import EditProfileScreen from '../screens/forms/EditProfileScreen';
 import ManageContractsScreen from '../screens/main/ManageContractsScreen';
 import ManageWaitlistScreen from '../screens/forms/ManageWaitlistScreen';
+import RecordVetVisitScreen from '../screens/forms/RecordVetVisitScreen';
 
 import LoadingScreen from '../screens/LoadingScreen';
 
@@ -417,6 +418,11 @@ const MainStack = () => {
       name="EditDog"
       component={EditDogScreen}
       options={{ title: 'Edit Dog' }}
+    />
+    <Stack.Screen
+      name="RecordVetVisit"
+      component={RecordVetVisitScreen}
+      options={{ title: 'Record Vet Visit' }}
     />
 
     {/* Message Screens */}

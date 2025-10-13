@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,7 @@ const DogDetailScreen: React.FC = () => {
   const [littersLoading, setLittersLoading] = useState(false);
   const [kennelOwner, setKennelOwner] = useState<{ id: string; name: string } | null>(null);
   const [fetchingKennel, setFetchingKennel] = useState(false);
+  const hasFetchedRef = useRef(false);
   
   // Check if user can edit (is the owner)
   const canEdit = dog?.ownerId === user?.userId || kennelOwner?.id === user?.userId;
@@ -131,37 +132,31 @@ const DogDetailScreen: React.FC = () => {
 
   // Fetch kennel owner information
   const fetchKennelOwner = async () => {
-    if (!dog?.kennelId) {
-      console.log('No kennelId available for dog');
-      return;
-    }
-    
-    setFetchingKennel(true);
-    try {
-      // Fetch kennel information
-      const response = await apiService.getKennelById(dog.kennelId);
+    // Always use ownerId as primary source if available (simpler and more reliable)
+    if (dog?.ownerId) {
+      console.log('Using dog ownerId:', dog.ownerId);
+      setKennelOwner({
+        id: dog.ownerId,
+        name: (dog as any).breederName || (dog as any).ownerName || 'Dog Owner'
+      });
       
-      if (response.success && response.data) {
-        const kennel = response.data;
-        console.log('Fetched kennel:', { id: kennel.id, name: kennel.name, ownerId: kennel.ownerId });
-        
-        // Set kennel owner info
-        setKennelOwner({
-          id: kennel.ownerId,
-          name: kennel.name || 'Kennel Owner'
-        });
+      // Optionally try to get kennel name for better display
+      if (dog.kennelId) {
+        try {
+          const response = await apiService.getKennelById(dog.kennelId);
+          if (response.success && response.data) {
+            // Update with kennel name if found
+            setKennelOwner({
+              id: dog.ownerId,
+              name: response.data.name || 'Kennel Owner'
+            });
+          }
+        } catch (error) {
+          // Silently fail - we already have ownerId set
+        }
       }
-    } catch (error) {
-      console.error('Error fetching kennel:', error);
-      // Try fallback to ownerId on dog if kennel fetch fails
-      if (dog.ownerId) {
-        setKennelOwner({
-          id: dog.ownerId,
-          name: (dog as any).breederName || 'Dog Owner'
-        });
-      }
-    } finally {
-      setFetchingKennel(false);
+    } else {
+      console.log('No ownerId available for dog');
     }
   };
 
@@ -177,20 +172,12 @@ const DogDetailScreen: React.FC = () => {
   useFocusEffect(
     React.useCallback(() => {
       const refreshDogData = async () => {
-        // Check if we have updated params (coming back from edit)
-        const updatedParams = route.params as DogDetailRouteParams;
-        const updatedDog = updatedParams?.dog;
-        
-        if (updatedDog) {
-          console.log('Dog data updated from navigation params');
-          setDog(updatedDog);
-        } else if (dogId && dog) {
-          // Fetch fresh data from API if we already have a dog loaded
-          console.log('Refreshing dog data from API');
+        // Only refresh if we haven't fetched before or if screen is focused after navigation
+        if (hasFetchedRef.current && dogId) {
+          console.log('Screen focused - refreshing dog data from API');
           try {
             const response = await apiService.getDogById(dogId);
             if (response.success && response.data) {
-              // Handle both formats: { dog: {...} } and direct dog object
               const dogData = (response.data as any).dog || response.data;
               setDog(dogData as Dog);
             }
@@ -198,10 +185,16 @@ const DogDetailScreen: React.FC = () => {
             console.error('Error refreshing dog data:', error);
           }
         }
+        hasFetchedRef.current = true;
       };
       
       refreshDogData();
-    }, [route.params, dogId, dog])
+      
+      // Reset the flag when screen loses focus
+      return () => {
+        hasFetchedRef.current = false;
+      };
+    }, [dogId])
   );
 
   // Show error state

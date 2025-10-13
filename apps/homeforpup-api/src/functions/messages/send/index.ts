@@ -6,7 +6,7 @@ import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
 
 const MESSAGES_TABLE = process.env.MESSAGES_TABLE || 'homeforpup-messages';
 const THREADS_TABLE = process.env.THREADS_TABLE || 'homeforpup-message-threads';
-const USERS_TABLE = process.env.USERS_TABLE || 'homeforpup-users';
+const PROFILES_TABLE = process.env.PROFILES_TABLE || 'homeforpup-profiles';
 
 // Helper to remove undefined values
 const cleanUndefinedValues = (obj: any): any => {
@@ -27,7 +27,7 @@ const cleanUndefinedValues = (obj: any): any => {
 const getUserInfo = async (userId: string) => {
   try {
     const command = new GetCommand({
-      TableName: USERS_TABLE,
+      TableName: PROFILES_TABLE,
       Key: { userId }
     });
     const result = await dynamodb.send(command);

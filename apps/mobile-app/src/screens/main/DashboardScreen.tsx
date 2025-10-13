@@ -66,6 +66,13 @@ const DashboardScreen: React.FC = () => {
       iconColor: theme.colors.secondary,
       screen: 'CreateDog',
     },
+    {
+      title: 'Record Vet Visit',
+      subtitle: 'Log veterinary care',
+      icon: 'medical',
+      iconColor: '#10b981',
+      screen: 'RecordVetVisit',
+    },
   ];
 
   return (

@@ -158,6 +158,9 @@ class ApiService {
             endpoint,
             hasAuth: true,
             tokenLength: tokenStr.length,
+            tokenPreview: tokenStr.substring(0, 50),
+            isJWT: tokenStr.split('.').length === 3,
+            startsWithEyJ: tokenStr.startsWith('eyJ'),
           });
         } else {
           console.warn('Invalid auth token detected:', {
@@ -187,11 +190,19 @@ class ApiService {
       });
 
       if (!response.ok) {
-        console.error('API request failed:', {
+        // Log 404s as warnings (resource not found is expected sometimes)
+        // Log other errors as actual errors
+        const logMessage = {
           url,
           status: response.status,
           error: data.message || data.error,
-        });
+        };
+        
+        if (response.status === 404) {
+          console.warn('API resource not found:', logMessage);
+        } else {
+          console.error('API request failed:', logMessage);
+        }
 
         // Handle token expiration - refresh and retry once
         if (response.status === 401 && retryOnAuth) {
@@ -279,6 +290,8 @@ class ApiService {
     }
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.search) queryParams.append('search', params.search);
+    // Note: User filtering is automatic based on authentication token
+    // The API returns only kennels where the authenticated user is owner or manager
 
     const endpoint = `/kennels?${queryParams.toString()}`;
     return this.makeRequest<KennelsResponse>(endpoint);
@@ -444,28 +457,46 @@ class ApiService {
     return this.makeRequest<Breed>(`/breeds/${id}`);
   }
 
-  // Users API
-  async getUserById(id: string): Promise<ApiResponse<{ user: User }>> {
-    return this.makeRequest<{ user: User }>(`/users/${id}`);
+  // Profiles API (renamed from Users API)
+  // Note: Identity fields (firstName, lastName, username, picture, phone, address, bio)
+  // are managed by Cognito and should be fetched from Cognito user attributes
+  async getProfileById(id: string): Promise<ApiResponse<{ profile: User }>> {
+    return this.makeRequest<{ profile: User }>(`/profiles/${id}`);
   }
 
+  async updateProfile(
+    id: string,
+    profileData: Partial<User>,
+  ): Promise<ApiResponse<{ profile: User }>> {
+    console.log('🔄 ApiService.updateProfile called');
+    console.log('  - User ID:', id);
+    console.log('  - Base URL:', this.baseUrl);
+    console.log('  - Has Auth Token:', !!this.authToken);
+    console.log('  - Update Data:', JSON.stringify(profileData, null, 2));
+    
+    const response = await this.makeRequest<{ profile: User }>(`/profiles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+    
+    console.log('🔄 ApiService.updateProfile response:', response);
+    return response;
+  }
+
+  // Legacy methods - deprecated, use getProfileById and updateProfile instead
+  // @deprecated
+  async getUserById(id: string): Promise<ApiResponse<{ user: User }>> {
+    const response = await this.getProfileById(id);
+    return { ...response, data: response.data ? { user: response.data.profile } : undefined } as any;
+  }
+
+  // @deprecated
   async updateUser(
     id: string,
     userData: Partial<User>,
   ): Promise<ApiResponse<{ user: User }>> {
-    console.log('🔄 ApiService.updateUser called');
-    console.log('  - User ID:', id);
-    console.log('  - Base URL:', this.baseUrl);
-    console.log('  - Has Auth Token:', !!this.authToken);
-    console.log('  - Update Data:', JSON.stringify(userData, null, 2));
-    
-    const response = await this.makeRequest<{ user: User }>(`/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    });
-    
-    console.log('🔄 ApiService.updateUser response:', response);
-    return response;
+    const response = await this.updateProfile(id, userData);
+    return { ...response, data: response.data ? { user: response.data.profile } : undefined } as any;
   }
 
   // Activities API (for recent activity)
@@ -592,6 +623,50 @@ class ApiService {
       console.error('S3 upload error:', error);
       return false;
     }
+  }
+
+  // Vet Visit API
+  async createVetVisit(
+    vetVisitData: any,
+  ): Promise<ApiResponse<any>> {
+    return this.makeRequest('/vet-visits', {
+      method: 'POST',
+      body: JSON.stringify(vetVisitData),
+    });
+  }
+
+  async getVetVisits(params: {
+    dogId?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.dogId) queryParams.append('dogId', params.dogId);
+
+    const endpoint = `/vet-visits?${queryParams.toString()}`;
+    return this.makeRequest(endpoint);
+  }
+
+  async getVetVisitById(id: string): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/vet-visits/${id}`);
+  }
+
+  async updateVetVisit(
+    id: string,
+    vetVisitData: any,
+  ): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/vet-visits/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(vetVisitData),
+    });
+  }
+
+  async deleteVetVisit(id: string): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(`/vet-visits/${id}`, {
+      method: 'DELETE',
+    });
   }
 }
 

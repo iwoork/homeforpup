@@ -199,7 +199,6 @@ export interface Dog {
   
   // Kennel association
   kennelId: string;
-  kennelName: string;
   
   // Pedigree information
   sireId?: string; // Father dog ID
@@ -317,7 +316,6 @@ export interface Litter {
   id: string;
   name: string;
   kennelId: string;
-  kennelName: string;
   
   // Parents
   sireId: string;

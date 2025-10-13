@@ -121,8 +121,8 @@ export class AuthService {
         // Store user data and token
         // Use ID token for API authentication (not access token)
         // The backend expects ID token for user identity verification
-        const tokenObj = session.tokens?.idToken;
-        const token = tokenObj ? String(tokenObj) : '';
+        // In Amplify v6, the token is accessed via toString() method
+        const token = session.tokens?.idToken?.toString() || '';
         
         console.log('Token extracted:', { 
           hasToken: !!token, 
@@ -133,6 +133,9 @@ export class AuthService {
         this.currentUser = userData;
         this.authToken = token;
         await this.storeAuthData(userData, token);
+        
+        // Ensure profile exists in database (create if doesn't exist)
+        await this.ensureProfileExists(userData, token);
         
         return {
           success: true,
@@ -333,14 +336,36 @@ export class AuthService {
       if (session && session.tokens?.idToken) {
         // Use ID token for API authentication (not access token)
         // The backend expects ID token for user identity verification
-        const tokenObj = session.tokens.idToken;
-        const token = String(tokenObj);
+        // Amplify v6 JWT tokens need to be extracted correctly
+        const idToken = session.tokens.idToken;
+        
+        // Debug: Check what we're working with
+        console.log('🔍 idToken object:', {
+          type: typeof idToken,
+          constructor: idToken?.constructor?.name,
+          hasToString: typeof idToken?.toString === 'function',
+          keys: idToken ? Object.keys(idToken).slice(0, 5) : [],
+        });
+        
+        // Try to get the JWT string - Amplify v6 returns a JWT object
+        // that should have a toString() method or direct string access
+        let token: string;
+        if (typeof idToken === 'string') {
+          token = idToken;
+        } else if (typeof idToken.toString === 'function') {
+          token = idToken.toString();
+        } else {
+          // Fallback: convert to string
+          token = String(idToken);
+        }
         
         console.log('getAuthToken: Token extracted:', { 
           hasToken: !!token, 
           tokenLength: token.length,
           tokenType: 'idToken',
-          startsWithBearer: token.startsWith('Bearer')
+          isJWT: token.split('.').length === 3,
+          startsWithEyJ: token.startsWith('eyJ'),
+          tokenPreview: token.substring(0, 50) + '...'
         });
         
         this.authToken = token;
@@ -368,8 +393,8 @@ export class AuthService {
       
       // Update stored token if refresh succeeded
       if (session && session.tokens?.idToken) {
-        const tokenObj = session.tokens.idToken;
-        const token = String(tokenObj);
+        // In Amplify v6, the token is accessed via toString() method
+        const token = session.tokens.idToken.toString();
         this.authToken = token;
         
         // Update stored token
@@ -461,6 +486,67 @@ export class AuthService {
     } catch (error) {
       console.error('Load stored auth data error:', error);
       return { user: null, token: null };
+    }
+  }
+
+  /**
+   * Ensures a profile exists in the database for this Cognito user
+   * Creates a basic profile record if it doesn't exist
+   */
+  private async ensureProfileExists(user: User, token: string): Promise<void> {
+    try {
+      console.log('🔍 Checking if profile exists for user:', user.userId);
+      
+      // Temporarily set token in API service for this check
+      const apiService = require('./apiService').default;
+      const previousToken = apiService.authToken;
+      apiService.setAuthToken(token);
+      
+      // Try to get existing profile
+      const response = await apiService.getProfileById(user.userId);
+      
+      if (response.success && response.data?.profile) {
+        console.log('✅ Profile exists for user:', user.userId);
+      } else {
+        // Profile doesn't exist, create it
+        console.log('📝 Profile not found, creating new profile for user:', user.userId);
+        
+        const newProfile = {
+          userId: user.userId,
+          email: user.email,
+          name: user.name,
+          displayName: user.displayName,
+          verified: false,
+          accountStatus: 'active' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        
+        // Create the profile using a direct API call
+        // We can't use updateProfile since it requires the profile to exist
+        const createResponse = await fetch(`${apiService.baseUrl}/profiles/${user.userId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(newProfile),
+        });
+        
+        if (createResponse.ok) {
+          console.log('✅ Profile created successfully for user:', user.userId);
+        } else {
+          const errorData = await createResponse.json();
+          console.warn('⚠️ Failed to create profile:', errorData);
+        }
+      }
+      
+      // Restore previous token
+      apiService.setAuthToken(previousToken);
+    } catch (error) {
+      console.error('❌ Error ensuring profile exists:', error);
+      // Don't fail login if profile creation fails
+      // User can still use the app, profile will be created on first update
     }
   }
 

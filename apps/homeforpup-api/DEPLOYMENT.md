@@ -79,7 +79,7 @@ COGNITO_USER_POOL_ARN=arn:aws:cognito-idp:us-east-1:ACCOUNT_ID:userpool/us-east-
 COGNITO_CLIENT_ID=your-client-id
 
 # DynamoDB Tables
-DYNAMODB_USERS_TABLE=homeforpup-users-dev
+DYNAMODB_PROFILES_TABLE=homeforpup-profiles-dev
 DYNAMODB_DOGS_TABLE=homeforpup-dogs-dev
 DYNAMODB_KENNELS_TABLE=homeforpup-kennels-dev
 DYNAMODB_MESSAGES_TABLE=homeforpup-messages-dev
@@ -102,7 +102,7 @@ COGNITO_USER_POOL_ARN=arn:aws:cognito-idp:us-east-1:ACCOUNT_ID:userpool/us-east-
 COGNITO_CLIENT_ID=prod-client-id
 
 # Production tables
-DYNAMODB_USERS_TABLE=homeforpup-users-prod
+DYNAMODB_PROFILES_TABLE=homeforpup-profiles-prod
 DYNAMODB_DOGS_TABLE=homeforpup-dogs-prod
 # ... etc
 

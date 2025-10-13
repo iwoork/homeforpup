@@ -49,6 +49,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       if (storedUser && token) {
+        // Validate token format - should be JWT with 3 parts (header.payload.signature)
+        const isValidJWT = token.split('.').length === 3 && token.startsWith('eyJ');
+        
+        if (!isValidJWT) {
+          console.warn('⚠️ Invalid token format detected in cache, clearing auth data...');
+          console.warn('Token preview:', token.substring(0, 50));
+          await authService.clearAuthData();
+          apiService.setAuthToken(null);
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
         // Verify the session is still valid
         const isValid = await authService.refreshSession();
         console.log('AuthContext: Session valid:', isValid);
@@ -63,6 +76,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Set the fresh auth token in the API service
           apiService.setAuthToken(freshToken);
+          
+          // Ensure profile exists in database
+          if (freshToken && storedUser) {
+            try {
+              const response = await apiService.getProfileById(storedUser.userId);
+              if (!response.success || !response.data?.profile) {
+                console.log('📝 Profile not found, creating...');
+                await apiService.updateProfile(storedUser.userId, {
+                  userId: storedUser.userId,
+                  email: storedUser.email,
+                  name: storedUser.name,
+                  verified: false,
+                  accountStatus: 'active',
+                });
+              }
+            } catch (error) {
+              console.warn('⚠️ Could not verify/create profile:', error);
+              // Continue anyway - not critical for app startup
+            }
+          }
+          
           setUser(storedUser);
         } else {
           // Session expired, clear stored data

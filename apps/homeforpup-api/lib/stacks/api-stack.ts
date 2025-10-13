@@ -77,7 +77,7 @@ export class ApiStack extends cdk.Stack {
 
     // Create API resources and routes
     this.createDogsApi();
-    this.createUsersApi();
+    this.createProfilesApi();
     this.createKennelsApi();
     this.createLittersApi();
     this.createMessagesApi();
@@ -123,10 +123,12 @@ export class ApiStack extends cdk.Stack {
       config,
       environment: {
         DOGS_TABLE: config.tables.dogs,
+        KENNELS_TABLE: config.tables.kennels,
       },
     });
     listDogsFunction.grantDynamoDBAccess([
       config.tables.dogs,
+      config.tables.kennels,
     ]);
 
     // GET /dogs does not require auth (optional auth handled in Lambda)
@@ -140,10 +142,12 @@ export class ApiStack extends cdk.Stack {
       config,
       environment: {
         DOGS_TABLE: config.tables.dogs,
+        KENNELS_TABLE: config.tables.kennels,
       },
     });
     getDogFunction.grantDynamoDBAccess([
       config.tables.dogs,
+      config.tables.kennels,
     ]);
 
     // GET /dogs/{id} does not require auth (public endpoint)
@@ -157,10 +161,12 @@ export class ApiStack extends cdk.Stack {
       config,
       environment: {
         DOGS_TABLE: config.tables.dogs,
+        KENNELS_TABLE: config.tables.kennels,
       },
     });
     createDogFunction.grantDynamoDBAccess([
       config.tables.dogs,
+      config.tables.kennels,
     ]);
 
     dogsResource.addMethod('POST', createDogFunction.createIntegration(), {
@@ -176,10 +182,12 @@ export class ApiStack extends cdk.Stack {
       config,
       environment: {
         DOGS_TABLE: config.tables.dogs,
+        KENNELS_TABLE: config.tables.kennels,
       },
     });
     updateDogFunction.grantDynamoDBAccess([
       config.tables.dogs,
+      config.tables.kennels,
     ]);
 
     dogIdResource.addMethod('PUT', updateDogFunction.createIntegration(), {
@@ -195,10 +203,12 @@ export class ApiStack extends cdk.Stack {
       config,
       environment: {
         DOGS_TABLE: config.tables.dogs,
+        KENNELS_TABLE: config.tables.kennels,
       },
     });
     deleteDogFunction.grantDynamoDBAccess([
       config.tables.dogs,
+      config.tables.kennels,
     ]);
 
     dogIdResource.addMethod('DELETE', deleteDogFunction.createIntegration(), {
@@ -207,42 +217,57 @@ export class ApiStack extends cdk.Stack {
     });
   }
 
-  private createUsersApi() {
+  private createProfilesApi() {
     const { config } = this;
-    const usersResource = this.api.root.addResource('users');
-    const userIdResource = usersResource.addResource('{id}');
+    const profilesResource = this.api.root.addResource('profiles');
+    const profileIdResource = profilesResource.addResource('{id}');
 
-    // GET /users/{id} - Get user profile
-    const getUserFunction = new LambdaApi(this, 'GetUserFunction', {
-      functionName: 'get-user',
+    // GET /profiles/{id} - Get user profile
+    const getProfileFunction = new LambdaApi(this, 'GetProfileFunction', {
+      functionName: 'get-profile',
       handler: 'index.handler',
-      entry: path.join(__dirname, '../../src/functions/users/get'),
+      entry: path.join(__dirname, '../../src/functions/profiles/get'),
       config,
       environment: {
-        USERS_TABLE: config.tables.users,
+        PROFILES_TABLE: config.tables.profiles,
       },
     });
-    getUserFunction.grantDynamoDBAccess([
-      config.tables.users,
+    getProfileFunction.grantDynamoDBAccess([
+      config.tables.profiles,
     ]);
 
-    userIdResource.addMethod('GET', getUserFunction.createIntegration());
+    profileIdResource.addMethod('GET', getProfileFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
 
-    // PUT /users/{id} - Update user profile
-    const updateUserFunction = new LambdaApi(this, 'UpdateUserFunction', {
-      functionName: 'update-user',
+    // PUT /profiles/{id} - Update user profile
+    const updateProfileFunction = new LambdaApi(this, 'UpdateProfileFunction', {
+      functionName: 'update-profile',
       handler: 'index.handler',
-      entry: path.join(__dirname, '../../src/functions/users/update'),
+      entry: path.join(__dirname, '../../src/functions/profiles/update'),
       config,
       environment: {
-        USERS_TABLE: config.tables.users,
+        PROFILES_TABLE: config.tables.profiles,
+        USER_POOL_ID: config.cognitoUserPoolId,
       },
     });
-    updateUserFunction.grantDynamoDBAccess([
-      config.tables.users,
+    updateProfileFunction.grantDynamoDBAccess([
+      config.tables.profiles,
     ]);
+    
+    // Grant permission to update Cognito user attributes
+    updateProfileFunction.function.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'cognito-idp:AdminUpdateUserAttributes',
+        ],
+        resources: [config.cognitoUserPoolArn],
+      })
+    );
 
-    userIdResource.addMethod('PUT', updateUserFunction.createIntegration(), {
+    profileIdResource.addMethod('PUT', updateProfileFunction.createIntegration(), {
       authorizer: this.authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
     });
@@ -439,13 +464,13 @@ export class ApiStack extends cdk.Stack {
       environment: {
         MESSAGES_TABLE: config.tables.messages,
         THREADS_TABLE: 'homeforpup-message-threads',
-        USERS_TABLE: config.tables.users,
+        PROFILES_TABLE: config.tables.profiles,
       },
     });
     sendMessageFunction.grantDynamoDBAccess([
       config.tables.messages,
       'homeforpup-message-threads',
-      config.tables.users,
+      config.tables.profiles,
     ]);
 
     const sendResource = messagesResource.addResource('send');

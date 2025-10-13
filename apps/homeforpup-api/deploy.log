@@ -1,0 +1,582 @@
+[dotenv@17.2.3] injecting env (17) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/ListDogsFunction/Function/Code/Stage...
+
+  ...3e0478aa2a8e671846b88d068adc145a4a8b9e4d3cd475b-building/index.js   7.6kb
+  ...78aa2a8e671846b88d068adc145a4a8b9e4d3cd475b-building/index.js.map  14.9kb
+
+⚡ Done in 19ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/GetDogFunction/Function/Code/Stage...
+
+  ...c150ce5b469fa94b262ae49ce7bd3a1c058231e0580c2215-building/index.js  4.8kb
+  ...ce5b469fa94b262ae49ce7bd3a1c058231e0580c2215-building/index.js.map  8.4kb
+
+⚡ Done in 6ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/CreateDogFunction/Function/Code/Stage...
+
+  ...43d029ddcbb2ce77fab8acf433b3cd5a08774ad3d87d93d-building/index.js   8.2kb
+  ...29ddcbb2ce77fab8acf433b3cd5a08774ad3d87d93d-building/index.js.map  14.9kb
+
+⚡ Done in 9ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/UpdateDogFunction/Function/Code/Stage...
+
+  ...4ba1ff79bc52b4a37966bff836f85078082de8332ac6ba0-building/index.js   7.4kb
+  ...ff79bc52b4a37966bff836f85078082de8332ac6ba0-building/index.js.map  13.5kb
+
+⚡ Done in 5ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/DeleteDogFunction/Function/Code/Stage...
+
+  ...72486d0e4e427aea037069b8a9438eeb8f09852efdd3b0e-building/index.js   5.8kb
+  ...6d0e4e427aea037069b8a9438eeb8f09852efdd3b0e-building/index.js.map  10.7kb
+
+⚡ Done in 6ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/GetProfileFunction/Function/Code/Stage...
+
+  ...5daec5c8fcc32f7f2a8b047cfb161cd7f12e03b8056e127f-building/index.js  4.3kb
+  ...c5c8fcc32f7f2a8b047cfb161cd7f12e03b8056e127f-building/index.js.map  7.7kb
+
+⚡ Done in 7ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/UpdateProfileFunction/Function/Code/Stage...
+
+  ...b89d861efe7151d7ca80a4940a9f70953e0eb8ac7e2c290-building/index.js   6.5kb
+  ...861efe7151d7ca80a4940a9f70953e0eb8ac7e2c290-building/index.js.map  11.9kb
+
+⚡ Done in 7ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/ListKennelsFunction/Function/Code/Stage...
+
+  ...eba8490dffdfae390e21d5d11c74984812f7263b270ed83-building/index.js   7.5kb
+  ...490dffdfae390e21d5d11c74984812f7263b270ed83-building/index.js.map  13.6kb
+
+⚡ Done in 7ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/GetKennelFunction/Function/Code/Stage...
+
+  ...90130371c465164b83ee7b07b79be366eb3a178b49db7aeb-building/index.js  4.1kb
+  ...0371c465164b83ee7b07b79be366eb3a178b49db7aeb-building/index.js.map  7.2kb
+
+⚡ Done in 6ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/CreateKennelFunction/Function/Code/Stage...
+
+  ...19708d70801b45c68b23f9a21a6b627164434cd1c42fe93-building/index.js   8.0kb
+  ...8d70801b45c68b23f9a21a6b627164434cd1c42fe93-building/index.js.map  14.8kb
+
+⚡ Done in 8ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/UpdateKennelFunction/Function/Code/Stage...
+
+  ...64fb87f90b69605dc4fc72c3154c7c1e4cea4142404f211-building/index.js   6.2kb
+  ...87f90b69605dc4fc72c3154c7c1e4cea4142404f211-building/index.js.map  11.5kb
+
+⚡ Done in 5ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/DeleteKennelFunction/Function/Code/Stage...
+
+  ...4b903cf3bae3257d22ac3479a997e0bee13159dfc3c9b0b-building/index.js   5.5kb
+  ...3cf3bae3257d22ac3479a997e0bee13159dfc3c9b0b-building/index.js.map  10.4kb
+
+⚡ Done in 9ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/ListLittersFunction/Function/Code/Stage...
+
+  ...22d9a1a599793d53943f99fb6865d63c0cd9a69d70adfc9-building/index.js   6.6kb
+  ...a1a599793d53943f99fb6865d63c0cd9a69d70adfc9-building/index.js.map  12.0kb
+
+⚡ Done in 7ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/GetLitterFunction/Function/Code/Stage...
+
+  ...484eeeb5d4c66f79825c4fd26827f8b1b9521a80946921b2-building/index.js  4.2kb
+  ...eeb5d4c66f79825c4fd26827f8b1b9521a80946921b2-building/index.js.map  7.2kb
+
+⚡ Done in 3ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/CreateLitterFunction/Function/Code/Stage...
+
+  ...2f21e6c4a5e49c2e2551ac861759189df7d41b9dcfdc8e7-building/index.js   8.2kb
+  ...e6c4a5e49c2e2551ac861759189df7d41b9dcfdc8e7-building/index.js.map  14.7kb
+
+⚡ Done in 10ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/UpdateLitterFunction/Function/Code/Stage...
+
+  ...cc9632fcc13249f569e374821699902e0ca5a8c7e2ec0a4-building/index.js   5.6kb
+  ...32fcc13249f569e374821699902e0ca5a8c7e2ec0a4-building/index.js.map  10.1kb
+
+⚡ Done in 6ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/DeleteLitterFunction/Function/Code/Stage...
+
+  ...3f41948d2e4c5c34cbb08ec2eb61a60d291e21896992aac5-building/index.js  5.0kb
+  ...948d2e4c5c34cbb08ec2eb61a60d291e21896992aac5-building/index.js.map  9.2kb
+
+⚡ Done in 8ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/SendMessageFunction/Function/Code/Stage...
+
+  ...1e48172fe398b0842c32053a57cd47da03d63b4e5973624-building/index.js   8.9kb
+  ...172fe398b0842c32053a57cd47da03d63b4e5973624-building/index.js.map  15.9kb
+
+⚡ Done in 5ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/ReplyMessageFunction/Function/Code/Stage...
+
+  ...e545f849c2755ff88c76b2dacbb875c6c2917c1a37f552d-building/index.js   8.9kb
+  ...f849c2755ff88c76b2dacbb875c6c2917c1a37f552d-building/index.js.map  15.5kb
+
+⚡ Done in 4ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/ListThreadsFunction/Function/Code/Stage...
+
+  ...40ee485c44cac142397413a0f72b619916f08333e2e3d77-building/index.js   6.8kb
+  ...485c44cac142397413a0f72b619916f08333e2e3d77-building/index.js.map  13.1kb
+
+⚡ Done in 7ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/GetThreadMessagesFunction/Function/Code/Stage...
+
+  ...d822223ba95c7adf715954972626c7c07f415b6322d9c1f-building/index.js   6.8kb
+  ...223ba95c7adf715954972626c7c07f415b6322d9c1f-building/index.js.map  12.8kb
+
+⚡ Done in 8ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/MarkThreadReadFunction/Function/Code/Stage...
+
+  ...bb702f3abc6b65e43ddfd1862665e88c07672021b430982-building/index.js   7.1kb
+  ...2f3abc6b65e43ddfd1862665e88c07672021b430982-building/index.js.map  12.6kb
+
+⚡ Done in 4ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/ListBreedsFunction/Function/Code/Stage...
+
+  ...98be8915dc4c14e8d0c7899af04d71cdaee16e8279c1eb7d-building/index.js  5.2kb
+  ...8915dc4c14e8d0c7899af04d71cdaee16e8279c1eb7d-building/index.js.map  9.2kb
+
+⚡ Done in 14ms
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+  use `logGroup` instead
+  This API will be removed in the next major release.
+Bundling asset HomeForPupApiStack-development/GetUploadUrlFunction/Function/Code/Stage...
+
+  ...80340b389c93ab74d93e6ef7b2d91a52575cc7b73f4a673-building/index.js   7.4kb
+  ...0b389c93ab74d93e6ef7b2d91a52575cc7b73f4a673-building/index.js.map  14.4kb
+
+⚡ Done in 17ms
+[Warning at /HomeForPupApiStack-development/ListDogsFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/GetDogFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/CreateDogFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/UpdateDogFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/DeleteDogFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/GetProfileFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/UpdateProfileFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/ListKennelsFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/GetKennelFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/CreateKennelFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/UpdateKennelFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/DeleteKennelFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/ListLittersFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/GetLitterFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/CreateLitterFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/UpdateLitterFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/DeleteLitterFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/SendMessageFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/ReplyMessageFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/ListThreadsFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/GetThreadMessagesFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/MarkThreadReadFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/ListBreedsFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+[Warning at /HomeForPupApiStack-development/GetUploadUrlFunction] If you are relying on AWS SDK v2 to be present in the Lambda environment already, please explicitly configure a NodeJS runtime of Node 16 or lower. [ack: @aws-cdk/aws-lambda-nodejs:sdkV2NotInRuntime]
+
+✨  Synthesis time: 23.43s
+
+homeforpup-api-development: start: Building ListDogsFunction/Function/Code
+homeforpup-api-development: success: Built ListDogsFunction/Function/Code
+homeforpup-api-development: start: Building GetDogFunction/Function/Code
+homeforpup-api-development: success: Built GetDogFunction/Function/Code
+homeforpup-api-development: start: Building CreateDogFunction/Function/Code
+homeforpup-api-development: success: Built CreateDogFunction/Function/Code
+homeforpup-api-development: start: Building UpdateDogFunction/Function/Code
+homeforpup-api-development: success: Built UpdateDogFunction/Function/Code
+homeforpup-api-development: start: Building DeleteDogFunction/Function/Code
+homeforpup-api-development: success: Built DeleteDogFunction/Function/Code
+homeforpup-api-development: start: Building GetProfileFunction/Function/Code
+homeforpup-api-development: success: Built GetProfileFunction/Function/Code
+homeforpup-api-development: start: Building UpdateProfileFunction/Function/Code
+homeforpup-api-development: success: Built UpdateProfileFunction/Function/Code
+homeforpup-api-development: start: Building ListKennelsFunction/Function/Code
+homeforpup-api-development: success: Built ListKennelsFunction/Function/Code
+homeforpup-api-development: start: Building GetKennelFunction/Function/Code
+homeforpup-api-development: success: Built GetKennelFunction/Function/Code
+homeforpup-api-development: start: Building CreateKennelFunction/Function/Code
+homeforpup-api-development: success: Built CreateKennelFunction/Function/Code
+homeforpup-api-development: start: Building UpdateKennelFunction/Function/Code
+homeforpup-api-development: success: Built UpdateKennelFunction/Function/Code
+homeforpup-api-development: start: Building DeleteKennelFunction/Function/Code
+homeforpup-api-development: success: Built DeleteKennelFunction/Function/Code
+homeforpup-api-development: start: Building ListLittersFunction/Function/Code
+homeforpup-api-development: success: Built ListLittersFunction/Function/Code
+homeforpup-api-development: start: Building GetLitterFunction/Function/Code
+homeforpup-api-development: success: Built GetLitterFunction/Function/Code
+homeforpup-api-development: start: Building CreateLitterFunction/Function/Code
+homeforpup-api-development: success: Built CreateLitterFunction/Function/Code
+homeforpup-api-development: start: Building UpdateLitterFunction/Function/Code
+homeforpup-api-development: success: Built UpdateLitterFunction/Function/Code
+homeforpup-api-development: start: Building DeleteLitterFunction/Function/Code
+homeforpup-api-development: success: Built DeleteLitterFunction/Function/Code
+homeforpup-api-development: start: Building SendMessageFunction/Function/Code
+homeforpup-api-development: success: Built SendMessageFunction/Function/Code
+homeforpup-api-development: start: Building ReplyMessageFunction/Function/Code
+homeforpup-api-development: success: Built ReplyMessageFunction/Function/Code
+homeforpup-api-development: start: Building ListThreadsFunction/Function/Code
+homeforpup-api-development: success: Built ListThreadsFunction/Function/Code
+homeforpup-api-development: start: Building GetThreadMessagesFunction/Function/Code
+homeforpup-api-development: success: Built GetThreadMessagesFunction/Function/Code
+homeforpup-api-development: start: Building MarkThreadReadFunction/Function/Code
+homeforpup-api-development: success: Built MarkThreadReadFunction/Function/Code
+homeforpup-api-development: start: Building ListBreedsFunction/Function/Code
+homeforpup-api-development: success: Built ListBreedsFunction/Function/Code
+homeforpup-api-development: start: Building homeforpup-api-development Template
+homeforpup-api-development: success: Built homeforpup-api-development Template
+homeforpup-api-development: start: Publishing ListDogsFunction/Function/Code (249730500554-us-east-1-d65a289b)
+homeforpup-api-development: start: Publishing CreateDogFunction/Function/Code (249730500554-us-east-1-a3b472cd)
+homeforpup-api-development: start: Publishing DeleteDogFunction/Function/Code (249730500554-us-east-1-c599afa5)
+homeforpup-api-development: start: Publishing UpdateDogFunction/Function/Code (249730500554-us-east-1-fde9e801)
+homeforpup-api-development: start: Publishing GetProfileFunction/Function/Code (249730500554-us-east-1-a9c3ba21)
+homeforpup-api-development: start: Publishing GetDogFunction/Function/Code (249730500554-us-east-1-8531bc51)
+homeforpup-api-development: start: Publishing UpdateProfileFunction/Function/Code (249730500554-us-east-1-b7c78b69)
+homeforpup-api-development: start: Publishing ListKennelsFunction/Function/Code (249730500554-us-east-1-903fa53c)
+homeforpup-api-development: success: Published ListDogsFunction/Function/Code (249730500554-us-east-1-d65a289b)
+homeforpup-api-development: start: Publishing GetKennelFunction/Function/Code (249730500554-us-east-1-d0b25b08)
+homeforpup-api-development: success: Published UpdateDogFunction/Function/Code (249730500554-us-east-1-fde9e801)
+homeforpup-api-development: start: Publishing CreateKennelFunction/Function/Code (249730500554-us-east-1-652e0407)
+homeforpup-api-development: success: Published UpdateProfileFunction/Function/Code (249730500554-us-east-1-b7c78b69)
+homeforpup-api-development: start: Publishing UpdateKennelFunction/Function/Code (249730500554-us-east-1-7a028737)
+homeforpup-api-development: success: Published CreateDogFunction/Function/Code (249730500554-us-east-1-a3b472cd)
+homeforpup-api-development: start: Publishing DeleteKennelFunction/Function/Code (249730500554-us-east-1-96c0e7c7)
+homeforpup-api-development: success: Published GetDogFunction/Function/Code (249730500554-us-east-1-8531bc51)
+homeforpup-api-development: start: Publishing ListLittersFunction/Function/Code (249730500554-us-east-1-11b24dc0)
+homeforpup-api-development: success: Published ListKennelsFunction/Function/Code (249730500554-us-east-1-903fa53c)
+homeforpup-api-development: start: Publishing GetLitterFunction/Function/Code (249730500554-us-east-1-d2e93769)
+homeforpup-api-development: success: Published GetProfileFunction/Function/Code (249730500554-us-east-1-a9c3ba21)
+homeforpup-api-development: start: Publishing CreateLitterFunction/Function/Code (249730500554-us-east-1-1108fc1c)
+homeforpup-api-development: success: Published DeleteDogFunction/Function/Code (249730500554-us-east-1-c599afa5)
+homeforpup-api-development: start: Publishing UpdateLitterFunction/Function/Code (249730500554-us-east-1-e42dfb2f)
+homeforpup-api-development: success: Published GetKennelFunction/Function/Code (249730500554-us-east-1-d0b25b08)
+homeforpup-api-development: start: Publishing DeleteLitterFunction/Function/Code (249730500554-us-east-1-b565c057)
+homeforpup-api-development: success: Published CreateKennelFunction/Function/Code (249730500554-us-east-1-652e0407)
+homeforpup-api-development: start: Publishing SendMessageFunction/Function/Code (249730500554-us-east-1-4c8f0131)
+homeforpup-api-development: success: Published UpdateKennelFunction/Function/Code (249730500554-us-east-1-7a028737)
+homeforpup-api-development: start: Publishing ReplyMessageFunction/Function/Code (249730500554-us-east-1-264be1f9)
+homeforpup-api-development: success: Published GetLitterFunction/Function/Code (249730500554-us-east-1-d2e93769)
+homeforpup-api-development: start: Publishing ListThreadsFunction/Function/Code (249730500554-us-east-1-f83ba925)
+homeforpup-api-development: success: Published CreateLitterFunction/Function/Code (249730500554-us-east-1-1108fc1c)
+homeforpup-api-development: start: Publishing GetThreadMessagesFunction/Function/Code (249730500554-us-east-1-973d128e)
+homeforpup-api-development: success: Published ListLittersFunction/Function/Code (249730500554-us-east-1-11b24dc0)
+homeforpup-api-development: start: Publishing MarkThreadReadFunction/Function/Code (249730500554-us-east-1-a5b76d34)
+homeforpup-api-development: success: Published UpdateLitterFunction/Function/Code (249730500554-us-east-1-e42dfb2f)
+homeforpup-api-development: start: Publishing ListBreedsFunction/Function/Code (249730500554-us-east-1-f8fddb4d)
+homeforpup-api-development: success: Published DeleteKennelFunction/Function/Code (249730500554-us-east-1-96c0e7c7)
+homeforpup-api-development: start: Publishing homeforpup-api-development Template (249730500554-us-east-1-fa862ef3)
+homeforpup-api-development: success: Published DeleteLitterFunction/Function/Code (249730500554-us-east-1-b565c057)
+homeforpup-api-development: success: Published ReplyMessageFunction/Function/Code (249730500554-us-east-1-264be1f9)
+homeforpup-api-development: success: Published SendMessageFunction/Function/Code (249730500554-us-east-1-4c8f0131)
+homeforpup-api-development: success: Published GetThreadMessagesFunction/Function/Code (249730500554-us-east-1-973d128e)
+homeforpup-api-development: success: Published ListBreedsFunction/Function/Code (249730500554-us-east-1-f8fddb4d)
+homeforpup-api-development: success: Published ListThreadsFunction/Function/Code (249730500554-us-east-1-f83ba925)
+homeforpup-api-development: success: Published MarkThreadReadFunction/Function/Code (249730500554-us-east-1-a5b76d34)
+homeforpup-api-development: success: Published homeforpup-api-development Template (249730500554-us-east-1-fa862ef3)
+HomeForPupApiStack-development (homeforpup-api-development): deploying... [1/1]
+homeforpup-api-development: creating CloudFormation changeset...
+homeforpup-api-development |   0/131 | 6:17:02 PM | UPDATE_IN_PROGRESS   | AWS::CloudFormation::Stack  | homeforpup-api-development User Initiated
+homeforpup-api-development |   0/131 | 6:17:10 PM | CREATE_IN_PROGRESS   | AWS::IAM::Role              | HomeForPupApiStack-development/GetProfileFunction/Function/ServiceRole (GetProfileFunctionServiceRole9297705A) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | CREATE_IN_PROGRESS   | AWS::IAM::Role              | HomeForPupApiStack-development/UpdateProfileFunction/Function/ServiceRole (UpdateProfileFunctionServiceRole030E9AE8) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | UPDATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/CreateDogFunction/Function/ServiceRole/DefaultPolicy (CreateDogFunctionServiceRoleDefaultPolicy35D54173) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | UPDATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/GetDogFunction/Function/ServiceRole/DefaultPolicy (GetDogFunctionServiceRoleDefaultPolicyAAE21C7A) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | UPDATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/DeleteDogFunction/Function/ServiceRole/DefaultPolicy (DeleteDogFunctionServiceRoleDefaultPolicy643CF694) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | UPDATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/SendMessageFunction/Function/ServiceRole/DefaultPolicy (SendMessageFunctionServiceRoleDefaultPolicy3127936E) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Resource   | HomeForPupApiStack-development/Api/Default/profiles (ApiprofilesDDE26A8C) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | UPDATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/UpdateDogFunction/Function/ServiceRole/DefaultPolicy (UpdateDogFunctionServiceRoleDefaultPolicy77B539E1) 
+homeforpup-api-development |   0/131 | 6:17:10 PM | UPDATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/ListDogsFunction/Function/ServiceRole/DefaultPolicy (ListDogsFunctionServiceRoleDefaultPolicy90A257BD) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | CREATE_IN_PROGRESS   | AWS::IAM::Role              | HomeForPupApiStack-development/UpdateProfileFunction/Function/ServiceRole (UpdateProfileFunctionServiceRole030E9AE8) Resource creation Initiated
+homeforpup-api-development |   0/131 | 6:17:11 PM | CREATE_IN_PROGRESS   | AWS::IAM::Role              | HomeForPupApiStack-development/GetProfileFunction/Function/ServiceRole (GetProfileFunctionServiceRole9297705A) Resource creation Initiated
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/CreateLitterFunction/Function (CreateLitterFunctionCF0F7051) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/CreateKennelFunction/Function (CreateKennelFunction9B2DB678) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/ReplyMessageFunction/Function (ReplyMessageFunction56E813D1) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/ListThreadsFunction/Function (ListThreadsFunction13F6839E) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/MarkThreadReadFunction/Function (MarkThreadReadFunctionBFD3E680) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateLitterFunction/Function (UpdateLitterFunctionC27D0E0F) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/ListBreedsFunction/Function (ListBreedsFunctionF3A37945) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/ListLittersFunction/Function (ListLittersFunctionD9DFEE40) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/ListKennelsFunction/Function (ListKennelsFunction68C52FF3) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/GetKennelFunction/Function (GetKennelFunction012CE237) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/DeleteKennelFunction/Function (DeleteKennelFunctionE900CDBB) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateKennelFunction/Function (UpdateKennelFunction7E266F07) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/GetThreadMessagesFunction/Function (GetThreadMessagesFunctionDA5606CD) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/DeleteLitterFunction/Function (DeleteLitterFunction0CB992C4) 
+homeforpup-api-development |   0/131 | 6:17:11 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Resource   | HomeForPupApiStack-development/Api/Default/profiles (ApiprofilesDDE26A8C) Resource creation Initiated
+homeforpup-api-development |   0/131 | 6:17:11 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/GetLitterFunction/Function (GetLitterFunction2AA2ACA0) 
+homeforpup-api-development |   1/131 | 6:17:12 PM | CREATE_COMPLETE      | AWS::ApiGateway::Resource   | HomeForPupApiStack-development/Api/Default/profiles (ApiprofilesDDE26A8C) 
+homeforpup-api-development |   1/131 | 6:17:12 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/OPTIONS (ApiprofilesOPTIONSB832F411) 
+homeforpup-api-development |   1/131 | 6:17:12 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Resource   | HomeForPupApiStack-development/Api/Default/profiles/{id} (Apiprofilesid9A5820F5) 
+homeforpup-api-development |   1/131 | 6:17:13 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/OPTIONS (ApiprofilesOPTIONSB832F411) Resource creation Initiated
+homeforpup-api-development |   1/131 | 6:17:13 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Resource   | HomeForPupApiStack-development/Api/Default/profiles/{id} (Apiprofilesid9A5820F5) Resource creation Initiated
+homeforpup-api-development |   2/131 | 6:17:14 PM | CREATE_COMPLETE      | AWS::ApiGateway::Resource   | HomeForPupApiStack-development/Api/Default/profiles/{id} (Apiprofilesid9A5820F5) 
+homeforpup-api-development |   2/131 | 6:17:15 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/OPTIONS (ApiprofilesidOPTIONSE227FAC6) 
+homeforpup-api-development |   3/131 | 6:17:15 PM | CREATE_COMPLETE      | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/OPTIONS (ApiprofilesOPTIONSB832F411) 
+homeforpup-api-development |   3/131 | 6:17:15 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/OPTIONS (ApiprofilesidOPTIONSE227FAC6) Resource creation Initiated
+homeforpup-api-development |   4/131 | 6:17:17 PM | CREATE_COMPLETE      | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/OPTIONS (ApiprofilesidOPTIONSE227FAC6) 
+homeforpup-api-development |   5/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/CreateLitterFunction/Function (CreateLitterFunctionCF0F7051) 
+homeforpup-api-development |   6/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/GetKennelFunction/Function (GetKennelFunction012CE237) 
+homeforpup-api-development |   7/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/ReplyMessageFunction/Function (ReplyMessageFunction56E813D1) 
+homeforpup-api-development |   8/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/ListBreedsFunction/Function (ListBreedsFunctionF3A37945) 
+homeforpup-api-development |   9/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/MarkThreadReadFunction/Function (MarkThreadReadFunctionBFD3E680) 
+homeforpup-api-development |  10/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/GetLitterFunction/Function (GetLitterFunction2AA2ACA0) 
+homeforpup-api-development |  11/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateLitterFunction/Function (UpdateLitterFunctionC27D0E0F) 
+homeforpup-api-development |  12/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/DeleteKennelFunction/Function (DeleteKennelFunctionE900CDBB) 
+homeforpup-api-development |  13/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/DeleteLitterFunction/Function (DeleteLitterFunction0CB992C4) 
+homeforpup-api-development |  14/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/CreateKennelFunction/Function (CreateKennelFunction9B2DB678) 
+homeforpup-api-development |  15/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/ListLittersFunction/Function (ListLittersFunctionD9DFEE40) 
+homeforpup-api-development |  16/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/GetThreadMessagesFunction/Function (GetThreadMessagesFunctionDA5606CD) 
+homeforpup-api-development |  17/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/ListThreadsFunction/Function (ListThreadsFunction13F6839E) 
+homeforpup-api-development |  18/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/ListKennelsFunction/Function (ListKennelsFunction68C52FF3) 
+homeforpup-api-development |  19/131 | 6:17:19 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateKennelFunction/Function (UpdateKennelFunction7E266F07) 
+homeforpup-api-development |  20/131 | 6:17:26 PM | UPDATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/DeleteDogFunction/Function/ServiceRole/DefaultPolicy (DeleteDogFunctionServiceRoleDefaultPolicy643CF694) 
+homeforpup-api-development |  21/131 | 6:17:26 PM | UPDATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/GetDogFunction/Function/ServiceRole/DefaultPolicy (GetDogFunctionServiceRoleDefaultPolicyAAE21C7A) 
+homeforpup-api-development |  22/131 | 6:17:26 PM | UPDATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/UpdateDogFunction/Function/ServiceRole/DefaultPolicy (UpdateDogFunctionServiceRoleDefaultPolicy77B539E1) 
+homeforpup-api-development |  23/131 | 6:17:26 PM | UPDATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/SendMessageFunction/Function/ServiceRole/DefaultPolicy (SendMessageFunctionServiceRoleDefaultPolicy3127936E) 
+homeforpup-api-development |  24/131 | 6:17:26 PM | UPDATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/CreateDogFunction/Function/ServiceRole/DefaultPolicy (CreateDogFunctionServiceRoleDefaultPolicy35D54173) 
+homeforpup-api-development |  25/131 | 6:17:26 PM | UPDATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/ListDogsFunction/Function/ServiceRole/DefaultPolicy (ListDogsFunctionServiceRoleDefaultPolicy90A257BD) 
+homeforpup-api-development |  26/131 | 6:17:28 PM | CREATE_COMPLETE      | AWS::IAM::Role              | HomeForPupApiStack-development/UpdateProfileFunction/Function/ServiceRole (UpdateProfileFunctionServiceRole030E9AE8) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | CREATE_COMPLETE      | AWS::IAM::Role              | HomeForPupApiStack-development/GetProfileFunction/Function/ServiceRole (GetProfileFunctionServiceRole9297705A) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/GetDogFunction/Function (GetDogFunctionBB8119CD) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/SendMessageFunction/Function (SendMessageFunctionB9600E39) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | CREATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/UpdateProfileFunction/Function/ServiceRole/DefaultPolicy (UpdateProfileFunctionServiceRoleDefaultPolicy5DEDEF00) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/DeleteDogFunction/Function (DeleteDogFunctionD2FB86B6) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | CREATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/GetProfileFunction/Function/ServiceRole/DefaultPolicy (GetProfileFunctionServiceRoleDefaultPolicy8B8A72C8) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/ListDogsFunction/Function (ListDogsFunction933F321C) 
+homeforpup-api-development |  27/131 | 6:17:28 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/CreateDogFunction/Function (CreateDogFunction48BD367E) 
+homeforpup-api-development |  27/131 | 6:17:29 PM | UPDATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateDogFunction/Function (UpdateDogFunctionC1014F89) 
+homeforpup-api-development |  27/131 | 6:17:29 PM | CREATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/UpdateProfileFunction/Function/ServiceRole/DefaultPolicy (UpdateProfileFunctionServiceRoleDefaultPolicy5DEDEF00) Resource creation Initiated
+homeforpup-api-development |  27/131 | 6:17:29 PM | CREATE_IN_PROGRESS   | AWS::IAM::Policy            | HomeForPupApiStack-development/GetProfileFunction/Function/ServiceRole/DefaultPolicy (GetProfileFunctionServiceRoleDefaultPolicy8B8A72C8) Resource creation Initiated
+homeforpup-api-development |  28/131 | 6:17:42 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/GetDogFunction/Function (GetDogFunctionBB8119CD) 
+homeforpup-api-development |  29/131 | 6:17:42 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/SendMessageFunction/Function (SendMessageFunctionB9600E39) 
+homeforpup-api-development |  30/131 | 6:17:42 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/DeleteDogFunction/Function (DeleteDogFunctionD2FB86B6) 
+homeforpup-api-development |  31/131 | 6:17:42 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/ListDogsFunction/Function (ListDogsFunction933F321C) 
+homeforpup-api-development |  32/131 | 6:17:42 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/CreateDogFunction/Function (CreateDogFunction48BD367E) 
+homeforpup-api-development |  33/131 | 6:17:43 PM | UPDATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateDogFunction/Function (UpdateDogFunctionC1014F89) 
+homeforpup-api-development |  34/131 | 6:17:45 PM | CREATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/UpdateProfileFunction/Function/ServiceRole/DefaultPolicy (UpdateProfileFunctionServiceRoleDefaultPolicy5DEDEF00) 
+homeforpup-api-development |  35/131 | 6:17:45 PM | CREATE_COMPLETE      | AWS::IAM::Policy            | HomeForPupApiStack-development/GetProfileFunction/Function/ServiceRole/DefaultPolicy (GetProfileFunctionServiceRoleDefaultPolicy8B8A72C8) 
+homeforpup-api-development |  35/131 | 6:17:46 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateProfileFunction/Function (UpdateProfileFunction8C638651) 
+homeforpup-api-development |  35/131 | 6:17:46 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/GetProfileFunction/Function (GetProfileFunction5EACEAB7) 
+homeforpup-api-development |  35/131 | 6:17:47 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateProfileFunction/Function (UpdateProfileFunction8C638651) Resource creation Initiated
+homeforpup-api-development |  35/131 | 6:17:48 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Function       | HomeForPupApiStack-development/GetProfileFunction/Function (GetProfileFunction5EACEAB7) Resource creation Initiated
+homeforpup-api-development |  36/131 | 6:17:55 PM | CREATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/UpdateProfileFunction/Function (UpdateProfileFunction8C638651) 
+homeforpup-api-development |  36/131 | 6:17:55 PM | CREATE_IN_PROGRESS   | Custom::LogRetention        | HomeForPupApiStack-development/UpdateProfileFunction/Function/LogRetention (UpdateProfileFunctionLogRetention244A0C20) 
+homeforpup-api-development |  36/131 | 6:17:55 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT (ApiprofilesidPUT6C6A55B8) 
+homeforpup-api-development |  36/131 | 6:17:55 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT/ApiPermission.Test.HomeForPupApiStackdevelopmentApi87359FA9.PUT..profiles.{id} (ApiprofilesidPUTApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9PUTprofilesidC7542ABB) 
+homeforpup-api-development |  37/131 | 6:17:56 PM | CREATE_COMPLETE      | AWS::Lambda::Function       | HomeForPupApiStack-development/GetProfileFunction/Function (GetProfileFunction5EACEAB7) 
+homeforpup-api-development |  37/131 | 6:17:56 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT (ApiprofilesidPUT6C6A55B8) Resource creation Initiated
+homeforpup-api-development |  37/131 | 6:17:56 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT/ApiPermission.Test.HomeForPupApiStackdevelopmentApi87359FA9.PUT..profiles.{id} (ApiprofilesidPUTApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9PUTprofilesidC7542ABB) Resource creation Initiated
+homeforpup-api-development |  37/131 | 6:17:57 PM | CREATE_IN_PROGRESS   | Custom::LogRetention        | HomeForPupApiStack-development/GetProfileFunction/Function/LogRetention (GetProfileFunctionLogRetention8216B81E) 
+homeforpup-api-development |  37/131 | 6:17:57 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET (ApiprofilesidGET9A94E9ED) 
+homeforpup-api-development |  37/131 | 6:17:57 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET/ApiPermission.Test.HomeForPupApiStackdevelopmentApi87359FA9.GET..profiles.{id} (ApiprofilesidGETApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9GETprofilesid1B175366) 
+homeforpup-api-development |  38/131 | 6:17:57 PM | CREATE_COMPLETE      | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT/ApiPermission.Test.HomeForPupApiStackdevelopmentApi87359FA9.PUT..profiles.{id} (ApiprofilesidPUTApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9PUTprofilesidC7542ABB) 
+homeforpup-api-development |  38/131 | 6:17:58 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET (ApiprofilesidGET9A94E9ED) Resource creation Initiated
+homeforpup-api-development |  38/131 | 6:17:58 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET/ApiPermission.Test.HomeForPupApiStackdevelopmentApi87359FA9.GET..profiles.{id} (ApiprofilesidGETApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9GETprofilesid1B175366) Resource creation Initiated
+homeforpup-api-development |  39/131 | 6:17:58 PM | CREATE_COMPLETE      | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET/ApiPermission.Test.HomeForPupApiStackdevelopmentApi87359FA9.GET..profiles.{id} (ApiprofilesidGETApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9GETprofilesid1B175366) 
+homeforpup-api-development |  40/131 | 6:17:58 PM | CREATE_COMPLETE      | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT (ApiprofilesidPUT6C6A55B8) 
+homeforpup-api-development |  40/131 | 6:17:59 PM | CREATE_IN_PROGRESS   | Custom::LogRetention        | HomeForPupApiStack-development/UpdateProfileFunction/Function/LogRetention (UpdateProfileFunctionLogRetention244A0C20) Resource creation Initiated
+homeforpup-api-development |  41/131 | 6:17:59 PM | CREATE_COMPLETE      | Custom::LogRetention        | HomeForPupApiStack-development/UpdateProfileFunction/Function/LogRetention (UpdateProfileFunctionLogRetention244A0C20) 
+homeforpup-api-development |  41/131 | 6:18:00 PM | CREATE_IN_PROGRESS   | Custom::LogRetention        | HomeForPupApiStack-development/GetProfileFunction/Function/LogRetention (GetProfileFunctionLogRetention8216B81E) Resource creation Initiated
+homeforpup-api-development |  42/131 | 6:18:00 PM | CREATE_COMPLETE      | AWS::ApiGateway::Method     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET (ApiprofilesidGET9A94E9ED) 
+homeforpup-api-development |  43/131 | 6:18:00 PM | CREATE_COMPLETE      | Custom::LogRetention        | HomeForPupApiStack-development/GetProfileFunction/Function/LogRetention (GetProfileFunctionLogRetention8216B81E) 
+homeforpup-api-development |  43/131 | 6:18:01 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Deployment | HomeForPupApiStack-development/Api/Deployment (ApiDeploymentB17BE62Dbda42287ee0ec4882ac374aefb3339c4) 
+homeforpup-api-development |  43/131 | 6:18:02 PM | CREATE_IN_PROGRESS   | AWS::ApiGateway::Deployment | HomeForPupApiStack-development/Api/Deployment (ApiDeploymentB17BE62Dbda42287ee0ec4882ac374aefb3339c4) Resource creation Initiated
+homeforpup-api-development |  44/131 | 6:18:03 PM | CREATE_COMPLETE      | AWS::ApiGateway::Deployment | HomeForPupApiStack-development/Api/Deployment (ApiDeploymentB17BE62Dbda42287ee0ec4882ac374aefb3339c4) 
+homeforpup-api-development |  44/131 | 6:18:04 PM | UPDATE_IN_PROGRESS   | AWS::ApiGateway::Stage      | HomeForPupApiStack-development/Api/DeploymentStage.development (ApiDeploymentStagedevelopmentD5CDD376) 
+homeforpup-api-development |  45/131 | 6:18:06 PM | UPDATE_COMPLETE      | AWS::ApiGateway::Stage      | HomeForPupApiStack-development/Api/DeploymentStage.development (ApiDeploymentStagedevelopmentD5CDD376) 
+homeforpup-api-development |  45/131 | 6:18:07 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT/ApiPermission.HomeForPupApiStackdevelopmentApi87359FA9.PUT..profiles.{id} (ApiprofilesidPUTApiPermissionHomeForPupApiStackdevelopmentApi87359FA9PUTprofilesid80C252AE) 
+homeforpup-api-development |  45/131 | 6:18:07 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET/ApiPermission.HomeForPupApiStackdevelopmentApi87359FA9.GET..profiles.{id} (ApiprofilesidGETApiPermissionHomeForPupApiStackdevelopmentApi87359FA9GETprofilesid372CB5A2) 
+homeforpup-api-development |  45/131 | 6:18:07 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT/ApiPermission.HomeForPupApiStackdevelopmentApi87359FA9.PUT..profiles.{id} (ApiprofilesidPUTApiPermissionHomeForPupApiStackdevelopmentApi87359FA9PUTprofilesid80C252AE) Resource creation Initiated
+homeforpup-api-development |  45/131 | 6:18:07 PM | CREATE_IN_PROGRESS   | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET/ApiPermission.HomeForPupApiStackdevelopmentApi87359FA9.GET..profiles.{id} (ApiprofilesidGETApiPermissionHomeForPupApiStackdevelopmentApi87359FA9GETprofilesid372CB5A2) Resource creation Initiated
+homeforpup-api-development |  46/131 | 6:18:08 PM | CREATE_COMPLETE      | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/PUT/ApiPermission.HomeForPupApiStackdevelopmentApi87359FA9.PUT..profiles.{id} (ApiprofilesidPUTApiPermissionHomeForPupApiStackdevelopmentApi87359FA9PUTprofilesid80C252AE) 
+homeforpup-api-development |  47/131 | 6:18:08 PM | CREATE_COMPLETE      | AWS::Lambda::Permission     | HomeForPupApiStack-development/Api/Default/profiles/{id}/GET/ApiPermission.HomeForPupApiStackdevelopmentApi87359FA9.GET..profiles.{id} (ApiprofilesidGETApiPermissionHomeForPupApiStackdevelopmentApi87359FA9GETprofilesid372CB5A2) 
+homeforpup-api-development |  48/131 | 6:18:10 PM | UPDATE_COMPLETE_CLEA | AWS::CloudFormation::Stack  | homeforpup-api-development 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::CloudFormation::CustomResource | GetUserFunctionLogRetention8A494400 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::CloudFormation::CustomResource | UpdateUserFunctionLogRetentionCF3C0B34 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::Lambda::Permission     | ApiusersidPUTApiPermissionHomeForPupApiStackdevelopmentApi87359FA9PUTusersid68469BAF 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::Lambda::Permission     | ApiusersidPUTApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9PUTusersidC7736AAA 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::Lambda::Permission     | ApiusersidGETApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9GETusersid0FD429E0 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::Lambda::Permission     | ApiusersidGETApiPermissionHomeForPupApiStackdevelopmentApi87359FA9GETusersid9CFF6897 
+homeforpup-api-development |  48/131 | 6:18:12 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Deployment | ApiDeploymentB17BE62Dfe75d8ea797c4a394bdfb484a1050e45 
+homeforpup-api-development |  49/131 | 6:18:13 PM | DELETE_COMPLETE      | AWS::Lambda::Permission     | ApiusersidPUTApiPermissionHomeForPupApiStackdevelopmentApi87359FA9PUTusersid68469BAF 
+homeforpup-api-development |  50/131 | 6:18:13 PM | DELETE_COMPLETE      | AWS::Lambda::Permission     | ApiusersidGETApiPermissionHomeForPupApiStackdevelopmentApi87359FA9GETusersid9CFF6897 
+homeforpup-api-development |  51/131 | 6:18:13 PM | DELETE_COMPLETE      | AWS::Lambda::Permission     | ApiusersidGETApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9GETusersid0FD429E0 
+homeforpup-api-development |  52/131 | 6:18:13 PM | DELETE_COMPLETE      | AWS::ApiGateway::Deployment | ApiDeploymentB17BE62Dfe75d8ea797c4a394bdfb484a1050e45 
+homeforpup-api-development |  53/131 | 6:18:13 PM | DELETE_COMPLETE      | AWS::Lambda::Permission     | ApiusersidPUTApiPermissionTestHomeForPupApiStackdevelopmentApi87359FA9PUTusersidC7736AAA 
+homeforpup-api-development |  53/131 | 6:18:13 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Method     | ApiusersidPUT5EAE40E9 
+homeforpup-api-development |  53/131 | 6:18:13 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Method     | ApiusersOPTIONS3D818C2B 
+homeforpup-api-development |  53/131 | 6:18:13 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Method     | ApiusersidOPTIONS2BEB6077 
+homeforpup-api-development |  53/131 | 6:18:13 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Method     | ApiusersidGETB1D117E7 
+homeforpup-api-development |  54/131 | 6:18:14 PM | DELETE_COMPLETE      | AWS::CloudFormation::CustomResource | GetUserFunctionLogRetention8A494400 
+homeforpup-api-development |  55/131 | 6:18:14 PM | DELETE_COMPLETE      | AWS::CloudFormation::CustomResource | UpdateUserFunctionLogRetentionCF3C0B34 
+homeforpup-api-development |  56/131 | 6:18:14 PM | DELETE_COMPLETE      | AWS::ApiGateway::Method     | ApiusersidPUT5EAE40E9 
+homeforpup-api-development |  57/131 | 6:18:14 PM | DELETE_COMPLETE      | AWS::ApiGateway::Method     | ApiusersOPTIONS3D818C2B 
+homeforpup-api-development |  58/131 | 6:18:14 PM | DELETE_COMPLETE      | AWS::ApiGateway::Method     | ApiusersidOPTIONS2BEB6077 
+homeforpup-api-development |  59/131 | 6:18:14 PM | DELETE_COMPLETE      | AWS::ApiGateway::Method     | ApiusersidGETB1D117E7 
+homeforpup-api-development |  59/131 | 6:18:15 PM | DELETE_IN_PROGRESS   | AWS::Lambda::Function       | UpdateUserFunctionC216A8E8 
+homeforpup-api-development |  59/131 | 6:18:15 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Resource   | Apiusersid5081FFC1 
+homeforpup-api-development |  59/131 | 6:18:15 PM | DELETE_IN_PROGRESS   | AWS::Lambda::Function       | GetUserFunctionFDDA6472 
+homeforpup-api-development |  60/131 | 6:18:16 PM | DELETE_COMPLETE      | AWS::ApiGateway::Resource   | Apiusersid5081FFC1 
+homeforpup-api-development |  60/131 | 6:18:16 PM | DELETE_IN_PROGRESS   | AWS::ApiGateway::Resource   | Apiusers7F86375B 
+homeforpup-api-development |  61/131 | 6:18:17 PM | DELETE_COMPLETE      | AWS::ApiGateway::Resource   | Apiusers7F86375B 
+homeforpup-api-development |  62/131 | 6:18:18 PM | DELETE_COMPLETE      | AWS::Lambda::Function       | UpdateUserFunctionC216A8E8 
+homeforpup-api-development |  62/131 | 6:18:19 PM | DELETE_IN_PROGRESS   | AWS::IAM::Policy            | UpdateUserFunctionServiceRoleDefaultPolicy86702FAA 
+homeforpup-api-development |  63/131 | 6:18:19 PM | DELETE_COMPLETE      | AWS::Lambda::Function       | GetUserFunctionFDDA6472 
+homeforpup-api-development |  63/131 | 6:18:19 PM | DELETE_IN_PROGRESS   | AWS::IAM::Policy            | GetUserFunctionServiceRoleDefaultPolicy33B2BC57 
+homeforpup-api-development |  64/131 | 6:18:20 PM | DELETE_COMPLETE      | AWS::IAM::Policy            | UpdateUserFunctionServiceRoleDefaultPolicy86702FAA 
+homeforpup-api-development |  64/131 | 6:18:20 PM | DELETE_IN_PROGRESS   | AWS::IAM::Role              | UpdateUserFunctionServiceRole2015C6AE 
+homeforpup-api-development |  65/131 | 6:18:20 PM | DELETE_COMPLETE      | AWS::IAM::Policy            | GetUserFunctionServiceRoleDefaultPolicy33B2BC57 
+homeforpup-api-development |  65/131 | 6:18:21 PM | DELETE_IN_PROGRESS   | AWS::IAM::Role              | GetUserFunctionServiceRole48811DE4 
+homeforpup-api-development |  66/131 | 6:18:32 PM | DELETE_COMPLETE      | AWS::IAM::Role              | UpdateUserFunctionServiceRole2015C6AE 
+homeforpup-api-development |  67/131 | 6:18:33 PM | DELETE_COMPLETE      | AWS::IAM::Role              | GetUserFunctionServiceRole48811DE4 
+homeforpup-api-development |  68/131 | 6:18:33 PM | UPDATE_COMPLETE      | AWS::CloudFormation::Stack  | homeforpup-api-development 
+
+ ✅  HomeForPupApiStack-development (homeforpup-api-development)
+
+✨  Deployment time: 131.9s
+
+Outputs:
+HomeForPupApiStack-development.ApiEndpoint4F160690 = https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development/
+HomeForPupApiStack-development.ApiId = 822fu3f7bk
+HomeForPupApiStack-development.ApiUrl = https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development/
+Stack ARN:
+arn:aws:cloudformation:us-east-1:249730500554:stack/homeforpup-api-development/164712f0-a3ff-11f0-8746-0e2ff02919a1
+
+✨  Total time: 155.33s
+

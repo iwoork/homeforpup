@@ -13,7 +13,7 @@ export interface EnvironmentConfig {
   
   // DynamoDB Tables
   tables: {
-    users: string;
+    profiles: string; // Renamed from users - contains application profile data only
     dogs: string;
     kennels: string;
     litters: string;
@@ -87,7 +87,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
         apiDomainName: 'api.homeforpup.com',
         certificateArn: process.env.ACM_CERTIFICATE_ARN,
         tables: {
-          users: 'homeforpup-users-prod',
+          profiles: 'homeforpup-profiles-prod',
           dogs: 'homeforpup-dogs-prod',
           kennels: 'homeforpup-kennels-prod',
           litters: 'homeforpup-litters-prod',
@@ -120,7 +120,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
         apiDomainName: 'api-staging.homeforpup.com',
         certificateArn: process.env.ACM_CERTIFICATE_ARN,
         tables: {
-          users: 'homeforpup-users-staging',
+          profiles: 'homeforpup-profiles-staging',
           dogs: 'homeforpup-dogs-staging',
           kennels: 'homeforpup-kennels-staging',
           litters: 'homeforpup-litters-staging',
@@ -151,7 +151,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
         ...baseConfig,
         environment: 'development',
         tables: {
-          users: 'homeforpup-users',
+          profiles: 'homeforpup-profiles',
           dogs: 'homeforpup-dogs',
           kennels: 'homeforpup-kennels',
           litters: 'homeforpup-litters',
