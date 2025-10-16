@@ -20,6 +20,12 @@ export const authOptions: NextAuthOptions = {
           image: profile.picture,
           userType: profile['custom:userType'] || 'breeder',
           isVerified: profile.email_verified || false,
+          // Additional Cognito attributes
+          phone: profile.phone_number,
+          location: profile.address,
+          bio: profile.profile,
+          firstName: profile.given_name,
+          lastName: profile.family_name,
         };
       },
     }),
@@ -33,6 +39,12 @@ export const authOptions: NextAuthOptions = {
         token.refreshToken = account.refresh_token;
         token.userType = profile?.userType || 'breeder';
         token.isVerified = profile?.isVerified || false;
+        // Pass through additional Cognito attributes
+        token.phone = profile?.phone;
+        token.location = profile?.location;
+        token.bio = profile?.bio;
+        token.firstName = profile?.firstName;
+        token.lastName = profile?.lastName;
       }
       return token;
     },
@@ -43,6 +55,12 @@ export const authOptions: NextAuthOptions = {
         session.user.userType = token.userType as string;
         session.user.isVerified = token.isVerified as boolean;
         session.accessToken = token.accessToken as string;
+        // Pass through additional Cognito attributes
+        session.user.phone = token.phone as string;
+        session.user.location = token.location as string;
+        session.user.bio = token.bio as string;
+        session.user.firstName = token.firstName as string;
+        session.user.lastName = token.lastName as string;
       }
       return session;
     },

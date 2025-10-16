@@ -34,6 +34,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // Periodically check token validity and refresh if needed
+  useEffect(() => {
+    if (!user) return;
+
+    // Check token validity every 5 minutes
+    const intervalId = setInterval(async () => {
+      console.log('🔄 Periodic token check...');
+      try {
+        const isValid = await authService.refreshSession();
+        if (!isValid) {
+          console.log('⚠️ Token refresh failed during periodic check - logging out');
+          await logout();
+        } else {
+          // Update API service with fresh token
+          const freshToken = await authService.getAuthToken();
+          if (freshToken) {
+            apiService.setAuthToken(freshToken);
+            console.log('✅ Token refreshed successfully during periodic check');
+          }
+        }
+      } catch (error) {
+        console.error('Error during periodic token check:', error);
+        // Don't logout on error - might be network issue
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(intervalId);
+  }, [user]);
+
   const initializeAuth = async () => {
     try {
       console.log('AuthContext: Initializing auth...');

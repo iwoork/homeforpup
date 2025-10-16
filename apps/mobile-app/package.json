@@ -1,6 +1,6 @@
 {
   "name": "mobile-app",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -9,6 +9,8 @@
     "start": "react-native start",
     "test": "jest",
     "build:ios": "react-native run-ios --configuration Release",
+    "build:ios-release": "cd ios && xcodebuild -workspace BreederIosApp.xcworkspace -scheme BreederIosApp -configuration Release -destination generic/platform=iOS -archivePath BreederIosApp.xcarchive archive",
+    "pod:install": "cd ios && pod install",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

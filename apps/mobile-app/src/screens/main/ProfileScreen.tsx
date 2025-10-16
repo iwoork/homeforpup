@@ -632,37 +632,6 @@ const ProfileScreen: React.FC = () => {
       </View>
       )}
 
-      {/* Dog Parent Preferences Section - Dog Parent Only */}
-      {user?.userType === 'dog-parent' && (
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Adoption Preferences</Text>
-          <TouchableOpacity
-            style={styles.menuItem}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('DogParentPreferences' as never)}
-          >
-            <View
-              style={[
-                styles.menuIconContainer,
-                { backgroundColor: `${theme.colors.primary}15` },
-              ]}
-            >
-              <Icon name="options" size={22} color={theme.colors.primary} />
-            </View>
-            <View style={styles.menuContent}>
-              <Text style={styles.menuTitle}>My Preferences</Text>
-              <Text style={styles.menuSubtitle}>
-                Update your search criteria and preferences
-              </Text>
-            </View>
-            <Icon
-              name="chevron-forward"
-              size={24}
-              color={theme.colors.textTertiary}
-            />
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* Account Management Section */}
       <View style={styles.menuSection}>

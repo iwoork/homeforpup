@@ -81,11 +81,17 @@ export class AuthService {
         const currentUser = await getCurrentUser();
         const session = await fetchAuthSession();
         
-        // Get user attributes to extract the actual name
+        // Get user attributes to extract the actual name and profile data
         const userAttributes = session.tokens?.idToken?.payload;
         const userName = userAttributes?.name as string || userAttributes?.email as string || currentUser.username;
         const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
         const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
+        
+        // Extract additional profile fields from Cognito
+        const location = userAttributes?.address as string || undefined;
+        const bio = userAttributes?.profile as string || undefined;
+        const phone = userAttributes?.phone_number as string || undefined;
+        const profileImage = userAttributes?.picture as string || undefined;
         
         // Try to get userType from multiple sources:
         // 1. From Cognito custom attribute (if configured)
@@ -102,13 +108,17 @@ export class AuthService {
           console.log('✅ userType from Cognito:', userType);
         }
         
-        // Create user object with proper name from attributes
+        // Create user object with proper name and profile data from Cognito attributes
         const userData: User = {
           userId: currentUser.username,
           email: userAttributes?.email as string || currentUser.signInDetails?.loginId || email,
           name: userName,
           firstName: firstName,
           lastName: lastName,
+          location: location,
+          bio: bio,
+          phone: phone,
+          profileImage: profileImage,
           userType: userType,
           verified: true,
           accountStatus: 'active',
@@ -289,12 +299,18 @@ export class AuthService {
 
       const user = await getCurrentUser();
       if (user) {
-        // Get user attributes from session to extract the actual name
+        // Get user attributes from session to extract the actual name and profile data
         const session = await fetchAuthSession();
         const userAttributes = session.tokens?.idToken?.payload;
         const userName = userAttributes?.name as string || userAttributes?.email as string || user.username;
         const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
         const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
+        
+        // Extract additional profile fields from Cognito
+        const location = userAttributes?.address as string || undefined;
+        const bio = userAttributes?.profile as string || undefined;
+        const phone = userAttributes?.phone_number as string || undefined;
+        const profileImage = userAttributes?.picture as string || undefined;
         
         // Try to get userType from multiple sources (same as login)
         let userType = userAttributes?.['custom:userType'] as 'breeder' | 'dog-parent' | undefined;
@@ -309,6 +325,10 @@ export class AuthService {
           name: userName,
           firstName: firstName,
           lastName: lastName,
+          location: location,
+          bio: bio,
+          phone: phone,
+          profileImage: profileImage,
           userType: userType,
           verified: true,
           accountStatus: 'active',
@@ -378,6 +398,41 @@ export class AuthService {
     }
   }
 
+  async getAccessToken(): Promise<string | null> {
+    try {
+      const session = await fetchAuthSession();
+      if (session && session.tokens?.accessToken) {
+        const accessToken = session.tokens.accessToken;
+        
+        // Try to get the JWT string - Amplify v6 returns a JWT object
+        let token: string;
+        if (typeof accessToken === 'string') {
+          token = accessToken;
+        } else if (typeof accessToken.toString === 'function') {
+          token = accessToken.toString();
+        } else {
+          // Fallback: convert to string
+          token = String(accessToken);
+        }
+        
+        console.log('getAccessToken: Token extracted:', { 
+          hasToken: !!token, 
+          tokenLength: token.length,
+          tokenType: 'accessToken',
+          isJWT: token.split('.').length === 3,
+          startsWithEyJ: token.startsWith('eyJ'),
+          tokenPreview: token.substring(0, 50) + '...'
+        });
+        
+        return token;
+      }
+      return null;
+    } catch (error) {
+      console.error('Get access token error:', error);
+      return null;
+    }
+  }
+
   async isAuthenticated(): Promise<boolean> {
     try {
       await getCurrentUser();
@@ -389,7 +444,15 @@ export class AuthService {
 
   async refreshSession(): Promise<boolean> {
     try {
+      console.log('🔄 Attempting to refresh session...');
+      
       const session = await fetchAuthSession({ forceRefresh: true });
+      
+      console.log('🔍 Session tokens available:', {
+        hasIdToken: !!session.tokens?.idToken,
+        hasAccessToken: !!session.tokens?.accessToken,
+        hasRefreshToken: !!session.tokens?.refreshToken,
+      });
       
       // Update stored token if refresh succeeded
       if (session && session.tokens?.idToken) {
@@ -400,12 +463,51 @@ export class AuthService {
         // Update stored token
         await AsyncStorage.setItem('auth_token', token);
         
-        console.log('Session refreshed successfully, new token length:', token.length);
+        console.log('✅ Session refreshed successfully, new token length:', token.length);
+        console.log('🔍 Token details:', {
+          tokenType: 'idToken',
+          tokenLength: token.length,
+          tokenPreview: token.substring(0, 50),
+          isJWT: token.split('.').length === 3,
+        });
+        
+        // Also log access token for comparison
+        if (session.tokens?.accessToken) {
+          const accessToken = session.tokens.accessToken.toString();
+          console.log('🔍 Access token available:', {
+            tokenType: 'accessToken',
+            tokenLength: accessToken.length,
+            tokenPreview: accessToken.substring(0, 50),
+            isJWT: accessToken.split('.').length === 3,
+          });
+        }
+        
+        return true;
       }
       
-      return true;
-    } catch (error) {
-      console.error('Refresh session error:', error);
+      console.warn('⚠️ Session refresh returned no token');
+      return false;
+    } catch (error: any) {
+      console.error('❌ Refresh session error:', {
+        message: error?.message,
+        name: error?.name,
+        code: error?.code,
+      });
+      
+      // If refresh token expired or invalid, clear auth data
+      // User will need to log in again
+      if (
+        error?.message?.includes('expired') ||
+        error?.message?.includes('invalid') ||
+        error?.name === 'NotAuthorizedException' ||
+        error?.code === 'NotAuthorizedException'
+      ) {
+        console.log('🔓 Refresh token expired, clearing auth data - user needs to login again');
+        await this.clearAuthData();
+        this.currentUser = null;
+        this.authToken = null;
+      }
+      
       return false;
     }
   }
@@ -569,6 +671,64 @@ export class AuthService {
       return false;
     } catch (error) {
       console.error('Error updating userType:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Updates Cognito user attributes (profile fields)
+   * This should be called whenever profile data is updated to keep Cognito in sync
+   */
+  async updateUserAttributes(attributes: {
+    name?: string;
+    given_name?: string;
+    family_name?: string;
+    address?: string;  // location
+    profile?: string;  // bio
+    phone_number?: string;
+    picture?: string;  // profileImage
+  }): Promise<boolean> {
+    try {
+      console.log('📝 Updating Cognito user attributes:', Object.keys(attributes));
+      
+      const { updateUserAttributes } = await import('aws-amplify/auth');
+      
+      // Filter out undefined values
+      const filteredAttributes: any = {};
+      Object.entries(attributes).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          filteredAttributes[key] = value;
+        }
+      });
+      
+      if (Object.keys(filteredAttributes).length === 0) {
+        console.log('⚠️ No attributes to update');
+        return true;
+      }
+      
+      await updateUserAttributes({
+        userAttributes: filteredAttributes,
+      });
+      
+      console.log('✅ Cognito user attributes updated successfully');
+      
+      // Update local user object with the new attributes
+      if (this.currentUser) {
+        if (attributes.name) this.currentUser.name = attributes.name;
+        if (attributes.given_name) this.currentUser.firstName = attributes.given_name;
+        if (attributes.family_name) this.currentUser.lastName = attributes.family_name;
+        if (attributes.address) this.currentUser.location = attributes.address;
+        if (attributes.profile) this.currentUser.bio = attributes.profile;
+        if (attributes.phone_number) this.currentUser.phone = attributes.phone_number;
+        if (attributes.picture) this.currentUser.profileImage = attributes.picture;
+        
+        // Update stored user data
+        await AsyncStorage.setItem('user_data', JSON.stringify(this.currentUser));
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating Cognito user attributes:', error);
       return false;
     }
   }

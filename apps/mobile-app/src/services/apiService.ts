@@ -161,12 +161,18 @@ class ApiService {
             tokenPreview: tokenStr.substring(0, 50),
             isJWT: tokenStr.split('.').length === 3,
             startsWithEyJ: tokenStr.startsWith('eyJ'),
+            // Add more token debugging
+            tokenParts: tokenStr.split('.').length,
+            tokenEnd: tokenStr.substring(tokenStr.length - 20),
           });
         } else {
           console.warn('Invalid auth token detected:', {
             token: this.authToken,
+            tokenType: typeof this.authToken,
           });
         }
+      } else {
+        console.warn('No auth token available for request:', endpoint);
       }
 
       const response = await fetch(url, {
@@ -206,7 +212,7 @@ class ApiService {
 
         // Handle token expiration - refresh and retry once
         if (response.status === 401 && retryOnAuth) {
-          console.log('Token expired, attempting to refresh...');
+          console.log('⚠️ Token expired (401), attempting to refresh...');
           try {
             const authService = require('./authService').default;
             const isValid = await authService.refreshSession();
@@ -214,12 +220,35 @@ class ApiService {
               const newToken = await authService.getAuthToken();
               if (newToken) {
                 this.authToken = newToken;
-                console.log('Token refreshed, retrying request...');
-                return this.makeRequest<T>(endpoint, options, false);
+                console.log('✅ Token refreshed successfully, retrying request...');
+                console.log('🔄 Retry with new token:', {
+                  tokenLength: newToken.length,
+                  tokenPreview: newToken.substring(0, 50),
+                });
+                // Retry with fresh options (don't pass old headers)
+                return this.makeRequest<T>(endpoint, { ...options, headers: {} }, false);
               }
             }
+            
+            // If ID token refresh failed, try access token
+            console.log('🔄 ID token failed, trying access token...');
+            const accessToken = await authService.getAccessToken();
+            if (accessToken) {
+              this.authToken = accessToken;
+              console.log('✅ Using access token, retrying request...');
+              console.log('🔄 Retry with access token:', {
+                tokenLength: accessToken.length,
+                tokenPreview: accessToken.substring(0, 50),
+              });
+              return this.makeRequest<T>(endpoint, { ...options, headers: {} }, false);
+            }
+            
+            // Both tokens failed - clear token and let AuthContext handle logout
+            console.error('❌ Both ID and access token failed - user needs to login again');
+            this.authToken = null;
           } catch (refreshError) {
-            console.error('Token refresh failed:', refreshError);
+            console.error('❌ Token refresh exception:', refreshError);
+            this.authToken = null;
           }
         }
 

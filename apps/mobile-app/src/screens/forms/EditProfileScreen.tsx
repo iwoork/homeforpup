@@ -20,7 +20,8 @@ import { theme } from '../../utils/theme';
 import { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
-import { LocationAutocompleteModal } from '../../components';
+import authService from '../../services/authService';
+import { LocationAutocompleteModal, CountrySelector } from '../../components';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -31,6 +32,54 @@ const EditProfileScreen: React.FC = () => {
   const [fetchingProfile, setFetchingProfile] = useState(true);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
+  // Helper function to extract string value from location data
+  const extractLocationString = (locationData: any): string => {
+    if (!locationData) return '';
+    if (typeof locationData === 'string') return locationData;
+    if (typeof locationData === 'object' && locationData.formatted) {
+      return locationData.formatted;
+    }
+    if (typeof locationData === 'object' && locationData.description) {
+      return locationData.description;
+    }
+    return String(locationData);
+  };
+
+  // Helper function to format phone number for Cognito (E.164 format)
+  const formatPhoneForCognito = (phone: string, country?: {code: string, name: string, dialCode: string, flag: string} | null): string | null => {
+    if (!phone) return null;
+    
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+    
+    // If we have a selected country, use its dial code
+    if (country?.dialCode) {
+      return country.dialCode + digitsOnly;
+    }
+    
+    // Fallback logic for backward compatibility
+    // If it's already in E.164 format (starts with country code), return as is
+    if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
+      return '+' + digitsOnly;
+    }
+    
+    // If it's a US number without country code, add +1
+    if (digitsOnly.length === 10) {
+      return '+1' + digitsOnly;
+    }
+    
+    // If it's a US number with leading 1, add +
+    if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+      return '+' + digitsOnly;
+    }
+    
+    // If we can't format it properly, return null to skip Cognito update
+    console.warn('⚠️ Cannot format phone number for Cognito:', phone);
+    return null;
+  };
+
+  const [selectedCountry, setSelectedCountry] = useState<{code: string, name: string, dialCode: string, flag: string} | null>(null);
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     firstName: user?.firstName || '',
@@ -38,7 +87,7 @@ const EditProfileScreen: React.FC = () => {
     displayName: user?.displayName || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    location: user?.location || '',
+    location: extractLocationString(user?.location) || '',
     bio: user?.bio || '',
     // Social media only for non-breeders (breeders manage in kennels)
     facebook: user?.userType !== 'breeder' ? user?.socialLinks?.facebook || '' : '',
@@ -61,7 +110,7 @@ const EditProfileScreen: React.FC = () => {
         displayName: user.displayName || '',
         email: user.email || '',
         phone: user.phone || '',
-        location: user.location || '',
+        location: extractLocationString(user.location) || '',
         bio: user.bio || '',
         // Social media only for non-breeders (breeders manage in kennels)
         facebook: user.userType !== 'breeder' ? user.socialLinks?.facebook || '' : '',
@@ -114,28 +163,65 @@ const EditProfileScreen: React.FC = () => {
           // API returns { user: {...} }
           const userData = response.data.user;
           
-          // Update form data with fresh data from API
-          setFormData({
-            name: userData.name || '',
-            firstName: userData.firstName || '',
-            lastName: userData.lastName || '',
-            displayName: userData.displayName || '',
-            email: userData.email || '',
-            phone: userData.phone || '',
-            location: userData.location || '',
-            bio: userData.bio || '',
+          console.log('=== DATA MERGE DEBUG ===');
+          console.log('userData from API:', {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            location: userData.location,
+            bio: userData.bio,
+            phone: userData.phone,
+          });
+          console.log('user from Cognito context:', {
+            firstName: user?.firstName,
+            lastName: user?.lastName,
+            location: user?.location,
+            bio: user?.bio,
+            phone: user?.phone,
+          });
+          
+          // IMPORTANT: Merge API data with Cognito data from user context
+          // The API only has database fields, but user context has Cognito attributes
+          // Prefer API data if it exists, otherwise fall back to user context (Cognito)
+          const mergedFormData = {
+            name: userData.name || user?.name || '',
+            firstName: userData.firstName || user?.firstName || '',
+            lastName: userData.lastName || user?.lastName || '',
+            displayName: userData.displayName || user?.displayName || '',
+            email: userData.email || user?.email || '',
+            phone: userData.phone || user?.phone || '',
+            location: extractLocationString(userData.location) || extractLocationString(user?.location) || '',
+            bio: userData.bio || user?.bio || '',
             // Social media only for non-breeders (breeders manage in kennels)
             // Check Cognito userType (from context), not database
             facebook: user?.userType !== 'breeder' ? userData.socialLinks?.facebook || '' : '',
             instagram: user?.userType !== 'breeder' ? userData.socialLinks?.instagram || '' : '',
             twitter: user?.userType !== 'breeder' ? userData.socialLinks?.twitter || '' : '',
+          };
+          
+          console.log('=== FINAL MERGED FORM DATA ===');
+          console.log('Merged form data:', {
+            firstName: mergedFormData.firstName,
+            lastName: mergedFormData.lastName,
+            location: mergedFormData.location,
+            bio: mergedFormData.bio,
+            phone: mergedFormData.phone,
           });
+          
+          setFormData(mergedFormData);
 
           // Also update the local user context
-          // IMPORTANT: Preserve the current userType preference (don't let API override it)
+          // IMPORTANT: Merge API data with Cognito data and preserve userType
           if (updateUser) {
             const updatedUserData = {
-              ...userData,
+              ...user, // Start with existing user data (has Cognito attributes)
+              ...userData, // Overlay with API data (database fields)
+              // Preserve Cognito attributes if API doesn't have them
+              firstName: userData.firstName || user?.firstName,
+              lastName: userData.lastName || user?.lastName,
+              location: userData.location || user?.location,
+              bio: userData.bio || user?.bio,
+              phone: userData.phone || user?.phone,
+              profileImage: userData.profileImage || user?.profileImage,
               userType: user?.userType || userData.userType, // Preserve current userType preference
             };
             updateUser(updatedUserData);
@@ -229,6 +315,32 @@ const EditProfileScreen: React.FC = () => {
         throw new Error(response.error || 'Failed to update profile');
       }
 
+      // Sync profile changes to Cognito user attributes
+      console.log('=== SYNCING TO COGNITO ===');
+      const cognitoAttributes: any = {};
+      
+      if (updateData.name) cognitoAttributes.name = updateData.name;
+      if (updateData.firstName) cognitoAttributes.given_name = updateData.firstName;
+      if (updateData.lastName) cognitoAttributes.family_name = updateData.lastName;
+      if (updateData.location) cognitoAttributes.address = updateData.location;
+      if (updateData.bio) cognitoAttributes.profile = updateData.bio;
+      
+      // Format phone number for Cognito (E.164 format required)
+      if (updateData.phone) {
+        const formattedPhone = formatPhoneForCognito(updateData.phone, selectedCountry);
+        if (formattedPhone) {
+          cognitoAttributes.phone_number = formattedPhone;
+          console.log('📞 Formatted phone for Cognito:', formattedPhone);
+        } else {
+          console.warn('⚠️ Skipping phone number sync to Cognito due to invalid format');
+        }
+      }
+      
+      const cognitoUpdateSuccess = await authService.updateUserAttributes(cognitoAttributes);
+      if (!cognitoUpdateSuccess) {
+        console.warn('⚠️ Failed to sync some attributes to Cognito, but profile was saved to database');
+      }
+
       // Update local user state with the response from the API
       // API returns { user: {...} }
       // IMPORTANT: Preserve the current userType preference (don't let API override it)
@@ -239,6 +351,23 @@ const EditProfileScreen: React.FC = () => {
           userType: user.userType, // Preserve current userType preference
         };
         updateUser(updatedUserData);
+        
+        // Also update the form data immediately to reflect changes
+        console.log('Updating form data with updated user data');
+        setFormData({
+          name: updatedUserData.name || '',
+          firstName: updatedUserData.firstName || '',
+          lastName: updatedUserData.lastName || '',
+          displayName: updatedUserData.displayName || '',
+          email: updatedUserData.email || '',
+          phone: updatedUserData.phone || '',
+          location: extractLocationString(updatedUserData.location) || '',
+          bio: updatedUserData.bio || '',
+          // Social media only for non-breeders (breeders manage in kennels)
+          facebook: user.userType !== 'breeder' ? updatedUserData.socialLinks?.facebook || '' : '',
+          instagram: user.userType !== 'breeder' ? updatedUserData.socialLinks?.instagram || '' : '',
+          twitter: user.userType !== 'breeder' ? updatedUserData.socialLinks?.twitter || '' : '',
+        });
       } else {
         console.warn('No user data in response to update local state');
       }
@@ -342,6 +471,15 @@ const EditProfileScreen: React.FC = () => {
           throw new Error(updateResponse.error || 'Failed to save profile photo');
         }
 
+        // Sync profile photo to Cognito
+        console.log('=== SYNCING PHOTO TO COGNITO ===');
+        const cognitoPhotoUpdateSuccess = await authService.updateUserAttributes({
+          picture: photoUrl,
+        });
+        if (!cognitoPhotoUpdateSuccess) {
+          console.warn('⚠️ Failed to sync photo to Cognito, but photo was saved to database');
+        }
+
         // Update local user state with the response from the API
         // API returns { user: {...} }
         // IMPORTANT: Preserve the current userType preference (don't let API override it)
@@ -352,6 +490,12 @@ const EditProfileScreen: React.FC = () => {
             userType: user.userType, // Preserve current userType preference
           };
           updateUser(updatedUserData);
+          
+          // Also update the form data to reflect the new profile image
+          setFormData(prevFormData => ({
+            ...prevFormData,
+            // The profile image is not part of form data, but we can update other fields if needed
+          }));
         } else {
           console.warn('No user data in photo update response');
         }
@@ -499,10 +643,56 @@ const EditProfileScreen: React.FC = () => {
           editable: false
         })}
         
-        {renderInput('Phone', 'phone', 'Enter your phone number', { 
-          icon: 'call', 
-          keyboardType: 'phone-pad' 
-        })}
+        {/* Phone with Country Selector */}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Phone</Text>
+          <View style={styles.phoneContainer}>
+            <View style={styles.countrySelectorContainer}>
+              <CountrySelector
+                value={selectedCountry?.dialCode}
+                onCountrySelect={(country) => {
+                  setSelectedCountry(country);
+                  if (errors.phone) {
+                    setErrors({ ...errors, phone: '' });
+                  }
+                }}
+                placeholder="Country"
+                error={!!errors.phone}
+                editable={true}
+              />
+            </View>
+            <View style={styles.phoneInputContainer}>
+              <View style={[
+                styles.inputContainer,
+                errors.phone && styles.inputError
+              ]}>
+                <Icon
+                  name="call"
+                  size={20}
+                  color={theme.colors.textSecondary}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={[
+                    styles.input,
+                    errors.phone && styles.inputError
+                  ]}
+                  value={formData.phone}
+                  onChangeText={text => {
+                    setFormData({ ...formData, phone: text });
+                    if (errors.phone) {
+                      setErrors({ ...errors, phone: '' });
+                    }
+                  }}
+                  placeholder="Phone number"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+          </View>
+          {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+        </View>
         
         {/* Location with Modal Autocomplete */}
         <View style={styles.inputGroup}>
@@ -529,28 +719,6 @@ const EditProfileScreen: React.FC = () => {
         })}
       </View>
 
-      {/* Dog Parent Preferences - Only show for dog parents */}
-      {user?.userType === 'dog-parent' && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Adoption Preferences</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('DogParentPreferences' as never)}
-              style={styles.editButton}
-            >
-              <Text style={styles.editButtonText}>Edit Detailed Preferences</Text>
-              <Icon name="arrow-forward" size={16} color={theme.colors.primary} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.infoCard}>
-            <Icon name="information-circle" size={24} color={theme.colors.info} />
-            <Text style={styles.infoText}>
-              Set your detailed adoption preferences (breeds, housing, experience) in the dedicated preferences screen.
-            </Text>
-          </View>
-        </View>
-      )}
 
       {/* Social Media - Only for dog parents, breeders manage in kennels */}
       {user?.userType !== 'breeder' && (
@@ -736,6 +904,17 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     fontSize: 14,
     marginTop: theme.spacing.xs,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    gap: theme.spacing.xs,
+  },
+  countrySelectorContainer: {
+    flex: 0,
+    width: 100,
+  },
+  phoneInputContainer: {
+    flex: 1,
   },
   buttonContainer: {
     paddingHorizontal: theme.spacing.lg,

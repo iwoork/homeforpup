@@ -340,6 +340,17 @@ const BreederDashboard: React.FC = () => {
                   Help & Documentation
                 </Button>
               </Link>
+              
+              <Link href="/profile/edit">
+                <Button 
+                  block 
+                  size="large"
+                  icon={<UserOutlined />}
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  Edit Profile
+                </Button>
+              </Link>
             </Space>
           </Card>
         </Col>
@@ -350,7 +361,19 @@ const BreederDashboard: React.FC = () => {
         <Col span={24}>
           <Card title="Profile Completion" style={cardStyle}>
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12}>
+              <Col xs={24} sm={8}>
+                <div style={{ textAlign: 'center', padding: '16px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '8px' }}>👤</div>
+                  <Title level={4}>Personal Profile</Title>
+                  <Paragraph>
+                    Update your personal information, contact details, and preferences
+                  </Paragraph>
+                  <Link href="/profile/edit">
+                    <Button type="primary">Edit Profile</Button>
+                  </Link>
+                </div>
+              </Col>
+              <Col xs={24} sm={8}>
                 <div style={{ textAlign: 'center', padding: '16px' }}>
                   <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏠</div>
                   <Title level={4}>Manage Your Kennel Profile</Title>
@@ -362,7 +385,7 @@ const BreederDashboard: React.FC = () => {
                   </Link>
                 </div>
               </Col>
-              <Col xs={24} sm={12}>
+              <Col xs={24} sm={8}>
                 <div style={{ textAlign: 'center', padding: '16px' }}>
                   <div style={{ fontSize: '48px', marginBottom: '8px' }}>🐕</div>
                   <Title level={4}>Add Your Dogs</Title>
