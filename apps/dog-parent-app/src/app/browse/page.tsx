@@ -8,6 +8,7 @@ import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
 import ContactBreederModal from '@/components/ContactBreederModal';
+import PuppySearchWizard from '@/components/PuppySearchWizard';
 import { BreedSelector } from '@/components';
 import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
 import { generateBreadcrumbSchema } from '@/lib/utils/seo';
@@ -28,6 +29,7 @@ const PuppiesPage: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
+  const [showSearchWizard, setShowSearchWizard] = useState(false);
 
   // Get user data
   const { user, loading: userLoading } = useAuth();
@@ -169,6 +171,19 @@ const PuppiesPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSearchWizardComplete = (criteria: any) => {
+    setFilters({
+      country: criteria.country || 'Canada',
+      state: criteria.state || [],
+      breed: criteria.breeds?.[0] || null,
+      gender: criteria.gender || null,
+      shipping: criteria.shipping || false,
+      verified: criteria.verifiedOnly || false,
+    });
+    setCurrentPage(1);
+    setShowSearchWizard(false);
   };
 
   // Check if any filters are active
@@ -369,11 +384,30 @@ const PuppiesPage: React.FC = () => {
     );
   }
 
+  if (showSearchWizard) {
+    return (
+      <PuppySearchWizard
+        onComplete={handleSearchWizardComplete}
+        onCancel={() => setShowSearchWizard(false)}
+      />
+    );
+  }
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
-      <Title level={1} style={{ color: '#08979C', marginBottom: '24px' }}>
-        Available Puppies
-      </Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <Title level={1} style={{ color: '#08979C', margin: 0 }}>
+          Available Puppies
+        </Title>
+        <Button 
+          type="primary" 
+          size="large"
+          onClick={() => setShowSearchWizard(true)}
+          style={{ background: '#08979C', borderColor: '#08979C' }}
+        >
+          Find My Perfect Puppy
+        </Button>
+      </div>
 
       {/* Stats */}
       {stats && (

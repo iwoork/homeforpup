@@ -34,15 +34,6 @@ const HomePage: React.FC = () => {
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const [newsletterMessage, setNewsletterMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleJoinCommunity = () => {
-    if (user) {
-      // User is already logged in, redirect to dashboard
-      window.location.href = '/dashboard';
-    } else {
-      // Show user type selection modal for signup
-      setUserTypeModalVisible(true);
-    }
-  };
 
   const handleUserTypeSelection = (_userType: 'breeder' | 'dog-parent') => {
     setUserTypeModalVisible(false);
@@ -91,7 +82,7 @@ const HomePage: React.FC = () => {
         @media (max-width: 767px) {
           .hero-buttons .ant-col {
             width: 100% !important;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
           }
           .hero-buttons .ant-col:last-child {
             margin-bottom: 0;
@@ -106,6 +97,26 @@ const HomePage: React.FC = () => {
             margin-bottom: 0 !important;
           }
         }
+        
+        /* Enhanced button hover effects */
+        .hero-buttons .ant-btn {
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .hero-buttons .ant-btn:hover {
+          transform: translateY(-2px) !important;
+        }
+        
+        .hero-buttons .ant-btn:active {
+          transform: translateY(0) !important;
+        }
+        
+        /* Smooth transitions for all button states */
+        .hero-buttons .ant-btn * {
+          transition: all 0.3s ease;
+        }
       `}</style>
 
       {/* Hero Section */}
@@ -117,38 +128,68 @@ const HomePage: React.FC = () => {
           <Paragraph style={{ fontSize: '20px', marginBottom: '32px', color: 'rgba(255, 255, 255, 0.9)', maxWidth: '600px', margin: '0 auto 32px auto' }}>
             Discover a community where dog lovers and devoted breeders work together to create fur-ever bonds between families and their ideal companions.
           </Paragraph>
-          <Row justify="center" gutter={[16, 12]} className="hero-buttons">
+          <Row justify="center" gutter={[24, 12]} className="hero-buttons">
+            <Col xs={24} sm={12} md={8}>
+              <Link href="/puppy-journey">
+                <Button 
+                  size="large" 
+                  block
+                  style={{ 
+                    height: '56px', 
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    background: 'linear-gradient(135deg, #E8A87C 0%, #D4A574 50%, #E8A87C 100%)',
+                    borderColor: 'transparent',
+                    color: 'white',
+                    boxShadow: '0 4px 15px rgba(232, 168, 124, 0.3)',
+                    transition: 'all 0.3s ease',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #D49A6B 0%, #C4965F 50%, #D49A6B 100%)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(232, 168, 124, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #E8A87C 0%, #D4A574 50%, #E8A87C 100%)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(232, 168, 124, 0.3)';
+                  }}
+                >
+                  ✨ Start Your Journey
+                </Button>
+              </Link>
+            </Col>
             <Col xs={24} sm={12} md={8}>
               <Link href="/browse">
                 <Button 
                   size="large" 
                   block
                   style={{ 
-                    height: '48px', 
-                    fontSize: '18px',
-                    fontWeight: '500'
+                    height: '56px', 
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    background: 'linear-gradient(135deg, #6B9BD2 0%, #5A8BC2 50%, #6B9BD2 100%)', 
+                    color: 'white', 
+                    borderColor: 'transparent',
+                    boxShadow: '0 4px 15px rgba(107, 155, 210, 0.3)',
+                    transition: 'all 0.3s ease',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #5A8BC2 0%, #4A7BB2 50%, #5A8BC2 100%)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(107, 155, 210, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #6B9BD2 0%, #5A8BC2 50%, #6B9BD2 100%)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(107, 155, 210, 0.3)';
                   }}
                 >
-                  Meet Available Puppies
+                  🐕 Meet Available Puppies
                 </Button>
               </Link>
-            </Col>
-            <Col xs={24} sm={12} md={8}>
-              <Button 
-                size="large" 
-                block
-                onClick={handleJoinCommunity}
-                style={{ 
-                  height: '48px', 
-                  fontSize: '18px', 
-                  background: 'white', 
-                  color: '#08979C', 
-                  borderColor: 'white',
-                  fontWeight: '500'
-                }}
-              >
-                {user ? 'Go to Dashboard' : 'Join Our Community'}
-              </Button>
             </Col>
           </Row>
         </div>
@@ -230,24 +271,6 @@ const HomePage: React.FC = () => {
             style={{ maxWidth: '100%' }}
           />
           
-          <div style={{ textAlign: 'center', marginTop: '48px' }}>
-            <Link href="/browse">
-              <Button 
-                size="large"
-                type="primary"
-                style={{ 
-                  height: '48px', 
-                  padding: '0 32px', 
-                  fontSize: '18px',
-                  background: '#08979C',
-                  borderColor: '#08979C',
-                  fontWeight: '500'
-                }}
-              >
-                Browse All Available Puppies
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -347,23 +370,6 @@ const HomePage: React.FC = () => {
             </Col>
           </Row>
           
-          <div style={{ textAlign: 'center', marginTop: '48px' }}>
-            <Button 
-              size="large"
-              type="primary"
-              onClick={handleJoinCommunity}
-              style={{ 
-                height: '48px', 
-                padding: '0 32px', 
-                fontSize: '18px',
-                background: '#08979C',
-                borderColor: '#08979C',
-                fontWeight: '500'
-              }}
-            >
-              {user ? 'Try AI Matching' : 'Start Your AI-Powered Search'}
-            </Button>
-          </div>
         </div>
       </section>
 
@@ -461,53 +467,6 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section style={{ padding: '64px 24px', background: '#fdf6e3', textAlign: 'center' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <Title level={2} style={{ marginBottom: '24px' }}>
-            Ready to Meet Your New Best Friend?
-          </Title>
-          <Paragraph style={{ fontSize: '18px', marginBottom: '32px' }}>
-            Join our community of dog lovers and discover the joy of finding your perfect four-legged family member through meaningful connections.
-          </Paragraph>
-          <Row justify="center" gutter={16}>
-            <Col>
-              <Link href="/browse">
-                <Button 
-                  type="primary" 
-                  size="large" 
-                  style={{ 
-                    height: '48px', 
-                    padding: '0 32px', 
-                    fontSize: '18px', 
-                    background: '#FA8072', 
-                    borderColor: '#FA8072',
-                    fontWeight: '500'
-                  }}
-                >
-                  Meet Our Puppies
-                </Button>
-              </Link>
-            </Col>
-            {!user && (
-              <Col>
-                <Button 
-                  size="large" 
-                  onClick={handleLogin}
-                  style={{ 
-                    height: '48px', 
-                    padding: '0 32px', 
-                    fontSize: '18px',
-                    fontWeight: '500'
-                  }}
-                >
-                  Login
-                </Button>
-              </Col>
-            )}
-          </Row>
-        </div>
-      </section>
 
       {/* User Type Selection Modal */}
       <UserTypeModal

@@ -26,36 +26,52 @@ const DogParentDashboardScreen: React.FC = () => {
 
   const quickActions = [
     {
-      title: 'Search Puppies',
-      subtitle: 'Browse available puppies',
-      icon: 'search',
+      title: 'Start Your Journey',
+      subtitle: 'Complete guide to finding your perfect puppy',
+      icon: 'compass',
       iconColor: theme.colors.primary,
-      screen: 'SearchPuppies',
+      screen: 'PuppyJourney',
       gradient: [theme.colors.primary, theme.colors.primaryDark],
     },
     {
-      title: 'Matched Puppies',
-      subtitle: 'Puppies that match your preferences',
-      icon: 'heart',
-      iconColor: '#ec4899',
-      screen: 'MatchedPuppies',
-      gradient: ['#ec4899', '#db2777'],
+      title: 'Search Puppies',
+      subtitle: 'Browse available puppies',
+      icon: 'search',
+      iconColor: '#10b981',
+      screen: 'SearchPuppies',
+      gradient: ['#10b981', '#059669'],
+    },
+    {
+      title: 'Ethical Guide',
+      subtitle: 'Learn how to identify ethical breeders',
+      icon: 'shield-checkmark',
+      iconColor: '#f59e0b',
+      screen: 'EthicalBreederGuide',
+      gradient: ['#f59e0b', '#d97706'],
     },
     {
       title: 'My Favorites',
       subtitle: 'Saved puppies',
       icon: 'star',
-      iconColor: '#f59e0b',
+      iconColor: '#ec4899',
       screen: 'Favorites',
-      gradient: ['#f59e0b', '#d97706'],
+      gradient: ['#ec4899', '#db2777'],
+    },
+    {
+      title: 'Post-Adoption',
+      subtitle: 'Support after bringing puppy home',
+      icon: 'home',
+      iconColor: '#8b5cf6',
+      screen: 'PostAdoptionSupport',
+      gradient: ['#8b5cf6', '#7c3aed'],
     },
     {
       title: 'Edit Preferences',
       subtitle: 'Update your search criteria',
       icon: 'options',
-      iconColor: '#8b5cf6',
+      iconColor: '#06b6d4',
       screen: 'DogParentPreferences',
-      gradient: ['#8b5cf6', '#7c3aed'],
+      gradient: ['#06b6d4', '#0891b2'],
     },
   ];
 
@@ -146,17 +162,24 @@ const DogParentDashboardScreen: React.FC = () => {
       <View style={styles.tipsContainer}>
         <Text style={styles.sectionTitle}>Tips for Finding Your Puppy</Text>
         <View style={styles.tipCard}>
-          <Icon name="bulb-outline" size={32} color={theme.colors.primary} />
-          <Text style={styles.tipTitle}>Be Prepared</Text>
+          <Icon name="compass-outline" size={32} color={theme.colors.primary} />
+          <Text style={styles.tipTitle}>Start Your Journey</Text>
           <Text style={styles.tipText}>
-            Make sure you have everything ready for your new puppy before bringing them home.
+            Use our comprehensive guide to define your search criteria and find the perfect match.
           </Text>
         </View>
         <View style={styles.tipCard}>
-          <Icon name="people-outline" size={32} color={theme.colors.secondary} />
+          <Icon name="shield-checkmark-outline" size={32} color={theme.colors.secondary} />
+          <Text style={styles.tipTitle}>Verify Breeders</Text>
+          <Text style={styles.tipText}>
+            Always verify breeders through our platform. Look for health testing and positive reviews.
+          </Text>
+        </View>
+        <View style={styles.tipCard}>
+          <Icon name="people-outline" size={32} color="#f59e0b" />
           <Text style={styles.tipTitle}>Ask Questions</Text>
           <Text style={styles.tipText}>
-            Don't hesitate to ask breeders about health tests, parents, and puppy care.
+            Don't hesitate to ask breeders about health tests, parents, and ongoing support.
           </Text>
         </View>
       </View>

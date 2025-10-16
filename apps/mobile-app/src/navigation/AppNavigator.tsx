@@ -33,6 +33,10 @@ import MatchedPuppiesScreen from '../screens/dog-parent/MatchedPuppiesScreen';
 import FavoritePuppiesScreen from '../screens/dog-parent/FavoritePuppiesScreen';
 import DogParentPreferencesScreen from '../screens/dog-parent/DogParentPreferencesScreen';
 import ContactBreederScreen from '../screens/dog-parent/ContactBreederScreen';
+import PuppyJourneyScreen from '../screens/dog-parent/PuppyJourneyScreen';
+import PuppySearchWizardScreen from '../screens/dog-parent/PuppySearchWizardScreen';
+import EthicalBreederGuideScreen from '../screens/dog-parent/EthicalBreederGuideScreen';
+import PostAdoptionSupportScreen from '../screens/dog-parent/PostAdoptionSupportScreen';
 
 // Detail Screens
 import KennelDetailScreen from '../screens/details/KennelDetailScreen';
@@ -455,6 +459,26 @@ const MainStack = () => {
     />
 
     {/* Dog Parent-specific Screens */}
+    <Stack.Screen
+      name="PuppyJourney"
+      component={PuppyJourneyScreen}
+      options={{ title: 'Your Puppy Journey' }}
+    />
+    <Stack.Screen
+      name="PuppySearchWizard"
+      component={PuppySearchWizardScreen}
+      options={{ title: 'Find Your Perfect Puppy' }}
+    />
+    <Stack.Screen
+      name="EthicalBreederGuide"
+      component={EthicalBreederGuideScreen}
+      options={{ title: 'Ethical Breeder Guide' }}
+    />
+    <Stack.Screen
+      name="PostAdoptionSupport"
+      component={PostAdoptionSupportScreen}
+      options={{ title: 'Post-Adoption Support' }}
+    />
     <Stack.Screen
       name="MatchedPuppies"
       component={MatchedPuppiesScreen}

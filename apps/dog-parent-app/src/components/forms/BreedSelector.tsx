@@ -207,45 +207,123 @@ const BreedSelector: React.FC<BreedSelectorProps> = ({
     );
   }
 
-  // Error state
+  // Error state - provide fallback breeds instead of disabling
   if (error) {
+    const fallbackBreeds = [
+      'Labrador Retriever', 'Golden Retriever', 'German Shepherd', 'French Bulldog',
+      'Bulldog', 'Poodle', 'Beagle', 'Rottweiler', 'German Shorthaired Pointer',
+      'Siberian Husky', 'Great Dane', 'Chihuahua', 'Shih Tzu', 'Boston Terrier',
+      'Pomeranian', 'Australian Shepherd', 'Maltese', 'Border Collie', 'Cocker Spaniel',
+      'Dachshund', 'Mastiff', 'Jack Russell Terrier', 'Yorkshire Terrier', 'Boxer',
+      'Newfoundland', 'Weimaraner', 'Cavalier King Charles Spaniel', 'Doberman Pinscher',
+      'Akita', 'Maltipoo', 'Goldendoodle', 'Labradoodle', 'Cockapoo', 'Bernedoodle',
+      'Cavapoo', 'Schnoodle', 'Springerdoodle', 'Yorkipoo', 'Puggle'
+    ];
+
     return (
       <Select
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
-        disabled={true}
+        allowClear={allowClear}
+        showSearch={showSearch}
+        mode={multiple ? 'multiple' : undefined}
+        disabled={disabled}
         style={style}
         className={className}
         size={size}
+        maxTagCount={maxTagCount}
+        onSearch={handleSearch}
+        onSelect={handleSelect}
+        onDeselect={handleDeselect}
+        onClear={handleClear}
+        onDropdownVisibleChange={handleDropdownVisibleChange}
+        dropdownStyle={dropdownStyle}
+        optionLabelProp={optionLabelProp}
+        optionFilterProp={optionFilterProp}
+        getPopupContainer={getPopupContainer}
+        virtual={virtual}
+        listHeight={listHeight}
+        filterOption={(input, option) => {
+          const searchText = input.toLowerCase();
+          const breedName = option?.children || '';
+          return breedName.toLowerCase().includes(searchText);
+        }}
         notFoundContent={
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Failed to load breeds"
+            description="No breeds match your search"
             style={{ padding: '20px' }}
           />
         }
-      />
+      >
+        {fallbackBreeds.map((breedName) => (
+          <Option key={breedName} value={breedName}>
+            {breedName}
+          </Option>
+        ))}
+      </Select>
     );
   }
 
-  // No breeds found
+  // No breeds found - provide fallback breeds instead of disabling
   if (filteredBreeds.length === 0) {
+    const fallbackBreeds = [
+      'Labrador Retriever', 'Golden Retriever', 'German Shepherd', 'French Bulldog',
+      'Bulldog', 'Poodle', 'Beagle', 'Rottweiler', 'German Shorthaired Pointer',
+      'Siberian Husky', 'Great Dane', 'Chihuahua', 'Shih Tzu', 'Boston Terrier',
+      'Pomeranian', 'Australian Shepherd', 'Maltese', 'Border Collie', 'Cocker Spaniel',
+      'Dachshund', 'Mastiff', 'Jack Russell Terrier', 'Yorkshire Terrier', 'Boxer',
+      'Newfoundland', 'Weimaraner', 'Cavalier King Charles Spaniel', 'Doberman Pinscher',
+      'Akita', 'Maltipoo', 'Goldendoodle', 'Labradoodle', 'Cockapoo', 'Bernedoodle',
+      'Cavapoo', 'Schnoodle', 'Springerdoodle', 'Yorkipoo', 'Puggle'
+    ];
+
     return (
       <Select
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
-        disabled={true}
+        allowClear={allowClear}
+        showSearch={showSearch}
+        mode={multiple ? 'multiple' : undefined}
+        disabled={disabled}
         style={style}
         className={className}
         size={size}
+        maxTagCount={maxTagCount}
+        onSearch={handleSearch}
+        onSelect={handleSelect}
+        onDeselect={handleDeselect}
+        onClear={handleClear}
+        onDropdownVisibleChange={handleDropdownVisibleChange}
+        dropdownStyle={dropdownStyle}
+        optionLabelProp={optionLabelProp}
+        optionFilterProp={optionFilterProp}
+        getPopupContainer={getPopupContainer}
+        virtual={virtual}
+        listHeight={listHeight}
+        filterOption={(input, option) => {
+          const searchText = input.toLowerCase();
+          const breedName = option?.children || '';
+          return breedName.toLowerCase().includes(searchText);
+        }}
         notFoundContent={
           notFoundContent || (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No breeds found"
+              description="No breeds match your search"
               style={{ padding: '20px' }}
             />
           )
         }
-      />
+      >
+        {fallbackBreeds.map((breedName) => (
+          <Option key={breedName} value={breedName}>
+            {breedName}
+          </Option>
+        ))}
+      </Select>
     );
   }
 

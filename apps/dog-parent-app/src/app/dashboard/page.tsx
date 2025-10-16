@@ -211,8 +211,13 @@ const DogParentDashboard: React.FC = () => {
           </Col>
           <Col>
             <Space>
-              <Link href="/browse">
+              <Link href="/puppy-journey">
                 <Button type="primary" icon={<SearchOutlined />}>
+                  Start Your Journey
+                </Button>
+              </Link>
+              <Link href="/browse">
+                <Button icon={<SearchOutlined />}>
                   Browse Puppies
                 </Button>
               </Link>
@@ -291,9 +296,20 @@ const DogParentDashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card title="Quick Actions" style={cardStyle}>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Link href="/browse">
+              <Link href="/puppy-journey">
                 <Button 
                   type="primary" 
+                  block 
+                  size="large"
+                  icon={<SearchOutlined />}
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  Start Your Puppy Journey
+                </Button>
+              </Link>
+              
+              <Link href="/browse">
+                <Button 
                   block 
                   size="large"
                   icon={<SearchOutlined />}
