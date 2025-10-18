@@ -358,7 +358,7 @@ const ProfileScreen: React.FC = () => {
       subtitle: 'Manage your account preferences',
       icon: 'settings-outline',
       iconColor: '#64748b',
-      onPress: () => {}, // TODO: Navigate to settings
+      onPress: () => navigation.navigate('ManageAccountScreen' as never),
     },
     {
       title: 'Notifications',

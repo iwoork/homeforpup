@@ -25,6 +25,7 @@ import ProfileScreen from '../screens/main/ProfileScreen';
 import NotificationsScreen from '../screens/main/NotificationsScreen';
 import PrivacySettingsScreen from '../screens/main/PrivacySettingsScreen';
 import HelpSupportScreen from '../screens/main/HelpSupportScreen';
+import ManageAccountScreen from '../screens/main/ManageAccountScreen';
 
 // Main Screens - Dog Parent
 import DogParentDashboardScreen from '../screens/main/DogParentDashboardScreen';
@@ -456,6 +457,11 @@ const MainStack = () => {
       name="HelpSupportScreen"
       component={HelpSupportScreen}
       options={{ title: 'Help & Support' }}
+    />
+    <Stack.Screen
+      name="ManageAccountScreen"
+      component={ManageAccountScreen}
+      options={{ title: 'Manage Account' }}
     />
 
     {/* Dog Parent-specific Screens */}
