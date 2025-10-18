@@ -290,9 +290,11 @@ export class ApiStack extends cdk.Stack {
     });
     listKennelsFunction.grantDynamoDBAccess([config.tables.kennels]);
 
-    // Temporarily make GET /kennels public for testing
-    // TODO: Re-enable Cognito auth once token validation is working
-    kennelsResource.addMethod('GET', listKennelsFunction.createIntegration());
+    // GET /kennels requires authentication
+    kennelsResource.addMethod('GET', listKennelsFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
 
     // GET /kennels/{id} - Get kennel by ID
     const getKennelFunction = new LambdaApi(this, 'GetKennelFunction', {

@@ -21,6 +21,40 @@ import BreedSelectorModal from '../../components/BreedSelectorModal';
 
 const { width } = Dimensions.get('window');
 
+// Available dog breeds
+const AVAILABLE_BREEDS = [
+  { id: '1', name: 'Golden Retriever', image: 'https://homeforpup.com/breeds/golden-retriever.jpg' },
+  { id: '2', name: 'Labrador Retriever', image: 'https://homeforpup.com/breeds/labrador-retriever.jpg' },
+  { id: '3', name: 'German Shepherd', image: 'https://homeforpup.com/breeds/german-shepherd.jpg' },
+  { id: '4', name: 'French Bulldog', image: 'https://homeforpup.com/breeds/french-bulldog.jpg' },
+  { id: '5', name: 'Bulldog', image: 'https://homeforpup.com/breeds/bulldog.jpg' },
+  { id: '6', name: 'Poodle', image: 'https://homeforpup.com/breeds/poodle.jpg' },
+  { id: '7', name: 'Beagle', image: 'https://homeforpup.com/breeds/beagle.jpg' },
+  { id: '8', name: 'Rottweiler', image: 'https://homeforpup.com/breeds/rottweiler.jpg' },
+  { id: '9', name: 'German Shorthaired Pointer', image: 'https://homeforpup.com/breeds/german-shorthaired-pointer.jpg' },
+  { id: '10', name: 'Siberian Husky', image: 'https://homeforpup.com/breeds/siberian-husky.jpg' },
+  { id: '11', name: 'Border Collie', image: 'https://homeforpup.com/breeds/border-collie.jpg' },
+  { id: '12', name: 'Australian Shepherd', image: 'https://homeforpup.com/breeds/australian-shepherd.jpg' },
+  { id: '13', name: 'Yorkshire Terrier', image: 'https://homeforpup.com/breeds/yorkshire-terrier.jpg' },
+  { id: '14', name: 'Boston Terrier', image: 'https://homeforpup.com/breeds/boston-terrier.jpg' },
+  { id: '15', name: 'Dachshund', image: 'https://homeforpup.com/breeds/dachshund.jpg' },
+  { id: '16', name: 'Boxer', image: 'https://homeforpup.com/breeds/boxer.jpg' },
+  { id: '17', name: 'Great Dane', image: 'https://homeforpup.com/breeds/great-dane.jpg' },
+  { id: '18', name: 'Chihuahua', image: 'https://homeforpup.com/breeds/chihuahua.jpg' },
+  { id: '19', name: 'Shih Tzu', image: 'https://homeforpup.com/breeds/shih-tzu.jpg' },
+  { id: '20', name: 'Maltese', image: 'https://homeforpup.com/breeds/maltese.jpg' },
+  { id: '21', name: 'Cocker Spaniel', image: 'https://homeforpup.com/breeds/cocker-spaniel.jpg' },
+  { id: '22', name: 'Jack Russell Terrier', image: 'https://homeforpup.com/breeds/jack-russell-terrier.jpg' },
+  { id: '23', name: 'Pomeranian', image: 'https://homeforpup.com/breeds/pomeranian.jpg' },
+  { id: '24', name: 'Cavalier King Charles Spaniel', image: 'https://homeforpup.com/breeds/cavalier-king-charles-spaniel.jpg' },
+  { id: '25', name: 'Shetland Sheepdog', image: 'https://homeforpup.com/breeds/shetland-sheepdog.jpg' },
+  { id: '26', name: 'Doberman Pinscher', image: 'https://homeforpup.com/breeds/doberman-pinscher.jpg' },
+  { id: '27', name: 'Weimaraner', image: 'https://homeforpup.com/breeds/weimaraner.jpg' },
+  { id: '28', name: 'Mastiff', image: 'https://homeforpup.com/breeds/mastiff.jpg' },
+  { id: '29', name: 'Saint Bernard', image: 'https://homeforpup.com/breeds/saint-bernard.jpg' },
+  { id: '30', name: 'Basset Hound', image: 'https://homeforpup.com/breeds/basset-hound.jpg' },
+];
+
 interface SearchCriteria {
   breeds: string[];
   gender: string | null;
@@ -55,7 +89,7 @@ const PuppySearchWizardScreen: React.FC = () => {
     familySize: '',
     childrenAges: [],
     experienceLevel: '',
-    country: 'Canada',
+    country: '+1',
     state: [],
     maxDistance: 100,
     shipping: false,
@@ -66,7 +100,6 @@ const PuppySearchWizardScreen: React.FC = () => {
     timeline: '',
   });
 
-  const [showBreedSelector, setShowBreedSelector] = useState(false);
 
   const steps = [
     {
@@ -118,7 +151,6 @@ const PuppySearchWizardScreen: React.FC = () => {
 
   const handleBreedSelection = (breeds: string[]) => {
     setCriteria({ ...criteria, breeds });
-    setShowBreedSelector(false);
   };
 
   const renderBreedPreferenceStep = () => (
@@ -130,18 +162,13 @@ const PuppySearchWizardScreen: React.FC = () => {
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>Preferred Breeds</Text>
-        <TouchableOpacity
-          style={styles.breedSelectorButton}
-          onPress={() => setShowBreedSelector(true)}
-        >
-          <Text style={styles.breedSelectorText}>
-            {criteria.breeds.length > 0 
-              ? `${criteria.breeds.length} breed(s) selected`
-              : 'Select breeds'
-            }
-          </Text>
-          <Icon name="chevron-forward" size={20} color={theme.colors.primary} />
-        </TouchableOpacity>
+        <BreedSelectorModal
+          selectedBreeds={criteria.breeds}
+          onBreedsChange={handleBreedSelection}
+          availableBreeds={AVAILABLE_BREEDS}
+          placeholder="Select preferred breeds"
+          multiSelect={true}
+        />
       </View>
 
       <View style={styles.inputGroup}>
@@ -316,7 +343,7 @@ const PuppySearchWizardScreen: React.FC = () => {
         <Text style={styles.inputLabel}>Country</Text>
         <CountrySelector
           value={criteria.country}
-          onValueChange={(value) => setCriteria({ ...criteria, country: value })}
+          onCountrySelect={(country) => setCriteria({ ...criteria, country: country.dialCode })}
           style={styles.countrySelector}
         />
       </View>
@@ -566,12 +593,6 @@ const PuppySearchWizardScreen: React.FC = () => {
         </View>
       </View>
 
-      <BreedSelectorModal
-        visible={showBreedSelector}
-        onClose={() => setShowBreedSelector(false)}
-        onSelect={handleBreedSelection}
-        selectedBreeds={criteria.breeds}
-      />
     </SafeAreaView>
   );
 };
@@ -647,20 +668,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
-  },
-  breedSelectorButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  breedSelectorText: {
-    fontSize: 16,
-    color: theme.colors.text,
   },
   radioGroup: {
     gap: theme.spacing.sm,

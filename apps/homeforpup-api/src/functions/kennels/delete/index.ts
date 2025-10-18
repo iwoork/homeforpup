@@ -18,6 +18,12 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     return errorResponse(error.message || 'Unauthorized', 401);
   }
 
+  // Check if user is a breeder
+  const userType = (event as any).requestContext.authorizer?.claims?.['custom:userType'];
+  if (userType !== 'breeder') {
+    return errorResponse('Forbidden: Only breeders can delete kennels', 403);
+  }
+
   const kennelId = event.pathParameters?.id;
 
   if (!kennelId) {

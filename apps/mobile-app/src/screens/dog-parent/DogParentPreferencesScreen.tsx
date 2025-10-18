@@ -15,7 +15,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
-import { LocationAutocompleteModal, BreedSelectorModal } from '../../components';
+import { LocationInput, BreedSelectorModal } from '../../components';
 import { useBreeds } from '../../hooks/useApi';
 
 const DogParentPreferencesScreen: React.FC = () => {
@@ -269,15 +269,12 @@ const DogParentPreferencesScreen: React.FC = () => {
             <Icon name="location" size={24} color={theme.colors.primary} />
             <Text style={styles.sectionTitle}>Location</Text>
           </View>
-          <LocationAutocompleteModal
+          <LocationInput
             value={preferences.location}
             onLocationSelect={(address) => {
-              console.log('Preference location selected:', address);
               setPreferences((prev) => ({ ...prev, location: address }));
             }}
             placeholder="City, State"
-            error={false}
-            editable={true}
           />
         </View>
         </ScrollView>

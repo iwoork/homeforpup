@@ -6,5 +6,7 @@ export { default as StatCard } from './StatCard';
 export { default as ActionCard } from './ActionCard';
 export { default as LocationAutocomplete } from './LocationAutocomplete';
 export { default as LocationAutocompleteModal } from './LocationAutocompleteModal';
+export { default as LocationInput } from './LocationInput';
 export { default as CountrySelector } from './CountrySelector';
 export { default as BreedSelectorModal } from './BreedSelectorModal';
+export { default as KennelLimitModal } from './KennelLimitModal';

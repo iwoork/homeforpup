@@ -7,6 +7,7 @@ import {
   TextStyle,
   ActivityIndicator,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../utils/theme';
 
 interface ButtonProps {
@@ -18,7 +19,7 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
-  icon?: React.ReactNode;
+  icon?: string | React.ReactNode;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -131,7 +132,18 @@ const Button: React.FC<ButtonProps> = ({
         />
       ) : (
         <>
-          {icon && <>{icon}</>}
+          {icon && (
+            typeof icon === 'string' ? (
+              <Icon 
+                name={icon} 
+                size={16} 
+                color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.textInverse}
+                style={{ marginRight: title ? theme.spacing.xs : 0 }}
+              />
+            ) : (
+              icon
+            )
+          )}
           <Text style={[getTextStyle(), textStyle]}>{title}</Text>
         </>
       )}

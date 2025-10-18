@@ -21,7 +21,7 @@ import { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
 import authService from '../../services/authService';
-import { LocationAutocompleteModal, CountrySelector } from '../../components';
+import { LocationInput, CountrySelector } from '../../components';
 
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -695,22 +695,18 @@ const EditProfileScreen: React.FC = () => {
         </View>
         
         {/* Location with Modal Autocomplete */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Location</Text>
-          <LocationAutocompleteModal
-            value={formData.location}
-            onLocationSelect={(address, details) => {
-              setFormData({ ...formData, location: address });
-              if (errors.location) {
-                setErrors({ ...errors, location: '' });
-              }
-            }}
-            placeholder="City, State"
-            error={!!errors.location}
-            editable={true}
-          />
-          {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
-        </View>
+        <LocationInput
+          label="Location"
+          value={formData.location}
+          onLocationSelect={(address, details) => {
+            setFormData({ ...formData, location: address });
+            if (errors.location) {
+              setErrors({ ...errors, location: '' });
+            }
+          }}
+          placeholder="City, State"
+          error={errors.location}
+        />
         
         {renderInput('Bio', 'bio', 'Tell us about yourself...', { 
           icon: 'document-text',

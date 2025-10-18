@@ -19,6 +19,12 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     return errorResponse('Unauthorized: Please log in to view your kennels', 401);
   }
 
+  // Check if user is a breeder
+  const userType = (event as any).requestContext.authorizer?.claims?.['custom:userType'];
+  if (userType !== 'breeder') {
+    return errorResponse('Forbidden: Only breeders can access kennels', 403);
+  }
+
   // Parse query parameters
   const queryParams = event.queryStringParameters || {};
   const {

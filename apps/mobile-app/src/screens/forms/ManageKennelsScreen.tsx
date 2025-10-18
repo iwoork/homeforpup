@@ -16,9 +16,12 @@ import { theme } from '../../utils/theme';
 import { Kennel } from '../../types';
 import { useKennels } from '../../hooks/useApi';
 import { apiService } from '../../services/apiService';
+import { KennelLimitModal } from '../../components';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ManageKennelsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const {
     data: kennelsData,
     loading,
@@ -31,9 +34,34 @@ const ManageKennelsScreen: React.FC = () => {
   });
 
   const kennels = kennelsData?.kennels || [];
+  
+  // Calculate kennel limits
+  const subscriptionPlan = user?.subscriptionPlan || 'basic';
+  const maxKennels = subscriptionPlan === 'basic' ? 1 : 10;
+  const canCreateKennel = kennels.length < maxKennels;
+  
+  // Modal state
+  const [showLimitModal, setShowLimitModal] = React.useState(false);
 
   const onRefresh = async () => {
     await refresh();
+  };
+
+  const handleCreateKennel = () => {
+    if (canCreateKennel) {
+      navigation.navigate('CreateKennel' as never);
+    } else {
+      setShowLimitModal(true);
+    }
+  };
+
+  const handleUpgrade = () => {
+    setShowLimitModal(false);
+    navigation.navigate('Profile' as never);
+  };
+
+  const handleCloseModal = () => {
+    setShowLimitModal(false);
   };
 
   const handleDeleteKennel = (kennel: Kennel) => {
@@ -169,7 +197,7 @@ const ManageKennelsScreen: React.FC = () => {
       </Text>
       <TouchableOpacity
         style={styles.createButton}
-        onPress={() => navigation.navigate('CreateKennel' as never)}
+        onPress={handleCreateKennel}
         activeOpacity={0.8}
       >
         <Icon name="add" size={20} color="#ffffff" />
@@ -195,7 +223,7 @@ const ManageKennelsScreen: React.FC = () => {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => navigation.navigate('CreateKennel' as never)}
+            onPress={handleCreateKennel}
             activeOpacity={0.8}
           >
             <Icon name="add" size={24} color="#ffffff" />
@@ -257,6 +285,16 @@ const ManageKennelsScreen: React.FC = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+      />
+
+      {/* Kennel Limit Modal */}
+      <KennelLimitModal
+        visible={showLimitModal}
+        onClose={handleCloseModal}
+        onUpgrade={handleUpgrade}
+        currentCount={kennels.length}
+        maxCount={maxKennels}
+        subscriptionPlan={subscriptionPlan}
       />
     </View>
   );

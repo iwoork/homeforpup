@@ -91,7 +91,6 @@ const BreedSelectorModal: React.FC<BreedSelectorModalProps> = ({
   };
 
   const handleConfirm = () => {
-    console.log('Confirming breed selection:', tempSelectedBreeds);
     onBreedsChange(tempSelectedBreeds);
     setIsModalVisible(false);
     setSearchQuery('');

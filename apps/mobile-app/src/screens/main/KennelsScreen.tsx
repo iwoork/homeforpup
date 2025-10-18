@@ -8,24 +8,58 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../utils/theme';
 import { Kennel } from '../../types';
 import { useKennels } from '../../hooks/useApi';
+import { useAuth } from '../../contexts/AuthContext';
+import { KennelLimitModal } from '../../components';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const KennelsScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const { user } = useAuth();
   const { data: kennelsData, loading, error, refreshing, refresh } = useKennels({
     page: 1,
     limit: 20,
   });
 
   const kennels = kennelsData?.kennels || [];
+  
+  // Calculate kennel limits
+  const subscriptionPlan = user?.subscriptionPlan || 'basic';
+  const maxKennels = subscriptionPlan === 'basic' ? 1 : 10;
+  const canCreateKennel = kennels.length < maxKennels;
+  
+  // Modal state
+  const [showLimitModal, setShowLimitModal] = React.useState(false);
 
   const onRefresh = async () => {
     await refresh();
   };
 
+  const handleCreateKennel = () => {
+    if (canCreateKennel) {
+      navigation.navigate('CreateKennel' as never);
+    } else {
+      setShowLimitModal(true);
+    }
+  };
+
+  const handleUpgrade = () => {
+    setShowLimitModal(false);
+    navigation.navigate('Profile' as never);
+  };
+
+  const handleCloseModal = () => {
+    setShowLimitModal(false);
+  };
+
   const renderKennelItem = ({ item }: { item: Kennel }) => (
-    <TouchableOpacity style={styles.kennelCard}>
+    <TouchableOpacity 
+      style={styles.kennelCard}
+      onPress={() => navigation.navigate('KennelDetail' as never, { kennel: item } as never)}
+    >
       <View style={styles.kennelImageContainer}>
         {item.photoUrl ? (
           <Image source={{ uri: item.photoUrl }} style={styles.kennelImage} />
@@ -93,9 +127,12 @@ const KennelsScreen: React.FC = () => {
       <Text style={styles.emptySubtitle}>
         Create your first kennel to start managing your breeding operations
       </Text>
-      <TouchableOpacity style={styles.createButton}>
-        <Text style={styles.createButtonText}>Create Kennel</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={handleCreateKennel}
+          >
+            <Text style={styles.createButtonText}>Create Kennel</Text>
+          </TouchableOpacity>
     </View>
   );
 
@@ -120,6 +157,22 @@ const KennelsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Header with kennel count and add button */}
+      <View style={styles.header}>
+        <View style={styles.headerInfo}>
+          <Text style={styles.headerTitle}>My Kennels</Text>
+          <Text style={styles.headerSubtitle}>
+            {kennels.length}/{maxKennels} kennels used
+          </Text>
+        </View>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleCreateKennel}
+            >
+              <Icon name="add" size={24} color={theme.colors.textInverse} />
+            </TouchableOpacity>
+      </View>
+
       <FlatList
         data={kennels}
         renderItem={renderKennelItem}
@@ -130,6 +183,16 @@ const KennelsScreen: React.FC = () => {
         }
         ListEmptyComponent={renderEmptyState}
       />
+
+      {/* Kennel Limit Modal */}
+      <KennelLimitModal
+        visible={showLimitModal}
+        onClose={handleCloseModal}
+        onUpgrade={handleUpgrade}
+        currentCount={kennels.length}
+        maxCount={maxKennels}
+        subscriptionPlan={subscriptionPlan}
+      />
     </View>
   );
 };
@@ -138,6 +201,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  },
+  addButton: {
+    backgroundColor: theme.colors.primary,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...theme.shadows.sm,
   },
   loadingContainer: {
     flex: 1,
@@ -296,6 +391,27 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
   },
   createButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  limitReachedContainer: {
+    alignItems: 'center',
+    marginTop: theme.spacing.lg,
+  },
+  limitReachedText: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  upgradeButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+  },
+  upgradeButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

@@ -17,14 +17,19 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 import apiService from '../../services/apiService';
+import { useKennels } from '../../hooks/useApi';
 
 const ProfileScreen: React.FC = () => {
-  const { user, logout, updateUserType, updateUser } = useAuth();
+  const { user, logout, updateUserType, updateUser, refreshUserFromCognito } = useAuth();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isVerifiedBreeder, setIsVerifiedBreeder] = useState(false);
+  
+  // Get actual kennel count
+  const { data: kennelsData } = useKennels();
+  const kennels = kennelsData?.kennels || [];
 
   // Fetch fresh user data from API
   const fetchUserProfile = useCallback(async () => {
@@ -125,10 +130,10 @@ const ProfileScreen: React.FC = () => {
     );
   };
 
-  // Mock subscription data - will be replaced with real data
+  // Get subscription data from user profile
   type SubscriptionPlan = 'basic' | 'premium';
-  const subscriptionPlan: SubscriptionPlan = 'basic' as SubscriptionPlan;
-  const kennelCount = 1;
+  const subscriptionPlan: SubscriptionPlan = (user?.subscriptionPlan as SubscriptionPlan) || 'basic';
+  const kennelCount = kennels.length;
   const maxKennels = subscriptionPlan === 'basic' ? 1 : 10;
 
   const handleLogout = () => {
@@ -155,6 +160,9 @@ const ProfileScreen: React.FC = () => {
   };
 
   const handlePhotoUpload = () => {
+    console.log('=== PHOTO UPLOAD START ===');
+    console.log('User ID:', user?.userId);
+    
     const options = {
       mediaType: 'photo' as MediaType,
       quality: 0.8,
@@ -162,14 +170,37 @@ const ProfileScreen: React.FC = () => {
     };
 
     launchImageLibrary(options, async (result) => {
-      if (result.didCancel || result.errorCode) {
+      console.log('Image picker result:', {
+        didCancel: result.didCancel,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+        assetsCount: result.assets?.length || 0
+      });
+      
+      if (result.didCancel) {
+        console.log('User cancelled image selection');
+        return;
+      }
+      
+      if (result.errorCode) {
+        console.error('Image picker error:', result.errorMessage);
+        Alert.alert('Error', `Image picker error: ${result.errorMessage}`);
         return;
       }
 
       const asset = result.assets?.[0];
       if (!asset || !asset.uri) {
+        console.error('No asset or URI found in result');
+        Alert.alert('Error', 'No image selected');
         return;
       }
+      
+      console.log('Selected asset:', {
+        uri: asset.uri?.substring(0, 50) + '...',
+        fileName: asset.fileName,
+        type: asset.type,
+        fileSize: asset.fileSize
+      });
 
       if (!user?.userId) {
         Alert.alert('Error', 'User not found. Please log in again.');
@@ -178,6 +209,7 @@ const ProfileScreen: React.FC = () => {
 
       setUploading(true);
       try {
+        console.log('Getting presigned upload URL...');
         // Get presigned upload URL
         const uploadResponse = await apiService.getUploadUrl({
           fileName: asset.fileName || 'profile-photo.jpg',
@@ -185,7 +217,14 @@ const ProfileScreen: React.FC = () => {
           uploadPath: 'profile-photos',
         });
 
+        console.log('Upload URL response:', {
+          success: uploadResponse.success,
+          hasData: !!uploadResponse.data,
+          error: uploadResponse.error
+        });
+
         if (!uploadResponse.success || !uploadResponse.data) {
+          console.error('Failed to get upload URL:', uploadResponse.error);
           throw new Error(uploadResponse.error || 'Failed to get upload URL');
         }
 
@@ -218,26 +257,39 @@ const ProfileScreen: React.FC = () => {
 
         console.log('✅ Photo uploaded to S3 successfully!');
 
-        // Update user profile in the API with new photo URL
+        // Update Cognito user attributes with new photo URL
         console.log('=== PHOTO UPDATE START ===');
         console.log('User ID:', user.userId);
-        console.log('Photo URL to save in DB:', photoUrl);
+        console.log('Photo URL to save in Cognito:', photoUrl);
+
+        // Import AuthService to update Cognito attributes
+        const { default: authService } = await import('../../services/authService');
         
-        const updateResponse = await apiService.updateUser(user.userId, {
-          profileImage: photoUrl,
+        const cognitoUpdateSuccess = await authService.updateUserAttributes({
+          picture: photoUrl,
         });
 
-        console.log('Photo Update API Response:', JSON.stringify(updateResponse, null, 2));
-        
-        if (!updateResponse.success) {
-          console.error('Photo Update API Error:', updateResponse.error);
-          throw new Error(updateResponse.error || 'Failed to save profile photo');
+        if (!cognitoUpdateSuccess) {
+          console.error('Failed to update Cognito user attributes');
+          throw new Error('Failed to update profile photo in Cognito');
         }
 
-        // Update local user state with the response from the API
-        if (updateUser && updateResponse.data?.user) {
-          console.log('Updating local user state with photo');
-          updateUser(updateResponse.data.user);
+        console.log('✅ Cognito user attributes updated successfully');
+
+        // Refresh user data from Cognito to get the updated profile image
+        console.log('Refreshing user data from Cognito...');
+        const refreshSuccess = await refreshUserFromCognito();
+        
+        if (!refreshSuccess) {
+          console.warn('Failed to refresh user from Cognito, updating local state manually');
+          // Fallback: update local state manually
+          if (updateUser) {
+            const updatedUser = {
+              ...user,
+              profileImage: photoUrl
+            };
+            updateUser(updatedUser);
+          }
         }
         
         console.log('=== PHOTO UPDATE COMPLETE ===');
@@ -396,9 +448,10 @@ const ProfileScreen: React.FC = () => {
               </View>
             )}
             <TouchableOpacity 
-              style={styles.editAvatarButton}
+              style={[styles.editAvatarButton, uploading && styles.disabledButton]}
               onPress={handlePhotoUpload}
               disabled={uploading}
+              activeOpacity={0.7}
             >
               <Icon name="camera" size={16} color="#ffffff" />
             </TouchableOpacity>
@@ -757,6 +810,10 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
     ...theme.shadows.md,
     zIndex: 2,
+  },
+  disabledButton: {
+    backgroundColor: theme.colors.textTertiary,
+    opacity: 0.6,
   },
   userName: {
     fontSize: 26,

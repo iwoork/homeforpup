@@ -224,30 +224,20 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
   };
 
   const handleSelectLocation = (prediction: PlacePrediction) => {
-    console.log('=== LOCATION SELECTION START ===');
-    console.log('Prediction:', prediction);
-    console.log('Description:', prediction.description);
-    
     const formattedAddress = prediction.description;
-    console.log('Formatted address:', formattedAddress);
     
-    // Update the form value first
-    console.log('Calling onLocationSelect with:', formattedAddress);
+    // Update the form value
     onLocationSelect(formattedAddress, null);
     
-    // Then close modal and cleanup
-    console.log('Closing modal...');
+    // Close modal and cleanup
     setIsModalVisible(false);
     setPredictions([]);
     setManualEntry(false);
     
-    // Dismiss keyboard last
+    // Dismiss keyboard
     setTimeout(() => {
-      console.log('Dismissing keyboard...');
       Keyboard.dismiss();
     }, 100);
-    
-    console.log('=== LOCATION SELECTION END ===');
   };
 
   const handleManualEntry = () => {
@@ -255,13 +245,13 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
       // Dismiss keyboard first
       Keyboard.dismiss();
       
-      // Close modal and update form
+      // Update the form value
+      onLocationSelect(searchText.trim(), null);
+      
+      // Close modal and cleanup
       setIsModalVisible(false);
       setPredictions([]);
       setManualEntry(false);
-      
-      // Update the form value
-      onLocationSelect(searchText.trim(), null);
     }
   };
 
@@ -372,10 +362,7 @@ const LocationAutocompleteModal: React.FC<LocationAutocompleteModalProps> = ({
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.predictionItem}
-                  onPress={() => {
-                    console.log('City tapped:', item.description);
-                    handleSelectLocation(item);
-                  }}
+                  onPress={() => handleSelectLocation(item)}
                   activeOpacity={0.7}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >

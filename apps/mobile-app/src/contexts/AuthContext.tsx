@@ -12,6 +12,7 @@ interface AuthContextType {
   signup: (userData: any) => Promise<ApiResponse>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  refreshUserFromCognito: () => Promise<boolean>;
   updateUserType: (userType: 'breeder' | 'dog-parent') => Promise<boolean>;
   refreshSession: () => Promise<void>;
   confirmSignup: (email: string, code: string) => Promise<ApiResponse>;
@@ -239,6 +240,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUserFromCognito = async () => {
+    try {
+      console.log('🔄 Refreshing user data from Cognito...');
+      const freshUser = await authService.getCurrentUser();
+      if (freshUser) {
+        setUser(freshUser);
+        console.log('✅ User data refreshed from Cognito');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing user from Cognito:', error);
+      return false;
+    }
+  };
+
   const updateUserType = async (userType: 'breeder' | 'dog-parent'): Promise<boolean> => {
     try {
       const success = await authService.updateUserType(userType);
@@ -345,6 +362,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signup,
     logout,
     updateUser,
+    refreshUserFromCognito,
     updateUserType,
     refreshSession,
     confirmSignup,

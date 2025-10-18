@@ -362,12 +362,12 @@ const MainStack = () => {
     <Stack.Screen
       name="KennelDetail"
       component={KennelDetailScreen}
-      options={{ title: 'Kennel Details' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="CreateKennel"
       component={CreateKennelScreen}
-      options={{ title: 'Create Kennel' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="EditKennel"
