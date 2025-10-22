@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Switch,
+  Modal,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,6 +20,7 @@ import { theme } from '../../utils/theme';
 import { VeterinaryVisit } from '@homeforpup/shared-types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDogs } from '../../hooks/useApi';
+import { useVeterinarians } from '../../hooks/useVeterinarians';
 import apiService from '../../services/apiService';
 
 interface RouteParams {
@@ -40,12 +42,15 @@ const RecordVetVisitScreen: React.FC = () => {
   
   const { data: dogsData } = useDogs({ ownerId: user?.userId });
   const dogs = dogsData?.dogs || [];
+  const { veterinarians } = useVeterinarians();
 
   const [loading, setLoading] = useState(false);
   const [showDogPicker, setShowDogPicker] = useState(false);
   const [showVisitDatePicker, setShowVisitDatePicker] = useState(false);
   const [showFollowUpDatePicker, setShowFollowUpDatePicker] = useState(false);
   const [showVisitTypePicker, setShowVisitTypePicker] = useState(false);
+  const [showVeterinarianPicker, setShowVeterinarianPicker] = useState(false);
+  const [selectedVeterinarian, setSelectedVeterinarian] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     dogId: params?.dogId || '',
@@ -89,12 +94,14 @@ const RecordVetVisitScreen: React.FC = () => {
       newErrors.dogId = 'Please select a dog';
     }
 
-    if (!formData.veterinarianName.trim()) {
-      newErrors.veterinarianName = 'Veterinarian name is required';
-    }
+    if (!selectedVeterinarian) {
+      if (!formData.veterinarianName.trim()) {
+        newErrors.veterinarianName = 'Veterinarian name is required';
+      }
 
-    if (!formData.clinicName.trim()) {
-      newErrors.clinicName = 'Clinic name is required';
+      if (!formData.clinicName.trim()) {
+        newErrors.clinicName = 'Clinic name is required';
+      }
     }
 
     if (!formData.reason.trim()) {
@@ -134,7 +141,12 @@ const RecordVetVisitScreen: React.FC = () => {
         dogId: formData.dogId,
         visitDate: formData.visitDate.toISOString(),
         visitType: formData.visitType,
-        veterinarian: {
+        veterinarian: selectedVeterinarian ? {
+          name: selectedVeterinarian.name,
+          clinic: selectedVeterinarian.clinic,
+          phone: selectedVeterinarian.phone || undefined,
+          email: selectedVeterinarian.email || undefined,
+        } : {
           name: formData.veterinarianName,
           clinic: formData.clinicName,
           phone: formData.clinicPhone || undefined,
@@ -188,6 +200,23 @@ const RecordVetVisitScreen: React.FC = () => {
 
   const removeMedication = (index: number) => {
     setMedications(medications.filter((_, i) => i !== index));
+  };
+
+  const handleSelectVeterinarian = (veterinarian: any) => {
+    setSelectedVeterinarian(veterinarian);
+    setFormData({
+      ...formData,
+      veterinarianName: veterinarian.name,
+      clinicName: veterinarian.clinic,
+      clinicPhone: veterinarian.phone || '',
+      clinicEmail: veterinarian.email || '',
+    });
+    setShowVeterinarianPicker(false);
+  };
+
+  const handleAddNewVeterinarian = () => {
+    setShowVeterinarianPicker(false);
+    navigation.navigate('AddVeterinarian' as never);
   };
 
   const selectedDog = dogs.find(d => d.id === formData.dogId);
@@ -335,52 +364,74 @@ const RecordVetVisitScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Veterinarian Information</Text>
 
+          {/* Veterinarian Selection */}
           <Text style={styles.label}>
-            Veterinarian Name <Text style={styles.required}>*</Text>
+            Select Veterinarian <Text style={styles.required}>*</Text>
           </Text>
-          <TextInput
-            style={[styles.input, errors.veterinarianName && styles.inputError]}
-            placeholder="Dr. Smith"
-            value={formData.veterinarianName}
-            onChangeText={(text) => {
-              setFormData({ ...formData, veterinarianName: text });
-              setErrors({ ...errors, veterinarianName: '' });
-            }}
-          />
-          {errors.veterinarianName && <Text style={styles.errorText}>{errors.veterinarianName}</Text>}
+          <TouchableOpacity
+            style={[styles.pickerButton, !selectedVeterinarian && styles.pickerButtonRequired]}
+            onPress={() => setShowVeterinarianPicker(true)}
+          >
+            <Text style={[styles.pickerButtonText, selectedVeterinarian && styles.pickerButtonTextSelected]}>
+              {selectedVeterinarian 
+                ? `${selectedVeterinarian.name} - ${selectedVeterinarian.clinic}`
+                : 'Choose from saved veterinarians'
+              }
+            </Text>
+            <Icon name="chevron-down" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+          {!selectedVeterinarian && (
+            <Text style={styles.helpText}>
+              You must add a veterinarian first before recording a vet visit. 
+              <Text style={styles.linkText} onPress={() => setShowVeterinarianPicker(true)}>
+                {' '}Add a veterinarian now
+              </Text>
+            </Text>
+          )}
 
-          <Text style={styles.label}>
-            Clinic Name <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.input, errors.clinicName && styles.inputError]}
-            placeholder="Happy Paws Veterinary Clinic"
-            value={formData.clinicName}
-            onChangeText={(text) => {
-              setFormData({ ...formData, clinicName: text });
-              setErrors({ ...errors, clinicName: '' });
-            }}
-          />
-          {errors.clinicName && <Text style={styles.errorText}>{errors.clinicName}</Text>}
+          {selectedVeterinarian ? (
+            <View style={styles.selectedVeterinarianInfo}>
+              <Text style={styles.label}>Selected Veterinarian Contact</Text>
+              <View style={styles.contactInfo}>
+                {selectedVeterinarian.phone && (
+                  <View style={styles.contactItem}>
+                    <Icon name="call" size={16} color={theme.colors.textSecondary} />
+                    <Text style={styles.contactText}>{selectedVeterinarian.phone}</Text>
+                  </View>
+                )}
+                {selectedVeterinarian.email && (
+                  <View style={styles.contactItem}>
+                    <Icon name="mail" size={16} color={theme.colors.textSecondary} />
+                    <Text style={styles.contactText}>{selectedVeterinarian.email}</Text>
+                  </View>
+                )}
+                {!selectedVeterinarian.phone && !selectedVeterinarian.email && (
+                  <Text style={styles.noContactText}>No contact information available</Text>
+                )}
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.label}>Clinic Phone</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="(555) 123-4567"
+                value={formData.clinicPhone}
+                onChangeText={(text) => setFormData({ ...formData, clinicPhone: text })}
+                keyboardType="phone-pad"
+              />
 
-          <Text style={styles.label}>Clinic Phone</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="(555) 123-4567"
-            value={formData.clinicPhone}
-            onChangeText={(text) => setFormData({ ...formData, clinicPhone: text })}
-            keyboardType="phone-pad"
-          />
-
-          <Text style={styles.label}>Clinic Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="info@happypawsvet.com"
-            value={formData.clinicEmail}
-            onChangeText={(text) => setFormData({ ...formData, clinicEmail: text })}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+              <Text style={styles.label}>Clinic Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="info@happypawsvet.com"
+                value={formData.clinicEmail}
+                onChangeText={(text) => setFormData({ ...formData, clinicEmail: text })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </>
+          )}
         </View>
 
         {/* Vital Signs */}
@@ -611,6 +662,63 @@ const RecordVetVisitScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Veterinarian Picker Modal */}
+      <Modal
+        visible={showVeterinarianPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowVeterinarianPicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Veterinarian</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowVeterinarianPicker(false)}
+            >
+              <Icon name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {veterinarians.length > 0 ? (
+              veterinarians.map((vet) => (
+                <TouchableOpacity
+                  key={vet.id}
+                  style={styles.veterinarianOption}
+                  onPress={() => handleSelectVeterinarian(vet)}
+                >
+                  <View style={styles.veterinarianInfo}>
+                    <Text style={styles.veterinarianName}>{vet.name}</Text>
+                    <Text style={styles.veterinarianClinic}>{vet.clinic}</Text>
+                    {vet.phone && (
+                      <Text style={styles.veterinarianPhone}>{vet.phone}</Text>
+                    )}
+                  </View>
+                  <Icon name="chevron-forward" size={20} color={theme.colors.textSecondary} />
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Icon name="medical" size={48} color={theme.colors.textSecondary} />
+                <Text style={styles.emptyStateTitle}>No Veterinarians</Text>
+                <Text style={styles.emptyStateText}>
+                  You haven't added any veterinarians yet.
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.addNewButton}
+              onPress={handleAddNewVeterinarian}
+            >
+              <Icon name="add" size={20} color={theme.colors.primary} />
+              <Text style={styles.addNewButtonText}>Add New Veterinarian</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -829,6 +937,139 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Veterinarian Picker Styles
+  pickerButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    marginBottom: theme.spacing.md,
+  },
+  pickerButtonText: {
+    fontSize: 15,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  pickerButtonTextSelected: {
+    color: theme.colors.text,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  closeButton: {
+    padding: theme.spacing.xs,
+  },
+  modalContent: {
+    flex: 1,
+    padding: theme.spacing.md,
+  },
+  veterinarianOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  veterinarianInfo: {
+    flex: 1,
+  },
+  veterinarianName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  veterinarianClinic: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  veterinarianPhone: {
+    fontSize: 13,
+    color: theme.colors.textTertiary,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  addNewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.primary + '15',
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    marginTop: theme.spacing.md,
+  },
+  addNewButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    marginLeft: theme.spacing.sm,
+  },
+  selectedVeterinarianInfo: {
+    marginTop: theme.spacing.md,
+  },
+  contactInfo: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  contactText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+  },
+  noContactText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
   },
 });
 

@@ -78,7 +78,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <Logo variant="large" style={styles.logo} />
             <Text style={styles.appName}>Home for Pup</Text>
             <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to manage your kennels</Text>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 
           <View style={styles.form}>

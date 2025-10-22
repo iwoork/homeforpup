@@ -17,6 +17,8 @@ export interface EnvironmentConfig {
     dogs: string;
     kennels: string;
     litters: string;
+    vetVisits: string;
+    veterinarians: string;
     messages: string;
     favorites: string;
     activities: string;
@@ -91,6 +93,8 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
           dogs: 'homeforpup-dogs-prod',
           kennels: 'homeforpup-kennels-prod',
           litters: 'homeforpup-litters-prod',
+          vetVisits: 'homeforpup-vet-visits-prod',
+          veterinarians: 'homeforpup-veterinarians-prod',
           messages: 'homeforpup-messages-prod',
           favorites: 'homeforpup-favorites-prod',
           activities: 'homeforpup-activities-prod',
@@ -124,6 +128,8 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
           dogs: 'homeforpup-dogs-staging',
           kennels: 'homeforpup-kennels-staging',
           litters: 'homeforpup-litters-staging',
+          vetVisits: 'homeforpup-vet-visits-staging',
+          veterinarians: 'homeforpup-veterinarians-staging',
           messages: 'homeforpup-messages-staging',
           favorites: 'homeforpup-favorites-staging',
           activities: 'homeforpup-activities-staging',
@@ -155,6 +161,8 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
           dogs: 'homeforpup-dogs',
           kennels: 'homeforpup-kennels',
           litters: 'homeforpup-litters',
+          vetVisits: 'homeforpup-vet-visits',
+          veterinarians: 'homeforpup-veterinarians',
           messages: 'homeforpup-messages',
           favorites: 'homeforpup-favorites',
           activities: 'homeforpup-activities',

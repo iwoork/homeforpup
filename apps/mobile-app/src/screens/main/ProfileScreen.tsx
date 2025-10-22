@@ -315,6 +315,13 @@ const ProfileScreen: React.FC = () => {
       iconColor: theme.colors.primary,
       onPress: () => navigation.navigate('ManageKennels' as never),
     },
+    {
+      title: 'Manage Dog Care',
+      subtitle: 'Manage veterinarians and care records',
+      icon: 'medical',
+      iconColor: '#10b981',
+      onPress: () => navigation.navigate('ManageDogCare' as never),
+    },
     ...(subscriptionPlan === 'premium'
       ? [
           {

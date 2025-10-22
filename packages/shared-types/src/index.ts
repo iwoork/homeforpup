@@ -73,6 +73,9 @@ export interface Profile {
     twitter?: string;
   };
   
+  // User type and role
+  userType?: 'breeder' | 'dog-parent'; // User type from Cognito
+  
   // Metadata
   createdAt: string; // ISO timestamp
   updatedAt: string; // ISO timestamp
@@ -91,6 +94,7 @@ export interface User extends Profile {
   location?: string;
   profileImage?: string;
   bio?: string;
+  userType?: 'breeder' | 'dog-parent'; // User type from Cognito
 }
 
 // Kennel interface for breeders
@@ -228,6 +232,66 @@ export interface Litter {
   // Health and documentation
   healthClearances: string[]; // URLs to parent health documents
   
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VetVisit {
+  id: string;
+  dogId: string;
+  ownerId: string; // User ID of the dog owner
+  kennelId?: string; // Optional kennel ID if dog belongs to a kennel
+  
+  // Visit details
+  visitDate: string; // ISO date string
+  vetName: string;
+  vetClinic: string;
+  visitType: 'routine' | 'emergency' | 'vaccination' | 'checkup' | 'surgery' | 'other';
+  
+  // Health information
+  reason: string; // Reason for visit
+  diagnosis?: string; // Diagnosis if any
+  treatment?: string; // Treatment provided
+  medications?: string[]; // List of medications prescribed
+  weight?: number; // Dog's weight at visit
+  temperature?: number; // Body temperature if taken
+  
+  // Follow-up
+  followUpRequired: boolean;
+  followUpDate?: string; // ISO date string
+  followUpNotes?: string;
+  
+  // Cost and billing
+  cost?: number; // Visit cost
+  currency?: string; // Currency code (default: USD)
+  paid: boolean; // Whether visit was paid for
+  
+  // Documentation
+  documents?: string[]; // URLs to uploaded documents (receipts, reports, etc.)
+  notes?: string; // Additional notes
+  
+  // Status
+  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Veterinarian {
+  id: string;
+  ownerId: string; // User ID who added this veterinarian
+  name: string;
+  clinic: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  specialties?: string[]; // e.g., ['surgery', 'dermatology', 'emergency']
+  notes?: string; // Additional notes about the veterinarian
+  isActive: boolean; // Whether this vet is still active/available
   createdAt: string;
   updatedAt: string;
 }

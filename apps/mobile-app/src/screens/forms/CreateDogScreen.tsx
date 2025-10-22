@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,8 @@ import apiService from '../../services/apiService';
 interface RouteParams {
   litterId?: string;
   dogType?: 'parent' | 'puppy';
+  gender?: 'male' | 'female';
+  returnToLitter?: boolean;
 }
 
 const CreateDogScreen: React.FC = () => {
@@ -33,7 +35,7 @@ const CreateDogScreen: React.FC = () => {
 
   const { data: breedsData } = useBreeds();
   // useKennels automatically filters to kennels where user is owner or manager
-  const { data: kennelsData } = useKennels();
+  const { data: kennelsData, loading: kennelsLoading } = useKennels();
 
   const breeds = breedsData?.breeds || [];
   const kennels = kennelsData?.kennels || [];
@@ -50,7 +52,7 @@ const CreateDogScreen: React.FC = () => {
     name: '',
     callName: '',
     breed: '',
-    gender: 'male' as 'male' | 'female',
+    gender: (params?.gender || 'male') as 'male' | 'female',
     birthDate: new Date(),
     weight: '',
     height: '',
@@ -64,13 +66,30 @@ const CreateDogScreen: React.FC = () => {
     breedingStatus: 'not_ready' as 'available' | 'retired' | 'not_ready',
     healthStatus: 'excellent' as 'excellent' | 'good' | 'fair' | 'poor',
     dogType: (params?.dogType || 'parent') as 'parent' | 'puppy',
-    kennelId: kennels[0]?.id || '',
+    kennelId: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Update kennelId when kennels data loads
+  useEffect(() => {
+    if (kennels.length > 0 && !formData.kennelId) {
+      setFormData(prev => ({ ...prev, kennelId: kennels[0].id }));
+    }
+  }, [kennels, formData.kennelId]);
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    if (kennelsLoading) {
+      Alert.alert('Loading', 'Please wait while kennels are loading...');
+      return false;
+    }
+
+    if (kennels.length === 0) {
+      Alert.alert('No Kennels', 'You need to create a kennel before adding dogs. Please create a kennel first.');
+      return false;
+    }
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -201,12 +220,20 @@ const CreateDogScreen: React.FC = () => {
       const response = await apiService.createDog(newDog);
 
       if (response.success) {
-        Alert.alert('Success', 'Dog added successfully!', [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
+        if (params?.returnToLitter) {
+          // Return to litter form with the newly created dog selected
+          navigation.navigate('CreateLitter' as never, {
+            selectedDogId: response.data?.dog?.id,
+            selectedDogGender: formData.gender,
+          } as never);
+        } else {
+          Alert.alert('Success', 'Dog added successfully!', [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack(),
+            },
+          ]);
+        }
       } else {
         throw new Error(response.error || 'Failed to add dog');
       }
@@ -372,7 +399,12 @@ const CreateDogScreen: React.FC = () => {
             {/* Kennel Selector */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Kennel *</Text>
-              {kennels.length === 0 ? (
+              {kennelsLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                  <Text style={styles.loadingText}>Loading kennels...</Text>
+                </View>
+              ) : kennels.length === 0 ? (
                 <View style={styles.warningContainer}>
                   <Icon
                     name="warning"
@@ -759,50 +791,61 @@ const CreateDogScreen: React.FC = () => {
           {/* Breed Picker Modal */}
           {showBreedPicker && (
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Select Breed</Text>
-                  <TouchableOpacity onPress={() => setShowBreedPicker(false)}>
-                    <Icon name="close" size={24} color={theme.colors.text} />
-                  </TouchableOpacity>
+              <KeyboardAvoidingView
+                style={styles.modalKeyboardAvoidingView}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+              >
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Select Breed</Text>
+                    <TouchableOpacity onPress={() => setShowBreedPicker(false)}>
+                      <Icon name="close" size={24} color={theme.colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.searchContainer}>
+                    <Icon
+                      name="search"
+                      size={20}
+                      color={theme.colors.textSecondary}
+                    />
+                    <TextInput
+                      style={styles.searchInput}
+                      value={breedSearchQuery}
+                      onChangeText={setBreedSearchQuery}
+                      placeholder="Search breeds..."
+                      placeholderTextColor={theme.colors.textSecondary}
+                      autoFocus={true}
+                    />
+                  </View>
+                  <ScrollView 
+                    style={styles.modalBody}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                  >
+                    {filteredBreeds.map(breed => {
+                      const breedImageUrl = `https://homeforpup.com/breeds/${breed.name}.jpg`;
+                      return (
+                        <TouchableOpacity
+                          key={breed.id}
+                          style={styles.breedItem}
+                          onPress={() => {
+                            setFormData({ ...formData, breed: breed.name });
+                            setShowBreedPicker(false);
+                            setBreedSearchQuery('');
+                          }}
+                        >
+                          <Image
+                            source={{ uri: breedImageUrl }}
+                            style={styles.breedItemImage}
+                          />
+                          <Text style={styles.breedItemText}>{breed.name}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
-                <View style={styles.searchContainer}>
-                  <Icon
-                    name="search"
-                    size={20}
-                    color={theme.colors.textSecondary}
-                  />
-                  <TextInput
-                    style={styles.searchInput}
-                    value={breedSearchQuery}
-                    onChangeText={setBreedSearchQuery}
-                    placeholder="Search breeds..."
-                    placeholderTextColor={theme.colors.textSecondary}
-                  />
-                </View>
-                <ScrollView style={styles.modalBody}>
-                  {filteredBreeds.map(breed => {
-                    const breedImageUrl = `https://homeforpup.com/breeds/${breed.name}.jpg`;
-                    return (
-                      <TouchableOpacity
-                        key={breed.id}
-                        style={styles.breedItem}
-                        onPress={() => {
-                          setFormData({ ...formData, breed: breed.name });
-                          setShowBreedPicker(false);
-                          setBreedSearchQuery('');
-                        }}
-                      >
-                        <Image
-                          source={{ uri: breedImageUrl }}
-                          style={styles.breedItemImage}
-                        />
-                        <Text style={styles.breedItemText}>{breed.name}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              </View>
+              </KeyboardAvoidingView>
             </View>
           )}
 
@@ -1114,6 +1157,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
+  modalKeyboardAvoidingView: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   modalContent: {
     backgroundColor: theme.colors.surface,
     borderTopLeftRadius: theme.borderRadius.xl,
@@ -1139,12 +1186,20 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    zIndex: 1,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: theme.colors.text,
     marginLeft: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   modalBody: {
     padding: theme.spacing.lg,
@@ -1179,6 +1234,21 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: '#856404',
+    marginLeft: theme.spacing.sm,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+  },
+  loadingText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
     marginLeft: theme.spacing.sm,
   },
   helperText: {

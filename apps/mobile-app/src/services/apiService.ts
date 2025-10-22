@@ -697,6 +697,52 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  // Veterinarians API
+  async createVeterinarian(
+    veterinarianData: any,
+  ): Promise<ApiResponse<any>> {
+    return this.makeRequest('/veterinarians', {
+      method: 'POST',
+      body: JSON.stringify(veterinarianData),
+    });
+  }
+
+  async getVeterinarians(params: {
+    ownerId?: string;
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+  } = {}): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.ownerId) queryParams.append('ownerId', params.ownerId);
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+
+    const endpoint = `/veterinarians?${queryParams.toString()}`;
+    return this.makeRequest(endpoint);
+  }
+
+  async getVeterinarianById(id: string): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/veterinarians/${id}`);
+  }
+
+  async updateVeterinarian(
+    id: string,
+    veterinarianData: any,
+  ): Promise<ApiResponse<any>> {
+    return this.makeRequest(`/veterinarians/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(veterinarianData),
+    });
+  }
+
+  async deleteVeterinarian(id: string): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(`/veterinarians/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 // Create a singleton instance

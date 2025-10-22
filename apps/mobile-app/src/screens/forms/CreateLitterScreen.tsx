@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,13 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Litter } from '../../types';
 import { useBreeds, useDogs } from '../../hooks/useApi';
+import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
 
 type LitterStatus =
@@ -30,11 +31,21 @@ type LitterStatus =
   | 'sold_out';
 type Season = 'spring' | 'summer' | 'fall' | 'winter';
 
+interface RouteParams {
+  selectedDogId?: string;
+  selectedDogGender?: 'male' | 'female';
+}
+
 const CreateLitterScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const params = (route.params as RouteParams) || {};
+  const { user } = useAuth();
+  
   const { data: breedsData, loading: breedsLoading } = useBreeds({ limit: 200 });
   const { data: dogsData, loading: dogsLoading } = useDogs({ 
     type: 'parent',
+    ownerId: user?.userId,
     limit: 100 
   });
 
@@ -62,6 +73,17 @@ const CreateLitterScreen: React.FC = () => {
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Handle returning from dog creation with selected dog
+  useEffect(() => {
+    if (params.selectedDogId && params.selectedDogGender) {
+      if (params.selectedDogGender === 'male') {
+        setFormData(prev => ({ ...prev, sireId: params.selectedDogId! }));
+      } else if (params.selectedDogGender === 'female') {
+        setFormData(prev => ({ ...prev, damId: params.selectedDogId! }));
+      }
+    }
+  }, [params.selectedDogId, params.selectedDogGender]);
 
   // Date picker handlers
   const onBreedingDateChange = (event: any, selectedDate?: Date) => {
@@ -427,7 +449,7 @@ const CreateLitterScreen: React.FC = () => {
                   !formData.sireId && styles.placeholderText,
                 ]}
               >
-                {selectedSire?.name || 'Select sire (male parent)'}
+                {selectedSire?.name || (maleDogs.length === 0 ? 'No male dogs - Add one first' : 'Select sire (male parent)')}
               </Text>
               <Icon
                 name="chevron-down"
@@ -463,7 +485,7 @@ const CreateLitterScreen: React.FC = () => {
                   !formData.damId && styles.placeholderText,
                 ]}
               >
-                {selectedDam?.name || 'Select dam (female parent)'}
+                {selectedDam?.name || (femaleDogs.length === 0 ? 'No female dogs - Add one first' : 'Select dam (female parent)')}
               </Text>
               <Icon
                 name="chevron-down"
@@ -689,8 +711,25 @@ const CreateLitterScreen: React.FC = () => {
                     <Text style={styles.emptyBreedText}>
                       {sireSearchQuery
                         ? `No male dogs found matching "${sireSearchQuery}"`
-                        : 'No male parent dogs available. Add parent dogs first.'}
+                        : 'No male parent dogs available.'}
                     </Text>
+                    {!sireSearchQuery && (
+                      <TouchableOpacity
+                        style={styles.addDogButton}
+                        onPress={() => {
+                          setShowSirePicker(false);
+                          navigation.navigate('CreateDog' as never, {
+                            dogType: 'parent',
+                            gender: 'male',
+                            returnToLitter: true,
+                          } as never);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Icon name="add" size={20} color="#ffffff" />
+                        <Text style={styles.addDogButtonText}>Add Male Parent Dog</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 }
               />
@@ -797,8 +836,25 @@ const CreateLitterScreen: React.FC = () => {
                     <Text style={styles.emptyBreedText}>
                       {damSearchQuery
                         ? `No female dogs found matching "${damSearchQuery}"`
-                        : 'No female parent dogs available. Add parent dogs first.'}
+                        : 'No female parent dogs available.'}
                     </Text>
+                    {!damSearchQuery && (
+                      <TouchableOpacity
+                        style={styles.addDogButton}
+                        onPress={() => {
+                          setShowDamPicker(false);
+                          navigation.navigate('CreateDog' as never, {
+                            dogType: 'parent',
+                            gender: 'female',
+                            returnToLitter: true,
+                          } as never);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Icon name="add" size={20} color="#ffffff" />
+                        <Text style={styles.addDogButtonText}>Add Female Parent Dog</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 }
               />
@@ -1200,6 +1256,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  addDogButton: {
+    backgroundColor: theme.colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing.lg,
+    ...theme.shadows.sm,
+  },
+  addDogButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: theme.spacing.sm,
   },
 });
 

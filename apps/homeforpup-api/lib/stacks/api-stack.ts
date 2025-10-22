@@ -80,6 +80,8 @@ export class ApiStack extends cdk.Stack {
     this.createProfilesApi();
     this.createKennelsApi();
     this.createLittersApi();
+    this.createVetVisitsApi();
+    this.createVeterinariansApi();
     this.createMessagesApi();
     this.createFavoritesApi();
     this.createActivitiesApi();
@@ -448,6 +450,188 @@ export class ApiStack extends cdk.Stack {
     deleteLitterFunction.grantDynamoDBAccess([config.tables.litters]);
 
     litterIdResource.addMethod('DELETE', deleteLitterFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+  }
+
+  private createVetVisitsApi() {
+    const { config } = this;
+    const vetVisitsResource = this.api.root.addResource('vet-visits');
+    const vetVisitIdResource = vetVisitsResource.addResource('{id}');
+
+    // GET /vet-visits - List vet visits
+    const listVetVisitsFunction = new LambdaApi(this, 'ListVetVisitsFunction', {
+      functionName: 'list-vet-visits',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/vet-visits/list'),
+      config,
+      environment: {
+        VET_VISITS_TABLE: config.tables.vetVisits,
+      },
+    });
+    listVetVisitsFunction.grantDynamoDBAccess([config.tables.vetVisits]);
+
+    vetVisitsResource.addMethod('GET', listVetVisitsFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // POST /vet-visits - Create vet visit
+    const createVetVisitFunction = new LambdaApi(this, 'CreateVetVisitFunction', {
+      functionName: 'create-vet-visit',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/vet-visits/create'),
+      config,
+      environment: {
+        VET_VISITS_TABLE: config.tables.vetVisits,
+      },
+    });
+    createVetVisitFunction.grantDynamoDBAccess([config.tables.vetVisits]);
+
+    vetVisitsResource.addMethod('POST', createVetVisitFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // GET /vet-visits/{id} - Get vet visit by ID
+    const getVetVisitFunction = new LambdaApi(this, 'GetVetVisitFunction', {
+      functionName: 'get-vet-visit',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/vet-visits/get'),
+      config,
+      environment: {
+        VET_VISITS_TABLE: config.tables.vetVisits,
+      },
+    });
+    getVetVisitFunction.grantDynamoDBAccess([config.tables.vetVisits]);
+
+    vetVisitIdResource.addMethod('GET', getVetVisitFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // PUT /vet-visits/{id} - Update vet visit
+    const updateVetVisitFunction = new LambdaApi(this, 'UpdateVetVisitFunction', {
+      functionName: 'update-vet-visit',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/vet-visits/update'),
+      config,
+      environment: {
+        VET_VISITS_TABLE: config.tables.vetVisits,
+      },
+    });
+    updateVetVisitFunction.grantDynamoDBAccess([config.tables.vetVisits]);
+
+    vetVisitIdResource.addMethod('PUT', updateVetVisitFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // DELETE /vet-visits/{id} - Delete vet visit
+    const deleteVetVisitFunction = new LambdaApi(this, 'DeleteVetVisitFunction', {
+      functionName: 'delete-vet-visit',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/vet-visits/delete'),
+      config,
+      environment: {
+        VET_VISITS_TABLE: config.tables.vetVisits,
+      },
+    });
+    deleteVetVisitFunction.grantDynamoDBAccess([config.tables.vetVisits]);
+
+    vetVisitIdResource.addMethod('DELETE', deleteVetVisitFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+  }
+
+  private createVeterinariansApi() {
+    const { config } = this;
+    const veterinariansResource = this.api.root.addResource('veterinarians');
+    const veterinarianIdResource = veterinariansResource.addResource('{id}');
+
+    // GET /veterinarians - List veterinarians
+    const listVeterinariansFunction = new LambdaApi(this, 'ListVeterinariansFunction', {
+      functionName: 'list-veterinarians',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/veterinarians/list'),
+      config,
+      environment: {
+        VETERINARIANS_TABLE: config.tables.veterinarians,
+      },
+    });
+    listVeterinariansFunction.grantDynamoDBAccess([config.tables.veterinarians]);
+
+    veterinariansResource.addMethod('GET', listVeterinariansFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // POST /veterinarians - Create veterinarian
+    const createVeterinarianFunction = new LambdaApi(this, 'CreateVeterinarianFunction', {
+      functionName: 'create-veterinarian',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/veterinarians/create'),
+      config,
+      environment: {
+        VETERINARIANS_TABLE: config.tables.veterinarians,
+      },
+    });
+    createVeterinarianFunction.grantDynamoDBAccess([config.tables.veterinarians]);
+
+    veterinariansResource.addMethod('POST', createVeterinarianFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // GET /veterinarians/{id} - Get veterinarian by ID
+    const getVeterinarianFunction = new LambdaApi(this, 'GetVeterinarianFunction', {
+      functionName: 'get-veterinarian',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/veterinarians/get'),
+      config,
+      environment: {
+        VETERINARIANS_TABLE: config.tables.veterinarians,
+      },
+    });
+    getVeterinarianFunction.grantDynamoDBAccess([config.tables.veterinarians]);
+
+    veterinarianIdResource.addMethod('GET', getVeterinarianFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // PUT /veterinarians/{id} - Update veterinarian
+    const updateVeterinarianFunction = new LambdaApi(this, 'UpdateVeterinarianFunction', {
+      functionName: 'update-veterinarian',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/veterinarians/update'),
+      config,
+      environment: {
+        VETERINARIANS_TABLE: config.tables.veterinarians,
+      },
+    });
+    updateVeterinarianFunction.grantDynamoDBAccess([config.tables.veterinarians]);
+
+    veterinarianIdResource.addMethod('PUT', updateVeterinarianFunction.createIntegration(), {
+      authorizer: this.authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+    });
+
+    // DELETE /veterinarians/{id} - Delete veterinarian
+    const deleteVeterinarianFunction = new LambdaApi(this, 'DeleteVeterinarianFunction', {
+      functionName: 'delete-veterinarian',
+      handler: 'index.handler',
+      entry: path.join(__dirname, '../../src/functions/veterinarians/delete'),
+      config,
+      environment: {
+        VETERINARIANS_TABLE: config.tables.veterinarians,
+      },
+    });
+    deleteVeterinarianFunction.grantDynamoDBAccess([config.tables.veterinarians]);
+
+    veterinarianIdResource.addMethod('DELETE', deleteVeterinarianFunction.createIntegration(), {
       authorizer: this.authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
     });

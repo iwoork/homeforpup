@@ -26,6 +26,9 @@ import NotificationsScreen from '../screens/main/NotificationsScreen';
 import PrivacySettingsScreen from '../screens/main/PrivacySettingsScreen';
 import HelpSupportScreen from '../screens/main/HelpSupportScreen';
 import ManageAccountScreen from '../screens/main/ManageAccountScreen';
+import ManageDogCareScreen from '../screens/main/ManageDogCareScreen';
+import VetVisitsListScreen from '../screens/main/VetVisitsListScreen';
+import EditVeterinarianScreen from '../screens/forms/EditVeterinarianScreen';
 
 // Main Screens - Dog Parent
 import DogParentDashboardScreen from '../screens/main/DogParentDashboardScreen';
@@ -57,6 +60,7 @@ import EditProfileScreen from '../screens/forms/EditProfileScreen';
 import ManageContractsScreen from '../screens/main/ManageContractsScreen';
 import ManageWaitlistScreen from '../screens/forms/ManageWaitlistScreen';
 import RecordVetVisitScreen from '../screens/forms/RecordVetVisitScreen';
+import AddVeterinarianScreen from '../screens/forms/AddVeterinarianScreen';
 
 import LoadingScreen from '../screens/LoadingScreen';
 
@@ -462,6 +466,26 @@ const MainStack = () => {
       name="ManageAccountScreen"
       component={ManageAccountScreen}
       options={{ title: 'Manage Account' }}
+    />
+    <Stack.Screen
+      name="ManageDogCare"
+      component={ManageDogCareScreen}
+      options={{ title: 'Manage Dog Care' }}
+    />
+    <Stack.Screen
+      name="AddVeterinarian"
+      component={AddVeterinarianScreen}
+      options={{ title: 'Add Veterinarian' }}
+    />
+    <Stack.Screen
+      name="VetVisitsList"
+      component={VetVisitsListScreen}
+      options={{ title: 'Vet Visits' }}
+    />
+    <Stack.Screen
+      name="EditVeterinarian"
+      component={EditVeterinarianScreen}
+      options={{ title: 'Edit Veterinarian' }}
     />
 
     {/* Dog Parent-specific Screens */}

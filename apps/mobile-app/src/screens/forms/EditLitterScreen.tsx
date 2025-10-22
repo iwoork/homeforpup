@@ -19,6 +19,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Litter } from '../../types';
 import { useBreeds, useDogs } from '../../hooks/useApi';
+import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
 
 interface RouteParams {
@@ -38,9 +39,11 @@ const EditLitterScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { litter } = route.params as RouteParams;
+  const { user } = useAuth();
   const { data: breedsData, loading: breedsLoading } = useBreeds({ limit: 200 });
   const { data: dogsData, loading: dogsLoading } = useDogs({ 
     type: 'parent',
+    ownerId: user?.userId,
     limit: 100 
   });
 

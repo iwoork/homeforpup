@@ -44,6 +44,7 @@ const DogsScreen: React.FC = () => {
     fetchDogs();
   }, [user]);
 
+
   // Refresh when screen comes into focus (returning from detail/edit screens)
   useFocusEffect(
     React.useCallback(() => {
@@ -279,7 +280,10 @@ const DogsScreen: React.FC = () => {
       <Text style={styles.emptySubtitle}>
         Add your first dog to start building your kennel's breeding program
       </Text>
-      <TouchableOpacity style={styles.createButton}>
+      <TouchableOpacity 
+        style={styles.createButton}
+        onPress={() => navigation.navigate('CreateDog' as never, { dogType: 'parent' } as never)}
+      >
         <Text style={styles.createButtonText}>Add Dog</Text>
       </TouchableOpacity>
     </View>
@@ -556,6 +560,15 @@ const DogsScreen: React.FC = () => {
         }
         ListEmptyComponent={renderEmptyState}
       />
+
+      {/* Floating Add Button */}
+      <TouchableOpacity
+        style={styles.floatingAddButton}
+        onPress={() => navigation.navigate('CreateDog' as never, { dogType: 'parent' } as never)}
+        activeOpacity={0.8}
+      >
+        <Icon name="add" size={24} color="#ffffff" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -925,6 +938,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  floatingAddButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
 

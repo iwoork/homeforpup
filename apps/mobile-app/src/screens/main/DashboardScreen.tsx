@@ -88,9 +88,14 @@ const DashboardScreen: React.FC = () => {
       >
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            Welcome back, {user?.name || 'Breeder'}!
+            Welcome back, {user?.name || (user?.userType === 'dog-parent' ? 'Dog Parent' : 'Breeder')}!
           </Text>
-          <Text style={styles.subtitle}>Here's your breeding overview</Text>
+          <Text style={styles.subtitle}>
+            {user?.userType === 'dog-parent' 
+              ? "Here's your puppy search overview" 
+              : "Here's your breeding overview"
+            }
+          </Text>
         </View>
       </LinearGradient>
 
@@ -142,6 +147,7 @@ const DashboardScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
+
 
       <View style={styles.recentActivity}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>

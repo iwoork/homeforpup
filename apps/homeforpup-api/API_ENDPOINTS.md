@@ -53,6 +53,41 @@ curl -X PUT "https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development/
   -d '{"name":"John Doe","location":"New York"}'
 ```
 
+### Vet Visits API
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/vet-visits` | Required | List vet visits with pagination |
+| GET | `/vet-visits/{id}` | Required | Get vet visit by ID |
+| POST | `/vet-visits` | Required | Create new vet visit |
+| PUT | `/vet-visits/{id}` | Required | Update vet visit |
+| DELETE | `/vet-visits/{id}` | Required | Delete vet visit |
+
+**Example:**
+```bash
+# List vet visits for a dog
+curl "https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development/vet-visits?dogId=DOG_ID" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Get specific vet visit
+curl "https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development/vet-visits/VET_VISIT_ID" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Create vet visit (with auth)
+curl -X POST "https://822fu3f7bk.execute-api.us-east-1.amazonaws.com/development/vet-visits" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"dogId":"DOG_ID","visitDate":"2025-01-15T10:00:00Z","vetName":"Dr. Smith","vetClinic":"Animal Hospital","reason":"Annual checkup"}'
+```
+
+**Query Parameters for GET /vet-visits:**
+- `dogId` - Filter by dog ID
+- `ownerId` - Filter by owner ID
+- `visitType` - Filter by visit type (routine, emergency, vaccination, checkup, surgery, other)
+- `status` - Filter by status (scheduled, completed, cancelled, rescheduled)
+- `page` - Page number (default: 1)
+- `limit` - Results per page (default: 50)
+
 ### Breeds API
 
 | Method | Endpoint | Auth | Description |
