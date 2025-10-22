@@ -165,7 +165,7 @@ const PuppySearchWizard: React.FC<{
             tooltip="Select breeds that match your lifestyle and preferences"
           >
             <BreedSelector
-              mode="multiple"
+              multiple
               placeholder="Select breeds you're interested in"
               style={{ width: '100%' }}
               showSearch

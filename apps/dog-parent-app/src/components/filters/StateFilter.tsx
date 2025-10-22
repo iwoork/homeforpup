@@ -7,7 +7,7 @@ const { Option } = Select;
 
 interface StateFilterProps {
   value?: string[];
-  onChange: (value: string[]) => void;
+  onChange?: (value: string[]) => void;
   availableStates?: string[];
   style?: React.CSSProperties;
   placeholder?: string;

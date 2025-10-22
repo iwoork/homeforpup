@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { Veterinarian } from '../../../../packages/shared-types/src';
+import { Veterinarian } from '@homeforpup/shared-types';
 import { getUserIdFromEvent } from '../../../middleware/auth';
 
 const dynamoClient = new DynamoDBClient({});

@@ -2,14 +2,15 @@
 
 import React from 'react';
 import { Card, Button, Typography, Result } from 'antd';
-import { HomeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { HomeOutlined, ReloadOutlined, MailOutlined } from '@ant-design/icons';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const { Title } = Typography;
 
 const AuthErrorPage: React.FC = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const error = searchParams.get('error');
 
   const getErrorMessage = (error: string | null) => {
@@ -20,8 +21,20 @@ const AuthErrorPage: React.FC = () => {
         return 'Access denied. You do not have permission to sign in.';
       case 'Verification':
         return 'The verification token has expired or has already been used.';
+      case 'EmailNotVerified':
+        return 'Please verify your email address before signing in.';
       default:
         return 'An error occurred during authentication. Please try again.';
+    }
+  };
+
+  const handleEmailNotVerified = () => {
+    // Get email from localStorage if available
+    const pendingEmail = typeof window !== 'undefined' ? localStorage.getItem('pendingEmail') : null;
+    if (pendingEmail) {
+      router.push(`/auth/confirm?email=${encodeURIComponent(pendingEmail)}`);
+    } else {
+      router.push('/auth/confirm');
     }
   };
 
@@ -46,7 +59,21 @@ const AuthErrorPage: React.FC = () => {
           status="error"
           title="Authentication Error"
           subTitle={getErrorMessage(error)}
-          extra={[
+          extra={error === 'EmailNotVerified' ? [
+            <Button 
+              key="verify" 
+              type="primary" 
+              icon={<MailOutlined />}
+              onClick={handleEmailNotVerified}
+            >
+              Verify Email Address
+            </Button>,
+            <Link key="home" href="/">
+              <Button icon={<HomeOutlined />}>
+                Go Home
+              </Button>
+            </Link>,
+          ] : [
             <Link key="home" href="/">
               <Button type="primary" icon={<HomeOutlined />}>
                 Go Home

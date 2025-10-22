@@ -1,18 +1,38 @@
 'use client';
 
-import React from 'react';
-import { Card, Button, Typography, Space, Divider } from 'antd';
-import { UserOutlined, LoginOutlined, UserAddOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Card, Button, Typography, Space, Divider, Alert } from 'antd';
+import { UserOutlined, LoginOutlined, UserAddOutlined, MailOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const { Title, Paragraph } = Typography;
 
 const LoginPage: React.FC = () => {
   const { login, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [showVerificationAlert, setShowVerificationAlert] = React.useState(false);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'EmailNotVerified') {
+      setShowVerificationAlert(true);
+    }
+  }, [searchParams]);
 
   const handleLogin = () => {
     login();
+  };
+
+  const handleVerifyEmail = () => {
+    const pendingEmail = localStorage.getItem('pendingEmail');
+    if (pendingEmail) {
+      router.push(`/auth/confirm?email=${encodeURIComponent(pendingEmail)}`);
+    } else {
+      router.push('/auth/confirm');
+    }
   };
 
   return (
@@ -41,6 +61,22 @@ const LoginPage: React.FC = () => {
             Sign in to your account to continue
           </Paragraph>
         </div>
+
+        {showVerificationAlert && (
+          <Alert
+            message="Email Verification Required"
+            description="Please verify your email address before signing in. Check your inbox for a confirmation code."
+            type="warning"
+            showIcon
+            icon={<MailOutlined />}
+            action={
+              <Button size="small" onClick={handleVerifyEmail}>
+                Verify Email
+              </Button>
+            }
+            style={{ marginBottom: '24px' }}
+          />
+        )}
 
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Button

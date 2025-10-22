@@ -56,10 +56,6 @@ const RecordVetVisitScreen: React.FC = () => {
     dogId: params?.dogId || '',
     visitDate: new Date(),
     visitType: 'routine_checkup' as VeterinaryVisit['visitType'],
-    veterinarianName: '',
-    clinicName: '',
-    clinicPhone: '',
-    clinicEmail: '',
     reason: '',
     diagnosis: '',
     treatment: '',
@@ -95,13 +91,7 @@ const RecordVetVisitScreen: React.FC = () => {
     }
 
     if (!selectedVeterinarian) {
-      if (!formData.veterinarianName.trim()) {
-        newErrors.veterinarianName = 'Veterinarian name is required';
-      }
-
-      if (!formData.clinicName.trim()) {
-        newErrors.clinicName = 'Clinic name is required';
-      }
+      newErrors.veterinarian = 'Please select a veterinarian';
     }
 
     if (!formData.reason.trim()) {
@@ -141,16 +131,11 @@ const RecordVetVisitScreen: React.FC = () => {
         dogId: formData.dogId,
         visitDate: formData.visitDate.toISOString(),
         visitType: formData.visitType,
-        veterinarian: selectedVeterinarian ? {
+        veterinarian: {
           name: selectedVeterinarian.name,
           clinic: selectedVeterinarian.clinic,
           phone: selectedVeterinarian.phone || undefined,
           email: selectedVeterinarian.email || undefined,
-        } : {
-          name: formData.veterinarianName,
-          clinic: formData.clinicName,
-          phone: formData.clinicPhone || undefined,
-          email: formData.clinicEmail || undefined,
         },
         reason: formData.reason,
         diagnosis: formData.diagnosis || undefined,
@@ -204,14 +189,11 @@ const RecordVetVisitScreen: React.FC = () => {
 
   const handleSelectVeterinarian = (veterinarian: any) => {
     setSelectedVeterinarian(veterinarian);
-    setFormData({
-      ...formData,
-      veterinarianName: veterinarian.name,
-      clinicName: veterinarian.clinic,
-      clinicPhone: veterinarian.phone || '',
-      clinicEmail: veterinarian.email || '',
-    });
     setShowVeterinarianPicker(false);
+    // Clear any existing veterinarian validation error
+    if (errors.veterinarian) {
+      setErrors({ ...errors, veterinarian: '' });
+    }
   };
 
   const handleAddNewVeterinarian = () => {
@@ -369,7 +351,7 @@ const RecordVetVisitScreen: React.FC = () => {
             Select Veterinarian <Text style={styles.required}>*</Text>
           </Text>
           <TouchableOpacity
-            style={[styles.pickerButton, !selectedVeterinarian && styles.pickerButtonRequired]}
+            style={[styles.pickerButton, (!selectedVeterinarian && styles.pickerButtonRequired), errors.veterinarian && styles.inputError]}
             onPress={() => setShowVeterinarianPicker(true)}
           >
             <Text style={[styles.pickerButtonText, selectedVeterinarian && styles.pickerButtonTextSelected]}>
@@ -380,7 +362,8 @@ const RecordVetVisitScreen: React.FC = () => {
             </Text>
             <Icon name="chevron-down" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
-          {!selectedVeterinarian && (
+          {errors.veterinarian && <Text style={styles.errorText}>{errors.veterinarian}</Text>}
+          {!selectedVeterinarian && !errors.veterinarian && (
             <Text style={styles.helpText}>
               You must add a veterinarian first before recording a vet visit. 
               <Text style={styles.linkText} onPress={() => setShowVeterinarianPicker(true)}>
@@ -389,7 +372,7 @@ const RecordVetVisitScreen: React.FC = () => {
             </Text>
           )}
 
-          {selectedVeterinarian ? (
+          {selectedVeterinarian && (
             <View style={styles.selectedVeterinarianInfo}>
               <Text style={styles.label}>Selected Veterinarian Contact</Text>
               <View style={styles.contactInfo}>
@@ -410,27 +393,6 @@ const RecordVetVisitScreen: React.FC = () => {
                 )}
               </View>
             </View>
-          ) : (
-            <>
-              <Text style={styles.label}>Clinic Phone</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="(555) 123-4567"
-                value={formData.clinicPhone}
-                onChangeText={(text) => setFormData({ ...formData, clinicPhone: text })}
-                keyboardType="phone-pad"
-              />
-
-              <Text style={styles.label}>Clinic Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="info@happypawsvet.com"
-                value={formData.clinicEmail}
-                onChangeText={(text) => setFormData({ ...formData, clinicEmail: text })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </>
           )}
         </View>
 
@@ -1070,6 +1032,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     fontStyle: 'italic',
+  },
+  pickerButtonRequired: {
+    borderColor: theme.colors.error,
+    borderWidth: 1,
+  },
+  helpText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.sm,
+    lineHeight: 20,
+  },
+  linkText: {
+    color: theme.colors.primary,
+    fontWeight: '600',
   },
 });
 

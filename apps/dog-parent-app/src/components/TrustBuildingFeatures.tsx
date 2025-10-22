@@ -32,7 +32,6 @@ import {
   MessageOutlined,
   HeartOutlined,
   TrophyOutlined,
-  ShieldOutlined,
   FileTextOutlined,
   CameraOutlined,
   PhoneOutlined,
@@ -265,7 +264,7 @@ const TrustBuildingFeatures: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Text strong>{review.author}</Text>
                         {review.verified && (
-                          <Tag color="green" icon={<CheckCircleOutlined />} size="small">
+                          <Tag color="green" icon={<CheckCircleOutlined />}>
                             Verified
                           </Tag>
                         )}
@@ -349,7 +348,7 @@ const TrustBuildingFeatures: React.FC = () => {
       <Card 
         title={
           <Space>
-            <ShieldOutlined style={{ color: '#08979C' }} />
+            <SafetyOutlined style={{ color: '#08979C' }} />
             Verification Details
           </Space>
         }

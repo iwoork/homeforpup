@@ -369,7 +369,6 @@ const EthicalBreederGuide: React.FC = () => {
                                 message="Red Flag"
                                 description={item.redFlag}
                                 type="error"
-                                size="small"
                                 showIcon
                                 style={{ marginTop: '8px' }}
                               />

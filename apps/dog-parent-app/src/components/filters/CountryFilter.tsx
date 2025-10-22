@@ -7,7 +7,7 @@ const { Option } = Select;
 
 interface CountryFilterProps {
   value?: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   style?: React.CSSProperties;
   placeholder?: string;
   size?: 'small' | 'middle' | 'large';
