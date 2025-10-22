@@ -12,6 +12,17 @@ export const authOptions: NextAuthOptions = {
       },
       checks: ["pkce", "state"],
       profile(profile: any) {
+        // Debug logging for profile data
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Cognito profile data:', {
+            sub: profile.sub,
+            email: profile.email,
+            email_verified: profile.email_verified,
+            custom_userType: profile['custom:userType'],
+            allKeys: Object.keys(profile)
+          });
+        }
+        
         return {
           id: profile.sub,
           name: profile.name || profile.email?.split('@')[0] || 'User',
@@ -28,11 +39,29 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, profile }: any) {
       // Persist the OAuth access_token and or the user id to the token right after signin
       if (account) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('JWT callback - account present:', {
+            hasProfile: !!profile,
+            profileIsVerified: profile?.isVerified,
+            profileUserType: profile?.userType
+          });
+        }
+        
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.userType = profile?.userType || 'dog-parent';
         token.isVerified = profile?.isVerified || false;
       }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('JWT callback - final token:', {
+          hasToken: !!token,
+          isVerified: token.isVerified,
+          userType: token.userType,
+          email: token.email
+        });
+      }
+      
       return token;
     },
     async session({ session, token }: any) {
