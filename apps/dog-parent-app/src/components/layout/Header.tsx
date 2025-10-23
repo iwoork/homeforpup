@@ -370,7 +370,7 @@ const Header: React.FC<HeaderProps> = ({
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         width={280}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         <Menu
           mode="inline"

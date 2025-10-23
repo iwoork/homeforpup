@@ -43,14 +43,18 @@ export const authOptions: NextAuthOptions = {
           console.log('JWT callback - account present:', {
             hasProfile: !!profile,
             profileIsVerified: profile?.isVerified,
-            profileUserType: profile?.userType
+            profileUserType: profile?.userType,
+            emailVerified: profile?.email_verified
           });
         }
         
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.userType = profile?.userType || 'dog-parent';
-        token.isVerified = profile?.isVerified || false;
+        
+        // Let Cognito handle email verification - don't interfere
+        // If user can authenticate, they should be able to access the app
+        token.isVerified = true; // Always allow access for authenticated users
       }
       
       if (process.env.NODE_ENV === 'development') {

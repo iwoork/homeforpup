@@ -124,7 +124,7 @@ const DocsPage: React.FC = () => {
               <Card 
                 hoverable
                 style={{ height: '100%' }}
-                bodyStyle={{ textAlign: 'center', padding: '20px' }}
+                styles={{ body: { textAlign: 'center', padding: '20px' } }}
               >
                 <div style={{ fontSize: '32px', marginBottom: '12px' }}>
                   {action.icon}

@@ -236,7 +236,7 @@ const QuickStartPage: React.FC = () => {
             <Card 
               hoverable
               style={{ textAlign: 'center', height: '100%' }}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               <HomeOutlined style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }} />
               <Title level={4} style={{ margin: '0 0 8px 0' }}>Add Kennel</Title>
@@ -254,7 +254,7 @@ const QuickStartPage: React.FC = () => {
             <Card 
               hoverable
               style={{ textAlign: 'center', height: '100%' }}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               <TeamOutlined style={{ fontSize: '32px', color: '#52c41a', marginBottom: '12px' }} />
               <Title level={4} style={{ margin: '0 0 8px 0' }}>Add Dog</Title>
@@ -272,7 +272,7 @@ const QuickStartPage: React.FC = () => {
             <Card 
               hoverable
               style={{ textAlign: 'center', height: '100%' }}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               <HeartOutlined style={{ fontSize: '32px', color: '#f5222d', marginBottom: '12px' }} />
               <Title level={4} style={{ margin: '0 0 8px 0' }}>Add Litter</Title>

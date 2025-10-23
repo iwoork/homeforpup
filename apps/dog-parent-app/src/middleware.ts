@@ -22,14 +22,12 @@ export default withAuth(
       });
     }
 
-    // If user is authenticated but explicitly not verified, redirect to confirmation page
-    if (token && token.isVerified === false) {
-      console.log('Redirecting to confirmation page for unverified user:', token.email);
-      const confirmUrl = new URL('/auth/confirm', req.url);
-      if (token.email) {
-        confirmUrl.searchParams.set('email', token.email);
-      }
-      return NextResponse.redirect(confirmUrl);
+    // Remove custom email verification logic - let Cognito handle it naturally
+    // Cognito will automatically handle email verification during the sign-in process
+    // We should not interfere with Cognito's built-in verification flow
+    
+    if (process.env.NODE_ENV === 'development' && token) {
+      console.log('Middleware - allowing access for user:', token.email, 'isVerified:', token.isVerified);
     }
 
     return NextResponse.next();

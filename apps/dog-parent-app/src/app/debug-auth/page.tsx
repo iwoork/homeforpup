@@ -1,13 +1,59 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Typography, Space, Tag } from 'antd';
+import { Card, Typography, Space, Tag, Button, Alert } from 'antd';
 
 const { Title, Paragraph, Text } = Typography;
 
 const DebugAuthPage: React.FC = () => {
   const { data: session, status } = useSession();
+  const [verificationStatus, setVerificationStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const checkVerificationStatus = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/verify-status');
+      const data = await response.json();
+      setVerificationStatus(data);
+    } catch (error) {
+      console.error('Error checking verification status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshSession = async () => {
+    setLoading(true);
+    try {
+      // Force a session refresh
+      await fetch('/api/auth/refresh-session', { method: 'POST' });
+      
+      // Clear any cached session data
+      if (typeof window !== 'undefined') {
+        // Clear NextAuth session storage
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.startsWith('nextauth')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+        
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('nextauth') || key.startsWith('pendingEmail')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      
+      // Reload the page to get fresh session data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error refreshing session:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
@@ -41,6 +87,66 @@ const DebugAuthPage: React.FC = () => {
           </div>
         </Card>
       )}
+
+      <Card style={{ marginTop: '20px' }}>
+        <Title level={4}>Verification Status Check</Title>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Button 
+            type="primary" 
+            onClick={checkVerificationStatus}
+            loading={loading}
+          >
+            Check Verification Status
+          </Button>
+          
+          {verificationStatus && (
+            <Alert
+              message={verificationStatus.success ? 'Verification Status Retrieved' : 'Error'}
+              description={
+                verificationStatus.success ? (
+                  <div>
+                    <p><strong>Is Verified:</strong> <Tag color={verificationStatus.isVerified ? 'green' : 'red'}>{verificationStatus.isVerified ? 'Yes' : 'No'}</Tag></p>
+                    <p><strong>Email:</strong> {verificationStatus.email}</p>
+                    <p><strong>User Type:</strong> {verificationStatus.userType}</p>
+                  </div>
+                ) : (
+                  verificationStatus.error
+                )
+              }
+              type={verificationStatus.success ? 'success' : 'error'}
+            />
+          )}
+          
+          {session && (
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Alert
+                message="Refresh Session"
+                description="Clear cached session data and refresh with new verification logic."
+                type="info"
+                action={
+                  <Button onClick={refreshSession} loading={loading} type="primary">
+                    Refresh Session
+                  </Button>
+                }
+              />
+              
+              <Alert
+                message="Bypass Confirmation"
+                description="If you're still stuck on the confirmation page, you can bypass it here."
+                type="warning"
+                action={
+                  <Button onClick={() => {
+                    localStorage.removeItem('pendingEmail');
+                    window.location.href = '/dashboard';
+                  }} type="primary" danger>
+                    Bypass Confirmation
+                  </Button>
+                }
+              />
+            </Space>
+          )}
+        </Space>
+      </Card>
     </div>
   );
 };

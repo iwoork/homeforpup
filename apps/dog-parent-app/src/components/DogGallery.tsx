@@ -99,7 +99,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
               minWidth: '200px',
               flexShrink: 0
             }}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
             onClick={() => handleImageClick(image)}
           >
             <div style={{ position: 'relative' }}>
@@ -163,7 +163,7 @@ const DogGallery: React.FC<DogGalleryProps> = ({
               minWidth: '200px',
               flexShrink: 0
             }}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
             onClick={() => handleImageClick(image)}
           >
             <div style={{ position: 'relative' }}>

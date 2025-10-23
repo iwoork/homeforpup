@@ -290,7 +290,7 @@ const BreederResourcesPage: React.FC = () => {
           <Row gutter={[16, 16]}>
             {stats.map((stat, index) => (
               <Col xs={12} sm={6} key={index}>
-                <Card style={cardStyle} bodyStyle={{ textAlign: 'center', padding: '16px' }}>
+                <Card style={cardStyle} styles={{ body: { textAlign: 'center', padding: '16px' } }}>
                   <div style={{ fontSize: '32px', color: '#1890ff', marginBottom: '12px' }}>
                     {stat.icon}
                   </div>
@@ -319,7 +319,7 @@ const BreederResourcesPage: React.FC = () => {
                 <Card
                   style={cardStyle}
                   hoverable
-                  bodyStyle={{ padding: '16px' }}
+                  styles={{ body: { padding: '16px' } }}
                 >
                   <div style={{ textAlign: 'center', marginBottom: '12px' }}>
                     <div style={{ fontSize: '32px', color: feature.color, marginBottom: '12px' }}>
@@ -362,7 +362,7 @@ const BreederResourcesPage: React.FC = () => {
                 <Card
                   style={cardStyle}
                   hoverable
-                  bodyStyle={{ padding: '16px' }}
+                  styles={{ body: { padding: '16px' } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
                     <div style={{ fontSize: '24px', color: feature.color, marginRight: '12px', marginTop: '2px' }}>
@@ -401,7 +401,7 @@ const BreederResourcesPage: React.FC = () => {
               Streamlined process from kennel setup to successful puppy rehoming
             </Paragraph>
           </div>
-          <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
+          <Card style={cardStyle} styles={{ body: { padding: '16px' } }}>
             <Steps
               direction="vertical"
               size="small"
@@ -419,7 +419,7 @@ const BreederResourcesPage: React.FC = () => {
         <section style={sectionStyle}>
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={12}>
-              <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
+              <Card style={cardStyle} styles={{ body: { padding: '16px' } }}>
                 <Title level={3} style={{ marginBottom: '16px', fontSize: '18px' }}>
                   Why Choose Our Platform?
                 </Title>
@@ -435,7 +435,7 @@ const BreederResourcesPage: React.FC = () => {
               </Card>
             </Col>
             <Col xs={24} lg={12}>
-              <Card style={cardStyle} bodyStyle={{ padding: '16px' }}>
+              <Card style={cardStyle} styles={{ body: { padding: '16px' } }}>
                 <Title level={3} style={{ marginBottom: '16px', fontSize: '18px' }}>
                   Get Started Today
                 </Title>

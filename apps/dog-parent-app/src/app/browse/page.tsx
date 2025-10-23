@@ -209,12 +209,14 @@ const PuppiesPage: React.FC = () => {
         flexDirection: 'column',
         border: '1px solid #f0f0f0'
       }}
-      bodyStyle={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '16px',
-        overflow: 'visible'
+      styles={{
+        body: {
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '16px',
+          overflow: 'visible'
+        }
       }}
       cover={
         <div style={{ position: 'relative', height: '200px' }}>
