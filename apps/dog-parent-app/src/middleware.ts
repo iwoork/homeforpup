@@ -6,8 +6,8 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    // Skip middleware for auth pages and API routes
-    if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
+    // Skip middleware for auth pages, API routes, and static assets
+    if (pathname.startsWith('/auth/') || pathname.startsWith('/api/') || pathname.startsWith('/images/')) {
       return NextResponse.next();
     }
 
@@ -37,8 +37,8 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
         
-        // Allow access to public pages
-        if (pathname === '/' || pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
+        // Allow access to public pages and static assets
+        if (pathname === '/' || pathname.startsWith('/auth/') || pathname.startsWith('/api/') || pathname.startsWith('/images/')) {
           return true;
         }
         
@@ -57,7 +57,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - images folder (static images)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/|images/).*)',
   ],
 };

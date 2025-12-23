@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge, Drawer, Menu } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined, MenuOutlined, EnvironmentOutlined, GlobalOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/hooks';
 import { useSession } from 'next-auth/react';
 
@@ -266,7 +267,7 @@ const ClientHeader: React.FC = () => {
     position: 'sticky' as const,
     top: 0,
     zIndex: 1000,
-    overflow: 'hidden',
+    overflow: 'visible', // Changed from 'hidden' to 'visible' to prevent logo clipping
     boxSizing: 'border-box' as const,
   };
 
@@ -274,6 +275,8 @@ const ClientHeader: React.FC = () => {
     height: isMobile ? '32px' : '40px',
     width: 'auto',
     marginRight: '16px',
+    display: 'block', // Ensure it's visible
+    maxWidth: '100%', // Prevent overflow
   };
 
   const buttonStyle = {
@@ -282,14 +285,30 @@ const ClientHeader: React.FC = () => {
     padding: isMobile ? '4px 12px' : '6px 16px',
   };
 
+  // Debug: Log header render
+  console.log('ClientHeader render - isMobile:', isMobile, 'logoStyle:', logoStyle);
+
   return (
     <Layout.Header style={headerStyle}>
       <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img 
-            src="/logo.png" 
-            alt="Home for Pup" 
-            style={logoStyle}
+          <Image
+            src="/logo.png"
+            alt="Home for Pup"
+            width={isMobile ? 32 : 40}
+            height={isMobile ? 32 : 40}
+            style={{
+              marginRight: '16px',
+              display: 'block',
+              maxWidth: '100%'
+            }}
+            priority
+            onError={(e) => {
+              console.error('Logo failed to load:', e);
+            }}
+            onLoad={() => {
+              console.log('Logo loaded successfully');
+            }}
           />
           <span style={{ 
             fontSize: isMobile ? '16px' : '20px', 

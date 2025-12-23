@@ -1,0 +1,35 @@
+{
+  "name": "homeforpup-infrastructure",
+  "version": "1.0.0",
+  "description": "AWS CDK infrastructure as code for HomeForPup - DynamoDB, S3, Cognito, IAM",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy",
+    "deploy:all": "cdk deploy --all",
+    "deploy:dynamodb": "cdk deploy DynamoDBStack-*",
+    "deploy:s3": "cdk deploy S3Stack-*",
+    "deploy:cognito": "cdk deploy CognitoStack-*",
+    "deploy:iam": "cdk deploy IAMStack-*",
+    "diff": "cdk diff",
+    "destroy": "cdk destroy",
+    "bootstrap": "cdk bootstrap"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.164.1",
+    "constructs": "^10.3.0",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.8",
+    "aws-cdk": "^2.164.1",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
+
+

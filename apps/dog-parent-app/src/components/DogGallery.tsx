@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Image, Typography } from 'antd';
+import { Card, Typography } from 'antd';
 import { HeartOutlined } from '@ant-design/icons';
+import Image from 'next/image';
 
 const { Text } = Typography;
 
@@ -24,45 +25,61 @@ const DogGallery: React.FC<DogGalleryProps> = ({
 }) => {
   const [images, setImages] = useState<DogImage[]>([]);
 
-  // Generate breed images from the public/breeds folder
+  // Convert breed name to file name with capitalized name (e.g., "Akita" -> "Akita.jpg", "Border Collie" -> "Border Collie.jpg")
+  const convertBreedNameToFileName = (breedName: string): string => {
+    return breedName.replace(/\.jpg$/i, '') + '.jpg';
+  };
+
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Generate breed images from the public/images/breeds folder
   const generateDogImages = (): DogImage[] => {
-    const breedImages = [
-      'Akita.jpg', 'Aussiedoodle.jpg', 'Australian Shepherd.jpg', 'Basenji.jpg',
-      'Beagle.jpg', 'Bernedoodle.jpg', 'Bernese Mountain Dog.jpg', 'Border Collie.jpg',
-      'Boston Terrier.jpg', 'Boxer.jpg', 'Brittany.jpg', 'Bulldog.jpg',
-      'Cavalier King Charles Spaniel.jpg', 'Cavapoo.jpg', 'Chihuahua.jpg', 'Cockapoo.jpg',
-      'Cocker Spaniel.jpg', 'Dachshund.jpg', 'Doberman Pinscher.jpg', 'English Setter.jpg',
-      'French Bulldog.jpg', 'German Shepherd.jpg', 'Golden Retriever.jpg', 'Goldendoodle.jpg',
-      'Great Dane.jpg', 'Greyhound.jpg', 'Irish Setter.jpg', 'Jack Russell Terrier.jpg',
-      'Labradoodle.jpg', 'Labrador Retriever.jpg', 'Maltese.jpg', 'Maltipoo.jpg',
-      'Mastiff.jpg', 'Newfoundland.jpg', 'Pointer.jpg', 'Pomeranian.jpg',
-      'Poodle.jpg', 'Puggle.jpg', 'Rottweiler.jpg', 'Saint Bernard.jpg',
-      'Schnoodle.jpg', 'Shiba Inu.jpg', 'Shih Tzu.jpg', 'Siberian Husky.jpg',
-      'Spanish Mastiff.jpg', 'Spanish Water Dog.jpg', 'Spinone Italiano.jpg', 'Sporty Mix.jpg',
-      'Springerdoodle.jpg', 'Stabyhoun.jpg', 'Staffordshire Bull Terrier.jpg', 'Standard Schnauzer.jpg',
-      'Sussex Spaniel.jpg', 'Swedish Lapphund.jpg', 'Swedish Vallhund.jpg', 'Taigan.jpg',
-      'Tamaskan.jpg', 'Teddy Roosevelt Terrier.jpg', 'Thai Ridgeback.jpg', 'Tibetan Mastiff.jpg',
-      'Tibetan Spaniel.jpg', 'Tibetan Terrier.jpg', 'Tornjak.jpg', 'Tosa Inu.jpg',
-      'Toy Australian Shepherd.jpg', 'Toy Fox Terrier.jpg', 'Toy Shetland Sheepdog.jpg', 'Transylvanian Hound.jpg',
-      'Treeing Feist.jpg', 'Vizsla.jpg', 'Weimaraner.jpg', 'Whippet.jpg',
-      'Yorkipoo.jpg', 'Yorkshire Terrier.jpg'
+    const breedNames = [
+      'Akita', 'Aussiedoodle', 'Australian Shepherd', 'Basenji',
+      'Beagle', 'Bernedoodle', 'Bernese Mountain Dog', 'Border Collie',
+      'Boston Terrier', 'Boxer', 'Brittany', 'Bulldog',
+      'Cavalier King Charles Spaniel', 'Cavapoo', 'Chihuahua', 'Cockapoo',
+      'Cocker Spaniel', 'Dachshund', 'Doberman Pinscher', 'English Setter',
+      'French Bulldog', 'German Shepherd', 'Golden Retriever', 'Goldendoodle',
+      'Great Dane', 'Greyhound', 'Irish Setter', 'Jack Russell Terrier',
+      'Labradoodle', 'Labrador Retriever', 'Maltese', 'Maltipoo',
+      'Mastiff', 'Newfoundland', 'Pointer', 'Pomeranian',
+      'Poodle', 'Puggle', 'Rottweiler', 'Saint Bernard',
+      'Schnoodle', 'Shiba Inu', 'Shih Tzu', 'Siberian Husky',
+      'Spanish Mastiff', 'Spanish Water Dog', 'Spinone Italiano', 'Sporty Mix',
+      'Springerdoodle', 'Stabyhoun', 'Staffordshire Bull Terrier', 'Standard Schnauzer',
+      'Sussex Spaniel', 'Swedish Lapphund', 'Swedish Vallhund', 'Taigan',
+      'Tamaskan', 'Teddy Roosevelt Terrier', 'Thai Ridgeback', 'Tibetan Mastiff',
+      'Tibetan Spaniel', 'Tibetan Terrier', 'Tornjak', 'Tosa Inu',
+      'Toy Australian Shepherd', 'Toy Fox Terrier', 'Toy Shetland Sheepdog', 'Transylvanian Hound',
+      'Treeing Feist', 'Vizsla', 'Weimaraner', 'Whippet',
+      'Yorkipoo', 'Yorkshire Terrier'
     ];
 
-    return breedImages.map((imageName, index) => {
-      const breedName = imageName.replace('.jpg', '');
+    return breedNames.map((breedName, index) => {
+      const fileName = convertBreedNameToFileName(breedName);
       return {
         id: `dog-${index}`,
-        src: `/breeds/${imageName}`,
+        src: `/images/breeds/${fileName}`,
         breed: breedName,
         alt: `${breedName} dog`
       };
     });
   };
 
-  // Load all images on component mount
+  // Load all images on component mount and randomize them
   useEffect(() => {
     const allImages = generateDogImages();
-    setImages(allImages);
+    const shuffledImages = shuffleArray(allImages);
+    setImages(shuffledImages);
   }, []);
 
   const handleImageClick = (image: DogImage) => {
@@ -102,17 +119,17 @@ const DogGallery: React.FC<DogGalleryProps> = ({
             styles={{ body: { padding: 0 } }}
             onClick={() => handleImageClick(image)}
           >
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: '200px', height: '200px' }}>
               <Image
                 src={image.src}
                 alt={image.alt}
+                fill
+                sizes="200px"
                 style={{ 
-                  width: '200px', 
-                  height: '200px', 
                   objectFit: 'cover',
                   borderRadius: '12px 12px 0 0'
                 }}
-                fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                unoptimized
               />
               <div style={{
                 position: 'absolute',
@@ -166,17 +183,17 @@ const DogGallery: React.FC<DogGalleryProps> = ({
             styles={{ body: { padding: 0 } }}
             onClick={() => handleImageClick(image)}
           >
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', width: '200px', height: '200px' }}>
               <Image
                 src={image.src}
                 alt={image.alt}
+                fill
+                sizes="200px"
                 style={{ 
-                  width: '200px', 
-                  height: '200px', 
                   objectFit: 'cover',
                   borderRadius: '12px 12px 0 0'
                 }}
-                fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfX0UQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3Ik1RnG4W+FgYxN"
+                unoptimized
               />
               <div style={{
                 position: 'absolute',

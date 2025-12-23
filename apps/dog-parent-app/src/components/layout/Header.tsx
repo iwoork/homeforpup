@@ -4,6 +4,7 @@ import React from 'react';
 import { Layout, Button, Avatar, Dropdown, Badge, Drawer, Menu } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, HeartOutlined, TeamOutlined, HomeOutlined, BookOutlined, MenuOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const { Header: AntHeader } = Layout;
 
@@ -183,10 +184,23 @@ const Header: React.FC<HeaderProps> = ({
     <AntHeader style={headerStyle}>
       <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img 
-            src="/logo.png" 
-            alt="Home for Pup" 
-            style={logoStyle}
+          <Image
+            src="/logo.png"
+            alt="Home for Pup"
+            width={isMobile ? 32 : 40}
+            height={isMobile ? 32 : 40}
+            style={{
+              marginRight: '16px',
+              display: 'block',
+              maxWidth: '100%',
+            }}
+            priority
+            onError={() => {
+              console.error('Logo failed to load');
+            }}
+            onLoad={() => {
+              console.log('Logo loaded successfully');
+            }}
           />
           <span style={{ 
             fontSize: isMobile ? '16px' : '20px', 
