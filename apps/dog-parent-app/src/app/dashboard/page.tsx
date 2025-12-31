@@ -75,7 +75,23 @@ const DogParentDashboard: React.FC = () => {
     }
   }, [user?.userId]);
 
+  // If not authenticated and not loading, show auth required message
+  // Give it a moment for user data to load after session is established
+  // IMPORTANT: This hook must be called before any early returns to follow Rules of Hooks
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      const timer = setTimeout(() => {
+        setWaitingForUser(false);
+      }, 2000); // Wait 2 seconds for user data to load
+      
+      return () => clearTimeout(timer);
+    } else {
+      setWaitingForUser(false);
+    }
+  }, [isAuthenticated, user]);
+
   // Show loading state while checking authentication or fetching user data
+  // All hooks must be called before any conditional returns
   if (loading) {
     return (
       <div style={{ 
@@ -91,20 +107,6 @@ const DogParentDashboard: React.FC = () => {
       </div>
     );
   }
-
-  // If not authenticated and not loading, show auth required message
-  // Give it a moment for user data to load after session is established
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      const timer = setTimeout(() => {
-        setWaitingForUser(false);
-      }, 2000); // Wait 2 seconds for user data to load
-      
-      return () => clearTimeout(timer);
-    } else {
-      setWaitingForUser(false);
-    }
-  }, [isAuthenticated, user]);
   
   if (!isAuthenticated || !user) {
     
