@@ -14,11 +14,26 @@ const DebugAuthPage: React.FC = () => {
   const checkVerificationStatus = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/verify-status');
-      const data = await response.json();
-      setVerificationStatus(data);
+      // Use NextAuth session directly - no custom API needed
+      if (session?.user) {
+        setVerificationStatus({
+          success: true,
+          isVerified: session.user.isVerified !== false,
+          email: session.user.email,
+          userType: session.user.userType,
+        });
+      } else {
+        setVerificationStatus({
+          success: false,
+          error: 'No session found',
+        });
+      }
     } catch (error) {
       console.error('Error checking verification status:', error);
+      setVerificationStatus({
+        success: false,
+        error: 'Failed to check verification status',
+      });
     } finally {
       setLoading(false);
     }
@@ -27,9 +42,7 @@ const DebugAuthPage: React.FC = () => {
   const refreshSession = async () => {
     setLoading(true);
     try {
-      // Force a session refresh
-      await fetch('/api/auth/refresh-session', { method: 'POST' });
-      
+      // Use NextAuth's built-in session refresh
       // Clear any cached session data
       if (typeof window !== 'undefined') {
         // Clear NextAuth session storage
@@ -46,7 +59,7 @@ const DebugAuthPage: React.FC = () => {
         });
       }
       
-      // Reload the page to get fresh session data
+      // Reload the page to get fresh session data from NextAuth
       window.location.reload();
     } catch (error) {
       console.error('Error refreshing session:', error);

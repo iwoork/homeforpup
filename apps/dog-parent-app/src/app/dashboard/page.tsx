@@ -35,6 +35,7 @@ const DogParentDashboard: React.FC = () => {
     profileViews: 0,
     activeThreads: 0
   });
+  const [waitingForUser, setWaitingForUser] = useState(true);
 
   // Fetch user's favorites
   const { data: favoritesData } = useSWR(
@@ -74,6 +75,7 @@ const DogParentDashboard: React.FC = () => {
     }
   }, [user?.userId]);
 
+  // Show loading state while checking authentication or fetching user data
   if (loading) {
     return (
       <div style={{ 
@@ -90,7 +92,38 @@ const DogParentDashboard: React.FC = () => {
     );
   }
 
+  // If not authenticated and not loading, show auth required message
+  // Give it a moment for user data to load after session is established
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      const timer = setTimeout(() => {
+        setWaitingForUser(false);
+      }, 2000); // Wait 2 seconds for user data to load
+      
+      return () => clearTimeout(timer);
+    } else {
+      setWaitingForUser(false);
+    }
+  }, [isAuthenticated, user]);
+  
   if (!isAuthenticated || !user) {
+    
+    if (waitingForUser) {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          flexDirection: 'column',
+          gap: '16px'
+        }}>
+          <Spin size="large" />
+          <div>Setting up your dashboard...</div>
+        </div>
+      );
+    }
+    
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
         <Alert

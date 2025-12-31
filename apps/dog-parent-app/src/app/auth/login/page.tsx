@@ -17,10 +17,19 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const error = searchParams.get('error');
+    const callbackUrl = searchParams.get('callbackUrl');
+    
+    // Redirect OAuth errors to the error page
+    if (error && error !== 'EmailNotVerified') {
+      const errorUrl = `/auth/error?error=${encodeURIComponent(error)}${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`;
+      router.replace(errorUrl);
+      return;
+    }
+    
     if (error === 'EmailNotVerified') {
       setShowVerificationAlert(true);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleLogin = () => {
     login();

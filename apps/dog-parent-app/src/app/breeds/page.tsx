@@ -187,7 +187,7 @@ const BreedsPage: React.FC = () => {
     return (
       <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
         <Image
-          src={`/breeds/${breed.name}.jpg` || fallbackImage}
+          src={`/images/breeds/${breed.name}.jpg` || fallbackImage}
           alt={breed.name}
           fill
           style={{ objectFit: 'cover' }}

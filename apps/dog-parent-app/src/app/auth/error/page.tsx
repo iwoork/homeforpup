@@ -16,15 +16,33 @@ const AuthErrorPage: React.FC = () => {
   const getErrorMessage = (error: string | null) => {
     switch (error) {
       case 'Configuration':
-        return 'There is a problem with the server configuration.';
+        return 'There is a problem with the server configuration. Please check your environment variables (NEXTAUTH_SECRET, NEXTAUTH_URL, COGNITO_AUTHORITY).';
       case 'AccessDenied':
         return 'Access denied. You do not have permission to sign in.';
       case 'Verification':
         return 'The verification token has expired or has already been used.';
       case 'EmailNotVerified':
         return 'Please verify your email address before signing in.';
+      case 'OAuthSignin':
+        return 'There was an error signing in with Cognito. Please check that your Cognito User Pool callback URLs include: http://localhost:3000/api/auth/callback/cognito';
+      case 'OAuthCallback':
+        return 'There was an error processing the OAuth callback from Cognito. Please verify that your Cognito User Pool has the callback URL whitelisted: http://localhost:3000/api/auth/callback/cognito. Check your AWS Cognito User Pool App Client settings under "Allowed callback URLs".';
+      case 'OAuthCreateAccount':
+        return 'Could not create OAuth account. Please try again.';
+      case 'EmailCreateAccount':
+        return 'Could not create email account. Please try again.';
+      case 'Callback':
+        return 'There was an error in the authentication callback. Please try again.';
+      case 'OAuthAccountNotLinked':
+        return 'An account with this email already exists. Please sign in with your original provider.';
+      case 'EmailSignin':
+        return 'Failed to send email. Please try again.';
+      case 'CredentialsSignin':
+        return 'Invalid credentials. Please check your email and password.';
+      case 'SessionRequired':
+        return 'Please sign in to access this page.';
       default:
-        return 'An error occurred during authentication. Please try again.';
+        return `An error occurred during authentication: ${error || 'Unknown error'}. Please try again or contact support if the problem persists.`;
     }
   };
 

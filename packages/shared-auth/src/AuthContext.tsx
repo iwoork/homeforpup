@@ -67,8 +67,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (!response.ok) {
           const errorText = await response.text();
+          let errorDetails;
+          try {
+            errorDetails = JSON.parse(errorText);
+          } catch {
+            errorDetails = { error: errorText };
+          }
+          
           console.error('AuthContext: Sync failed:', errorText);
-          throw new Error('Failed to sync user data');
+          
+          // If it's a ResourceNotFoundException, provide helpful message
+          if (errorDetails.details?.includes('ResourceNotFoundException') || 
+              errorDetails.details?.includes('not found')) {
+            console.error('❌ DynamoDB table not found. This is a configuration issue.');
+            console.error('   Table name:', errorDetails.tableName || 'unknown');
+            console.error('   Troubleshooting:', errorDetails.troubleshooting || []);
+            setError('Database table not configured. Please contact support.');
+          } else {
+            setError('Failed to sync user data. Please try again.');
+          }
+          
+          // Don't throw - allow user to continue with session data
+          return;
         }
 
         const syncResult = await response.json();

@@ -50,31 +50,18 @@ const ConfirmPage: React.FC = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/auth/confirm', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          confirmationCode: confirmationCode.trim(),
-        }),
+      // Note: Email confirmation should be handled through Cognito's hosted UI
+      // or through the sign-in flow. This page should redirect users to sign in
+      // after they confirm their email through Cognito's email link.
+      setMessage({ 
+        type: 'info', 
+        text: 'Email confirmation is handled through Cognito. Please check your email for the confirmation link, or sign in to complete the process.' 
       });
-
-      const data: ConfirmResponse = await response.json();
-
-      if (data.success) {
-        setMessage({ type: 'success', text: data.message });
-        setConfirmed(true);
-        // Clear stored email
-        localStorage.removeItem('pendingEmail');
-        // Redirect to dashboard after a short delay
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Confirmation failed. Please try again.' });
-      }
+      
+      // Redirect to login after showing message
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 3000);
     } catch (error) {
       console.error('Confirmation error:', error);
       setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
@@ -88,21 +75,18 @@ const ConfirmPage: React.FC = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/auth/resend-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      // Note: Resending confirmation codes should be done through Cognito
+      // Users should use the "Resend confirmation code" option in Cognito's hosted UI
+      // or sign in again to trigger a new confirmation email
+      setMessage({ 
+        type: 'info', 
+        text: 'Please sign in again to receive a new confirmation code, or use Cognito\'s hosted UI to resend the confirmation email.' 
       });
-
-      const data: ConfirmResponse = await response.json();
-
-      if (data.success) {
-        setMessage({ type: 'success', text: data.message });
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to resend confirmation code' });
-      }
+      
+      // Redirect to login
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 3000);
     } catch (error) {
       console.error('Resend error:', error);
       setMessage({ type: 'error', text: 'An error occurred. Please try again.' });

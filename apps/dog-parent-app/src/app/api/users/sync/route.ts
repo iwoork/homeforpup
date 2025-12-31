@@ -19,7 +19,17 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
     removeUndefinedValues: true // Remove undefined values automatically
   }
 });
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
+
+// Use profiles table if available, fallback to users table for backward compatibility
+const USERS_TABLE = process.env.USERS_TABLE_NAME || process.env.PROFILES_TABLE_NAME || 'homeforpup-profiles';
+
+// Log table name in development for debugging
+if (process.env.NODE_ENV === 'development') {
+  console.log('📊 Using DynamoDB table:', USERS_TABLE);
+  console.log('   USERS_TABLE_NAME:', process.env.USERS_TABLE_NAME || 'not set');
+  console.log('   PROFILES_TABLE_NAME:', process.env.PROFILES_TABLE_NAME || 'not set');
+  console.log('   ⚠️  If you see ResourceNotFoundException, verify the table exists in AWS DynamoDB');
+}
 
 // Helper function to remove undefined values from objects
 function removeUndefinedValues(obj: any): any {
@@ -174,8 +184,35 @@ export async function POST(request: NextRequest) {
       message: `User ${isNewUser ? 'created' : 'updated'} successfully`
     }, { status: isNewUser ? 201 : 200 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error syncing user:', error);
+    
+    // Check if it's a ResourceNotFoundException (table doesn't exist)
+    if (error.name === 'ResourceNotFoundException' || error.message?.includes('ResourceNotFoundException')) {
+      console.error('❌ DynamoDB table not found:', USERS_TABLE);
+      console.error('   Please verify:');
+      console.error('   1. Table exists in AWS DynamoDB:', USERS_TABLE);
+      console.error('   2. AWS credentials have access to the table');
+      console.error('   3. AWS_REGION is set correctly:', process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1');
+      console.error('   4. Table name environment variable is set correctly');
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to sync user data',
+          details: `DynamoDB table '${USERS_TABLE}' not found. Please verify the table exists and AWS credentials are configured correctly.`,
+          tableName: USERS_TABLE,
+          troubleshooting: [
+            `1. Verify table '${USERS_TABLE}' exists in AWS DynamoDB Console`,
+            '2. Check AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)',
+            '3. Verify AWS_REGION matches the table region',
+            '4. Ensure IAM permissions allow DynamoDB access',
+            '5. If table was migrated, set PROFILES_TABLE_NAME environment variable'
+          ]
+        }, 
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to sync user data',

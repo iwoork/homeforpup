@@ -16,12 +16,12 @@ The email confirmation system ensures that users verify their email addresses be
 
 ## Flow
 
-1. **User Signs Up**: User creates an account through AWS Cognito
-2. **Email Sent**: AWS Cognito automatically sends a confirmation email with a 6-digit code
-3. **Redirect to Confirmation**: User is redirected to `/auth/confirm` page
-4. **Code Entry**: User enters the 6-digit confirmation code
-5. **Verification**: Code is verified through AWS Cognito API
-6. **Success**: User is redirected to dashboard upon successful verification
+1. **User Signs Up**: User creates an account through AWS Cognito (via NextAuth)
+2. **Email Sent**: AWS Cognito automatically sends a confirmation email
+3. **Email Confirmation**: User confirms email through Cognito's email link or hosted UI
+4. **Sign In**: User signs in through NextAuth with Cognito provider
+5. **Session Management**: NextAuth manages the session and verification status
+6. **Access**: User can access the application once authenticated and verified
 
 ## Pages and Components
 
@@ -47,20 +47,19 @@ The email confirmation system ensures that users verify their email addresses be
 
 ## API Endpoints
 
-### `POST /api/auth/confirm`
-- **Purpose**: Confirm user's email with verification code
-- **Body**: `{ email: string, confirmationCode: string }`
-- **Response**: Success/error status with appropriate message
+**Note**: Custom authentication APIs have been removed. Authentication is now handled exclusively through NextAuth.
 
-### `POST /api/auth/resend-confirmation`
-- **Purpose**: Resend confirmation code to user's email
-- **Body**: `{ email: string }`
-- **Response**: Success/error status with appropriate message
+### NextAuth Standard Routes
+- `/api/auth/[...nextauth]` - NextAuth catch-all route for all authentication operations
+  - Handles OAuth callbacks, session management, sign-in, sign-out
+  - Uses Cognito provider for authentication
+  - All authentication flows go through NextAuth
 
-### `POST /api/auth/check-verification`
-- **Purpose**: Check if user's email is verified
-- **Body**: `{ email: string }`
-- **Response**: Verification status and user status
+### Email Confirmation
+Email confirmation is handled through:
+- **Cognito Hosted UI**: Users receive confirmation emails from Cognito
+- **NextAuth Session**: Verification status is available in the NextAuth session
+- **No Custom APIs**: All authentication operations use NextAuth's standard patterns
 
 ## Middleware
 
