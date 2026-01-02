@@ -49,33 +49,78 @@ export interface EnvironmentConfig {
 }
 
 export function getEnvironmentConfig(environment: string): EnvironmentConfig {
-  // Validate required environment variables
-  const requiredVars = {
-    COGNITO_USER_POOL_ARN: process.env.COGNITO_USER_POOL_ARN,
-    COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID,
-    COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID,
-  };
+  // Read Cognito config from root .env file (supports both NEXT_PUBLIC_ and COGNITO_ prefixes)
+  const region = process.env.AWS_REGION || process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1';
+  
+  // Try multiple environment variable names (in order of preference)
+  const userPoolId = 
+    process.env.COGNITO_USER_POOL_ID || 
+    process.env.NEXT_PUBLIC_AWS_USER_POOL_ID || 
+    process.env.AWS_USER_POOL_ID;
+  
+  const clientId = 
+    process.env.COGNITO_CLIENT_ID || 
+    process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
+  
+  const userPoolArn = process.env.COGNITO_USER_POOL_ARN;
+  
+  // Debug logging to see what values we're getting
+  console.log('\n🔍 Environment Configuration Debug:');
+  console.log(`   Region: ${region}`);
+  console.log(`   User Pool ID: ${userPoolId || '❌ NOT FOUND'}`);
+  console.log(`   User Pool ARN: ${userPoolArn || '❌ NOT FOUND (will construct from ID)'}`);
+  console.log(`   Client ID: ${clientId || '❌ NOT FOUND'}`);
+  console.log(`   Environment variables checked:`);
+  console.log(`     - COGNITO_USER_POOL_ID: ${process.env.COGNITO_USER_POOL_ID || 'undefined'}`);
+  console.log(`     - NEXT_PUBLIC_AWS_USER_POOL_ID: ${process.env.NEXT_PUBLIC_AWS_USER_POOL_ID || 'undefined'}`);
+  console.log(`     - AWS_USER_POOL_ID: ${process.env.AWS_USER_POOL_ID || 'undefined'}`);
+  console.log(`     - COGNITO_USER_POOL_ARN: ${process.env.COGNITO_USER_POOL_ARN || 'undefined'}`);
+  console.log(`     - COGNITO_CLIENT_ID: ${process.env.COGNITO_CLIENT_ID || 'undefined'}`);
+  console.log(`     - NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID: ${process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID || 'undefined'}\n`);
+  
+  // Construct ARN from user pool ID if not provided
+  // Format: arn:aws:cognito-idp:{region}:{account-id}:userpool/{user-pool-id}
+  const awsAccountId = process.env.AWS_ACCOUNT_ID || process.env.CDK_DEFAULT_ACCOUNT || '249730500554';
+  const constructedArn = userPoolId 
+    ? `arn:aws:cognito-idp:${region}:${awsAccountId}:userpool/${userPoolId}`
+    : null;
+  
+  const finalUserPoolArn = userPoolArn || constructedArn;
 
-  const missing = Object.entries(requiredVars)
-    .filter(([_, value]) => !value)
-    .map(([key]) => key);
+  // Validate required environment variables
+  const missing: string[] = [];
+  if (!userPoolId) missing.push('COGNITO_USER_POOL_ID or NEXT_PUBLIC_AWS_USER_POOL_ID');
+  if (!finalUserPoolArn) missing.push('COGNITO_USER_POOL_ARN (or user pool ID to construct ARN)');
+  if (!clientId) missing.push('COGNITO_CLIENT_ID or NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID');
 
   if (missing.length > 0) {
     console.error('\n❌ ERROR: Missing required environment variables:');
     missing.forEach(key => console.error(`   - ${key}`));
     console.error('\n📝 To fix this:');
-    console.error('   1. Copy the example: cp .env.example .env.development');
-    console.error('   2. Edit .env.development with your AWS values');
+    console.error('   1. Ensure root .env file contains:');
+    console.error('      NEXT_PUBLIC_AWS_USER_POOL_ID=us-east-1_xxxxx');
+    console.error('      NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID=xxxxx');
+    console.error('   2. Or set:');
+    console.error('      COGNITO_USER_POOL_ID=us-east-1_xxxxx');
+    console.error('      COGNITO_USER_POOL_ARN=arn:aws:cognito-idp:...');
+    console.error('      COGNITO_CLIENT_ID=xxxxx');
     console.error('   3. Find your Cognito User Pool:');
     console.error('      aws cognito-idp list-user-pools --max-results 10\n');
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
+  console.log('✅ Cognito configuration loaded:', {
+    userPoolId: userPoolId?.substring(0, 20) + '...',
+    userPoolArn: finalUserPoolArn?.substring(0, 50) + '...',
+    clientId: clientId?.substring(0, 10) + '...',
+    arnSource: userPoolArn ? 'from env' : 'constructed',
+  });
+
   const baseConfig = {
-    region: process.env.AWS_REGION || 'us-east-1',
-    cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID!,
-    cognitoUserPoolArn: process.env.COGNITO_USER_POOL_ARN!,
-    cognitoClientId: process.env.COGNITO_CLIENT_ID!,
+    region,
+    cognitoUserPoolId: userPoolId!,
+    cognitoUserPoolArn: finalUserPoolArn!,
+    cognitoClientId: clientId!,
     uploadBucket: process.env.S3_UPLOAD_BUCKET || '',
     imageBucket: process.env.S3_IMAGE_BUCKET,
     photosBucket: process.env.S3_PHOTOS_BUCKET || 'homeforpup-images',

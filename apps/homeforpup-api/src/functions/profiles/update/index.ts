@@ -16,12 +16,29 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
   const currentUserId = getUserIdFromEvent(event);
   const targetUserId = event.pathParameters?.id;
 
+  console.log('Profile update request:', {
+    currentUserId,
+    targetUserId,
+    userIdsMatch: currentUserId === targetUserId,
+    hasAuthorizer: !!event.requestContext.authorizer,
+    claims: event.requestContext.authorizer?.claims ? {
+      sub: event.requestContext.authorizer.claims.sub,
+      email: event.requestContext.authorizer.claims.email,
+      'cognito:username': event.requestContext.authorizer.claims['cognito:username'],
+    } : null,
+  });
+
   if (!targetUserId) {
     throw new ApiError('User ID is required', 400);
   }
 
   // Users can only update their own profile (unless admin)
   if (currentUserId !== targetUserId) {
+    console.error('User ID mismatch:', {
+      currentUserId,
+      targetUserId,
+      error: 'User can only update their own profile',
+    });
     throw new ApiError('Forbidden: You can only update your own profile', 403);
   }
 

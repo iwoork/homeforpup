@@ -264,8 +264,24 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching puppies:', error);
-    return NextResponse.json({ error: 'Failed to fetch puppies' }, { status: 500 });
+    
+    // Check if the table doesn't exist
+    if (error.name === 'ResourceNotFoundException' || 
+        error.message?.includes('ResourceNotFoundException') ||
+        error.__type === 'com.amazonaws.dynamodb.v20120810#ResourceNotFoundException') {
+      console.error(`DynamoDB table "${BREEDERS_TABLE}" not found. Please create it first.`);
+      return NextResponse.json({ 
+        error: 'Breeders table not found',
+        message: `The DynamoDB table "${BREEDERS_TABLE}" does not exist. Please run the setup script to create it: node scripts/setup-dynamodb-tables.js`,
+        tableName: BREEDERS_TABLE
+      }, { status: 503 }); // 503 Service Unavailable
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to fetch puppies',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 });
   }
 }

@@ -13,31 +13,78 @@ import {
 import { User, ApiResponse } from '../types';
 import config from '../config/config';
 
+// Track if Amplify has been configured
+let amplifyConfigured = false;
+
 // Configure Amplify (this should be called in App.tsx)
 export const configureAmplify = () => {
   try {
-    console.log('Configuring Amplify with:', {
+    // Prevent double configuration
+    if (amplifyConfigured) {
+      console.log('⚠️  Amplify already configured, skipping...');
+      return;
+    }
+
+    console.log('🔧 Configuring Amplify with:', {
       userPoolId: config.aws.userPoolId,
       userPoolWebClientId: config.aws.userPoolWebClientId,
       region: config.aws.region,
     });
     
-    Amplify.configure({
+    // Validate configuration before setting up Amplify
+    if (!config.aws.userPoolId || !config.aws.userPoolWebClientId) {
+      const errorMsg = `❌ Missing Cognito configuration!
+      
+userPoolId: ${config.aws.userPoolId || 'MISSING'}
+userPoolClientId: ${config.aws.userPoolWebClientId || 'MISSING'}
+region: ${config.aws.region || 'MISSING'}
+
+Please ensure:
+1. The root .env file contains NEXT_PUBLIC_AWS_USER_POOL_ID and NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID
+2. The apps/mobile-app/.env file exists and contains the Cognito configuration
+3. The app has been rebuilt after updating .env files
+4. Metro bundler has been restarted with --reset-cache`;
+      
+      console.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    // Configure Amplify with the correct format for v6
+    const amplifyConfig = {
       Auth: {
         Cognito: {
-          userPoolId: config.aws.userPoolId,
-          userPoolClientId: config.aws.userPoolWebClientId,
+          userPoolId: config.aws.userPoolId.trim(),
+          userPoolClientId: config.aws.userPoolWebClientId.trim(),
           loginWith: {
             email: true,
           },
         },
       },
-    });
-    console.log('Amplify configured successfully');
+    };
+
+    console.log('🔧 Amplify config object:', JSON.stringify(amplifyConfig, null, 2));
+    
+    Amplify.configure(amplifyConfig);
+    
+    // Verify the configuration was set
+    try {
+      const currentConfig = Amplify.getConfig();
+      console.log('✅ Amplify current config:', JSON.stringify(currentConfig, null, 2));
+    } catch (configError) {
+      console.warn('⚠️  Could not retrieve Amplify config (this is normal in some cases):', configError);
+    }
+    
+    amplifyConfigured = true;
+    console.log('✅ Amplify configured successfully');
   } catch (error) {
-    console.error('Error configuring Amplify:', error);
+    console.error('❌ Error configuring Amplify:', error);
+    amplifyConfigured = false;
+    throw error; // Re-throw to prevent silent failures
   }
 };
+
+// Export function to check if Amplify is configured
+export const isAmplifyConfigured = () => amplifyConfigured;
 
 export interface AuthResult {
   success: boolean;
@@ -62,12 +109,24 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<AuthResult> {
     try {
+      // Ensure Amplify is configured before attempting login
+      if (!amplifyConfigured) {
+        console.log('⚠️  Amplify not configured, attempting to configure now...');
+        configureAmplify();
+      }
+
       console.log('Attempting login with:', { email, passwordLength: password.length });
       console.log('Amplify config check:', {
         region: config.aws.region,
         userPoolId: config.aws.userPoolId,
         userPoolWebClientId: config.aws.userPoolWebClientId,
+        amplifyConfigured,
       });
+      
+      // Double-check configuration values
+      if (!config.aws.userPoolId || !config.aws.userPoolWebClientId) {
+        throw new Error('Cognito configuration is missing. Please check your .env file.');
+      }
       
       const result = await signIn({
         username: email,
@@ -83,6 +142,12 @@ export class AuthService {
         
         // Get user attributes to extract the actual name and profile data
         const userAttributes = session.tokens?.idToken?.payload;
+        
+        // IMPORTANT: Use 'sub' claim as userId (not username)
+        // The 'sub' claim is the unique user identifier that API Gateway uses for authorization
+        // This must match the userId in API requests, otherwise Lambda will return 403
+        const userId = (userAttributes?.sub as string) || currentUser.username;
+        
         const userName = userAttributes?.name as string || userAttributes?.email as string || currentUser.username;
         const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
         const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
@@ -108,9 +173,17 @@ export class AuthService {
           console.log('✅ userType from Cognito:', userType);
         }
         
+        console.log('🔑 User ID from token sub claim:', {
+          sub: userAttributes?.sub,
+          username: currentUser.username,
+          usingSub: userAttributes?.sub || 'fallback to username',
+          userId: userId,
+          warning: !userAttributes?.sub ? '⚠️ No sub claim in token - using username fallback' : null,
+        });
+        
         // Create user object with proper name and profile data from Cognito attributes
         const userData: User = {
-          userId: currentUser.username,
+          userId: userId, // Use 'sub' claim, not username - MUST match token.sub for API calls
           email: userAttributes?.email as string || currentUser.signInDetails?.loginId || email,
           name: userName,
           firstName: firstName,
@@ -129,20 +202,74 @@ export class AuthService {
         console.log('User data created:', { name: userData.name, email: userData.email });
 
         // Store user data and token
-        // Use ID token for API authentication (not access token)
-        // The backend expects ID token for user identity verification
-        // In Amplify v6, the token is accessed via toString() method
-        const token = session.tokens?.idToken?.toString() || '';
+        // API Gateway Cognito User Pool Authorizer expects ID tokens (not access tokens)
+        // ID tokens contain user identity claims (sub, email, etc.) that the authorizer validates
+        const idToken = session.tokens?.idToken;
+        let token: string = '';
         
-        console.log('Token extracted:', { 
-          hasToken: !!token, 
-          tokenLength: token.length,
-          tokenType: 'idToken'
-        });
+        if (idToken) {
+          if (typeof idToken === 'string') {
+            token = idToken;
+          } else if (typeof idToken.toString === 'function') {
+            token = idToken.toString();
+          } else {
+            token = String(idToken);
+          }
+          
+          // Decode token to verify sub claim matches userId
+          let tokenSub: string | null = null;
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = parts[1];
+              const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+              if (typeof Buffer !== 'undefined') {
+                const decodedPayload = JSON.parse(Buffer.from(paddedPayload, 'base64').toString('utf8'));
+                tokenSub = decodedPayload.sub;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not decode token to verify sub:', e);
+          }
+          
+          console.log('Token extracted (ID token):', { 
+            hasToken: !!token, 
+            tokenLength: token.length,
+            tokenType: 'idToken',
+            isJWT: token.split('.').length === 3,
+            startsWithEyJ: token.startsWith('eyJ'),
+            tokenPreview: token.substring(0, 50) + '...',
+            tokenSub: tokenSub,
+            userId: userId,
+            subMatches: tokenSub === userId ? '✅ MATCH' : `❌ MISMATCH (token.sub=${tokenSub}, userId=${userId})`,
+          });
+          
+          // CRITICAL: Verify token sub matches userId
+          if (tokenSub && tokenSub !== userId) {
+            console.error('❌ CRITICAL: Token sub does not match userId!', {
+              tokenSub,
+              userId,
+              warning: 'This will cause 403 errors in API calls',
+            });
+            // Use token sub as the source of truth
+            userData.userId = tokenSub;
+            console.log('✅ Updated userId to match token sub:', tokenSub);
+          }
+        }
+        
+        if (!token) {
+          console.error('❌ No ID token extracted from session!');
+          throw new Error('Failed to extract authentication token');
+        }
         
         this.currentUser = userData;
         this.authToken = token;
         await this.storeAuthData(userData, token);
+        
+        // Set token in API service immediately after login
+        const apiService = require('./apiService').default;
+        apiService.setAuthToken(token);
+        console.log('✅ Token set in API service after login');
         
         // Ensure profile exists in database (create if doesn't exist)
         await this.ensureProfileExists(userData, token);
@@ -302,6 +429,11 @@ export class AuthService {
         // Get user attributes from session to extract the actual name and profile data
         const session = await fetchAuthSession();
         const userAttributes = session.tokens?.idToken?.payload;
+        
+        // IMPORTANT: Use 'sub' claim as userId (not username)
+        // The 'sub' claim is the unique user identifier that API Gateway uses for authorization
+        const userId = (userAttributes?.sub as string) || user.username;
+        
         const userName = userAttributes?.name as string || userAttributes?.email as string || user.username;
         const firstName = userAttributes?.given_name as string || userName.split(' ')[0];
         const lastName = userAttributes?.family_name as string || userName.split(' ').slice(1).join(' ');
@@ -320,7 +452,7 @@ export class AuthService {
         }
 
         const currentUser: User = {
-          userId: user.username,
+          userId: userId, // Use 'sub' claim, not username
           email: userAttributes?.email as string || user.signInDetails?.loginId || '',
           name: userName,
           firstName: firstName,
@@ -353,33 +485,22 @@ export class AuthService {
       }
 
       const session = await fetchAuthSession();
+      
+      // API Gateway Cognito User Pool Authorizer expects ID tokens (not access tokens)
+      // ID tokens contain user identity claims (sub, email, etc.) that the authorizer validates
       if (session && session.tokens?.idToken) {
-        // Use ID token for API authentication (not access token)
-        // The backend expects ID token for user identity verification
-        // Amplify v6 JWT tokens need to be extracted correctly
         const idToken = session.tokens.idToken;
         
-        // Debug: Check what we're working with
-        console.log('🔍 idToken object:', {
-          type: typeof idToken,
-          constructor: idToken?.constructor?.name,
-          hasToString: typeof idToken?.toString === 'function',
-          keys: idToken ? Object.keys(idToken).slice(0, 5) : [],
-        });
-        
-        // Try to get the JWT string - Amplify v6 returns a JWT object
-        // that should have a toString() method or direct string access
         let token: string;
         if (typeof idToken === 'string') {
           token = idToken;
         } else if (typeof idToken.toString === 'function') {
           token = idToken.toString();
         } else {
-          // Fallback: convert to string
           token = String(idToken);
         }
         
-        console.log('getAuthToken: Token extracted:', { 
+        console.log('getAuthToken: ID token extracted:', { 
           hasToken: !!token, 
           tokenLength: token.length,
           tokenType: 'idToken',
@@ -391,6 +512,7 @@ export class AuthService {
         this.authToken = token;
         return token;
       }
+      
       return null;
     } catch (error) {
       console.error('Get auth token error:', error);
@@ -455,9 +577,25 @@ export class AuthService {
       });
       
       // Update stored token if refresh succeeded
+      // API Gateway Cognito User Pool Authorizer expects ID tokens (not access tokens)
+      // ID tokens contain user identity claims (sub, email, etc.) that the authorizer validates
+      let token: string | null = null;
+      let tokenType = 'unknown';
+      
       if (session && session.tokens?.idToken) {
-        // In Amplify v6, the token is accessed via toString() method
-        const token = session.tokens.idToken.toString();
+        const idToken = session.tokens.idToken;
+        if (typeof idToken === 'string') {
+          token = idToken;
+        } else if (typeof idToken.toString === 'function') {
+          token = idToken.toString();
+        } else {
+          token = String(idToken);
+        }
+        tokenType = 'idToken';
+        console.log('✅ Using ID token from refreshed session (required for API Gateway Cognito authorizer)');
+      }
+      
+      if (token) {
         this.authToken = token;
         
         // Update stored token
@@ -465,22 +603,11 @@ export class AuthService {
         
         console.log('✅ Session refreshed successfully, new token length:', token.length);
         console.log('🔍 Token details:', {
-          tokenType: 'idToken',
+          tokenType,
           tokenLength: token.length,
           tokenPreview: token.substring(0, 50),
           isJWT: token.split('.').length === 3,
         });
-        
-        // Also log access token for comparison
-        if (session.tokens?.accessToken) {
-          const accessToken = session.tokens.accessToken.toString();
-          console.log('🔍 Access token available:', {
-            tokenType: 'accessToken',
-            tokenLength: accessToken.length,
-            tokenPreview: accessToken.substring(0, 50),
-            isJWT: accessToken.split('.').length === 3,
-          });
-        }
         
         return true;
       }
@@ -579,6 +706,35 @@ export class AuthService {
 
       if (token && userData) {
         const user = JSON.parse(userData);
+        
+        // CRITICAL: Verify cached userId matches token's sub claim
+        // If they don't match, update userId to use token's sub
+        let tokenSub: string | null = null;
+        try {
+          const parts = String(token).split('.');
+          if (parts.length === 3) {
+            const payload = parts[1];
+            const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+            if (typeof Buffer !== 'undefined') {
+              const decodedPayload = JSON.parse(Buffer.from(paddedPayload, 'base64').toString('utf8'));
+              tokenSub = decodedPayload.sub;
+            }
+          }
+        } catch (e) {
+          console.warn('Could not decode token to verify sub:', e);
+        }
+        
+        if (tokenSub && tokenSub !== user.userId) {
+          console.warn('⚠️ Cached userId does not match token sub, updating...', {
+            cachedUserId: user.userId,
+            tokenSub: tokenSub,
+          });
+          user.userId = tokenSub; // Update to use token's sub claim
+          // Save updated user data
+          await AsyncStorage.setItem('user_data', JSON.stringify(user));
+          console.log('✅ Updated cached userId to match token sub:', tokenSub);
+        }
+        
         this.currentUser = user;
         this.authToken = token;
         return { user, token };
@@ -599,10 +755,16 @@ export class AuthService {
     try {
       console.log('🔍 Checking if profile exists for user:', user.userId);
       
-      // Temporarily set token in API service for this check
+      // Import API service and set token
       const apiService = require('./apiService').default;
       const previousToken = apiService.authToken;
       apiService.setAuthToken(token);
+      
+      console.log('🔑 Token set in API service:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        tokenPreview: token?.substring(0, 30) + '...',
+      });
       
       // Try to get existing profile
       const response = await apiService.getProfileById(user.userId);
@@ -610,36 +772,37 @@ export class AuthService {
       if (response.success && response.data?.profile) {
         console.log('✅ Profile exists for user:', user.userId);
       } else {
-        // Profile doesn't exist, create it
+        // Profile doesn't exist, create it using updateProfile (which does upsert)
         console.log('📝 Profile not found, creating new profile for user:', user.userId);
         
         const newProfile = {
           userId: user.userId,
           email: user.email,
           name: user.name,
-          displayName: user.displayName,
+          displayName: user.displayName || user.name,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          userType: user.userType || 'dog-parent',
           verified: false,
           accountStatus: 'active' as const,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         
-        // Create the profile using a direct API call
-        // We can't use updateProfile since it requires the profile to exist
-        const createResponse = await fetch(`${apiService.baseUrl}/profiles/${user.userId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(newProfile),
+        console.log('📤 Creating profile with data:', {
+          userId: newProfile.userId,
+          email: newProfile.email,
+          name: newProfile.name,
+          userType: newProfile.userType,
         });
         
-        if (createResponse.ok) {
+        // Use updateProfile which does upsert (create or update)
+        const createResponse = await apiService.updateProfile(user.userId, newProfile);
+        
+        if (createResponse.success) {
           console.log('✅ Profile created successfully for user:', user.userId);
         } else {
-          const errorData = await createResponse.json();
-          console.warn('⚠️ Failed to create profile:', errorData);
+          console.warn('⚠️ Failed to create profile:', createResponse.error || createResponse.message);
         }
       }
       

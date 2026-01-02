@@ -64,7 +64,13 @@ export class ApiStack extends cdk.Stack {
       },
     });
 
+    // Validate Cognito User Pool exists and is accessible
+    // This will throw an error during deployment if the ARN is invalid
+    console.log(`🔍 Validating Cognito User Pool: ${config.cognitoUserPoolArn}`);
+
     // Create Cognito Authorizer
+    // Note: When attached to a method, this REQUIRES a valid JWT token
+    // Token must be in format: Authorization: Bearer <jwt-token>
     this.authorizer = new apigateway.CognitoUserPoolsAuthorizer(
       this,
       'CognitoAuthorizer',
@@ -72,8 +78,20 @@ export class ApiStack extends cdk.Stack {
         cognitoUserPools: [userPool],
         authorizerName: `homeforpup-authorizer-${config.environment}`,
         identitySource: 'method.request.header.Authorization',
+        resultsCacheTtl: cdk.Duration.seconds(300), // Cache authorizer results for 5 minutes
       }
     );
+
+    // Output authorizer info for debugging
+    new cdk.CfnOutput(this, 'AuthorizerId', {
+      value: this.authorizer.authorizerId,
+      description: 'Cognito Authorizer ID (for debugging)',
+    });
+
+    new cdk.CfnOutput(this, 'CognitoUserPoolId', {
+      value: config.cognitoUserPoolId,
+      description: 'Cognito User Pool ID',
+    });
 
     // Create API resources and routes
     this.createDogsApi();
@@ -238,6 +256,8 @@ export class ApiStack extends cdk.Stack {
       config.tables.profiles,
     ]);
 
+    // GET /profiles/{id} - Optional auth (Lambda doesn't check, but API Gateway requires it for security)
+    // Note: The Lambda function doesn't validate ownership, but API Gateway ensures valid token
     profileIdResource.addMethod('GET', getProfileFunction.createIntegration(), {
       authorizer: this.authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,

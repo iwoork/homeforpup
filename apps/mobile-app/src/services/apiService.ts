@@ -154,6 +154,59 @@ class ApiService {
         const tokenStr = String(this.authToken).trim();
         if (tokenStr && tokenStr !== '[object Object]') {
           headers.Authorization = `Bearer ${tokenStr}`;
+          
+          // Decode JWT to check issuer and audience (for debugging)
+          // React Native doesn't have atob, use Buffer or manual base64 decode
+          let tokenClaims: any = null;
+          try {
+            const parts = tokenStr.split('.');
+            if (parts.length === 3) {
+              const payload = parts[1];
+              // Add padding if needed for base64 decode
+              const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+              
+              // Use Buffer for base64 decoding (works in React Native)
+              let decodedPayload: any;
+              if (typeof Buffer !== 'undefined') {
+                decodedPayload = JSON.parse(Buffer.from(paddedPayload, 'base64').toString('utf8'));
+              } else if (typeof atob !== 'undefined') {
+                decodedPayload = JSON.parse(atob(paddedPayload));
+              } else {
+                // Fallback: manual base64 decode for React Native
+                const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+                let result = '';
+                let i = 0;
+                while (i < paddedPayload.length) {
+                  const enc1 = base64Chars.indexOf(paddedPayload.charAt(i++));
+                  const enc2 = base64Chars.indexOf(paddedPayload.charAt(i++));
+                  const enc3 = base64Chars.indexOf(paddedPayload.charAt(i++));
+                  const enc4 = base64Chars.indexOf(paddedPayload.charAt(i++));
+                  const chr1 = (enc1 << 2) | (enc2 >> 4);
+                  const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+                  const chr3 = ((enc3 & 3) << 6) | enc4;
+                  result += String.fromCharCode(chr1);
+                  if (enc3 !== 64) result += String.fromCharCode(chr2);
+                  if (enc4 !== 64) result += String.fromCharCode(chr3);
+                }
+                decodedPayload = JSON.parse(result);
+              }
+              
+              tokenClaims = {
+                sub: decodedPayload.sub,
+                iss: decodedPayload.iss,
+                aud: decodedPayload.aud,
+                exp: decodedPayload.exp,
+                token_use: decodedPayload.token_use,
+                'cognito:username': decodedPayload['cognito:username'],
+              };
+            }
+          } catch (e) {
+            console.warn('Failed to decode token for debugging:', e);
+          }
+          
+          // Extract user ID from endpoint for comparison
+          const userIdFromPath = endpoint.match(/\/profiles\/([^\/]+)/)?.[1];
+          
           console.log('API request with auth:', {
             endpoint,
             hasAuth: true,
@@ -161,9 +214,25 @@ class ApiService {
             tokenPreview: tokenStr.substring(0, 50),
             isJWT: tokenStr.split('.').length === 3,
             startsWithEyJ: tokenStr.startsWith('eyJ'),
-            // Add more token debugging
             tokenParts: tokenStr.split('.').length,
             tokenEnd: tokenStr.substring(tokenStr.length - 20),
+            userIdFromPath: userIdFromPath,
+            tokenClaims: tokenClaims ? {
+              sub: tokenClaims.sub,
+              subMatchesPath: userIdFromPath ? tokenClaims.sub === userIdFromPath : null,
+              iss: tokenClaims.iss,
+              aud: tokenClaims.aud,
+              token_use: tokenClaims.token_use,
+              exp: tokenClaims.exp,
+              expired: tokenClaims.exp ? Date.now() / 1000 > tokenClaims.exp : null,
+              userPoolFromIss: tokenClaims.iss ? tokenClaims.iss.split('/').pop() : null,
+              expectedUserPool: 'us-east-1_VEufvIU7M',
+              userPoolMatch: tokenClaims.iss ? tokenClaims.iss.includes('us-east-1_VEufvIU7M') : false,
+              'cognito:username': tokenClaims['cognito:username'],
+            } : 'Could not decode',
+            warning: tokenClaims && userIdFromPath && tokenClaims.sub !== userIdFromPath 
+              ? '⚠️ Token sub does not match path userId - this will cause 403 in Lambda' 
+              : null,
           });
         } else {
           console.warn('Invalid auth token detected:', {
@@ -210,37 +279,53 @@ class ApiService {
           console.error('API request failed:', logMessage);
         }
 
-        // Handle token expiration - refresh and retry once
-        if (response.status === 401 && retryOnAuth) {
-          console.log('⚠️ Token expired (401), attempting to refresh...');
+        // Handle token expiration (401) or forbidden (403) - refresh and retry once
+        if ((response.status === 401 || response.status === 403) && retryOnAuth) {
+          console.log(`⚠️ Token issue (${response.status}), attempting to refresh...`);
+          
+          // Decode token to check user pool
+          let tokenIssuer: string | null = null;
+          try {
+            const tokenStr = String(this.authToken || '').trim();
+            const parts = tokenStr.split('.');
+            if (parts.length === 3) {
+              const payload = parts[1];
+              const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+              const decodedPayload = JSON.parse(atob(paddedPayload));
+              tokenIssuer = decodedPayload.iss;
+            }
+          } catch (e) {
+            // Ignore
+          }
+          
+          console.log('Current token state:', {
+            hasToken: !!this.authToken,
+            tokenLength: this.authToken?.length,
+            tokenPreview: this.authToken?.substring(0, 30),
+            tokenIssuer: tokenIssuer,
+            expectedUserPool: 'us-east-1_VEufvIU7M',
+            note: response.status === 403 ? '403 Forbidden usually means API Gateway authorizer rejected the token. Check if API is deployed with correct user pool.' : '',
+          });
+          
           try {
             const authService = require('./authService').default;
+            
+            // For 403, refresh session and get new ID token
+            // API Gateway Cognito User Pool Authorizer expects ID tokens (not access tokens)
+            console.log('🔄 Refreshing session to get new ID token...');
             const isValid = await authService.refreshSession();
             if (isValid) {
-              const newToken = await authService.getAuthToken();
-              if (newToken) {
-                this.authToken = newToken;
-                console.log('✅ Token refreshed successfully, retrying request...');
-                console.log('🔄 Retry with new token:', {
-                  tokenLength: newToken.length,
-                  tokenPreview: newToken.substring(0, 50),
+              const idToken = await authService.getAuthToken();
+              if (idToken) {
+                this.authToken = idToken;
+                console.log('✅ Using refreshed ID token, retrying request...');
+                console.log('🔄 Retry with refreshed ID token:', {
+                  tokenLength: idToken.length,
+                  tokenPreview: idToken.substring(0, 50),
+                  isJWT: idToken.split('.').length === 3,
                 });
-                // Retry with fresh options (don't pass old headers)
                 return this.makeRequest<T>(endpoint, { ...options, headers: {} }, false);
               }
-            }
-            
-            // If ID token refresh failed, try access token
-            console.log('🔄 ID token failed, trying access token...');
-            const accessToken = await authService.getAccessToken();
-            if (accessToken) {
-              this.authToken = accessToken;
-              console.log('✅ Using access token, retrying request...');
-              console.log('🔄 Retry with access token:', {
-                tokenLength: accessToken.length,
-                tokenPreview: accessToken.substring(0, 50),
-              });
-              return this.makeRequest<T>(endpoint, { ...options, headers: {} }, false);
             }
             
             // Both tokens failed - clear token and let AuthContext handle logout

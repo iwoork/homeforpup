@@ -11,7 +11,8 @@
     "build:ios": "react-native run-ios --configuration Release",
     "build:ios-release": "cd ios && xcodebuild -workspace BreederIosApp.xcworkspace -scheme BreederIosApp -configuration Release -destination generic/platform=iOS -archivePath BreederIosApp.xcarchive archive",
     "pod:install": "cd ios && pod install",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "preios": "node -e \"const fs = require('fs'); const path = require('path'); const envPath = path.join(__dirname, '.env'); const rootEnvPath = path.join(__dirname, '../../.env'); if (fs.existsSync(rootEnvPath)) { fs.copyFileSync(rootEnvPath, envPath); console.log('✅ .env file synced from root'); } else { console.warn('⚠️  Root .env file not found at', rootEnvPath); }\""
   },
   "dependencies": {
     "@aws-amplify/react-native": "^1.2.0",
