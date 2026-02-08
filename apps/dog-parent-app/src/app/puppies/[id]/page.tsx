@@ -75,6 +75,7 @@ const PuppyDetailPage: React.FC = () => {
   const puppyId = params?.id as string;
   const { user } = useAuth();
   const [contactModalVisible, setContactModalVisible] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const { data: puppy, error, isLoading } = useSWR<PuppyDetail>(
     puppyId ? `/api/puppies/${puppyId}` : null,
@@ -158,11 +159,26 @@ const PuppyDetailPage: React.FC = () => {
 
   if (!puppy) return null;
 
-  // Extract photo URL
+  // Build ordered photo list: profile photo first, then remaining gallery photos
+  const allPhotos: { url: string; caption?: string }[] = [];
   const photoGallery = puppy.photoGallery;
-  const profilePhoto = photoGallery?.find((photo) => photo.isProfilePhoto)?.url;
-  const firstPhoto = photoGallery?.[0]?.url;
-  const heroImage = puppy.photoUrl || profilePhoto || firstPhoto || null;
+  const profilePhotoEntry = photoGallery?.find((photo) => photo.isProfilePhoto);
+
+  if (puppy.photoUrl) {
+    allPhotos.push({ url: puppy.photoUrl });
+  } else if (profilePhotoEntry) {
+    allPhotos.push({ url: profilePhotoEntry.url, caption: profilePhotoEntry.caption });
+  }
+
+  if (photoGallery) {
+    for (const photo of photoGallery) {
+      if (photo.url && !allPhotos.some((p) => p.url === photo.url)) {
+        allPhotos.push({ url: photo.url, caption: photo.caption });
+      }
+    }
+  }
+
+  const heroImage = allPhotos.length > 0 ? allPhotos[selectedPhotoIndex]?.url : null;
 
   const GenderIcon = puppy.gender === 'male' ? ManOutlined : WomanOutlined;
   const genderColor = puppy.gender === 'male' ? '#1890ff' : '#eb2f96';
@@ -175,8 +191,9 @@ const PuppyDetailPage: React.FC = () => {
       {/* Hero Section */}
       <Card style={{ ...cardStyle, marginBottom: '24px', overflow: 'hidden' }}>
         <Row gutter={[24, 24]}>
-          {/* Primary Photo */}
+          {/* Photo Gallery */}
           <Col xs={24} md={12}>
+            {/* Main Photo */}
             <div style={{
               position: 'relative',
               width: '100%',
@@ -188,7 +205,7 @@ const PuppyDetailPage: React.FC = () => {
               {heroImage ? (
                 <Image
                   src={heroImage}
-                  alt={puppy.name}
+                  alt={allPhotos[selectedPhotoIndex]?.caption || puppy.name}
                   fill
                   style={{ objectFit: 'cover' }}
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -200,6 +217,7 @@ const PuppyDetailPage: React.FC = () => {
               ) : (
                 <div style={{
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   height: '100%',
@@ -207,9 +225,52 @@ const PuppyDetailPage: React.FC = () => {
                   fontSize: '64px',
                 }}>
                   <HeartOutlined />
+                  <Text style={{ fontSize: '14px', color: '#bfbfbf', marginTop: '8px' }}>
+                    No photos available
+                  </Text>
                 </div>
               )}
             </div>
+
+            {/* Thumbnail Strip */}
+            {allPhotos.length > 1 && (
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginTop: '8px',
+                overflowX: 'auto',
+                paddingBottom: '4px',
+              }}>
+                {allPhotos.map((photo, index) => (
+                  <div
+                    key={photo.url}
+                    onClick={() => setSelectedPhotoIndex(index)}
+                    style={{
+                      position: 'relative',
+                      width: '72px',
+                      height: '72px',
+                      minWidth: '72px',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      border: index === selectedPhotoIndex
+                        ? '2px solid #08979C'
+                        : '2px solid transparent',
+                      opacity: index === selectedPhotoIndex ? 1 : 0.7,
+                      transition: 'opacity 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    <Image
+                      src={photo.url}
+                      alt={photo.caption || `${puppy.name} photo ${index + 1}`}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      sizes="72px"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </Col>
 
           {/* Puppy Info */}
