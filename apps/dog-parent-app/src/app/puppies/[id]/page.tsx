@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Tag, Space, Spin, Alert, Button, Divider, Empty,
+  Tooltip, message,
 } from 'antd';
 import {
   LoadingOutlined, EnvironmentOutlined, CalendarOutlined,
-  HeartOutlined, ManOutlined, WomanOutlined, MedicineBoxOutlined,
+  HeartOutlined, HeartFilled, ManOutlined, WomanOutlined, MedicineBoxOutlined,
   SafetyCertificateOutlined, SmileOutlined, TeamOutlined,
   CheckCircleOutlined, PhoneOutlined, MailOutlined, GlobalOutlined,
-  MessageOutlined,
+  MessageOutlined, ShareAltOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,7 +18,7 @@ import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Dog, Kennel } from '@homeforpup/shared-types';
 import ContactBreederModal from '@/components/ContactBreederModal';
-import { useAuth } from '@/hooks';
+import { useAuth, useFavorites, useFavoriteStatus } from '@/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -73,9 +74,40 @@ const sectionTitleStyle: React.CSSProperties = {
 const PuppyDetailPage: React.FC = () => {
   const params = useParams();
   const puppyId = params?.id as string;
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [contactModalVisible, setContactModalVisible] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+
+  // Favorites
+  const { toggleFavorite } = useFavorites();
+  const { isFavorited, isLoading: favoriteLoading } = useFavoriteStatus(puppyId);
+  const [optimisticFavorited, setOptimisticFavorited] = useState<boolean | null>(null);
+  const isFav = optimisticFavorited !== null ? optimisticFavorited : isFavorited;
+
+  const handleToggleFavorite = async () => {
+    if (!puppyId) return;
+    const prev = isFav;
+    setOptimisticFavorited(!prev);
+    try {
+      await toggleFavorite(puppyId);
+      setOptimisticFavorited(null); // Let server state take over
+    } catch {
+      setOptimisticFavorited(prev); // Revert on error
+    }
+  };
+
+  // Share / copy URL
+  const [shareTooltipVisible, setShareTooltipVisible] = useState(false);
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareTooltipVisible(true);
+      setTimeout(() => setShareTooltipVisible(false), 2000);
+    } catch {
+      message.info('Copy this URL to share: ' + url);
+    }
+  };
 
   const { data: puppy, error, isLoading } = useSWR<PuppyDetail>(
     puppyId ? `/api/puppies/${puppyId}` : null,
@@ -276,9 +308,35 @@ const PuppyDetailPage: React.FC = () => {
           {/* Puppy Info */}
           <Col xs={24} md={12}>
             <div style={{ padding: '8px 0' }}>
-              <Title level={2} style={{ margin: '0 0 8px 0', color: '#08979C' }}>
-                {puppy.name}
-              </Title>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Title level={2} style={{ margin: 0, color: '#08979C' }}>
+                  {puppy.name}
+                </Title>
+                <Space>
+                  <Button
+                    type="text"
+                    shape="circle"
+                    size="large"
+                    icon={isFav
+                      ? <HeartFilled style={{ color: '#ff4d4f', fontSize: '22px' }} />
+                      : <HeartOutlined style={{ fontSize: '22px' }} />
+                    }
+                    onClick={handleToggleFavorite}
+                    disabled={favoriteLoading}
+                    aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                  />
+                  <Tooltip title="Copied!" open={shareTooltipVisible}>
+                    <Button
+                      type="text"
+                      shape="circle"
+                      size="large"
+                      icon={<ShareAltOutlined style={{ fontSize: '22px' }} />}
+                      onClick={handleShare}
+                      aria-label="Share this puppy"
+                    />
+                  </Tooltip>
+                </Space>
+              </div>
 
               <Space size="middle" wrap style={{ marginBottom: '16px' }}>
                 <Tag color="blue" style={{ fontSize: '14px', padding: '4px 12px' }}>
