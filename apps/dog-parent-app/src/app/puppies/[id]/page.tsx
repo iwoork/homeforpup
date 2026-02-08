@@ -1,18 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Card, Row, Col, Typography, Tag, Space, Spin, Alert, Button,
+  Card, Row, Col, Typography, Tag, Space, Spin, Alert, Button, Divider, Empty,
 } from 'antd';
 import {
   LoadingOutlined, EnvironmentOutlined, CalendarOutlined,
-  HeartOutlined, ManOutlined, WomanOutlined,
+  HeartOutlined, ManOutlined, WomanOutlined, MedicineBoxOutlined,
+  SafetyCertificateOutlined, SmileOutlined, TeamOutlined,
+  CheckCircleOutlined, PhoneOutlined, MailOutlined, GlobalOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Dog, Kennel } from '@homeforpup/shared-types';
+import ContactBreederModal from '@/components/ContactBreederModal';
+import { useAuth } from '@/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -57,9 +62,19 @@ const cardStyle: React.CSSProperties = {
   marginBottom: '16px',
 };
 
+const sectionTitleStyle: React.CSSProperties = {
+  margin: '0 0 16px 0',
+  color: '#08979C',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+};
+
 const PuppyDetailPage: React.FC = () => {
   const params = useParams();
   const puppyId = params?.id as string;
+  const { user } = useAuth();
+  const [contactModalVisible, setContactModalVisible] = useState(false);
 
   const { data: puppy, error, isLoading } = useSWR<PuppyDetail>(
     puppyId ? `/api/puppies/${puppyId}` : null,
@@ -68,6 +83,20 @@ const PuppyDetailPage: React.FC = () => {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
     }
+  );
+
+  // Fetch sire data if sireId exists
+  const { data: sire } = useSWR<PuppyDetail>(
+    puppy?.sireId ? `/api/puppies/${puppy.sireId}` : null,
+    fetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  // Fetch dam data if damId exists
+  const { data: dam } = useSWR<PuppyDetail>(
+    puppy?.damId ? `/api/puppies/${puppy.damId}` : null,
+    fetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
   );
 
   // Loading state
@@ -137,6 +166,9 @@ const PuppyDetailPage: React.FC = () => {
 
   const GenderIcon = puppy.gender === 'male' ? ManOutlined : WomanOutlined;
   const genderColor = puppy.gender === 'male' ? '#1890ff' : '#eb2f96';
+  const kennel = puppy.kennel;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isVerified = !!(kennel as any)?.verified;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
@@ -260,6 +292,302 @@ const PuppyDetailPage: React.FC = () => {
           </Col>
         </Row>
       </Card>
+
+      {/* Content Sections + Sidebar */}
+      <Row gutter={[24, 24]}>
+        {/* Main Content */}
+        <Col xs={24} md={16}>
+          {/* About Section */}
+          <Card style={cardStyle}>
+            <Title level={4} style={sectionTitleStyle}>
+              <SmileOutlined /> About {puppy.name}
+            </Title>
+            {puppy.description && (
+              <Paragraph style={{ fontSize: '14px', color: '#595959' }}>
+                {puppy.description}
+              </Paragraph>
+            )}
+            <Row gutter={[16, 12]}>
+              {puppy.color && (
+                <Col xs={12} sm={6}>
+                  <Text type="secondary">Color</Text>
+                  <div><Text strong>{puppy.color}</Text></div>
+                </Col>
+              )}
+              {puppy.weight > 0 && (
+                <Col xs={12} sm={6}>
+                  <Text type="secondary">Weight</Text>
+                  <div><Text strong>{puppy.weight} lbs</Text></div>
+                </Col>
+              )}
+              {puppy.birthDate && (
+                <Col xs={12} sm={6}>
+                  <Text type="secondary">Birth Date</Text>
+                  <div><Text strong>{new Date(puppy.birthDate).toLocaleDateString()}</Text></div>
+                </Col>
+              )}
+              {puppy.height && (
+                <Col xs={12} sm={6}>
+                  <Text type="secondary">Height</Text>
+                  <div><Text strong>{puppy.height} inches</Text></div>
+                </Col>
+              )}
+              {puppy.eyeColor && (
+                <Col xs={12} sm={6}>
+                  <Text type="secondary">Eye Color</Text>
+                  <div><Text strong>{puppy.eyeColor}</Text></div>
+                </Col>
+              )}
+              {puppy.markings && (
+                <Col xs={12} sm={6}>
+                  <Text type="secondary">Markings</Text>
+                  <div><Text strong>{puppy.markings}</Text></div>
+                </Col>
+              )}
+            </Row>
+          </Card>
+
+          {/* Health & Vaccinations Section */}
+          <Card style={cardStyle}>
+            <Title level={4} style={sectionTitleStyle}>
+              <MedicineBoxOutlined /> Health & Vaccinations
+            </Title>
+            {puppy.healthStatus && (
+              <div style={{ marginBottom: '16px' }}>
+                <Text type="secondary">Health Status: </Text>
+                <Tag color={
+                  puppy.healthStatus === 'excellent' ? 'green' :
+                  puppy.healthStatus === 'good' ? 'blue' :
+                  puppy.healthStatus === 'fair' ? 'orange' : 'red'
+                }>
+                  {puppy.healthStatus.charAt(0).toUpperCase() + puppy.healthStatus.slice(1)}
+                </Tag>
+              </div>
+            )}
+            {puppy.specialNeeds && (
+              <div style={{ marginBottom: '16px' }}>
+                <Text type="secondary">Special Needs: </Text>
+                <Text>{puppy.specialNeeds}</Text>
+              </div>
+            )}
+            {puppy.healthTests && puppy.healthTests.length > 0 ? (
+              <>
+                <Text strong style={{ display: 'block', marginBottom: '8px' }}>Health Tests</Text>
+                <Space wrap>
+                  {puppy.healthTests.map((test, index) => (
+                    <Tag
+                      key={index}
+                      icon={<SafetyCertificateOutlined />}
+                      color="green"
+                    >
+                      {test.includes('http') ? `Health Test ${index + 1}` : test}
+                    </Tag>
+                  ))}
+                </Space>
+              </>
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No health test records available"
+              />
+            )}
+          </Card>
+
+          {/* Temperament Section */}
+          {puppy.temperament && (
+            <Card style={cardStyle}>
+              <Title level={4} style={sectionTitleStyle}>
+                <SmileOutlined /> Temperament
+              </Title>
+              <Space wrap size="middle">
+                {puppy.temperament.split(',').map((trait, index) => (
+                  <Tag
+                    key={index}
+                    color="cyan"
+                    style={{ fontSize: '14px', padding: '4px 12px' }}
+                  >
+                    {trait.trim()}
+                  </Tag>
+                ))}
+              </Space>
+            </Card>
+          )}
+
+          {/* Parents Section */}
+          {(puppy.sireId || puppy.damId) && (
+            <Card style={cardStyle}>
+              <Title level={4} style={sectionTitleStyle}>
+                <TeamOutlined /> Parents
+              </Title>
+              <Row gutter={[16, 16]}>
+                {puppy.sireId && (
+                  <Col xs={24} sm={12}>
+                    <Card
+                      size="small"
+                      style={{ borderRadius: '8px', background: '#f0f9ff' }}
+                    >
+                      <Space>
+                        <ManOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
+                        <div>
+                          <Text type="secondary" style={{ fontSize: '12px' }}>Sire (Father)</Text>
+                          <div>
+                            <Link href={`/puppies/${puppy.sireId}`}>
+                              <Text strong style={{ color: '#08979C' }}>
+                                {sire?.name || 'View Sire'}
+                              </Text>
+                            </Link>
+                          </div>
+                        </div>
+                      </Space>
+                    </Card>
+                  </Col>
+                )}
+                {puppy.damId && (
+                  <Col xs={24} sm={12}>
+                    <Card
+                      size="small"
+                      style={{ borderRadius: '8px', background: '#fff0f6' }}
+                    >
+                      <Space>
+                        <WomanOutlined style={{ color: '#eb2f96', fontSize: '20px' }} />
+                        <div>
+                          <Text type="secondary" style={{ fontSize: '12px' }}>Dam (Mother)</Text>
+                          <div>
+                            <Link href={`/puppies/${puppy.damId}`}>
+                              <Text strong style={{ color: '#08979C' }}>
+                                {dam?.name || 'View Dam'}
+                              </Text>
+                            </Link>
+                          </div>
+                        </div>
+                      </Space>
+                    </Card>
+                  </Col>
+                )}
+              </Row>
+            </Card>
+          )}
+        </Col>
+
+        {/* Sidebar - Breeder Info */}
+        <Col xs={24} md={8}>
+          <Card style={{ ...cardStyle, position: 'sticky', top: '16px' }}>
+            <Title level={4} style={sectionTitleStyle}>
+              Breeder Info
+            </Title>
+            {kennel ? (
+              <>
+                <div style={{ marginBottom: '16px' }}>
+                  <Space align="center">
+                    <Text strong style={{ fontSize: '18px' }}>{kennel.name}</Text>
+                    {isVerified && (
+                      <CheckCircleOutlined style={{ color: '#08979C', fontSize: '18px' }} />
+                    )}
+                  </Space>
+                  {isVerified && (
+                    <div>
+                      <Tag color="cyan" style={{ marginTop: '4px' }}>Verified Breeder</Tag>
+                    </div>
+                  )}
+                </div>
+
+                {kennel.description && (
+                  <Paragraph
+                    style={{ fontSize: '13px', color: '#595959' }}
+                    ellipsis={{ rows: 3, expandable: true, symbol: 'more' }}
+                  >
+                    {kennel.description}
+                  </Paragraph>
+                )}
+
+                <Divider style={{ margin: '12px 0' }} />
+
+                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                  {kennel.address && (
+                    <div>
+                      <Space>
+                        <EnvironmentOutlined style={{ color: '#08979C' }} />
+                        <Text>
+                          {kennel.address.city}, {kennel.address.state}
+                          {kennel.address.country && kennel.address.country !== 'US' ? `, ${kennel.address.country}` : ''}
+                        </Text>
+                      </Space>
+                    </div>
+                  )}
+                  {kennel.phone && (
+                    <div>
+                      <Space>
+                        <PhoneOutlined style={{ color: '#08979C' }} />
+                        <Text>{kennel.phone}</Text>
+                      </Space>
+                    </div>
+                  )}
+                  {kennel.email && (
+                    <div>
+                      <Space>
+                        <MailOutlined style={{ color: '#08979C' }} />
+                        <Text>{kennel.email}</Text>
+                      </Space>
+                    </div>
+                  )}
+                  {kennel.website && (
+                    <div>
+                      <Space>
+                        <GlobalOutlined style={{ color: '#08979C' }} />
+                        <a href={kennel.website} target="_blank" rel="noopener noreferrer">
+                          <Text style={{ color: '#08979C' }}>Website</Text>
+                        </a>
+                      </Space>
+                    </div>
+                  )}
+                </Space>
+
+                {kennel.specialties && kennel.specialties.length > 0 && (
+                  <>
+                    <Divider style={{ margin: '12px 0' }} />
+                    <Text type="secondary" style={{ fontSize: '12px' }}>Specialties</Text>
+                    <div style={{ marginTop: '4px' }}>
+                      <Space wrap>
+                        {kennel.specialties.map((breed, index) => (
+                          <Tag key={index} color="blue">{breed}</Tag>
+                        ))}
+                      </Space>
+                    </div>
+                  </>
+                )}
+
+                <Divider style={{ margin: '12px 0' }} />
+
+                <Button
+                  type="primary"
+                  icon={<MessageOutlined />}
+                  block
+                  size="large"
+                  style={{ background: '#08979C', borderColor: '#08979C' }}
+                  onClick={() => setContactModalVisible(true)}
+                >
+                  Contact Breeder
+                </Button>
+              </>
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Breeder information unavailable"
+              />
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Contact Breeder Modal */}
+      <ContactBreederModal
+        visible={contactModalVisible}
+        onCancel={() => setContactModalVisible(false)}
+        puppyName={puppy.name}
+        breederName={kennel?.name || 'Breeder'}
+        senderName={user?.name || user?.displayName || 'Guest User'}
+        senderEmail={user?.email || ''}
+      />
     </div>
   );
 };
