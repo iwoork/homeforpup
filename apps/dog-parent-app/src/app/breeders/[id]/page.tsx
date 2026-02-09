@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space, 
-  Rate, Spin, Alert
+import {
+  Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space,
+  Rate, Spin, Alert, Input, message
 } from 'antd';
 import {
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
   HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined,
-  LoadingOutlined, PictureOutlined
+  LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -337,11 +337,55 @@ const reviewsFetcher = async (url: string): Promise<{ reviews: ReviewFromApi[]; 
 };
 
 const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
-  const { data: reviewsData, error: reviewsError, isLoading: reviewsLoading } = useSWR(
+  const { isAuthenticated } = useAuth();
+  const { data: reviewsData, error: reviewsError, isLoading: reviewsLoading, mutate: mutateReviews } = useSWR(
     breederId ? `/api/reviews?breederId=${breederId}` : null,
     reviewsFetcher,
     { revalidateOnFocus: false, revalidateOnReconnect: false }
   );
+
+  const [showForm, setShowForm] = useState(false);
+  const [formRating, setFormRating] = useState(0);
+  const [formTitle, setFormTitle] = useState('');
+  const [formContent, setFormContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitReview = async () => {
+    if (formRating === 0 || !formTitle.trim() || !formContent.trim()) {
+      message.warning('Please fill in all fields and select a rating.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          breederId,
+          rating: formRating,
+          title: formTitle.trim(),
+          content: formContent.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit review');
+      }
+
+      message.success('Review submitted successfully!');
+      setShowForm(false);
+      setFormRating(0);
+      setFormTitle('');
+      setFormContent('');
+      mutateReviews();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const reviews = React.useMemo(() => reviewsData?.reviews || [], [reviewsData?.reviews]);
 
@@ -387,17 +431,87 @@ const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardSty
     );
   }
 
+  const reviewFormBlock = (
+    <>
+      {isAuthenticated ? (
+        showForm ? (
+          <Card style={{ ...cardStyle, border: '1px solid #08979C' }}>
+            <Title level={5} style={{ marginBottom: '16px' }}>Write a Review</Title>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>Rating</Text>
+              <Rate value={formRating} onChange={setFormRating} style={{ fontSize: '28px' }} />
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>Title</Text>
+              <Input
+                placeholder="Summarize your experience"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>Your Review</Text>
+              <Input.TextArea
+                placeholder="Tell others about your experience with this breeder..."
+                value={formContent}
+                onChange={(e) => setFormContent(e.target.value)}
+                rows={4}
+                maxLength={2000}
+              />
+            </div>
+            <Space>
+              <Button
+                type="primary"
+                style={{ background: '#08979C', borderColor: '#08979C' }}
+                onClick={handleSubmitReview}
+                loading={submitting}
+                disabled={submitting || formRating === 0 || !formTitle.trim() || !formContent.trim()}
+              >
+                Submit Review
+              </Button>
+              <Button onClick={() => { setShowForm(false); setFormRating(0); setFormTitle(''); setFormContent(''); }} disabled={submitting}>
+                Cancel
+              </Button>
+            </Space>
+          </Card>
+        ) : (
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            style={{ background: '#08979C', borderColor: '#08979C', marginBottom: '16px' }}
+            onClick={() => setShowForm(true)}
+          >
+            Write a Review
+          </Button>
+        )
+      ) : (
+        <Card style={{ ...cardStyle, background: '#fafafa' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LockOutlined style={{ color: '#999' }} />
+            <Text type="secondary">
+              <Link href="/auth/signin" style={{ color: '#08979C' }}>Sign in</Link> to leave a review
+            </Text>
+          </div>
+        </Card>
+      )}
+    </>
+  );
+
   if (reviews.length === 0) {
     return (
-      <Card style={cardStyle}>
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <StarOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
-          <Title level={4}>No Reviews Yet</Title>
-          <Paragraph style={{ fontSize: '16px' }}>
-            Be the first to leave a review for {breeder.businessName}!
-          </Paragraph>
-        </div>
-      </Card>
+      <div>
+        <Card style={cardStyle}>
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <StarOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+            <Title level={4}>No Reviews Yet</Title>
+            <Paragraph style={{ fontSize: '16px' }}>
+              Be the first to leave a review for {breeder.businessName}!
+            </Paragraph>
+          </div>
+        </Card>
+        {reviewFormBlock}
+      </div>
     );
   }
 
@@ -448,6 +562,11 @@ const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardSty
           </Col>
         </Row>
       </Card>
+
+      {/* Write a Review */}
+      <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+        {reviewFormBlock}
+      </div>
 
       {/* Individual Reviews */}
       <Title level={4} style={{ marginTop: '24px', marginBottom: '16px' }}>
