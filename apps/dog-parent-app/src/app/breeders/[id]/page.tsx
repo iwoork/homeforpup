@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space, 
-  Rate, Spin, Alert
+import {
+  Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space,
+  Rate, Spin, Alert, Input, message, Breadcrumb
 } from 'antd';
-import { 
-  CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, 
+import {
+  CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
-  HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined, 
-  LoadingOutlined
+  HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined,
+  LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -78,6 +78,525 @@ const fetcher = async (url: string): Promise<{ breeder: Breeder }> => {
   return response.json();
 };
 
+// Puppy type from the /api/puppies endpoint
+interface PuppyFromApi {
+  id: string;
+  name: string;
+  breed: string;
+  gender: 'male' | 'female';
+  ageWeeks: number;
+  price: number;
+  location: string;
+  image: string;
+  description?: string;
+  healthStatus: string;
+}
+
+// Fetcher for puppies API
+const puppiesFetcher = async (url: string): Promise<{ puppies: PuppyFromApi[]; total: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch puppies');
+  }
+  return response.json();
+};
+
+const BreederPuppiesTab: React.FC<{ breederId: string; cardStyle: React.CSSProperties }> = ({ breederId, cardStyle }) => {
+  const { data: puppiesData, error: puppiesError, isLoading: puppiesLoading } = useSWR(
+    breederId ? `/api/puppies?breederId=${breederId}` : null,
+    puppiesFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const puppies = puppiesData?.puppies || [];
+
+  if (puppiesLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading puppies..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (puppiesError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load puppies"
+          description="There was a problem fetching available puppies. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (puppies.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Title level={4}>No Puppies Available</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            This breeder doesn&apos;t have any puppies available right now. Check back soon for upcoming litters!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      <Title level={4} style={{ marginBottom: '16px' }}>
+        Available Puppies ({puppies.length})
+      </Title>
+      <Row gutter={[16, 16]}>
+        {puppies.map((puppy) => (
+          <Col xs={24} sm={12} md={12} key={puppy.id}>
+            <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              <Card
+                hoverable
+                style={{ ...cardStyle, overflow: 'hidden' }}
+                cover={
+                  <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+                    <img
+                      src={puppy.image}
+                      alt={puppy.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { e.currentTarget.src = '/api/placeholder/400/200'; }}
+                    />
+                    <Tag color="blue" style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                      {puppy.ageWeeks} weeks
+                    </Tag>
+                  </div>
+                }
+              >
+                <Title level={5} style={{ margin: 0, color: '#08979C' }}>{puppy.name}</Title>
+                <Text type="secondary">{puppy.breed} &bull; {puppy.gender}</Text>
+                <div style={{ marginTop: '8px' }}>
+                  <Space>
+                    <EnvironmentOutlined style={{ color: '#08979C', fontSize: '12px' }} />
+                    <Text type="secondary" style={{ fontSize: '12px' }}>{puppy.location}</Text>
+                  </Space>
+                </div>
+                {puppy.price > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    <Text strong style={{ fontSize: '16px', color: '#08979C' }}>
+                      ${puppy.price.toLocaleString()}
+                    </Text>
+                  </div>
+                )}
+              </Card>
+            </Link>
+          </Col>
+        ))}
+      </Row>
+    </div>
+  );
+};
+
+// Gallery photo type
+interface GalleryPhoto {
+  url: string;
+  caption: string;
+}
+
+const BreederGalleryTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
+  // Fetch puppies to get their images for the gallery
+  const { data: puppiesData, isLoading } = useSWR(
+    breederId ? `/api/puppies?breederId=${breederId}` : null,
+    puppiesFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  // Build gallery photos from breeder images + puppy images
+  const galleryPhotos: GalleryPhoto[] = React.useMemo(() => {
+    const photos: GalleryPhoto[] = [];
+
+    // Add breeder cover image
+    if (breeder.coverImage) {
+      photos.push({ url: breeder.coverImage, caption: `${breeder.businessName}` });
+    }
+
+    // Add breeder profile image
+    if (breeder.profileImage) {
+      photos.push({ url: breeder.profileImage, caption: `${breeder.businessName}` });
+    }
+
+    // Add puppy images
+    if (puppiesData?.puppies) {
+      for (const puppy of puppiesData.puppies) {
+        if (puppy.image) {
+          photos.push({ url: puppy.image, caption: `${puppy.name} - ${puppy.breed}` });
+        }
+      }
+    }
+
+    return photos;
+  }, [breeder.coverImage, breeder.profileImage, breeder.businessName, puppiesData]);
+
+  if (isLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading gallery..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (galleryPhotos.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <PictureOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+          <Title level={4}>No Photos Yet</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            This breeder hasn&apos;t added any photos to their gallery yet. Check back soon!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      <Title level={4} style={{ marginBottom: '16px' }}>
+        Photo Gallery ({galleryPhotos.length})
+      </Title>
+      <Image.PreviewGroup>
+        <Row gutter={[16, 16]}>
+          {galleryPhotos.map((photo, index) => (
+            <Col xs={24} sm={12} md={8} key={index}>
+              <div
+                style={{
+                  position: 'relative',
+                  height: '200px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                }}
+              >
+                <Image
+                  src={photo.url}
+                  alt={photo.caption}
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                  }}
+                  fallback="/api/placeholder/300/200"
+                  placeholder={
+                    <div style={{
+                      width: '100%',
+                      height: '200px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#f5f5f5',
+                      borderRadius: '8px',
+                    }}>
+                      <Spin indicator={<LoadingOutlined spin />} />
+                    </div>
+                  }
+                />
+              </div>
+              <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                {photo.caption}
+              </Text>
+            </Col>
+          ))}
+        </Row>
+      </Image.PreviewGroup>
+    </div>
+  );
+};
+
+// Review type from the /api/reviews endpoint
+interface ReviewFromApi {
+  id: string;
+  breederId: string;
+  reviewerId: string;
+  reviewerName: string;
+  rating: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Fetcher for reviews API
+const reviewsFetcher = async (url: string): Promise<{ reviews: ReviewFromApi[]; count: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch reviews');
+  }
+  return response.json();
+};
+
+const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
+  const { isAuthenticated } = useAuth();
+  const { data: reviewsData, error: reviewsError, isLoading: reviewsLoading, mutate: mutateReviews } = useSWR(
+    breederId ? `/api/reviews?breederId=${breederId}` : null,
+    reviewsFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const [showForm, setShowForm] = useState(false);
+  const [formRating, setFormRating] = useState(0);
+  const [formTitle, setFormTitle] = useState('');
+  const [formContent, setFormContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitReview = async () => {
+    if (formRating === 0 || !formTitle.trim() || !formContent.trim()) {
+      message.warning('Please fill in all fields and select a rating.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          breederId,
+          rating: formRating,
+          title: formTitle.trim(),
+          content: formContent.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit review');
+      }
+
+      message.success('Review submitted successfully!');
+      setShowForm(false);
+      setFormRating(0);
+      setFormTitle('');
+      setFormContent('');
+      mutateReviews();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const reviews = React.useMemo(() => reviewsData?.reviews || [], [reviewsData?.reviews]);
+
+  // Calculate rating distribution
+  const ratingDistribution = React.useMemo(() => {
+    const dist = [0, 0, 0, 0, 0]; // index 0 = 1-star, index 4 = 5-star
+    for (const review of reviews) {
+      const idx = Math.max(0, Math.min(4, Math.round(review.rating) - 1));
+      dist[idx]++;
+    }
+    return dist;
+  }, [reviews]);
+
+  // Calculate average rating from actual reviews
+  const avgRating = React.useMemo(() => {
+    if (reviews.length === 0) return breeder.rating;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    return sum / reviews.length;
+  }, [reviews, breeder.rating]);
+
+  const totalReviews = reviews.length || breeder.reviewCount;
+
+  if (reviewsLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading reviews..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (reviewsError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load reviews"
+          description="There was a problem fetching reviews. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  const reviewFormBlock = (
+    <>
+      {isAuthenticated ? (
+        showForm ? (
+          <Card style={{ ...cardStyle, border: '1px solid #08979C' }}>
+            <Title level={5} style={{ marginBottom: '16px' }}>Write a Review</Title>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>Rating</Text>
+              <Rate value={formRating} onChange={setFormRating} style={{ fontSize: '28px' }} />
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>Title</Text>
+              <Input
+                placeholder="Summarize your experience"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>Your Review</Text>
+              <Input.TextArea
+                placeholder="Tell others about your experience with this breeder..."
+                value={formContent}
+                onChange={(e) => setFormContent(e.target.value)}
+                rows={4}
+                maxLength={2000}
+              />
+            </div>
+            <Space>
+              <Button
+                type="primary"
+                style={{ background: '#08979C', borderColor: '#08979C' }}
+                onClick={handleSubmitReview}
+                loading={submitting}
+                disabled={submitting || formRating === 0 || !formTitle.trim() || !formContent.trim()}
+              >
+                Submit Review
+              </Button>
+              <Button onClick={() => { setShowForm(false); setFormRating(0); setFormTitle(''); setFormContent(''); }} disabled={submitting}>
+                Cancel
+              </Button>
+            </Space>
+          </Card>
+        ) : (
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            style={{ background: '#08979C', borderColor: '#08979C', marginBottom: '16px' }}
+            onClick={() => setShowForm(true)}
+          >
+            Write a Review
+          </Button>
+        )
+      ) : (
+        <Card style={{ ...cardStyle, background: '#fafafa' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LockOutlined style={{ color: '#999' }} />
+            <Text type="secondary">
+              <Link href="/auth/signin" style={{ color: '#08979C' }}>Sign in</Link> to leave a review
+            </Text>
+          </div>
+        </Card>
+      )}
+    </>
+  );
+
+  if (reviews.length === 0) {
+    return (
+      <div>
+        <Card style={cardStyle}>
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <StarOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+            <Title level={4}>No Reviews Yet</Title>
+            <Paragraph style={{ fontSize: '16px' }}>
+              Be the first to leave a review for {breeder.businessName}!
+            </Paragraph>
+          </div>
+        </Card>
+        {reviewFormBlock}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Overall Rating Summary */}
+      <Card style={cardStyle}>
+        <Row gutter={[24, 24]} align="middle">
+          <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#08979C', lineHeight: 1.2 }}>
+              {avgRating.toFixed(1)}
+            </div>
+            <Rate disabled value={avgRating} allowHalf style={{ fontSize: '20px' }} />
+            <div style={{ marginTop: '4px' }}>
+              <Text type="secondary">{totalReviews} review{totalReviews !== 1 ? 's' : ''}</Text>
+            </div>
+          </Col>
+          <Col xs={24} sm={16}>
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = ratingDistribution[star - 1];
+              const pct = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+              return (
+                <div key={star} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                  <Text style={{ width: '50px', fontSize: '13px' }}>{star} star</Text>
+                  <div style={{
+                    flex: 1,
+                    height: '12px',
+                    background: '#f0f0f0',
+                    borderRadius: '6px',
+                    marginLeft: '8px',
+                    marginRight: '8px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: '100%',
+                      background: '#fadb14',
+                      borderRadius: '6px',
+                      transition: 'width 0.3s ease',
+                    }} />
+                  </div>
+                  <Text type="secondary" style={{ width: '30px', fontSize: '13px', textAlign: 'right' }}>
+                    {count}
+                  </Text>
+                </div>
+              );
+            })}
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Write a Review */}
+      <div style={{ marginTop: '24px', marginBottom: '16px' }}>
+        {reviewFormBlock}
+      </div>
+
+      {/* Individual Reviews */}
+      <Title level={4} style={{ marginTop: '24px', marginBottom: '16px' }}>
+        All Reviews ({reviews.length})
+      </Title>
+      {reviews.map((review) => (
+        <Card key={review.id} style={{ ...cardStyle, marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <div>
+              <Text strong style={{ fontSize: '15px' }}>{review.reviewerName}</Text>
+              <div style={{ marginTop: '2px' }}>
+                <Rate disabled value={review.rating} style={{ fontSize: '14px' }} />
+              </div>
+            </div>
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              {new Date(review.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </div>
+          <Title level={5} style={{ margin: '8px 0 4px 0' }}>{review.title}</Title>
+          <Paragraph style={{ margin: 0, fontSize: '14px' }}>{review.content}</Paragraph>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
 const BreederProfilePage: React.FC = () => {
   const params = useParams();
   const breederId = params?.id as string;
@@ -144,6 +663,13 @@ const BreederProfilePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb style={{ marginBottom: '16px' }} items={[
+        { title: <Link href="/"><HomeOutlined /> Home</Link> },
+        { title: <Link href="/breeders">Breeders</Link> },
+        { title: breeder.businessName },
+      ]} />
+
       {/* Profile Header */}
       <Card style={{ ...cardStyle, marginBottom: '24px' }}>
         <Row gutter={[24, 24]} align="middle">
@@ -419,86 +945,15 @@ const BreederProfilePage: React.FC = () => {
             </TabPane>
             
             <TabPane tab="Available Puppies" key="available">
-              <Card style={cardStyle}>
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Title level={4}>Current Available Puppies</Title>
-                  {breeder.availablePuppies > 0 ? (
-                    <div>
-                      <Paragraph style={{ fontSize: '16px', marginBottom: '24px' }}>
-                        We currently have <Text strong>{breeder.availablePuppies}</Text> puppies 
-                        available from our recent litters!
-                      </Paragraph>
-                      <Space>
-                        <Button 
-                          type="primary" 
-                          size="large"
-                          style={{ background: '#08979C', borderColor: '#08979C' }}
-                        >
-                          View Available Puppies
-                        </Button>
-                        <Button size="large">
-                          Join Waiting List
-                        </Button>
-                      </Space>
-                    </div>
-                  ) : (
-                    <div>
-                      <Paragraph style={{ fontSize: '16px', marginBottom: '24px' }}>
-                        Check back soon for available puppies from our upcoming litters!
-                      </Paragraph>
-                      <Button 
-                        type="primary" 
-                        size="large"
-                        style={{ background: '#08979C', borderColor: '#08979C' }}
-                      >
-                        Join Waiting List
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
+              <BreederPuppiesTab breederId={breederId} cardStyle={cardStyle} />
             </TabPane>
             
             <TabPane tab="Reviews" key="reviews">
-              <Card style={cardStyle}>
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4}>Family Reviews</Title>
-                  <Space>
-                    <Rate disabled value={breeder.rating} allowHalf />
-                    <Text strong>{breeder.rating.toFixed(1)} out of 5</Text>
-                    <Text type="secondary">({breeder.reviewCount} reviews)</Text>
-                  </Space>
-                </div>
-                
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Title level={5}>Reviews Coming Soon</Title>
-                  <Paragraph>
-                    Family reviews and testimonials will be displayed here once our review system is fully implemented.
-                  </Paragraph>
-                </div>
-              </Card>
+              <BreederReviewsTab breederId={breederId} breeder={breeder} cardStyle={cardStyle} />
             </TabPane>
 
             <TabPane tab="Gallery" key="gallery">
-              <Card style={cardStyle}>
-                <Title level={4}>Photo Gallery</Title>
-                <Row gutter={[16, 16]}>
-                  {[1,2,3,4,5,6].map(i => (
-                    <Col xs={12} sm={8} key={i}>
-                      <Image
-                        src={`https://picsum.photos/300/300?random=${(breederId || 'gallery') + i}`}
-                        alt={`Gallery image ${i}`}
-                        style={{ 
-                          width: '100%', 
-                          height: '150px', 
-                          objectFit: 'cover',
-                          borderRadius: '8px'
-                        }}
-                      />
-                    </Col>
-                  ))}
-                </Row>
-              </Card>
+              <BreederGalleryTab breederId={breederId} breeder={breeder} cardStyle={cardStyle} />
             </TabPane>
           </Tabs>
         </Col>
