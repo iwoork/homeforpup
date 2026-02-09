@@ -3,12 +3,12 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space,
-  Rate, Spin, Alert, Input, message, Breadcrumb
+  Rate, Spin, Alert, Input, message, Breadcrumb, Tooltip
 } from 'antd';
 import {
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
-  HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined,
+  HomeOutlined, TrophyOutlined, HeartOutlined, HeartFilled, TeamOutlined, StarOutlined,
   LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined,
   CommentOutlined, SendOutlined
 } from '@ant-design/icons';
@@ -497,6 +497,96 @@ const PostComments: React.FC<{ postId: string }> = ({ postId }) => {
   );
 };
 
+// Reaction data from the /api/posts/[postId]/reactions endpoint
+interface ReactionsData {
+  counts: Record<string, number>;
+  total: number;
+  userReaction: string | null;
+}
+
+// Fetcher for reactions API
+const reactionsFetcher = async (url: string): Promise<ReactionsData> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch reactions');
+  }
+  return response.json();
+};
+
+// PostLikeButton component - heart icon with like count and optimistic toggle
+const PostLikeButton: React.FC<{ postId: string }> = ({ postId }) => {
+  const { isAuthenticated } = useAuth();
+  const { data: reactionsData, mutate: mutateReactions } = useSWR(
+    `/api/posts/${postId}/reactions`,
+    reactionsFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+  const [optimisticTotal, setOptimisticTotal] = useState<number | null>(null);
+
+  const liked = optimisticLiked ?? (reactionsData?.userReaction !== null && reactionsData?.userReaction !== undefined);
+  const total = optimisticTotal ?? (reactionsData?.total || 0);
+
+  const handleToggleLike = async () => {
+    if (!isAuthenticated) return;
+
+    const wasLiked = liked;
+    const prevTotal = total;
+
+    // Optimistic update
+    setOptimisticLiked(!wasLiked);
+    setOptimisticTotal(wasLiked ? Math.max(0, prevTotal - 1) : prevTotal + 1);
+
+    try {
+      if (wasLiked) {
+        const response = await fetch(`/api/posts/${postId}/reactions`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to remove reaction');
+      } else {
+        const response = await fetch(`/api/posts/${postId}/reactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reactionType: 'like' }),
+        });
+        if (!response.ok) throw new Error('Failed to add reaction');
+      }
+      // Revalidate to sync with server
+      mutateReactions();
+    } catch {
+      // Revert optimistic update on error
+      setOptimisticLiked(wasLiked);
+      setOptimisticTotal(prevTotal);
+    } finally {
+      // Clear optimistic state after revalidation settles
+      setTimeout(() => {
+        setOptimisticLiked(null);
+        setOptimisticTotal(null);
+      }, 500);
+    }
+  };
+
+  const heartButton = (
+    <Button
+      type="text"
+      icon={liked ? <HeartFilled style={{ color: '#ff4d4f' }} /> : <HeartOutlined />}
+      onClick={handleToggleLike}
+      style={{ color: liked ? '#ff4d4f' : '#08979C', padding: '4px 8px' }}
+    >
+      {total > 0 ? total : ''}
+    </Button>
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <Tooltip title="Sign in to like">
+        {heartButton}
+      </Tooltip>
+    );
+  }
+
+  return heartButton;
+};
+
 const POST_TYPE_COLORS: Record<string, string> = {
   litter: 'blue',
   health: 'green',
@@ -599,6 +689,9 @@ const BreederPostsTab: React.FC<{ breederId: string; cardStyle: React.CSSPropert
               </Image.PreviewGroup>
             </div>
           )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+            <PostLikeButton postId={post.id} />
+          </div>
           <PostComments postId={post.id} />
         </Card>
       ))}
