@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Tabs, Image, Tag, Space,
-  Spin, Alert, Input, message, Button, Tooltip, Breadcrumb, Select
+  Spin, Alert, Input, message, Button, Tooltip, Breadcrumb, Select, Timeline
 } from 'antd';
 import {
   HomeOutlined, TeamOutlined, LoadingOutlined, LockOutlined,
   CommentOutlined, SendOutlined, HeartOutlined, HeartFilled,
-  EditOutlined
+  EditOutlined, DashboardOutlined, MedicineBoxOutlined,
+  TrophyOutlined, StarOutlined
 } from '@ant-design/icons';
 import PhotoUpload from '@/components/forms/Upload/PhotoUpload';
 import Link from 'next/link';
@@ -72,6 +73,19 @@ interface ReactionsData {
   userReaction: string | null;
 }
 
+// Milestone type
+interface MilestoneFromApi {
+  id: string;
+  litterId: string;
+  breederId: string;
+  title: string;
+  description: string;
+  milestoneType: 'weight' | 'health' | 'training' | 'social' | 'first';
+  date: string;
+  photos: string[];
+  createdAt: string;
+}
+
 // Fetchers
 const groupFetcher = async (url: string): Promise<{ group: GroupData }> => {
   const response = await fetch(url);
@@ -100,6 +114,12 @@ const commentsFetcher = async (url: string): Promise<{ comments: CommentFromApi[
 const reactionsFetcher = async (url: string): Promise<ReactionsData> => {
   const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch reactions');
+  return response.json();
+};
+
+const milestonesFetcher = async (url: string): Promise<{ milestones: MilestoneFromApi[] }> => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Failed to fetch milestones');
   return response.json();
 };
 
@@ -537,6 +557,117 @@ const GroupPostsFeed: React.FC<{ groupId: string }> = ({ groupId }) => {
   );
 };
 
+const MILESTONE_TYPE_ICONS: Record<string, React.ReactNode> = {
+  weight: <DashboardOutlined style={{ color: '#08979C' }} />,
+  health: <MedicineBoxOutlined style={{ color: '#52c41a' }} />,
+  training: <TrophyOutlined style={{ color: '#faad14' }} />,
+  social: <TeamOutlined style={{ color: '#722ed1' }} />,
+  first: <StarOutlined style={{ color: '#eb2f96' }} />,
+};
+
+// Group Milestones Timeline component
+const GroupMilestones: React.FC<{ litterId: string }> = ({ litterId }) => {
+  const { data: milestonesData, error: milestonesError, isLoading: milestonesLoading } = useSWR(
+    litterId ? `/api/milestones?litterId=${litterId}` : null,
+    milestonesFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const milestones = milestonesData?.milestones || [];
+
+  if (milestonesLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading milestones..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (milestonesError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load milestones"
+          description="There was a problem fetching milestones. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (milestones.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <StarOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+          <Title level={4}>No milestones yet</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            Milestones will appear here as the breeder documents the puppies&apos; development.
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={cardStyle}>
+      <Timeline
+        items={milestones.map((milestone) => ({
+          dot: MILESTONE_TYPE_ICONS[milestone.milestoneType] || <StarOutlined style={{ color: '#08979C' }} />,
+          children: (
+            <div style={{ paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                <Text strong style={{ fontSize: '15px' }}>{milestone.title}</Text>
+                <Text type="secondary" style={{ fontSize: '13px', flexShrink: 0, marginLeft: '12px' }}>
+                  {new Date(milestone.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </Text>
+              </div>
+              <Tag style={{ marginBottom: '6px' }}>
+                {milestone.milestoneType.charAt(0).toUpperCase() + milestone.milestoneType.slice(1)}
+              </Tag>
+              {milestone.description && (
+                <Paragraph style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#555' }}>
+                  {milestone.description}
+                </Paragraph>
+              )}
+              {milestone.photos && milestone.photos.length > 0 && (
+                <div style={{ marginTop: '8px' }}>
+                  <Image.PreviewGroup>
+                    <Row gutter={[8, 8]}>
+                      {milestone.photos.map((photo, idx) => (
+                        <Col xs={8} sm={6} key={idx}>
+                          <Image
+                            src={photo}
+                            alt={`${milestone.title} photo ${idx + 1}`}
+                            style={{
+                              width: '100%',
+                              height: '80px',
+                              objectFit: 'cover',
+                              borderRadius: '6px',
+                            }}
+                            fallback="/api/placeholder/100/80"
+                          />
+                        </Col>
+                      ))}
+                    </Row>
+                  </Image.PreviewGroup>
+                </div>
+              )}
+            </div>
+          ),
+        }))}
+      />
+    </Card>
+  );
+};
+
 const GroupDetailPage: React.FC = () => {
   const params = useParams();
   const groupId = params?.id as string;
@@ -670,6 +801,11 @@ const GroupDetailPage: React.FC = () => {
             <CreatePostForm groupId={groupId} onPostCreated={() => {}} />
             <GroupPostsFeed groupId={groupId} />
           </Tabs.TabPane>
+          {group.litterId && (
+            <Tabs.TabPane tab="Milestones" key="milestones">
+              <GroupMilestones litterId={group.litterId} />
+            </Tabs.TabPane>
+          )}
         </Tabs>
       )}
     </div>
