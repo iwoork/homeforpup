@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Tag, Space, Spin, Alert, Button, Divider, Empty,
-  Tooltip, message,
+  Tooltip, message, Breadcrumb,
 } from 'antd';
 import {
   LoadingOutlined, EnvironmentOutlined, CalendarOutlined,
   HeartOutlined, HeartFilled, ManOutlined, WomanOutlined, MedicineBoxOutlined,
   SafetyCertificateOutlined, SmileOutlined, TeamOutlined,
   CheckCircleOutlined, PhoneOutlined, MailOutlined, GlobalOutlined,
-  MessageOutlined, ShareAltOutlined,
+  MessageOutlined, ShareAltOutlined, HomeOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -303,6 +303,13 @@ const PuppyDetailPage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb style={{ marginBottom: '16px' }} items={[
+        { title: <Link href="/"><HomeOutlined /> Home</Link> },
+        { title: <Link href="/browse">Browse Puppies</Link> },
+        { title: puppy.name },
+      ]} />
+
       {/* Hero Section */}
       <Card style={{ ...cardStyle, marginBottom: '24px', overflow: 'hidden' }}>
         <Row gutter={[24, 24]}>

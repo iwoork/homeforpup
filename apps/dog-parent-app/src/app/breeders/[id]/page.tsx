@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space,
-  Rate, Spin, Alert, Input, message
+  Rate, Spin, Alert, Input, message, Breadcrumb
 } from 'antd';
 import {
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
@@ -663,6 +663,13 @@ const BreederProfilePage: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb style={{ marginBottom: '16px' }} items={[
+        { title: <Link href="/"><HomeOutlined /> Home</Link> },
+        { title: <Link href="/breeders">Breeders</Link> },
+        { title: breeder.businessName },
+      ]} />
+
       {/* Profile Header */}
       <Card style={{ ...cardStyle, marginBottom: '24px' }}>
         <Row gutter={[24, 24]} align="middle">
