@@ -4,6 +4,7 @@ import {
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
+  ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../lib/auth';
@@ -33,6 +34,7 @@ interface PostItem {
   authorName: string;
   breederId: string;
   kennelId: string;
+  groupId?: string;
   title: string;
   content: string;
   postType: PostType;
@@ -93,15 +95,16 @@ async function ensureTableExists(): Promise<void> {
   }
 }
 
-// GET /api/posts?breederId=[id] - Get posts for a breeder
+// GET /api/posts?breederId=[id] or GET /api/posts?groupId=[id] - Get posts
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const breederId = searchParams.get('breederId');
+    const groupId = searchParams.get('groupId');
 
-    if (!breederId) {
+    if (!breederId && !groupId) {
       return NextResponse.json(
-        { error: 'breederId query parameter is required' },
+        { error: 'breederId or groupId query parameter is required' },
         { status: 400 }
       );
     }
@@ -111,6 +114,39 @@ export async function GET(request: NextRequest) {
 
     await ensureTableExists();
 
+    if (groupId) {
+      // Query posts by groupId using Scan with filter (no GSI for groupId)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const params: any = {
+        TableName: POSTS_TABLE,
+        FilterExpression: 'groupId = :groupId',
+        ExpressionAttributeValues: {
+          ':groupId': groupId,
+        },
+        Limit: limit,
+      };
+
+      if (lastKey) {
+        params.ExclusiveStartKey = JSON.parse(decodeURIComponent(lastKey));
+      }
+
+      const result = await dynamodb.send(new ScanCommand(params));
+
+      // Sort by createdAt descending since Scan doesn't guarantee order
+      const posts = (result.Items || []).sort(
+        (a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()
+      );
+
+      return NextResponse.json({
+        posts,
+        lastKey: result.LastEvaluatedKey
+          ? encodeURIComponent(JSON.stringify(result.LastEvaluatedKey))
+          : null,
+        count: posts.length,
+      });
+    }
+
+    // Query posts by breederId using GSI
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: any = {
       TableName: POSTS_TABLE,
@@ -154,7 +190,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { breederId, kennelId, title, content, postType, photos, tags } = body;
+    const { breederId, kennelId, groupId, title, content, postType, photos, tags } = body;
 
     // Validate required fields
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
@@ -183,6 +219,7 @@ export async function POST(request: NextRequest) {
         'Anonymous',
       breederId: String(breederId || ''),
       kennelId: String(kennelId || ''),
+      groupId: groupId ? String(groupId) : undefined,
       title: (title || '').trim(),
       content: content.trim(),
       postType: postType as PostType,
