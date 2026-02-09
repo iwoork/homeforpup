@@ -336,6 +336,137 @@ const reviewsFetcher = async (url: string): Promise<{ reviews: ReviewFromApi[]; 
   return response.json();
 };
 
+// Post type from the /api/posts endpoint
+interface PostFromApi {
+  id: string;
+  authorId: string;
+  authorName: string;
+  breederId: string;
+  title: string;
+  content: string;
+  postType: 'litter' | 'health' | 'achievement' | 'event' | 'available' | 'general';
+  photos: string[];
+  tags: string[];
+  createdAt: string;
+}
+
+// Fetcher for posts API
+const postsFetcher = async (url: string): Promise<{ posts: PostFromApi[]; count: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch posts');
+  }
+  return response.json();
+};
+
+const POST_TYPE_COLORS: Record<string, string> = {
+  litter: 'blue',
+  health: 'green',
+  achievement: 'gold',
+  event: 'purple',
+  available: 'cyan',
+  general: 'default',
+};
+
+const BreederPostsTab: React.FC<{ breederId: string; cardStyle: React.CSSProperties }> = ({ breederId, cardStyle }) => {
+  const { data: postsData, error: postsError, isLoading: postsLoading } = useSWR(
+    breederId ? `/api/posts?breederId=${breederId}` : null,
+    postsFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const posts = postsData?.posts || [];
+
+  if (postsLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading posts..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (postsError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load posts"
+          description="There was a problem fetching community posts. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Title level={4}>No Posts Yet</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            This breeder hasn&apos;t shared any community updates yet. Check back soon!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      {posts.map((post) => (
+        <Card key={post.id} style={{ ...cardStyle, marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <div>
+              <Text strong style={{ fontSize: '15px' }}>{post.authorName}</Text>
+              <div style={{ marginTop: '4px' }}>
+                <Tag color={POST_TYPE_COLORS[post.postType] || 'default'}>
+                  {post.postType.charAt(0).toUpperCase() + post.postType.slice(1)}
+                </Tag>
+              </div>
+            </div>
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              {new Date(post.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </div>
+          {post.title && (
+            <Title level={5} style={{ margin: '8px 0 4px 0' }}>{post.title}</Title>
+          )}
+          <Paragraph style={{ margin: '4px 0 0 0', fontSize: '14px' }}>{post.content}</Paragraph>
+          {post.photos && post.photos.length > 0 && (
+            <div style={{ marginTop: '12px' }}>
+              <Image.PreviewGroup>
+                <Row gutter={[8, 8]}>
+                  {post.photos.map((photo, idx) => (
+                    <Col xs={12} sm={8} key={idx}>
+                      <Image
+                        src={photo}
+                        alt={`${post.title || 'Post'} photo ${idx + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '120px',
+                          objectFit: 'cover',
+                          borderRadius: '6px',
+                        }}
+                        fallback="/api/placeholder/200/120"
+                      />
+                    </Col>
+                  ))}
+                </Row>
+              </Image.PreviewGroup>
+            </div>
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+};
+
 const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
   const { isAuthenticated } = useAuth();
   const { data: reviewsData, error: reviewsError, isLoading: reviewsLoading, mutate: mutateReviews } = useSWR(
@@ -601,8 +732,6 @@ const BreederProfilePage: React.FC = () => {
   const params = useParams();
   const breederId = params?.id as string;
   const [activeTab, setActiveTab] = useState("posts");
-  const [composeVisible, setComposeVisible] = useState(false);
-
   // Fetch breeder data
   const { data, error, isLoading } = useSWR<{ breeder: Breeder }>(
     breederId ? `/api/breeders/${breederId}` : null,
@@ -931,17 +1060,7 @@ const BreederProfilePage: React.FC = () => {
             size="large"
           >
             <TabPane tab="Community Posts" key="posts">
-              <Card style={cardStyle}>
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Title level={4}>Community Updates</Title>
-                  <Paragraph>
-                    Stay connected with our latest news, puppy updates, and family stories.
-                  </Paragraph>
-                  <Button type="primary" style={{ background: '#08979C', borderColor: '#08979C' }}>
-                    View All Posts
-                  </Button>
-                </div>
-              </Card>
+              <BreederPostsTab breederId={breederId} cardStyle={cardStyle} />
             </TabPane>
             
             <TabPane tab="Available Puppies" key="available">
