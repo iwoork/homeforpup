@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Tabs, Image, Tag, Space,
-  Spin, Alert, Input, message, Button, Tooltip, Breadcrumb
+  Spin, Alert, Input, message, Button, Tooltip, Breadcrumb, Select
 } from 'antd';
 import {
   HomeOutlined, TeamOutlined, LoadingOutlined, LockOutlined,
-  CommentOutlined, SendOutlined, HeartOutlined, HeartFilled
+  CommentOutlined, SendOutlined, HeartOutlined, HeartFilled,
+  EditOutlined
 } from '@ant-design/icons';
+import PhotoUpload from '@/components/forms/Upload/PhotoUpload';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useAuth } from '@homeforpup/shared-auth';
 
 const { Title, Paragraph, Text } = Typography;
@@ -303,6 +305,134 @@ const PostLikeButton: React.FC<{ postId: string }> = ({ postId }) => {
   return heartButton;
 };
 
+// Create Post Form component
+const CreatePostForm: React.FC<{ groupId: string; onPostCreated: () => void }> = ({ groupId, onPostCreated }) => {
+  const { mutate: globalMutate } = useSWRConfig();
+  const [expanded, setExpanded] = useState(false);
+  const [postType, setPostType] = useState<string>('general');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!content.trim()) {
+      message.warning('Please enter some content for your post');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId,
+          title: title.trim(),
+          content: content.trim(),
+          postType,
+          photos,
+          tags: [],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create post');
+      }
+
+      // Reset form
+      setTitle('');
+      setContent('');
+      setPostType('general');
+      setPhotos([]);
+      setExpanded(false);
+      message.success('Post created!');
+      globalMutate(`/api/posts?groupId=${groupId}`);
+      onPostCreated();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to create post');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Card style={{ ...cardStyle, marginBottom: '16px' }}>
+      {!expanded ? (
+        <div
+          onClick={() => setExpanded(true)}
+          style={{
+            padding: '8px 12px',
+            background: '#f5f5f5',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <EditOutlined style={{ color: '#08979C' }} />
+          <Text type="secondary">Share an update...</Text>
+        </div>
+      ) : (
+        <div>
+          <div style={{ marginBottom: '12px' }}>
+            <Text strong style={{ fontSize: '15px' }}>Create Post</Text>
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <Select
+              value={postType}
+              onChange={(value) => setPostType(value)}
+              style={{ width: '200px' }}
+              options={[
+                { label: 'General', value: 'general' },
+                { label: 'Litter Update', value: 'litter' },
+                { label: 'Health', value: 'health' },
+                { label: 'Achievement', value: 'achievement' },
+                { label: 'Event', value: 'event' },
+                { label: 'Available', value: 'available' },
+              ]}
+            />
+          </div>
+          <Input
+            placeholder="Title (optional)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={{ marginBottom: '12px' }}
+          />
+          <Input.TextArea
+            placeholder="What's new?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={4}
+            style={{ marginBottom: '12px' }}
+          />
+          <PhotoUpload
+            photos={photos}
+            onPhotosChange={setPhotos}
+            maxPhotos={5}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <Button onClick={() => setExpanded(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              loading={submitting}
+              disabled={submitting || !content.trim()}
+              style={{ background: '#08979C', borderColor: '#08979C' }}
+            >
+              Post
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+};
+
 // Group Posts Feed component
 const GroupPostsFeed: React.FC<{ groupId: string }> = ({ groupId }) => {
   const { data: postsData, error: postsError, isLoading: postsLoading } = useSWR(
@@ -537,6 +667,7 @@ const GroupDetailPage: React.FC = () => {
       ) : (
         <Tabs defaultActiveKey="posts" size="large">
           <Tabs.TabPane tab="Posts" key="posts">
+            <CreatePostForm groupId={groupId} onPostCreated={() => {}} />
             <GroupPostsFeed groupId={groupId} />
           </Tabs.TabPane>
         </Tabs>
