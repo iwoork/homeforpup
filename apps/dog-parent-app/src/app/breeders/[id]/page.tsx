@@ -9,7 +9,8 @@ import {
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
   HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined,
-  LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined
+  LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined,
+  CommentOutlined, SendOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -359,6 +360,143 @@ const postsFetcher = async (url: string): Promise<{ posts: PostFromApi[]; count:
   return response.json();
 };
 
+// Comment type from the /api/posts/[postId]/comments endpoint
+interface CommentFromApi {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+// Fetcher for comments API
+const commentsFetcher = async (url: string): Promise<{ comments: CommentFromApi[]; count: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch comments');
+  }
+  return response.json();
+};
+
+// PostComments component - displays comments for a post with expand/collapse
+const PostComments: React.FC<{ postId: string }> = ({ postId }) => {
+  const { isAuthenticated } = useAuth();
+  const [expanded, setExpanded] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const { data: commentsData, isLoading: commentsLoading, mutate: mutateComments } = useSWR(
+    expanded ? `/api/posts/${postId}/comments` : null,
+    commentsFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  // Track comment count separately so we can show it before expanding
+  const { data: countData } = useSWR(
+    `/api/posts/${postId}/comments?limit=0`,
+    commentsFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const comments = commentsData?.comments || [];
+  const commentCount = commentsData?.count ?? countData?.count ?? 0;
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim()) return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText.trim() }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post comment');
+      }
+      setCommentText('');
+      mutateComments();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to post comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '12px', paddingTop: '8px' }}>
+      <Button
+        type="text"
+        icon={<CommentOutlined />}
+        onClick={() => setExpanded(!expanded)}
+        style={{ color: '#08979C', padding: '4px 8px' }}
+      >
+        {expanded ? 'Hide Comments' : 'Comments'} ({commentCount})
+      </Button>
+
+      {expanded && (
+        <div style={{ marginTop: '8px' }}>
+          {commentsLoading ? (
+            <div style={{ textAlign: 'center', padding: '12px' }}>
+              <Spin size="small" />
+            </div>
+          ) : comments.length === 0 ? (
+            <Text type="secondary" style={{ fontSize: '13px', display: 'block', padding: '8px 0' }}>
+              No comments yet. Be the first to comment!
+            </Text>
+          ) : (
+            <div style={{ marginBottom: '8px' }}>
+              {comments.map((comment) => (
+                <div key={comment.id} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text strong style={{ fontSize: '13px' }}>{comment.authorName}</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </Text>
+                  </div>
+                  <Text style={{ fontSize: '13px', display: 'block', marginTop: '2px' }}>{comment.content}</Text>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <Input
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onPressEnter={() => { if (!submitting && commentText.trim()) handleSubmitComment(); }}
+                disabled={submitting}
+                style={{ flex: 1 }}
+              />
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={handleSubmitComment}
+                loading={submitting}
+                disabled={submitting || !commentText.trim()}
+                style={{ background: '#08979C', borderColor: '#08979C' }}
+              />
+            </div>
+          ) : (
+            <div style={{ padding: '8px 0' }}>
+              <Text type="secondary" style={{ fontSize: '13px' }}>
+                <Link href="/auth/signin" style={{ color: '#08979C' }}>Sign in</Link> to comment
+              </Text>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const POST_TYPE_COLORS: Record<string, string> = {
   litter: 'blue',
   health: 'green',
@@ -461,6 +599,7 @@ const BreederPostsTab: React.FC<{ breederId: string; cardStyle: React.CSSPropert
               </Image.PreviewGroup>
             </div>
           )}
+          <PostComments postId={post.id} />
         </Card>
       ))}
     </div>
