@@ -12,6 +12,7 @@ import {
   MessageOutlined,
 } from '@ant-design/icons';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Dog, Kennel } from '@homeforpup/shared-types';
 
 const { Title, Text } = Typography;
@@ -32,6 +33,7 @@ export interface PuppyCardProps {
   onContact?: (puppy: PuppyWithKennel) => void;
   showContactButton?: boolean;
   showFavoriteButton?: boolean;
+  href?: string;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -43,6 +45,7 @@ const PuppyCard: React.FC<PuppyCardProps> = ({
   onContact,
   showContactButton = true,
   showFavoriteButton = true,
+  href,
   style,
   className,
 }) => {
@@ -75,7 +78,7 @@ const PuppyCard: React.FC<PuppyCardProps> = ({
   const location = puppy.location || (puppy.kennel?.address ? `${puppy.kennel.address.city}, ${puppy.kennel.address.state}` : 'Location not specified');
   const country = puppy.country || puppy.kennel?.address?.country || 'Country not specified';
 
-  return (
+  const card = (
     <Card
       hoverable
       style={{
@@ -154,11 +157,11 @@ const PuppyCard: React.FC<PuppyCardProps> = ({
         </div>
       }
     >
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
         height: '100%',
-        padding: '0 4px' 
+        padding: '0 4px'
       }}>
         {/* Header Section */}
         <div style={{ marginBottom: '8px' }}>
@@ -206,8 +209,8 @@ const PuppyCard: React.FC<PuppyCardProps> = ({
         {puppy.description && (
           <div style={{ marginBottom: '12px', flex: 1 }}>
             <Text style={{ fontSize: '12px', lineHeight: '1.4' }}>
-              {puppy.description.length > 100 
-                ? `${puppy.description.substring(0, 100)}...` 
+              {puppy.description.length > 100
+                ? `${puppy.description.substring(0, 100)}...`
                 : puppy.description
               }
             </Text>
@@ -237,6 +240,16 @@ const PuppyCard: React.FC<PuppyCardProps> = ({
       </div>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 };
 
 export default PuppyCard;

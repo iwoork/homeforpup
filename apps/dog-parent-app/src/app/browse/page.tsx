@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Statistic, Tooltip, Badge, Divider } from 'antd';
 import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
 import Image from 'next/image';
+import Link from 'next/link';
 import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
@@ -594,11 +595,13 @@ const PuppiesPage: React.FC = () => {
               </div>
 
               <Row gutter={[16, 16]}>
-                {puppies.map((puppy, index) => (
+                {puppies.map((puppy) => (
                   <Col xs={24} sm={12} lg={8} key={puppy.id}>
-                    {renderPuppyCard(puppy)}
-        </Col>
-      ))}
+                    <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                      {renderPuppyCard(puppy)}
+                    </Link>
+                  </Col>
+                ))}
               </Row>
 
               {totalPages > 1 && (

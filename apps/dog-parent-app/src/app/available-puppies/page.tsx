@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Typography, Select, Checkbox, Button, Tag, Space, Spin, Alert, Pagination, Statistic, Badge, Collapse } from 'antd';
 import { HeartOutlined, HeartFilled, EnvironmentOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined, MessageOutlined, DownOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 import { PuppyList, PuppyWithKennel } from '@homeforpup/shared-dogs';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
@@ -502,6 +503,7 @@ const AvailablePuppiesPage: React.FC = () => {
               <Row gutter={[16, 16]}>
                 {puppies.map((puppy) => (
                   <Col xs={24} sm={12} lg={8} key={puppy.id}>
+                    <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                     <Card
                       hoverable
                       style={{
@@ -673,6 +675,7 @@ const AvailablePuppiesPage: React.FC = () => {
                         </div>
                       </div>
                     </Card>
+                    </Link>
                   </Col>
                 ))}
               </Row>

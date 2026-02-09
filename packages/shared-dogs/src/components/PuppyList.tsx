@@ -134,6 +134,7 @@ const PuppyList: React.FC<PuppyListProps> = ({
               onContact={onContact}
               showContactButton={showContactButton}
               showFavoriteButton={showFavoriteButton}
+              href={`/puppies/${puppy.id}`}
             />
           </Col>
         ))}
