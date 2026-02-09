@@ -387,9 +387,20 @@ const DogParentDashboard: React.FC = () => {
                 </Button>
               </Link>
               
+              <Link href="/dashboard/groups">
+                <Button
+                  block
+                  size="large"
+                  icon={<TeamOutlined />}
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  My Groups
+                </Button>
+              </Link>
+
               <Link href="/breeders">
-                <Button 
-                  block 
+                <Button
+                  block
                   size="large"
                   icon={<TeamOutlined />}
                   style={{ height: '48px', fontSize: '16px' }}

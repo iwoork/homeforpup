@@ -193,22 +193,36 @@ export async function GET(request: NextRequest) {
 
     const groups = batchResult.Responses?.[GROUPS_TABLE] || [];
 
-    // Enrich with member's role
-    const groupsWithRole = groups.map((g) => {
-      const membership = memberships.find((m) => m.groupId === g.id);
-      return {
-        ...g,
-        memberRole: membership?.role || 'member',
-      };
-    });
+    // Enrich with member's role and member count
+    const groupsWithDetails = await Promise.all(
+      groups.map(async (g) => {
+        const membership = memberships.find((m) => m.groupId === g.id);
+        // Get member count for this group
+        const countResult = await dynamodb.send(
+          new QueryCommand({
+            TableName: GROUP_MEMBERS_TABLE,
+            KeyConditionExpression: 'groupId = :groupId',
+            ExpressionAttributeValues: {
+              ':groupId': g.id as string,
+            },
+            Select: 'COUNT',
+          })
+        );
+        return {
+          ...g,
+          memberRole: membership?.role || 'member',
+          memberCount: countResult.Count || 0,
+        };
+      })
+    );
 
     // Sort by createdAt descending
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    groupsWithRole.sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    groupsWithDetails.sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
     return NextResponse.json({
-      groups: groupsWithRole,
-      count: groupsWithRole.length,
+      groups: groupsWithDetails,
+      count: groupsWithDetails.length,
     });
   } catch (error) {
     console.error('Error fetching groups:', error);
