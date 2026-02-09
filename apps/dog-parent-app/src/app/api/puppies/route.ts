@@ -143,7 +143,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Filter parameters
-    const country = searchParams.get('country') || 'Canada'; // Default to Canada
+    const breederId = searchParams.get('breederId');
+    const country = breederId ? searchParams.get('country') : (searchParams.get('country') || 'Canada'); // Skip country default when filtering by breeder
     const state = searchParams.get('state');
     const breed = searchParams.get('breed');
     const gender = searchParams.get('gender');
@@ -151,13 +152,13 @@ export async function GET(request: NextRequest) {
     const maxPrice = parseInt(searchParams.get('maxPrice') || '10000');
     const shipping = searchParams.get('shipping') === 'true';
     const verified = searchParams.get('verified') === 'true';
-    
+
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
-    
-    console.log('Puppies API Request params:', { 
-      country, state, breed, gender, minPrice, maxPrice, shipping, verified, page, limit 
+
+    console.log('Puppies API Request params:', {
+      breederId, country, state, breed, gender, minPrice, maxPrice, shipping, verified, page, limit
     });
 
     // Build DynamoDB query parameters for breeders
@@ -172,6 +173,13 @@ export async function GET(request: NextRequest) {
         ':zero': 0
       }
     };
+
+    // Add breederId filter
+    if (breederId) {
+      params.FilterExpression += ' AND #id = :breederId';
+      params.ExpressionAttributeNames['#id'] = 'id';
+      params.ExpressionAttributeValues[':breederId'] = parseInt(breederId);
+    }
 
     // Add country filter
     if (country) {

@@ -78,6 +78,124 @@ const fetcher = async (url: string): Promise<{ breeder: Breeder }> => {
   return response.json();
 };
 
+// Puppy type from the /api/puppies endpoint
+interface PuppyFromApi {
+  id: string;
+  name: string;
+  breed: string;
+  gender: 'male' | 'female';
+  ageWeeks: number;
+  price: number;
+  location: string;
+  image: string;
+  description?: string;
+  healthStatus: string;
+}
+
+// Fetcher for puppies API
+const puppiesFetcher = async (url: string): Promise<{ puppies: PuppyFromApi[]; total: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch puppies');
+  }
+  return response.json();
+};
+
+const BreederPuppiesTab: React.FC<{ breederId: string; cardStyle: React.CSSProperties }> = ({ breederId, cardStyle }) => {
+  const { data: puppiesData, error: puppiesError, isLoading: puppiesLoading } = useSWR(
+    breederId ? `/api/puppies?breederId=${breederId}` : null,
+    puppiesFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const puppies = puppiesData?.puppies || [];
+
+  if (puppiesLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading puppies..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (puppiesError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load puppies"
+          description="There was a problem fetching available puppies. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (puppies.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Title level={4}>No Puppies Available</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            This breeder doesn&apos;t have any puppies available right now. Check back soon for upcoming litters!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      <Title level={4} style={{ marginBottom: '16px' }}>
+        Available Puppies ({puppies.length})
+      </Title>
+      <Row gutter={[16, 16]}>
+        {puppies.map((puppy) => (
+          <Col xs={24} sm={12} md={12} key={puppy.id}>
+            <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              <Card
+                hoverable
+                style={{ ...cardStyle, overflow: 'hidden' }}
+                cover={
+                  <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
+                    <img
+                      src={puppy.image}
+                      alt={puppy.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { e.currentTarget.src = '/api/placeholder/400/200'; }}
+                    />
+                    <Tag color="blue" style={{ position: 'absolute', top: '12px', right: '12px' }}>
+                      {puppy.ageWeeks} weeks
+                    </Tag>
+                  </div>
+                }
+              >
+                <Title level={5} style={{ margin: 0, color: '#08979C' }}>{puppy.name}</Title>
+                <Text type="secondary">{puppy.breed} &bull; {puppy.gender}</Text>
+                <div style={{ marginTop: '8px' }}>
+                  <Space>
+                    <EnvironmentOutlined style={{ color: '#08979C', fontSize: '12px' }} />
+                    <Text type="secondary" style={{ fontSize: '12px' }}>{puppy.location}</Text>
+                  </Space>
+                </div>
+                {puppy.price > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    <Text strong style={{ fontSize: '16px', color: '#08979C' }}>
+                      ${puppy.price.toLocaleString()}
+                    </Text>
+                  </div>
+                )}
+              </Card>
+            </Link>
+          </Col>
+        ))}
+      </Row>
+    </div>
+  );
+};
+
 const BreederProfilePage: React.FC = () => {
   const params = useParams();
   const breederId = params?.id as string;
@@ -419,44 +537,7 @@ const BreederProfilePage: React.FC = () => {
             </TabPane>
             
             <TabPane tab="Available Puppies" key="available">
-              <Card style={cardStyle}>
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Title level={4}>Current Available Puppies</Title>
-                  {breeder.availablePuppies > 0 ? (
-                    <div>
-                      <Paragraph style={{ fontSize: '16px', marginBottom: '24px' }}>
-                        We currently have <Text strong>{breeder.availablePuppies}</Text> puppies 
-                        available from our recent litters!
-                      </Paragraph>
-                      <Space>
-                        <Button 
-                          type="primary" 
-                          size="large"
-                          style={{ background: '#08979C', borderColor: '#08979C' }}
-                        >
-                          View Available Puppies
-                        </Button>
-                        <Button size="large">
-                          Join Waiting List
-                        </Button>
-                      </Space>
-                    </div>
-                  ) : (
-                    <div>
-                      <Paragraph style={{ fontSize: '16px', marginBottom: '24px' }}>
-                        Check back soon for available puppies from our upcoming litters!
-                      </Paragraph>
-                      <Button 
-                        type="primary" 
-                        size="large"
-                        style={{ background: '#08979C', borderColor: '#08979C' }}
-                      >
-                        Join Waiting List
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
+              <BreederPuppiesTab breederId={breederId} cardStyle={cardStyle} />
             </TabPane>
             
             <TabPane tab="Reviews" key="reviews">
