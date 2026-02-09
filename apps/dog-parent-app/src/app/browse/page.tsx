@@ -33,7 +33,7 @@ const PuppiesPage: React.FC = () => {
   const [showSearchWizard, setShowSearchWizard] = useState(false);
 
   // Get user data
-  const { user, loading: userLoading } = useAuth();
+  const { user, loading: userLoading, isAuthenticated } = useAuth();
 
   // Contact modal state
   const [contactModalVisible, setContactModalVisible] = useState(false);
@@ -631,8 +631,10 @@ const PuppiesPage: React.FC = () => {
           onCancel={handleCloseModal}
           puppyName={selectedPuppy.name}
           breederName={selectedPuppy.breeder.businessName}
+          breederId={String(selectedPuppy.breeder.id)}
           senderName={user?.name || user?.displayName || 'Guest User'}
           senderEmail={user?.email || 'support@homeforpup.com'}
+          isAuthenticated={isAuthenticated}
         />
       )}
 

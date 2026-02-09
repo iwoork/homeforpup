@@ -797,8 +797,10 @@ const PuppyDetailPage: React.FC = () => {
         onCancel={() => setContactModalVisible(false)}
         puppyName={puppy.name}
         breederName={kennel?.name || 'Breeder'}
+        breederId={puppy.ownerId || kennel?.ownerId}
         senderName={user?.name || user?.displayName || 'Guest User'}
         senderEmail={user?.email || ''}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );
