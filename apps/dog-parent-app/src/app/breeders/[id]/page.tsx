@@ -5,11 +5,11 @@ import {
   Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space, 
   Rate, Spin, Alert
 } from 'antd';
-import { 
-  CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, 
+import {
+  CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
-  HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined, 
-  LoadingOutlined
+  HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined,
+  LoadingOutlined, PictureOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -192,6 +192,124 @@ const BreederPuppiesTab: React.FC<{ breederId: string; cardStyle: React.CSSPrope
           </Col>
         ))}
       </Row>
+    </div>
+  );
+};
+
+// Gallery photo type
+interface GalleryPhoto {
+  url: string;
+  caption: string;
+}
+
+const BreederGalleryTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
+  // Fetch puppies to get their images for the gallery
+  const { data: puppiesData, isLoading } = useSWR(
+    breederId ? `/api/puppies?breederId=${breederId}` : null,
+    puppiesFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  // Build gallery photos from breeder images + puppy images
+  const galleryPhotos: GalleryPhoto[] = React.useMemo(() => {
+    const photos: GalleryPhoto[] = [];
+
+    // Add breeder cover image
+    if (breeder.coverImage) {
+      photos.push({ url: breeder.coverImage, caption: `${breeder.businessName}` });
+    }
+
+    // Add breeder profile image
+    if (breeder.profileImage) {
+      photos.push({ url: breeder.profileImage, caption: `${breeder.businessName}` });
+    }
+
+    // Add puppy images
+    if (puppiesData?.puppies) {
+      for (const puppy of puppiesData.puppies) {
+        if (puppy.image) {
+          photos.push({ url: puppy.image, caption: `${puppy.name} - ${puppy.breed}` });
+        }
+      }
+    }
+
+    return photos;
+  }, [breeder.coverImage, breeder.profileImage, breeder.businessName, puppiesData]);
+
+  if (isLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading gallery..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (galleryPhotos.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <PictureOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+          <Title level={4}>No Photos Yet</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            This breeder hasn&apos;t added any photos to their gallery yet. Check back soon!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      <Title level={4} style={{ marginBottom: '16px' }}>
+        Photo Gallery ({galleryPhotos.length})
+      </Title>
+      <Image.PreviewGroup>
+        <Row gutter={[16, 16]}>
+          {galleryPhotos.map((photo, index) => (
+            <Col xs={24} sm={12} md={8} key={index}>
+              <div
+                style={{
+                  position: 'relative',
+                  height: '200px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                }}
+              >
+                <Image
+                  src={photo.url}
+                  alt={photo.caption}
+                  style={{
+                    width: '100%',
+                    height: '200px',
+                    objectFit: 'cover',
+                    borderRadius: '8px',
+                  }}
+                  fallback="/api/placeholder/300/200"
+                  placeholder={
+                    <div style={{
+                      width: '100%',
+                      height: '200px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: '#f5f5f5',
+                      borderRadius: '8px',
+                    }}>
+                      <Spin indicator={<LoadingOutlined spin />} />
+                    </div>
+                  }
+                />
+              </div>
+              <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                {photo.caption}
+              </Text>
+            </Col>
+          ))}
+        </Row>
+      </Image.PreviewGroup>
     </div>
   );
 };
@@ -561,25 +679,7 @@ const BreederProfilePage: React.FC = () => {
             </TabPane>
 
             <TabPane tab="Gallery" key="gallery">
-              <Card style={cardStyle}>
-                <Title level={4}>Photo Gallery</Title>
-                <Row gutter={[16, 16]}>
-                  {[1,2,3,4,5,6].map(i => (
-                    <Col xs={12} sm={8} key={i}>
-                      <Image
-                        src={`https://picsum.photos/300/300?random=${(breederId || 'gallery') + i}`}
-                        alt={`Gallery image ${i}`}
-                        style={{ 
-                          width: '100%', 
-                          height: '150px', 
-                          objectFit: 'cover',
-                          borderRadius: '8px'
-                        }}
-                      />
-                    </Col>
-                  ))}
-                </Row>
-              </Card>
+              <BreederGalleryTab breederId={breederId} breeder={breeder} cardStyle={cardStyle} />
             </TabPane>
           </Tabs>
         </Col>
