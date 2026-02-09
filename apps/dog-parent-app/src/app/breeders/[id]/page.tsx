@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import {
   Card, Row, Col, Typography, Button, Tabs, Image, Tag, Space,
-  Rate, Spin, Alert, Input, message, Breadcrumb
+  Rate, Spin, Alert, Input, message, Breadcrumb, Tooltip
 } from 'antd';
 import {
   CalendarOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined,
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
-  HomeOutlined, TrophyOutlined, HeartOutlined, TeamOutlined, StarOutlined,
-  LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined
+  HomeOutlined, TrophyOutlined, HeartOutlined, HeartFilled, TeamOutlined, StarOutlined,
+  LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined,
+  CommentOutlined, SendOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -336,6 +337,368 @@ const reviewsFetcher = async (url: string): Promise<{ reviews: ReviewFromApi[]; 
   return response.json();
 };
 
+// Post type from the /api/posts endpoint
+interface PostFromApi {
+  id: string;
+  authorId: string;
+  authorName: string;
+  breederId: string;
+  title: string;
+  content: string;
+  postType: 'litter' | 'health' | 'achievement' | 'event' | 'available' | 'general';
+  photos: string[];
+  tags: string[];
+  createdAt: string;
+}
+
+// Fetcher for posts API
+const postsFetcher = async (url: string): Promise<{ posts: PostFromApi[]; count: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch posts');
+  }
+  return response.json();
+};
+
+// Comment type from the /api/posts/[postId]/comments endpoint
+interface CommentFromApi {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+// Fetcher for comments API
+const commentsFetcher = async (url: string): Promise<{ comments: CommentFromApi[]; count: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch comments');
+  }
+  return response.json();
+};
+
+// PostComments component - displays comments for a post with expand/collapse
+const PostComments: React.FC<{ postId: string }> = ({ postId }) => {
+  const { isAuthenticated } = useAuth();
+  const [expanded, setExpanded] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const { data: commentsData, isLoading: commentsLoading, mutate: mutateComments } = useSWR(
+    expanded ? `/api/posts/${postId}/comments` : null,
+    commentsFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  // Track comment count separately so we can show it before expanding
+  const { data: countData } = useSWR(
+    `/api/posts/${postId}/comments?limit=0`,
+    commentsFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const comments = commentsData?.comments || [];
+  const commentCount = commentsData?.count ?? countData?.count ?? 0;
+
+  const handleSubmitComment = async () => {
+    if (!commentText.trim()) return;
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: commentText.trim() }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post comment');
+      }
+      setCommentText('');
+      mutateComments();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to post comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ borderTop: '1px solid #f0f0f0', marginTop: '12px', paddingTop: '8px' }}>
+      <Button
+        type="text"
+        icon={<CommentOutlined />}
+        onClick={() => setExpanded(!expanded)}
+        style={{ color: '#08979C', padding: '4px 8px' }}
+      >
+        {expanded ? 'Hide Comments' : 'Comments'} ({commentCount})
+      </Button>
+
+      {expanded && (
+        <div style={{ marginTop: '8px' }}>
+          {commentsLoading ? (
+            <div style={{ textAlign: 'center', padding: '12px' }}>
+              <Spin size="small" />
+            </div>
+          ) : comments.length === 0 ? (
+            <Text type="secondary" style={{ fontSize: '13px', display: 'block', padding: '8px 0' }}>
+              No comments yet. Be the first to comment!
+            </Text>
+          ) : (
+            <div style={{ marginBottom: '8px' }}>
+              {comments.map((comment) => (
+                <div key={comment.id} style={{ padding: '8px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text strong style={{ fontSize: '13px' }}>{comment.authorName}</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      {new Date(comment.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </Text>
+                  </div>
+                  <Text style={{ fontSize: '13px', display: 'block', marginTop: '2px' }}>{comment.content}</Text>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <Input
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onPressEnter={() => { if (!submitting && commentText.trim()) handleSubmitComment(); }}
+                disabled={submitting}
+                style={{ flex: 1 }}
+              />
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={handleSubmitComment}
+                loading={submitting}
+                disabled={submitting || !commentText.trim()}
+                style={{ background: '#08979C', borderColor: '#08979C' }}
+              />
+            </div>
+          ) : (
+            <div style={{ padding: '8px 0' }}>
+              <Text type="secondary" style={{ fontSize: '13px' }}>
+                <Link href="/auth/signin" style={{ color: '#08979C' }}>Sign in</Link> to comment
+              </Text>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Reaction data from the /api/posts/[postId]/reactions endpoint
+interface ReactionsData {
+  counts: Record<string, number>;
+  total: number;
+  userReaction: string | null;
+}
+
+// Fetcher for reactions API
+const reactionsFetcher = async (url: string): Promise<ReactionsData> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch reactions');
+  }
+  return response.json();
+};
+
+// PostLikeButton component - heart icon with like count and optimistic toggle
+const PostLikeButton: React.FC<{ postId: string }> = ({ postId }) => {
+  const { isAuthenticated } = useAuth();
+  const { data: reactionsData, mutate: mutateReactions } = useSWR(
+    `/api/posts/${postId}/reactions`,
+    reactionsFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
+  const [optimisticTotal, setOptimisticTotal] = useState<number | null>(null);
+
+  const liked = optimisticLiked ?? (reactionsData?.userReaction !== null && reactionsData?.userReaction !== undefined);
+  const total = optimisticTotal ?? (reactionsData?.total || 0);
+
+  const handleToggleLike = async () => {
+    if (!isAuthenticated) return;
+
+    const wasLiked = liked;
+    const prevTotal = total;
+
+    // Optimistic update
+    setOptimisticLiked(!wasLiked);
+    setOptimisticTotal(wasLiked ? Math.max(0, prevTotal - 1) : prevTotal + 1);
+
+    try {
+      if (wasLiked) {
+        const response = await fetch(`/api/posts/${postId}/reactions`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to remove reaction');
+      } else {
+        const response = await fetch(`/api/posts/${postId}/reactions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reactionType: 'like' }),
+        });
+        if (!response.ok) throw new Error('Failed to add reaction');
+      }
+      // Revalidate to sync with server
+      mutateReactions();
+    } catch {
+      // Revert optimistic update on error
+      setOptimisticLiked(wasLiked);
+      setOptimisticTotal(prevTotal);
+    } finally {
+      // Clear optimistic state after revalidation settles
+      setTimeout(() => {
+        setOptimisticLiked(null);
+        setOptimisticTotal(null);
+      }, 500);
+    }
+  };
+
+  const heartButton = (
+    <Button
+      type="text"
+      icon={liked ? <HeartFilled style={{ color: '#ff4d4f' }} /> : <HeartOutlined />}
+      onClick={handleToggleLike}
+      style={{ color: liked ? '#ff4d4f' : '#08979C', padding: '4px 8px' }}
+    >
+      {total > 0 ? total : ''}
+    </Button>
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <Tooltip title="Sign in to like">
+        {heartButton}
+      </Tooltip>
+    );
+  }
+
+  return heartButton;
+};
+
+const POST_TYPE_COLORS: Record<string, string> = {
+  litter: 'blue',
+  health: 'green',
+  achievement: 'gold',
+  event: 'purple',
+  available: 'cyan',
+  general: 'default',
+};
+
+const BreederPostsTab: React.FC<{ breederId: string; cardStyle: React.CSSProperties }> = ({ breederId, cardStyle }) => {
+  const { data: postsData, error: postsError, isLoading: postsLoading } = useSWR(
+    breederId ? `/api/posts?breederId=${breederId}` : null,
+    postsFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const posts = postsData?.posts || [];
+
+  if (postsLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading posts..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (postsError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load posts"
+          description="There was a problem fetching community posts. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Title level={4}>No Posts Yet</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            This breeder hasn&apos;t shared any community updates yet. Check back soon!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      {posts.map((post) => (
+        <Card key={post.id} style={{ ...cardStyle, marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <div>
+              <Text strong style={{ fontSize: '15px' }}>{post.authorName}</Text>
+              <div style={{ marginTop: '4px' }}>
+                <Tag color={POST_TYPE_COLORS[post.postType] || 'default'}>
+                  {post.postType.charAt(0).toUpperCase() + post.postType.slice(1)}
+                </Tag>
+              </div>
+            </div>
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              {new Date(post.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </div>
+          {post.title && (
+            <Title level={5} style={{ margin: '8px 0 4px 0' }}>{post.title}</Title>
+          )}
+          <Paragraph style={{ margin: '4px 0 0 0', fontSize: '14px' }}>{post.content}</Paragraph>
+          {post.photos && post.photos.length > 0 && (
+            <div style={{ marginTop: '12px' }}>
+              <Image.PreviewGroup>
+                <Row gutter={[8, 8]}>
+                  {post.photos.map((photo, idx) => (
+                    <Col xs={12} sm={8} key={idx}>
+                      <Image
+                        src={photo}
+                        alt={`${post.title || 'Post'} photo ${idx + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '120px',
+                          objectFit: 'cover',
+                          borderRadius: '6px',
+                        }}
+                        fallback="/api/placeholder/200/120"
+                      />
+                    </Col>
+                  ))}
+                </Row>
+              </Image.PreviewGroup>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px' }}>
+            <PostLikeButton postId={post.id} />
+          </div>
+          <PostComments postId={post.id} />
+        </Card>
+      ))}
+    </div>
+  );
+};
+
 const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
   const { isAuthenticated } = useAuth();
   const { data: reviewsData, error: reviewsError, isLoading: reviewsLoading, mutate: mutateReviews } = useSWR(
@@ -601,8 +964,6 @@ const BreederProfilePage: React.FC = () => {
   const params = useParams();
   const breederId = params?.id as string;
   const [activeTab, setActiveTab] = useState("posts");
-  const [composeVisible, setComposeVisible] = useState(false);
-
   // Fetch breeder data
   const { data, error, isLoading } = useSWR<{ breeder: Breeder }>(
     breederId ? `/api/breeders/${breederId}` : null,
@@ -931,17 +1292,7 @@ const BreederProfilePage: React.FC = () => {
             size="large"
           >
             <TabPane tab="Community Posts" key="posts">
-              <Card style={cardStyle}>
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Title level={4}>Community Updates</Title>
-                  <Paragraph>
-                    Stay connected with our latest news, puppy updates, and family stories.
-                  </Paragraph>
-                  <Button type="primary" style={{ background: '#08979C', borderColor: '#08979C' }}>
-                    View All Posts
-                  </Button>
-                </div>
-              </Card>
+              <BreederPostsTab breederId={breederId} cardStyle={cardStyle} />
             </TabPane>
             
             <TabPane tab="Available Puppies" key="available">
