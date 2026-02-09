@@ -314,6 +314,170 @@ const BreederGalleryTab: React.FC<{ breederId: string; breeder: Breeder; cardSty
   );
 };
 
+// Review type from the /api/reviews endpoint
+interface ReviewFromApi {
+  id: string;
+  breederId: string;
+  reviewerId: string;
+  reviewerName: string;
+  rating: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Fetcher for reviews API
+const reviewsFetcher = async (url: string): Promise<{ reviews: ReviewFromApi[]; count: number }> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch reviews');
+  }
+  return response.json();
+};
+
+const BreederReviewsTab: React.FC<{ breederId: string; breeder: Breeder; cardStyle: React.CSSProperties }> = ({ breederId, breeder, cardStyle }) => {
+  const { data: reviewsData, error: reviewsError, isLoading: reviewsLoading } = useSWR(
+    breederId ? `/api/reviews?breederId=${breederId}` : null,
+    reviewsFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const reviews = React.useMemo(() => reviewsData?.reviews || [], [reviewsData?.reviews]);
+
+  // Calculate rating distribution
+  const ratingDistribution = React.useMemo(() => {
+    const dist = [0, 0, 0, 0, 0]; // index 0 = 1-star, index 4 = 5-star
+    for (const review of reviews) {
+      const idx = Math.max(0, Math.min(4, Math.round(review.rating) - 1));
+      dist[idx]++;
+    }
+    return dist;
+  }, [reviews]);
+
+  // Calculate average rating from actual reviews
+  const avgRating = React.useMemo(() => {
+    if (reviews.length === 0) return breeder.rating;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    return sum / reviews.length;
+  }, [reviews, breeder.rating]);
+
+  const totalReviews = reviews.length || breeder.reviewCount;
+
+  if (reviewsLoading) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Spin indicator={<LoadingOutlined style={{ fontSize: 36 }} spin />} tip="Loading reviews..." />
+        </div>
+      </Card>
+    );
+  }
+
+  if (reviewsError) {
+    return (
+      <Card style={cardStyle}>
+        <Alert
+          message="Unable to load reviews"
+          description="There was a problem fetching reviews. Please try again later."
+          type="error"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <Card style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <StarOutlined style={{ fontSize: '48px', color: '#d9d9d9', marginBottom: '16px' }} />
+          <Title level={4}>No Reviews Yet</Title>
+          <Paragraph style={{ fontSize: '16px' }}>
+            Be the first to leave a review for {breeder.businessName}!
+          </Paragraph>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      {/* Overall Rating Summary */}
+      <Card style={cardStyle}>
+        <Row gutter={[24, 24]} align="middle">
+          <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#08979C', lineHeight: 1.2 }}>
+              {avgRating.toFixed(1)}
+            </div>
+            <Rate disabled value={avgRating} allowHalf style={{ fontSize: '20px' }} />
+            <div style={{ marginTop: '4px' }}>
+              <Text type="secondary">{totalReviews} review{totalReviews !== 1 ? 's' : ''}</Text>
+            </div>
+          </Col>
+          <Col xs={24} sm={16}>
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = ratingDistribution[star - 1];
+              const pct = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+              return (
+                <div key={star} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                  <Text style={{ width: '50px', fontSize: '13px' }}>{star} star</Text>
+                  <div style={{
+                    flex: 1,
+                    height: '12px',
+                    background: '#f0f0f0',
+                    borderRadius: '6px',
+                    marginLeft: '8px',
+                    marginRight: '8px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${pct}%`,
+                      height: '100%',
+                      background: '#fadb14',
+                      borderRadius: '6px',
+                      transition: 'width 0.3s ease',
+                    }} />
+                  </div>
+                  <Text type="secondary" style={{ width: '30px', fontSize: '13px', textAlign: 'right' }}>
+                    {count}
+                  </Text>
+                </div>
+              );
+            })}
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Individual Reviews */}
+      <Title level={4} style={{ marginTop: '24px', marginBottom: '16px' }}>
+        All Reviews ({reviews.length})
+      </Title>
+      {reviews.map((review) => (
+        <Card key={review.id} style={{ ...cardStyle, marginBottom: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+            <div>
+              <Text strong style={{ fontSize: '15px' }}>{review.reviewerName}</Text>
+              <div style={{ marginTop: '2px' }}>
+                <Rate disabled value={review.rating} style={{ fontSize: '14px' }} />
+              </div>
+            </div>
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              {new Date(review.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </div>
+          <Title level={5} style={{ margin: '8px 0 4px 0' }}>{review.title}</Title>
+          <Paragraph style={{ margin: 0, fontSize: '14px' }}>{review.content}</Paragraph>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
 const BreederProfilePage: React.FC = () => {
   const params = useParams();
   const breederId = params?.id as string;
@@ -659,23 +823,7 @@ const BreederProfilePage: React.FC = () => {
             </TabPane>
             
             <TabPane tab="Reviews" key="reviews">
-              <Card style={cardStyle}>
-                <div style={{ marginBottom: '24px' }}>
-                  <Title level={4}>Family Reviews</Title>
-                  <Space>
-                    <Rate disabled value={breeder.rating} allowHalf />
-                    <Text strong>{breeder.rating.toFixed(1)} out of 5</Text>
-                    <Text type="secondary">({breeder.reviewCount} reviews)</Text>
-                  </Space>
-                </div>
-                
-                <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                  <Title level={5}>Reviews Coming Soon</Title>
-                  <Paragraph>
-                    Family reviews and testimonials will be displayed here once our review system is fully implemented.
-                  </Paragraph>
-                </div>
-              </Card>
+              <BreederReviewsTab breederId={breederId} breeder={breeder} cardStyle={cardStyle} />
             </TabPane>
 
             <TabPane tab="Gallery" key="gallery">
