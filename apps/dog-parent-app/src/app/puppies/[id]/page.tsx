@@ -71,6 +71,89 @@ const sectionTitleStyle: React.CSSProperties = {
   gap: '8px',
 };
 
+interface SimilarPuppyFromApi {
+  id: string;
+  name: string;
+  breed: string;
+  gender: 'male' | 'female';
+  ageWeeks: number;
+  price: number;
+  location: string;
+  image: string;
+}
+
+const similarFetcher = async (url: string): Promise<{ puppies: SimilarPuppyFromApi[] }> => {
+  const response = await fetch(url);
+  if (!response.ok) return { puppies: [] };
+  return response.json();
+};
+
+const SimilarPuppies: React.FC<{ breed: string; currentPuppyId: string }> = ({ breed, currentPuppyId }) => {
+  const { data, isLoading } = useSWR(
+    breed ? `/api/puppies?breed=${encodeURIComponent(breed)}&limit=5` : null,
+    similarFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  const similarPuppies = (data?.puppies || [])
+    .filter((p) => p.id !== currentPuppyId)
+    .slice(0, 4);
+
+  if (isLoading || similarPuppies.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '24px' }}>
+      <Title level={4} style={{ ...sectionTitleStyle, marginBottom: '16px' }}>
+        <TeamOutlined /> Similar Puppies
+      </Title>
+      <Row gutter={[16, 16]}>
+        {similarPuppies.map((p) => (
+          <Col key={p.id} xs={12} sm={12} md={6}>
+            <Link href={`/puppies/${p.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              <Card
+                hoverable
+                style={{ ...cardStyle, marginBottom: 0 }}
+                cover={
+                  <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                }
+              >
+                <Card.Meta
+                  title={<Text strong style={{ fontSize: '14px' }}>{p.name}</Text>}
+                  description={
+                    <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                      <Text type="secondary" style={{ fontSize: '12px' }}>{p.breed}</Text>
+                      <Space size="small">
+                        <Tag color={p.gender === 'male' ? 'blue' : 'pink'} style={{ fontSize: '11px', margin: 0 }}>
+                          {p.gender === 'male' ? 'Male' : 'Female'}
+                        </Tag>
+                        <Text type="secondary" style={{ fontSize: '11px' }}>
+                          {p.ageWeeks}w
+                        </Text>
+                      </Space>
+                      {p.location && (
+                        <Text type="secondary" style={{ fontSize: '11px' }}>
+                          <EnvironmentOutlined /> {p.location}
+                        </Text>
+                      )}
+                    </Space>
+                  }
+                />
+              </Card>
+            </Link>
+          </Col>
+        ))}
+      </Row>
+    </div>
+  );
+};
+
 const PuppyDetailPage: React.FC = () => {
   const params = useParams();
   const puppyId = params?.id as string;
@@ -697,6 +780,9 @@ const PuppyDetailPage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Similar Puppies Section */}
+      <SimilarPuppies breed={puppy.breed} currentPuppyId={puppyId} />
 
       {/* Contact Breeder Modal */}
       <ContactBreederModal
