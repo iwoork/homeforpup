@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Statistic, List, Avatar, Tag, Spin, Alert } from 'antd';
-import { 
-  HeartOutlined, 
-  MessageOutlined, 
-  EyeOutlined, 
+import { Card, Row, Col, Typography, Button, Space, Statistic, List, Avatar, Tag, Spin, Alert, Badge } from 'antd';
+import {
+  HeartOutlined,
+  MessageOutlined,
+  EyeOutlined,
   UserOutlined,
   SearchOutlined,
   CalendarOutlined,
   TeamOutlined,
   TrophyOutlined
 } from '@ant-design/icons';
+import type { MessageThread } from '@homeforpup/shared-types';
 import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
 import { ActivityFeed, activityTracker } from '@homeforpup/shared-activity';
@@ -377,14 +378,16 @@ const DogParentDashboard: React.FC = () => {
               </Link>
               
               <Link href="/dashboard/messages">
-                <Button 
-                  block 
-                  size="large"
-                  icon={<MessageOutlined />}
-                  style={{ height: '48px', fontSize: '16px' }}
-                >
-                  View Messages
-                </Button>
+                <Badge count={stats.totalMessages} offset={[-12, 0]} style={{ boxShadow: 'none' }}>
+                  <Button
+                    block
+                    size="large"
+                    icon={<MessageOutlined />}
+                    style={{ height: '48px', fontSize: '16px', width: '100%' }}
+                  >
+                    Messages
+                  </Button>
+                </Badge>
               </Link>
               
               <Link href="/dashboard/groups">
@@ -412,6 +415,68 @@ const DogParentDashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Recent Messages */}
+      {threadsData?.threads && threadsData.threads.length > 0 && (
+        <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+          <Col span={24}>
+            <Card
+              title="Recent Messages"
+              style={cardStyle}
+              extra={
+                <Link href="/dashboard/messages">
+                  <Button type="link" size="small">View All</Button>
+                </Link>
+              }
+            >
+              <List
+                dataSource={(threadsData.threads as MessageThread[]).slice(0, 3)}
+                renderItem={(thread: MessageThread) => {
+                  const otherParticipantId = thread.participants?.find(
+                    (id: string) => id !== user.userId
+                  );
+                  const otherName = otherParticipantId && thread.participantNames
+                    ? thread.participantNames[otherParticipantId]
+                    : 'Unknown';
+                  const unread = thread.unreadCount?.[user.userId] || 0;
+                  const timeAgo = thread.updatedAt
+                    ? new Date(thread.updatedAt).toLocaleDateString()
+                    : '';
+                  return (
+                    <List.Item
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => window.location.href = '/dashboard/messages'}
+                    >
+                      <List.Item.Meta
+                        avatar={
+                          <Badge dot={unread > 0}>
+                            <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#08979C' }} />
+                          </Badge>
+                        }
+                        title={
+                          <Space>
+                            <Text strong={unread > 0}>{thread.subject}</Text>
+                            {unread > 0 && (
+                              <Tag color="blue">{unread} new</Tag>
+                            )}
+                          </Space>
+                        }
+                        description={
+                          <Space>
+                            <Text type="secondary">{otherName}</Text>
+                            <Text type="secondary">·</Text>
+                            <Text type="secondary">{timeAgo}</Text>
+                          </Space>
+                        }
+                      />
+                    </List.Item>
+                  );
+                }}
+              />
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Profile Completion */}
       <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
