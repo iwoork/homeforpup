@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { threadId, content, receiverId, receiverName, subject } = body;
+    const { threadId, content, receiverId, receiverName, subject, attachments } = body;
 
     if (!threadId || !content || !receiverId) {
       return NextResponse.json(
@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
       timestamp,
       createdAt: timestamp,
       updatedAt: timestamp,
+      // Include attachments if provided
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
       // GSI keys for querying by sender/receiver
       GSI1PK: userId, // senderId
       GSI1SK: timestamp,

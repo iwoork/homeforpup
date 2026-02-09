@@ -39,7 +39,7 @@ import { useMessaging } from '../hooks/useMessaging';
 import ComposeMessage from './ComposeMessage';
 import ChatMessage from './ChatMessage';
 import InlineReplyForm from './InlineReplyForm';
-import { Message, MessageThread } from '../types';
+import { Message, MessageThread, MessageAttachment } from '../types';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -385,11 +385,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                     {!loadingThread && (
                       <InlineReplyForm
                         threadId={selectedThread.id}
-                        onSendMessage={async (content: string, messageType: string) => {
+                        onSendMessage={async (content: string, messageType: string, attachments?: MessageAttachment[]) => {
                           try {
                             const recipientId = selectedThread.participants.find(p => p !== userId) || '';
                             const recipientName = selectedThread.participantNames?.[recipientId] || 'Unknown User';
-                            
+
                             const response = await fetch('/api/messages/reply', {
                               method: 'POST',
                               headers: {
@@ -401,7 +401,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                                 content,
                                 receiverId: recipientId,
                                 receiverName: recipientName,
-                                subject: `Re: ${selectedThread.subject}`
+                                subject: `Re: ${selectedThread.subject}`,
+                                ...(attachments && attachments.length > 0 ? { attachments } : {})
                               })
                             });
 
@@ -609,11 +610,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
             {selectedThread && !loadingThread && (
               <InlineReplyForm
                 threadId={selectedThread.id}
-                onSendMessage={async (content: string, messageType: string) => {
+                onSendMessage={async (content: string, messageType: string, attachments?: MessageAttachment[]) => {
                   try {
                     const recipientId = selectedThread.participants.find(p => p !== userId) || '';
                     const recipientName = selectedThread.participantNames?.[recipientId] || 'Unknown User';
-                    
+
                     const response = await fetch('/api/messages/reply', {
                       method: 'POST',
                       headers: {
@@ -625,7 +626,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                         content,
                         receiverId: recipientId,
                         receiverName: recipientName,
-                        subject: `Re: ${selectedThread.subject}`
+                        subject: `Re: ${selectedThread.subject}`,
+                        ...(attachments && attachments.length > 0 ? { attachments } : {})
                       })
                     });
 
