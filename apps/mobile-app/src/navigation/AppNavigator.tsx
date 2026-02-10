@@ -58,6 +58,7 @@ import CreateDogScreen from '../screens/forms/CreateDogScreen';
 import EditDogScreen from '../screens/forms/EditDogScreen';
 import EditProfileScreen from '../screens/forms/EditProfileScreen';
 import ManageContractsScreen from '../screens/main/ManageContractsScreen';
+import AllActivitiesScreen from '../screens/main/AllActivitiesScreen';
 import ManageWaitlistScreen from '../screens/forms/ManageWaitlistScreen';
 import RecordVetVisitScreen from '../screens/forms/RecordVetVisitScreen';
 import AddVeterinarianScreen from '../screens/forms/AddVeterinarianScreen';
@@ -378,6 +379,13 @@ const MainStack = () => {
       name="EditKennel"
       component={EditKennelScreen}
       options={{ headerShown: false }}
+    />
+
+    {/* Activity Screens */}
+    <Stack.Screen
+      name="AllActivities"
+      component={AllActivitiesScreen}
+      options={{ title: 'All Activities' }}
     />
 
     {/* Contract Screens */}

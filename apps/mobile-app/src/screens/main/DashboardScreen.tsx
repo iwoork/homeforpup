@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -14,15 +15,81 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../contexts/AuthContext';
 import { theme } from '../../utils/theme';
 import { useDashboardStats } from '../../hooks/useApi';
+import apiService, { Activity } from '../../services/apiService';
+
+const ACTIVITY_ICON_MAP: Record<string, { icon: string; color: string }> = {
+  kennel_created: { icon: 'home', color: '#10b981' },
+  kennel_updated: { icon: 'home-outline', color: '#2d8a8f' },
+  dog_added: { icon: 'paw', color: '#f59e0b' },
+  dog_updated: { icon: 'paw-outline', color: '#2d8a8f' },
+  litter_created: { icon: 'albums', color: '#10b981' },
+  litter_updated: { icon: 'albums-outline', color: '#2d8a8f' },
+  puppy_listed: { icon: 'star', color: '#f59e0b' },
+  puppy_updated: { icon: 'star-outline', color: '#2d8a8f' },
+  puppy_removed: { icon: 'close-circle', color: '#ef4444' },
+  message_received: { icon: 'chatbubble', color: '#3b82f6' },
+  message_sent: { icon: 'chatbubble-outline', color: '#2d8a8f' },
+  inquiry_received: { icon: 'mail', color: '#f59e0b' },
+  inquiry_responded: { icon: 'mail-open', color: '#10b981' },
+  health_record_updated: { icon: 'medical', color: '#10b981' },
+  photo_uploaded: { icon: 'camera', color: '#8b5cf6' },
+  profile_updated: { icon: 'person', color: '#2d8a8f' },
+  account_created: { icon: 'person-add', color: '#10b981' },
+  login: { icon: 'log-in', color: '#6b7280' },
+};
+
+function getActivityIcon(type: string): { icon: string; color: string } {
+  return ACTIVITY_ICON_MAP[type] || { icon: 'ellipse', color: theme.colors.textTertiary };
+}
+
+function getRelativeTime(timestamp: string): string {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
 
 const DashboardScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { data: stats, loading, error, refreshing, refresh } = useDashboardStats(user?.userId);
 
-  const onRefresh = React.useCallback(async () => {
-    await refresh();
-  }, [refresh]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [activitiesError, setActivitiesError] = useState<string | null>(null);
+
+  const fetchActivities = useCallback(async () => {
+    try {
+      const response = await apiService.getActivities({ limit: 10 });
+      if (response.success && response.data) {
+        setActivities(response.data.activities || []);
+        setActivitiesError(null);
+      } else {
+        setActivities([]);
+        setActivitiesError(response.error || 'Failed to fetch activities');
+      }
+    } catch {
+      setActivities([]);
+      setActivitiesError('Network error');
+    }
+  }, []);
+
+  useEffect(() => {
+    setActivitiesLoading(true);
+    fetchActivities().finally(() => setActivitiesLoading(false));
+  }, [fetchActivities]);
+
+  const onRefresh = useCallback(async () => {
+    await Promise.all([refresh(), fetchActivities()]);
+  }, [refresh, fetchActivities]);
 
   const statsDisplay = [
     {
@@ -150,14 +217,62 @@ const DashboardScreen: React.FC = () => {
 
 
       <View style={styles.recentActivity}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <View style={styles.activityCard}>
-          <Icon name="time-outline" size={48} color={theme.colors.textTertiary} />
-          <Text style={styles.activityText}>No recent activity</Text>
-          <Text style={styles.activitySubtext}>
-            Your recent breeding activities will appear here
-          </Text>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { marginBottom: 0, paddingHorizontal: 0 }]}>Recent Activity</Text>
+          {activities.length > 0 && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('AllActivities' as never)}
+            >
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          )}
         </View>
+        {activitiesLoading ? (
+          <View style={styles.activityCard}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        ) : activitiesError && activities.length === 0 ? (
+          <View style={styles.activityCard}>
+            <Icon name="alert-circle-outline" size={48} color={theme.colors.error} />
+            <Text style={styles.activityText}>Failed to load activities</Text>
+            <TouchableOpacity onPress={() => {
+              setActivitiesLoading(true);
+              fetchActivities().finally(() => setActivitiesLoading(false));
+            }}>
+              <Text style={styles.retryText}>Tap to retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : activities.length === 0 ? (
+          <View style={styles.activityCard}>
+            <Icon name="time-outline" size={48} color={theme.colors.textTertiary} />
+            <Text style={styles.activityText}>No recent activity</Text>
+            <Text style={styles.activitySubtext}>
+              Your recent breeding activities will appear here
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.activityList}>
+            {activities.map((activity) => {
+              const { icon, color } = getActivityIcon(activity.type);
+              return (
+                <View key={activity.id} style={styles.activityItem}>
+                  <View style={[styles.activityIconContainer, { backgroundColor: `${color}15` }]}>
+                    <Icon name={icon} size={20} color={color} />
+                  </View>
+                  <View style={styles.activityItemContent}>
+                    <Text style={styles.activityItemTitle}>{activity.title}</Text>
+                    <Text style={styles.activityItemDescription} numberOfLines={1}>
+                      {activity.description}
+                    </Text>
+                  </View>
+                  <Text style={styles.activityTimestamp}>
+                    {getRelativeTime(activity.timestamp)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -270,6 +385,18 @@ const styles = StyleSheet.create({
   recentActivity: {
     marginBottom: theme.spacing.xl,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.primary,
+  },
   activityCard: {
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.xl,
@@ -292,6 +419,53 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    marginTop: theme.spacing.sm,
+  },
+  activityList: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  activityIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.spacing.sm,
+  },
+  activityItemContent: {
+    flex: 1,
+  },
+  activityItemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 1,
+  },
+  activityItemDescription: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  activityTimestamp: {
+    fontSize: 11,
+    color: theme.colors.textTertiary,
+    marginLeft: theme.spacing.sm,
   },
 });
 

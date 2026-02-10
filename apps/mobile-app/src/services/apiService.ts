@@ -155,6 +155,60 @@ export interface ContractsResponse {
   contracts: Contract[];
 }
 
+export type ActivityType =
+  | 'kennel_created'
+  | 'kennel_updated'
+  | 'dog_added'
+  | 'dog_updated'
+  | 'litter_created'
+  | 'litter_updated'
+  | 'puppy_listed'
+  | 'puppy_updated'
+  | 'puppy_removed'
+  | 'message_received'
+  | 'message_sent'
+  | 'inquiry_received'
+  | 'inquiry_responded'
+  | 'health_record_updated'
+  | 'photo_uploaded'
+  | 'profile_updated'
+  | 'account_created'
+  | 'login'
+  | string;
+
+export type ActivityCategory =
+  | 'engagement'
+  | 'communication'
+  | 'profile'
+  | 'content'
+  | 'business'
+  | 'system'
+  | 'security'
+  | 'marketing';
+
+export interface Activity {
+  id: string;
+  userId: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  metadata?: Record<string, any>;
+  timestamp: string;
+  read: boolean;
+  priority: 'low' | 'medium' | 'high';
+  category: ActivityCategory;
+}
+
+export interface ActivitiesResponse {
+  activities: Activity[];
+  total: number;
+  hasMore: boolean;
+  stats?: {
+    total: number;
+    unread: number;
+  };
+}
+
 export interface LittersResponse {
   litters: Litter[];
   total: number;
@@ -657,19 +711,18 @@ class ApiService {
   }
 
   // Activities API (for recent activity)
-  // Note: This endpoint may not be deployed yet. See API_ENDPOINTS.md
   async getActivities(
     params: {
-      page?: number;
       limit?: number;
+      offset?: number;
     } = {},
-  ): Promise<ApiResponse<any>> {
+  ): Promise<ApiResponse<ActivitiesResponse>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.offset) queryParams.append('offset', params.offset.toString());
 
     const endpoint = `/activities?${queryParams.toString()}`;
-    return this.makeRequest<any>(endpoint);
+    return this.makeRequest<ActivitiesResponse>(endpoint);
   }
 
   // Litters API
