@@ -31,6 +31,7 @@ import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
 import { useAuth } from '@/hooks';
 import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
+import { calculateBreedScore, MatchPreferences, Breed } from '@homeforpup/shared-dogs';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -119,6 +120,7 @@ const fetcher = async (url: string): Promise<BreedersResponse> => {
 
 // Sort options
 const sortOptions = [
+  { value: 'bestMatch', label: 'Best Match' },
   { value: 'rating', label: 'Highest Rated' },
   { value: 'experience', label: 'Most Experience' },
   { value: 'distance', label: 'Nearest' },
@@ -150,6 +152,8 @@ const BreederDirectoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [matchPrefs, setMatchPrefs] = useState<MatchPreferences | null>(null);
+  const [breedsForMatch, setBreedsForMatch] = useState<Breed[]>([]);
 
   // Debounce search term
   useEffect(() => {
@@ -176,6 +180,28 @@ const BreederDirectoryPage: React.FC = () => {
       );
     }
   }, []);
+
+  // Load preferences and breeds for Best Match sorting
+  useEffect(() => {
+    if (sortBy !== 'bestMatch') return;
+    const load = async () => {
+      try {
+        const [prefsRes, breedsRes] = await Promise.all([
+          fetch('/api/matching/preferences'),
+          fetch('/api/breeds?limit=500'),
+        ]);
+        if (prefsRes.ok) {
+          const { matchPreferences } = await prefsRes.json();
+          if (matchPreferences) setMatchPrefs(matchPreferences);
+        }
+        if (breedsRes.ok) {
+          const bData = await breedsRes.json();
+          setBreedsForMatch(bData.breeds || []);
+        }
+      } catch { /* ignore */ }
+    };
+    load();
+  }, [sortBy]);
 
   // Build API URL
   const apiUrl = useMemo(() => {
@@ -211,7 +237,23 @@ const BreederDirectoryPage: React.FC = () => {
     dedupingInterval: 60000,
   });
 
-  const breeders = data?.breeders || [];
+  const rawBreeders = data?.breeders || [];
+
+  // Client-side Best Match sorting
+  const breeders = useMemo(() => {
+    if (sortBy !== 'bestMatch' || !matchPrefs || breedsForMatch.length === 0) return rawBreeders;
+    const scored = rawBreeders.map((breeder: Breeder) => {
+      const breedScores = breeder.breeds.map((breedName: string) => {
+        const breed = breedsForMatch.find((b: Breed) => b.name.toLowerCase() === breedName.toLowerCase());
+        return breed ? calculateBreedScore(breed, matchPrefs).total : 0;
+      });
+      const avgScore = breedScores.length > 0 ? Math.max(...breedScores) : 0;
+      return { ...breeder, _matchScore: avgScore };
+    });
+    scored.sort((a: any, b: any) => b._matchScore - a._matchScore);
+    return scored;
+  }, [rawBreeders, sortBy, matchPrefs, breedsForMatch]);
+
   const totalCount = data?.total || 0;
   const totalPages = data?.totalPages || 1;
   const breederFilters = data?.filters;
@@ -805,12 +847,19 @@ const BreederDirectoryPage: React.FC = () => {
               <Text style={{ marginRight: '8px' }}>Sort by:</Text>
               <Select
                 value={sortBy}
-                onChange={setSortBy}
+                onChange={(val) => {
+                  if (val === 'bestMatch' && !matchPrefs) {
+                    // Still allow selecting - it will load prefs
+                  }
+                  setSortBy(val);
+                }}
                 style={{ width: '160px' }}
               >
                 {sortOptions.map(option => (
                   <Option key={option.value} value={option.value}>
-                    {option.label}
+                    {option.value === 'bestMatch' && !matchPrefs && sortBy !== 'bestMatch'
+                      ? <Tooltip title="Take our quiz first">{option.label}</Tooltip>
+                      : option.label}
                   </Option>
                 ))}
               </Select>

@@ -14,6 +14,7 @@ import ContactBreederModal from '@/components/ContactBreederModal';
 import PuppySearchWizard from '@/components/PuppySearchWizard';
 import { BreedSelector } from '@/components';
 import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
+import { calculateBreedScore, MatchPreferences, Breed } from '@homeforpup/shared-dogs';
 import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
 
@@ -23,6 +24,9 @@ const { Option } = Select;
 const PuppiesPage: React.FC = () => {
   const router = useRouter();
   const [matchingLoading, setMatchingLoading] = useState(false);
+  const [sortBy, setSortBy] = useState('newest');
+  const [matchPrefs, setMatchPrefs] = useState<MatchPreferences | null>(null);
+  const [breedsForMatch, setBreedsForMatch] = useState<Breed[]>([]);
   const [filters, setFilters] = useState({
     country: 'Canada', // Default to Canada
     state: [] as string[],
@@ -96,6 +100,40 @@ const PuppiesPage: React.FC = () => {
   useEffect(() => {
     setOptimisticFavorites({});
   }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verified]);
+
+  // Load preferences and breeds for Best Match sorting
+  useEffect(() => {
+    if (sortBy !== 'bestMatch') return;
+    const load = async () => {
+      try {
+        const [prefsRes, breedsRes] = await Promise.all([
+          fetch('/api/matching/preferences'),
+          fetch('/api/breeds?limit=500'),
+        ]);
+        if (prefsRes.ok) {
+          const { matchPreferences } = await prefsRes.json();
+          if (matchPreferences) setMatchPrefs(matchPreferences);
+        }
+        if (breedsRes.ok) {
+          const bData = await breedsRes.json();
+          setBreedsForMatch(bData.breeds || []);
+        }
+      } catch { /* ignore */ }
+    };
+    load();
+  }, [sortBy]);
+
+  // Sort puppies client-side when Best Match is selected
+  const sortedPuppies = React.useMemo(() => {
+    if (sortBy !== 'bestMatch' || !matchPrefs || breedsForMatch.length === 0) return puppies;
+    return [...puppies].sort((a, b) => {
+      const breedA = breedsForMatch.find((br: Breed) => br.name.toLowerCase() === a.breed.toLowerCase());
+      const breedB = breedsForMatch.find((br: Breed) => br.name.toLowerCase() === b.breed.toLowerCase());
+      const scoreA = breedA ? calculateBreedScore(breedA, matchPrefs).total : 0;
+      const scoreB = breedB ? calculateBreedScore(breedB, matchPrefs).total : 0;
+      return scoreB - scoreA;
+    });
+  }, [puppies, sortBy, matchPrefs, breedsForMatch]);
 
   const resetFilters = () => {
     setFilters({
@@ -635,13 +673,29 @@ const PuppiesPage: React.FC = () => {
                 <Text>
                   Showing {puppies.length} of {totalCount} puppies
                 </Text>
-                <Text type="secondary">
-                  Page {currentPage} of {totalPages}
-                </Text>
+                <Space>
+                  <Text type="secondary" style={{ marginRight: '4px' }}>Sort:</Text>
+                  <Select
+                    value={sortBy}
+                    onChange={(val) => setSortBy(val)}
+                    style={{ width: '140px' }}
+                    size="small"
+                  >
+                    <Select.Option value="newest">Newest</Select.Option>
+                    <Select.Option value="bestMatch">
+                      {!matchPrefs && sortBy !== 'bestMatch'
+                        ? <Tooltip title="Take our quiz first">Best Match</Tooltip>
+                        : 'Best Match'}
+                    </Select.Option>
+                  </Select>
+                  <Text type="secondary">
+                    Page {currentPage} of {totalPages}
+                  </Text>
+                </Space>
               </div>
 
               <Row gutter={[16, 16]}>
-                {puppies.map((puppy) => (
+                {sortedPuppies.map((puppy) => (
                   <Col xs={24} sm={12} lg={8} key={puppy.id}>
                     <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                       {renderPuppyCard(puppy)}
