@@ -8,6 +8,9 @@ import {
   ColumnHeightOutlined,
   SmileOutlined,
   ArrowLeftOutlined,
+  DownOutlined,
+  UpOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -65,6 +68,7 @@ const RecommendationsPage: React.FC = () => {
   const router = useRouter();
   const [results, setResults] = useState<MatchResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedBreeds, setExpandedBreeds] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // Try session storage first
@@ -225,7 +229,7 @@ const RecommendationsPage: React.FC = () => {
               </div>
 
               {/* Key characteristics */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
                 <Tooltip title="Energy Level">
                   <Tag icon={<ThunderboltOutlined />} color={breed.characteristics.energyLevel >= 7 ? 'orange' : 'blue'}>
                     Energy: {breed.characteristics.energyLevel}/10
@@ -242,6 +246,74 @@ const RecommendationsPage: React.FC = () => {
                   </Tag>
                 </Tooltip>
               </div>
+
+              {/* Expandable "Why this match" */}
+              <Button
+                type="link"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedBreeds((prev) => ({ ...prev, [breed.id]: !prev[breed.id] }));
+                }}
+                icon={expandedBreeds[breed.id] ? <UpOutlined /> : <DownOutlined />}
+                style={{ padding: 0, color: '#08979C' }}
+              >
+                {expandedBreeds[breed.id] ? 'Hide Details' : 'Why this match?'}
+              </Button>
+
+              {expandedBreeds[breed.id] && (
+                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #f0f0f0' }}>
+                  {[
+                    { label: 'Energy Match', value: breed.breakdown.energyMatch, max: 20 },
+                    { label: 'Size Match', value: breed.breakdown.sizeMatch, max: 15 },
+                    { label: 'Kid-Friendliness', value: breed.breakdown.kidFriendliness, max: 15 },
+                    { label: 'Trainability', value: breed.breakdown.trainability, max: 15 },
+                    { label: 'Space Requirements', value: breed.breakdown.spaceRequirements, max: 15 },
+                    { label: 'Grooming Needs', value: breed.breakdown.groomingNeeds, max: 10 },
+                    { label: 'Social Compatibility', value: breed.breakdown.socialCompatibility, max: 10 },
+                  ].map((criterion) => {
+                    const pct = Math.round((criterion.value / criterion.max) * 100);
+                    const isLow = pct < 50;
+                    return (
+                      <div key={criterion.label} style={{ marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <Text style={{ fontSize: '12px' }}>
+                            {isLow ? (
+                              <WarningOutlined style={{ color: '#faad14', marginRight: '4px' }} />
+                            ) : (
+                              <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '4px' }} />
+                            )}
+                            {criterion.label}
+                          </Text>
+                          <Text style={{ fontSize: '12px' }}>{criterion.value}/{criterion.max}</Text>
+                        </div>
+                        <Progress
+                          percent={pct}
+                          size="small"
+                          strokeColor={isLow ? '#faad14' : '#52c41a'}
+                          showInfo={false}
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {/* Low-scoring warnings */}
+                  {breed.matchReasons
+                    .filter((r) =>
+                      r.toLowerCase().includes('may') ||
+                      r.toLowerCase().includes('higher') ||
+                      r.toLowerCase().includes('challenging') ||
+                      r.toLowerCase().includes('tight') ||
+                      r.toLowerCase().includes('not ideal')
+                    )
+                    .map((reason, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '6px' }}>
+                        <WarningOutlined style={{ color: '#faad14', marginTop: '4px', flexShrink: 0 }} />
+                        <Text style={{ fontSize: '12px', color: '#d48806' }}>{reason}</Text>
+                      </div>
+                    ))}
+                </div>
+              )}
             </Card>
           </Col>
         ))}
