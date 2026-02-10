@@ -10,7 +10,11 @@ import {
   SearchOutlined,
   CalendarOutlined,
   TeamOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  SafetyCertificateOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { MessageThread } from '@homeforpup/shared-types';
 import Link from 'next/link';
@@ -53,6 +57,28 @@ const DogParentDashboard: React.FC = () => {
     async (url) => {
       const response = await fetch(url);
       return response.json();
+    }
+  );
+
+  // Fetch verification status
+  const { data: verificationData } = useSWR(
+    isAuthenticated ? '/api/verification/status' : null,
+    async (url) => {
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) return null;
+      return res.json();
+    }
+  );
+
+  // Fetch trust score when verified
+  const { data: trustScoreData } = useSWR(
+    isAuthenticated && verificationData?.status === 'approved' && user?.userId
+      ? `/api/breeders/${user.userId}/trust-score`
+      : null,
+    async (url) => {
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) return null;
+      return res.json();
     }
   );
 
@@ -311,6 +337,152 @@ const DogParentDashboard: React.FC = () => {
         </Col>
       </Row>
 
+      {/* Verification Status Card */}
+      {verificationData && (() => {
+        const vStatus = verificationData.status;
+        const vRequest = verificationData.verificationRequest;
+
+        if (vStatus === 'none' || !vStatus) {
+          // Not verified - show CTA
+          return (
+            <Card
+              style={{ marginBottom: '24px', ...cardStyle, borderLeft: '4px solid #08979C' }}
+            >
+              <Row align="middle" gutter={24}>
+                <Col xs={24} md={16}>
+                  <Space align="start" size={16}>
+                    <SafetyCertificateOutlined style={{ fontSize: '36px', color: '#08979C' }} />
+                    <div>
+                      <Title level={4} style={{ margin: 0, color: '#08979C' }}>Get Verified</Title>
+                      <Paragraph style={{ margin: '8px 0 12px 0', color: '#666' }}>
+                        Earn a verified badge and build trust with potential families.
+                      </Paragraph>
+                      <Space direction="vertical" size={4}>
+                        <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Trust badge on your profile</Text>
+                        <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Higher search ranking</Text>
+                        <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />More inquiries from families</Text>
+                      </Space>
+                    </div>
+                  </Space>
+                </Col>
+                <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+                  <Link href="/verification">
+                    <Button type="primary" size="large" icon={<SafetyCertificateOutlined />}>
+                      Start Verification
+                    </Button>
+                  </Link>
+                </Col>
+              </Row>
+            </Card>
+          );
+        }
+
+        if (vStatus === 'pending' || vStatus === 'in_review') {
+          return (
+            <Card
+              style={{ marginBottom: '24px', ...cardStyle, borderLeft: '4px solid #faad14' }}
+            >
+              <Row align="middle" gutter={24}>
+                <Col xs={24} md={16}>
+                  <Space align="start" size={16}>
+                    <ClockCircleOutlined style={{ fontSize: '36px', color: '#faad14' }} />
+                    <div>
+                      <Title level={4} style={{ margin: 0, color: '#faad14' }}>Verification In Progress</Title>
+                      <Paragraph style={{ margin: '8px 0 0 0', color: '#666' }}>
+                        Your verification request is being reviewed. This typically takes 2-3 business days.
+                      </Paragraph>
+                      {vRequest?.submittedAt && (
+                        <Text type="secondary" style={{ marginTop: 4, display: 'block' }}>
+                          Submitted: {new Date(vRequest.submittedAt).toLocaleDateString()}
+                        </Text>
+                      )}
+                      <Tag color={vStatus === 'pending' ? 'orange' : 'blue'} style={{ marginTop: 8 }}>
+                        {vStatus === 'pending' ? 'Pending Review' : 'In Review'}
+                      </Tag>
+                    </div>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          );
+        }
+
+        if (vStatus === 'approved') {
+          const trustScore = trustScoreData?.total;
+          const badgeLevel = trustScore && trustScore >= 80 ? 'Premium Verified' : 'Verified';
+          return (
+            <Card
+              style={{ marginBottom: '24px', ...cardStyle, borderLeft: '4px solid #52c41a' }}
+            >
+              <Row align="middle" gutter={24}>
+                <Col xs={24} md={16}>
+                  <Space align="start" size={16}>
+                    <CheckCircleOutlined style={{ fontSize: '36px', color: '#52c41a' }} />
+                    <div>
+                      <Title level={4} style={{ margin: 0, color: '#52c41a' }}>Verified Breeder</Title>
+                      <Paragraph style={{ margin: '8px 0 0 0', color: '#666' }}>
+                        Your breeder profile has been verified by HomeForPup.
+                      </Paragraph>
+                      {vRequest?.reviewedAt && (
+                        <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
+                          Verified on: {new Date(vRequest.reviewedAt).toLocaleDateString()}
+                        </Text>
+                      )}
+                      <Space style={{ marginTop: 8 }}>
+                        <Tag color="green">{badgeLevel}</Tag>
+                        {trustScore !== undefined && trustScore !== null && (
+                          <Tag color={trustScore >= 80 ? 'gold' : trustScore >= 60 ? 'blue' : 'default'}>
+                            Trust Score: {trustScore}
+                          </Tag>
+                        )}
+                      </Space>
+                    </div>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          );
+        }
+
+        if (vStatus === 'rejected') {
+          return (
+            <Card
+              style={{ marginBottom: '24px', ...cardStyle, borderLeft: '4px solid #ff4d4f' }}
+            >
+              <Row align="middle" gutter={24}>
+                <Col xs={24} md={16}>
+                  <Space align="start" size={16}>
+                    <ExclamationCircleOutlined style={{ fontSize: '36px', color: '#ff4d4f' }} />
+                    <div>
+                      <Title level={4} style={{ margin: 0, color: '#ff4d4f' }}>Verification Needs Attention</Title>
+                      <Paragraph style={{ margin: '8px 0 0 0', color: '#666' }}>
+                        Your verification request was not approved. Please review the feedback and resubmit.
+                      </Paragraph>
+                      {vRequest?.reviewerNotes && (
+                        <Alert
+                          type="warning"
+                          message="Reviewer Feedback"
+                          description={vRequest.reviewerNotes}
+                          style={{ marginTop: 8 }}
+                        />
+                      )}
+                    </div>
+                  </Space>
+                </Col>
+                <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+                  <Link href="/verification">
+                    <Button type="primary" danger size="large" icon={<SafetyCertificateOutlined />}>
+                      Resubmit
+                    </Button>
+                  </Link>
+                </Col>
+              </Row>
+            </Card>
+          );
+        }
+
+        return null;
+      })()}
 
       <Row gutter={[24, 24]}>
         {/* Recent Activity */}

@@ -10,7 +10,8 @@ import {
   HeartOutlined, HeartFilled, ManOutlined, WomanOutlined, MedicineBoxOutlined,
   SafetyCertificateOutlined, SmileOutlined, TeamOutlined,
   CheckCircleOutlined, PhoneOutlined, MailOutlined, GlobalOutlined,
-  MessageOutlined, ShareAltOutlined, HomeOutlined,
+  MessageOutlined, ShareAltOutlined, HomeOutlined, FileProtectOutlined,
+  CloseCircleOutlined, LinkOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -588,21 +589,80 @@ const PuppyDetailPage: React.FC = () => {
                 <Text>{puppy.specialNeeds}</Text>
               </div>
             )}
-            {puppy.healthTests && puppy.healthTests.length > 0 ? (
-              <>
-                <Text strong style={{ display: 'block', marginBottom: '8px' }}>Health Tests</Text>
-                <Space wrap>
-                  {puppy.healthTests.map((test, index) => (
-                    <Tag
-                      key={index}
-                      icon={<SafetyCertificateOutlined />}
-                      color="green"
-                    >
-                      {test.includes('http') ? `Health Test ${index + 1}` : test}
-                    </Tag>
-                  ))}
+            {isVerified && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '8px 12px',
+                background: '#e6fffb',
+                borderRadius: '6px',
+                border: '1px solid #b5f5ec',
+              }}>
+                <Space>
+                  <CheckCircleOutlined style={{ color: '#08979C' }} />
+                  <Text style={{ color: '#006d75' }}>This breeder has been verified by HomeForPup</Text>
                 </Space>
-              </>
+              </div>
+            )}
+            {puppy.healthTests && puppy.healthTests.length > 0 ? (
+              (() => {
+                const isUrl = (s: string) => s.startsWith('http://') || s.startsWith('https://');
+                const verifiedCount = puppy.healthTests.filter(t => isUrl(t)).length;
+                const totalCount = puppy.healthTests.length;
+                return (
+                  <>
+                    <div style={{ marginBottom: '12px' }}>
+                      <Text strong>
+                        <FileProtectOutlined style={{ marginRight: '6px' }} />
+                        {verifiedCount} of {totalCount} health test{totalCount !== 1 ? 's' : ''} verified with documentation
+                      </Text>
+                    </div>
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                      {puppy.healthTests.map((test, index) => {
+                        const hasDoc = isUrl(test);
+                        return (
+                          <div
+                            key={index}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '8px 12px',
+                              background: hasDoc ? '#f6ffed' : '#fafafa',
+                              borderRadius: '6px',
+                              border: `1px solid ${hasDoc ? '#b7eb8f' : '#d9d9d9'}`,
+                            }}
+                          >
+                            <Space>
+                              <SafetyCertificateOutlined style={{ color: hasDoc ? '#52c41a' : '#bfbfbf' }} />
+                              <Text>{hasDoc ? `Health Test ${index + 1}` : test}</Text>
+                              {hasDoc ? (
+                                <Tag color="green" style={{ margin: 0 }}>Verified</Tag>
+                              ) : (
+                                <Tag color="default" style={{ margin: 0, color: '#8c8c8c' }}>
+                                  <CloseCircleOutlined style={{ marginRight: '4px' }} />
+                                  Unverified
+                                </Tag>
+                              )}
+                            </Space>
+                            {hasDoc && (
+                              <a href={test} target="_blank" rel="noopener noreferrer">
+                                <Button
+                                  type="link"
+                                  size="small"
+                                  icon={<LinkOutlined />}
+                                  style={{ color: '#08979C', padding: 0 }}
+                                >
+                                  View Certificate
+                                </Button>
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </Space>
+                  </>
+                );
+              })()
             ) : (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}

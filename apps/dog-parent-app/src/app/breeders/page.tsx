@@ -35,6 +35,25 @@ import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
+// Client-side trust score estimation using same formula as /api/breeders/[id]/trust-score
+const estimateTrustScore = (breeder: Breeder): number => {
+  const verifiedScore = breeder.verified ? 30 : 0;
+  const ratingScore = breeder.rating > 0 ? Math.round(((breeder.rating - 1) / 4) * 25) : 0;
+  const reviewsScore = Math.round(Math.min(breeder.reviewCount / 10, 1) * 15);
+  const responseScore = Math.round(breeder.responseRate * 15);
+  const experienceScore = Math.round(Math.min(breeder.experience / 10, 1) * 15);
+  return verifiedScore + ratingScore + reviewsScore + responseScore + experienceScore;
+};
+
+// Badge level types
+type BadgeLevel = 'unverified' | 'verified' | 'premium_verified';
+
+const getBadgeLevel = (verified: boolean, trustScore: number): BadgeLevel => {
+  if (!verified) return 'unverified';
+  if (trustScore >= 80) return 'premium_verified';
+  return 'verified';
+};
+
 // Breeder interface matching API response
 interface Breeder {
   id: number;
@@ -120,6 +139,7 @@ const fetcher = async (url: string): Promise<BreedersResponse> => {
 // Sort options
 const sortOptions = [
   { value: 'rating', label: 'Highest Rated' },
+  { value: 'trust', label: 'Most Trusted' },
   { value: 'experience', label: 'Most Experience' },
   { value: 'distance', label: 'Nearest' },
   { value: 'reviews', label: 'Most Reviews' },
@@ -140,7 +160,7 @@ const BreederDirectoryPage: React.FC = () => {
   const [filters, setFilters] = useState({
     country: 'Canada', // Default to Canada
     states: [] as string[],
-    verified: false,
+    verificationLevel: 'all' as 'all' | 'verified' | 'premium_verified',
     shipping: false,
     availablePuppies: false,
     minRating: 0,
@@ -185,7 +205,7 @@ const BreederDirectoryPage: React.FC = () => {
     if (selectedBreed) params.append('breed', selectedBreed);
     if (filters.country) params.append('country', filters.country);
     if (filters.states.length > 0) params.append('state', filters.states[0]); // For simplicity, use first state
-    if (filters.verified) params.append('verified', 'true');
+    if (filters.verificationLevel !== 'all') params.append('verified', 'true');
     if (filters.shipping) params.append('shipping', 'true');
     if (filters.availablePuppies) params.append('availablePuppies', 'true');
     if (filters.minRating > 0) params.append('minRating', filters.minRating.toString());
@@ -211,17 +231,28 @@ const BreederDirectoryPage: React.FC = () => {
     dedupingInterval: 60000,
   });
 
-  const breeders = data?.breeders || [];
-  const totalCount = data?.total || 0;
+  // Apply client-side filtering for Premium Verified and sorting by trust score
+  const filteredBreeders = useMemo(() => {
+    let result = data?.breeders || [];
+    if (filters.verificationLevel === 'premium_verified') {
+      result = result.filter(b => b.verified && estimateTrustScore(b) >= 80);
+    }
+    if (sortBy === 'trust') {
+      result = [...result].sort((a, b) => estimateTrustScore(b) - estimateTrustScore(a));
+    }
+    return result;
+  }, [data?.breeders, filters.verificationLevel, sortBy]);
+  const breeders = filteredBreeders;
+  const totalCount = filters.verificationLevel === 'premium_verified' ? filteredBreeders.length : (data?.total || 0);
   const totalPages = data?.totalPages || 1;
   const breederFilters = data?.filters;
   const stats = data?.stats;
 
   // Check if any filters are active
-  const hasActiveFilters = debouncedSearchTerm !== '' || selectedBreed !== '' || 
-                          filters.country !== 'Canada' || filters.states.length > 0 || filters.verified || 
-                          filters.shipping || filters.availablePuppies || 
-                          filters.minRating > 0 || filters.experienceRange[0] > 0 || 
+  const hasActiveFilters = debouncedSearchTerm !== '' || selectedBreed !== '' ||
+                          filters.country !== 'Canada' || filters.states.length > 0 || filters.verificationLevel !== 'all' ||
+                          filters.shipping || filters.availablePuppies ||
+                          filters.minRating > 0 || filters.experienceRange[0] > 0 ||
                           filters.experienceRange[1] < 25;
 
   // Clear all filters
@@ -232,7 +263,7 @@ const BreederDirectoryPage: React.FC = () => {
     setFilters({
       country: 'Canada', // Reset to Canada default
       states: [],
-      verified: false,
+      verificationLevel: 'all',
       shipping: false,
       availablePuppies: false,
       minRating: 0,
@@ -289,11 +320,37 @@ const BreederDirectoryPage: React.FC = () => {
               gap: '8px',
               flexWrap: 'wrap'
             }}>
-              {breeder.verified && hasPremiumAccess && (
-                <Tag color="green" icon={<CheckCircleOutlined />}>
-                  Verified
-                </Tag>
-              )}
+              {breeder.verified && hasPremiumAccess && (() => {
+                const trustScore = estimateTrustScore(breeder);
+                const level = getBadgeLevel(breeder.verified, trustScore);
+                const isPremium = level === 'premium_verified';
+                const tooltipContent = (
+                  <div style={{ maxWidth: '200px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                      {isPremium ? 'Premium Verified' : 'Verified Breeder'}
+                    </div>
+                    <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+                      Trust Score: {trustScore}/100
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>
+                      {isPremium
+                        ? 'Verified with an exceptional trust score.'
+                        : 'This breeder has been verified by HomeForPup.'}
+                    </div>
+                  </div>
+                );
+                return (
+                  <Tooltip title={tooltipContent}>
+                    <Tag
+                      color={isPremium ? 'gold' : 'green'}
+                      icon={isPremium ? <CrownOutlined /> : <CheckCircleOutlined />}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {isPremium ? 'Premium Verified' : 'Verified'}
+                    </Tag>
+                  </Tooltip>
+                );
+              })()}
               {breeder.verified && !hasPremiumAccess && (
                 <Tooltip title="Upgrade to Premium to see verified breeders">
                   <Tag color="gold" icon={<CrownOutlined />}>
@@ -751,15 +808,30 @@ const BreederDirectoryPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Verification Level */}
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong>Verification Level</Text>
+              <Select
+                value={filters.verificationLevel}
+                onChange={(value) => {
+                  setFilters(prev => ({ ...prev, verificationLevel: value }));
+                  setCurrentPage(1);
+                }}
+                style={{ width: '100%', marginTop: '8px' }}
+              >
+                <Option value="all">All Breeders</Option>
+                <Option value="verified">
+                  <Space><CheckCircleOutlined style={{ color: '#52c41a' }} />Verified</Space>
+                </Option>
+                <Option value="premium_verified">
+                  <Space><CrownOutlined style={{ color: '#faad14' }} />Premium Verified</Space>
+                </Option>
+              </Select>
+            </div>
+
             {/* Checkboxes */}
             <div style={{ marginBottom: '16px' }}>
               <Space direction="vertical">
-                <Checkbox
-                  checked={filters.verified}
-                  onChange={(e) => setFilters(prev => ({ ...prev, verified: e.target.checked }))}
-                >
-                  Verified Breeders Only
-                </Checkbox>
                 <Checkbox
                   checked={filters.shipping}
                   onChange={(e) => setFilters(prev => ({ ...prev, shipping: e.target.checked }))}
