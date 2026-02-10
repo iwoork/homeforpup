@@ -10,8 +10,10 @@ import {
   SearchOutlined,
   CalendarOutlined,
   TeamOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  StarOutlined,
 } from '@ant-design/icons';
+import { Progress } from 'antd';
 import type { MessageThread } from '@homeforpup/shared-types';
 import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
@@ -27,6 +29,107 @@ interface DashboardStats {
   activeThreads: number;
 }
 
+
+const RecommendedForYou: React.FC = () => {
+  const [recommendations, setRecommendations] = useState<any>(null);
+  const [recLoading, setRecLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecs = async () => {
+      try {
+        const prefsRes = await fetch('/api/matching/preferences');
+        if (!prefsRes.ok) { setRecLoading(false); return; }
+        const { matchPreferences } = await prefsRes.json();
+        if (!matchPreferences) { setRecLoading(false); return; }
+
+        const res = await fetch('/api/matching/recommendations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(matchPreferences),
+        });
+        if (!res.ok) throw new Error('Failed');
+        const data = await res.json();
+        setRecommendations(data);
+      } catch {
+        // No recommendations
+      } finally {
+        setRecLoading(false);
+      }
+    };
+    fetchRecs();
+  }, []);
+
+  if (recLoading) return null;
+
+  const rcStyle: React.CSSProperties = {
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    border: '1px solid #f1f5f9',
+    marginBottom: '24px',
+  };
+
+  if (!recommendations) {
+    return (
+      <Card
+        title={<span><StarOutlined style={{ color: '#08979C', marginRight: '8px' }} />Find Your Perfect Match</span>}
+        style={rcStyle}
+      >
+        <div style={{ textAlign: 'center', padding: '16px' }}>
+          <Paragraph>Take our matching quiz to get personalized breed recommendations!</Paragraph>
+          <Link href="/browse">
+            <Button type="primary" style={{ background: '#08979C', borderColor: '#08979C' }}>
+              Take the Quiz
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
+  const getColor = (s: number) => s >= 80 ? '#52c41a' : s >= 60 ? '#1890ff' : s >= 40 ? '#faad14' : '#ff4d4f';
+  const top3 = recommendations.breeds?.slice(0, 3) || [];
+
+  return (
+    <Card
+      title={<span><StarOutlined style={{ color: '#08979C', marginRight: '8px' }} />Recommended For You</span>}
+      style={rcStyle}
+      extra={
+        <Link href="/recommendations">
+          <Button type="link" size="small">View All Recommendations</Button>
+        </Link>
+      }
+    >
+      <Row gutter={[16, 16]}>
+        {top3.map((breed: any) => (
+          <Col xs={24} sm={8} key={breed.id}>
+            <Card
+              size="small"
+              hoverable
+              style={{ borderRadius: '8px', textAlign: 'center' }}
+            >
+              <Progress
+                type="circle"
+                percent={breed.score}
+                size={48}
+                strokeColor={getColor(breed.score)}
+                format={(pct) => <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{pct}</span>}
+              />
+              <div style={{ marginTop: '8px' }}>
+                <Text strong style={{ color: '#08979C' }}>{breed.name}</Text>
+              </div>
+              <div>
+                <Text type="secondary" style={{ fontSize: '12px' }}>{breed.size} &bull; {breed.category}</Text>
+              </div>
+              <Link href="/recommendations">
+                <Button type="link" size="small" style={{ marginTop: '4px' }}>View Details</Button>
+              </Link>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </Card>
+  );
+};
 
 const DogParentDashboard: React.FC = () => {
   const { user, isAuthenticated, loading } = useAuth();
@@ -311,6 +414,9 @@ const DogParentDashboard: React.FC = () => {
         </Col>
       </Row>
 
+
+      {/* Recommended For You */}
+      <RecommendedForYou />
 
       <Row gutter={[24, 24]}>
         {/* Recent Activity */}
