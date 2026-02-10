@@ -31,6 +31,7 @@ import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
 import { useAuth } from '@/hooks';
 import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
+import { calculateBreedScore, MatchPreferences, Breed } from '@homeforpup/shared-dogs';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -138,6 +139,7 @@ const fetcher = async (url: string): Promise<BreedersResponse> => {
 
 // Sort options
 const sortOptions = [
+  { value: 'bestMatch', label: 'Best Match' },
   { value: 'rating', label: 'Highest Rated' },
   { value: 'trust', label: 'Most Trusted' },
   { value: 'experience', label: 'Most Experience' },
@@ -170,6 +172,8 @@ const BreederDirectoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [matchPrefs, setMatchPrefs] = useState<MatchPreferences | null>(null);
+  const [breedsForMatch, setBreedsForMatch] = useState<Breed[]>([]);
 
   // Debounce search term
   useEffect(() => {
@@ -196,6 +200,28 @@ const BreederDirectoryPage: React.FC = () => {
       );
     }
   }, []);
+
+  // Load preferences and breeds for Best Match sorting
+  useEffect(() => {
+    if (sortBy !== 'bestMatch') return;
+    const load = async () => {
+      try {
+        const [prefsRes, breedsRes] = await Promise.all([
+          fetch('/api/matching/preferences'),
+          fetch('/api/breeds?limit=500'),
+        ]);
+        if (prefsRes.ok) {
+          const { matchPreferences } = await prefsRes.json();
+          if (matchPreferences) setMatchPrefs(matchPreferences);
+        }
+        if (breedsRes.ok) {
+          const bData = await breedsRes.json();
+          setBreedsForMatch(bData.breeds || []);
+        }
+      } catch { /* ignore */ }
+    };
+    load();
+  }, [sortBy]);
 
   // Build API URL
   const apiUrl = useMemo(() => {
@@ -231,19 +257,40 @@ const BreederDirectoryPage: React.FC = () => {
     dedupingInterval: 60000,
   });
 
-  // Apply client-side filtering for Premium Verified and sorting by trust score
-  const filteredBreeders = useMemo(() => {
-    let result = data?.breeders || [];
+  const rawBreeders = data?.breeders || [];
+
+  // Apply client-side filtering for Premium Verified, trust score sorting, and Best Match sorting
+  const breeders = useMemo(() => {
+    let result = rawBreeders;
+
+    // Filter for premium_verified
     if (filters.verificationLevel === 'premium_verified') {
       result = result.filter(b => b.verified && estimateTrustScore(b) >= 80);
     }
+
+    // Sort by trust score
     if (sortBy === 'trust') {
       result = [...result].sort((a, b) => estimateTrustScore(b) - estimateTrustScore(a));
     }
+
+    // Client-side Best Match sorting
+    if (sortBy === 'bestMatch' && matchPrefs && breedsForMatch.length > 0) {
+      const scored = result.map((breeder: Breeder) => {
+        const breedScores = breeder.breeds.map((breedName: string) => {
+          const breed = breedsForMatch.find((b: Breed) => b.name.toLowerCase() === breedName.toLowerCase());
+          return breed ? calculateBreedScore(breed, matchPrefs).total : 0;
+        });
+        const avgScore = breedScores.length > 0 ? Math.max(...breedScores) : 0;
+        return { ...breeder, _matchScore: avgScore };
+      });
+      scored.sort((a: any, b: any) => b._matchScore - a._matchScore);
+      return scored;
+    }
+
     return result;
-  }, [data?.breeders, filters.verificationLevel, sortBy]);
-  const breeders = filteredBreeders;
-  const totalCount = filters.verificationLevel === 'premium_verified' ? filteredBreeders.length : (data?.total || 0);
+  }, [rawBreeders, sortBy, matchPrefs, breedsForMatch, filters.verificationLevel]);
+
+  const totalCount = filters.verificationLevel === 'premium_verified' ? breeders.length : (data?.total || 0);
   const totalPages = data?.totalPages || 1;
   const breederFilters = data?.filters;
   const stats = data?.stats;
@@ -877,12 +924,19 @@ const BreederDirectoryPage: React.FC = () => {
               <Text style={{ marginRight: '8px' }}>Sort by:</Text>
               <Select
                 value={sortBy}
-                onChange={setSortBy}
+                onChange={(val) => {
+                  if (val === 'bestMatch' && !matchPrefs) {
+                    // Still allow selecting - it will load prefs
+                  }
+                  setSortBy(val);
+                }}
                 style={{ width: '160px' }}
               >
                 {sortOptions.map(option => (
                   <Option key={option.value} value={option.value}>
-                    {option.label}
+                    {option.value === 'bestMatch' && !matchPrefs && sortBy !== 'bestMatch'
+                      ? <Tooltip title="Take our quiz first">{option.label}</Tooltip>
+                      : option.label}
                   </Option>
                 ))}
               </Select>

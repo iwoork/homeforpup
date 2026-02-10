@@ -5,6 +5,8 @@ import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag
 import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined, CrownOutlined } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { message } from 'antd';
 import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
@@ -12,6 +14,7 @@ import ContactBreederModal from '@/components/ContactBreederModal';
 import PuppySearchWizard from '@/components/PuppySearchWizard';
 import { BreedSelector } from '@/components';
 import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
+import { calculateBreedScore, MatchPreferences, Breed } from '@homeforpup/shared-dogs';
 import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
 
@@ -19,6 +22,11 @@ const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
 const PuppiesPage: React.FC = () => {
+  const router = useRouter();
+  const [matchingLoading, setMatchingLoading] = useState(false);
+  const [sortBy, setSortBy] = useState('newest');
+  const [matchPrefs, setMatchPrefs] = useState<MatchPreferences | null>(null);
+  const [breedsForMatch, setBreedsForMatch] = useState<Breed[]>([]);
   const [filters, setFilters] = useState({
     country: 'Canada', // Default to Canada
     state: [] as string[],
@@ -92,6 +100,40 @@ const PuppiesPage: React.FC = () => {
   useEffect(() => {
     setOptimisticFavorites({});
   }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verificationLevel]);
+
+  // Load preferences and breeds for Best Match sorting
+  useEffect(() => {
+    if (sortBy !== 'bestMatch') return;
+    const load = async () => {
+      try {
+        const [prefsRes, breedsRes] = await Promise.all([
+          fetch('/api/matching/preferences'),
+          fetch('/api/breeds?limit=500'),
+        ]);
+        if (prefsRes.ok) {
+          const { matchPreferences } = await prefsRes.json();
+          if (matchPreferences) setMatchPrefs(matchPreferences);
+        }
+        if (breedsRes.ok) {
+          const bData = await breedsRes.json();
+          setBreedsForMatch(bData.breeds || []);
+        }
+      } catch { /* ignore */ }
+    };
+    load();
+  }, [sortBy]);
+
+  // Sort puppies client-side when Best Match is selected
+  const sortedPuppies = React.useMemo(() => {
+    if (sortBy !== 'bestMatch' || !matchPrefs || breedsForMatch.length === 0) return puppies;
+    return [...puppies].sort((a, b) => {
+      const breedA = breedsForMatch.find((br: Breed) => br.name.toLowerCase() === a.breed.toLowerCase());
+      const breedB = breedsForMatch.find((br: Breed) => br.name.toLowerCase() === b.breed.toLowerCase());
+      const scoreA = breedA ? calculateBreedScore(breedA, matchPrefs).total : 0;
+      const scoreB = breedB ? calculateBreedScore(breedB, matchPrefs).total : 0;
+      return scoreB - scoreA;
+    });
+  }, [puppies, sortBy, matchPrefs, breedsForMatch]);
 
   const resetFilters = () => {
     setFilters({
@@ -174,17 +216,57 @@ const PuppiesPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearchWizardComplete = (criteria: any) => {
-    setFilters({
-      country: criteria.country || 'Canada',
-      state: criteria.state || [],
-      breed: criteria.breeds?.[0] || null,
-      gender: criteria.gender || null,
-      shipping: criteria.shipping || false,
-      verificationLevel: criteria.verifiedOnly ? 'verified' : 'all',
-    });
-    setCurrentPage(1);
-    setShowSearchWizard(false);
+  const handleSearchWizardComplete = async (criteria: any) => {
+    setMatchingLoading(true);
+    try {
+      const preferences = {
+        activityLevel: criteria.activityLevel,
+        livingSpace: criteria.livingSpace,
+        familySize: criteria.familySize,
+        childrenAges: criteria.childrenAges || [],
+        experienceLevel: criteria.experienceLevel,
+        size: criteria.size || [],
+      };
+
+      // Save preferences if authenticated
+      if (isAuthenticated) {
+        fetch('/api/matching/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preferences),
+        }).catch(() => {});
+      }
+
+      // Get recommendations
+      const res = await fetch('/api/matching/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preferences),
+      });
+
+      if (!res.ok) throw new Error('Failed to get recommendations');
+
+      const results = await res.json();
+      sessionStorage.setItem('matchResults', JSON.stringify(results));
+      sessionStorage.setItem('matchPreferences', JSON.stringify(preferences));
+      setShowSearchWizard(false);
+      router.push('/recommendations');
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      message.error('Failed to generate recommendations. Applying filters instead.');
+      // Fallback: apply criteria as filters
+      setFilters({
+        country: criteria.country || 'Canada',
+        state: criteria.state || [],
+        breed: criteria.breeds?.[0] || null,
+        gender: criteria.gender || null,
+        shipping: criteria.shipping || false,
+        verificationLevel: criteria.verifiedOnly ? 'verified' : 'all',
+      });
+      setCurrentPage(1);
+      setShowSearchWizard(false);
+      setMatchingLoading(false);
+    }
   };
 
   // Check if any filters are active
@@ -388,6 +470,19 @@ const PuppiesPage: React.FC = () => {
   }
 
   if (showSearchWizard) {
+    if (matchingLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '24px' }}>
+            <Title level={3} style={{ color: '#08979C' }}>Finding Your Perfect Match...</Title>
+            <Text type="secondary" style={{ fontSize: '16px' }}>
+              Analyzing breed compatibility with your lifestyle preferences
+            </Text>
+          </div>
+        </div>
+      );
+    }
     return (
       <PuppySearchWizard
         onComplete={handleSearchWizardComplete}
@@ -601,13 +696,29 @@ const PuppiesPage: React.FC = () => {
                 <Text>
                   Showing {puppies.length} of {totalCount} puppies
                 </Text>
-                <Text type="secondary">
-                  Page {currentPage} of {totalPages}
-                </Text>
+                <Space>
+                  <Text type="secondary" style={{ marginRight: '4px' }}>Sort:</Text>
+                  <Select
+                    value={sortBy}
+                    onChange={(val) => setSortBy(val)}
+                    style={{ width: '140px' }}
+                    size="small"
+                  >
+                    <Select.Option value="newest">Newest</Select.Option>
+                    <Select.Option value="bestMatch">
+                      {!matchPrefs && sortBy !== 'bestMatch'
+                        ? <Tooltip title="Take our quiz first">Best Match</Tooltip>
+                        : 'Best Match'}
+                    </Select.Option>
+                  </Select>
+                  <Text type="secondary">
+                    Page {currentPage} of {totalPages}
+                  </Text>
+                </Space>
               </div>
 
               <Row gutter={[16, 16]}>
-                {puppies.map((puppy) => (
+                {sortedPuppies.map((puppy) => (
                   <Col xs={24} sm={12} lg={8} key={puppy.id}>
                     <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                       {renderPuppyCard(puppy)}
