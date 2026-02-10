@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Statistic, Tooltip, Badge, Divider } from 'antd';
-import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined, CrownOutlined } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -33,7 +33,7 @@ const PuppiesPage: React.FC = () => {
     breed: null as string | null,
     gender: null as string | null,
     shipping: false,
-    verified: false,
+    verificationLevel: 'all' as 'all' | 'verified' | 'premium_verified',
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,7 +64,7 @@ const PuppiesPage: React.FC = () => {
     breed: filters.breed || undefined,
     gender: filters.gender || undefined,
     shipping: filters.shipping,
-    verified: filters.verified,
+    verified: filters.verificationLevel !== 'all',
     page: currentPage,
     limit: pageSize,
   });
@@ -99,7 +99,7 @@ const PuppiesPage: React.FC = () => {
   // Clear optimistic updates when page changes or filters change
   useEffect(() => {
     setOptimisticFavorites({});
-  }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verified]);
+  }, [currentPage, filters.country, filters.state, filters.breed, filters.gender, filters.shipping, filters.verificationLevel]);
 
   // Load preferences and breeds for Best Match sorting
   useEffect(() => {
@@ -142,7 +142,7 @@ const PuppiesPage: React.FC = () => {
       breed: null,
       gender: null,
       shipping: false,
-      verified: false,
+      verificationLevel: 'all',
     });
     setCurrentPage(1);
   };
@@ -253,18 +253,29 @@ const PuppiesPage: React.FC = () => {
       router.push('/recommendations');
     } catch (error) {
       console.error('Error getting recommendations:', error);
-      message.error('Failed to generate recommendations. Please try again.');
+      message.error('Failed to generate recommendations. Applying filters instead.');
+      // Fallback: apply criteria as filters
+      setFilters({
+        country: criteria.country || 'Canada',
+        state: criteria.state || [],
+        breed: criteria.breeds?.[0] || null,
+        gender: criteria.gender || null,
+        shipping: criteria.shipping || false,
+        verificationLevel: criteria.verifiedOnly ? 'verified' : 'all',
+      });
+      setCurrentPage(1);
+      setShowSearchWizard(false);
       setMatchingLoading(false);
     }
   };
 
   // Check if any filters are active
-  const hasActiveFilters = filters.country !== 'Canada' || 
-                          filters.state.length > 0 || 
-                          filters.breed !== null || 
-                          filters.gender !== null || 
-                          filters.shipping || 
-                          filters.verified;
+  const hasActiveFilters = filters.country !== 'Canada' ||
+                          filters.state.length > 0 ||
+                          filters.breed !== null ||
+                          filters.gender !== null ||
+                          filters.shipping ||
+                          filters.verificationLevel !== 'all';
 
   // Render puppy card
   const renderPuppyCard = (puppy: PuppyWithBreeder) => (
@@ -539,8 +550,8 @@ const PuppiesPage: React.FC = () => {
                 <FilterOutlined />
                 Filters
                 {hasActiveFilters && (
-                  <Badge count={Object.values(filters).filter(v => 
-                    Array.isArray(v) ? v.length > 0 : v !== null && v !== false && v !== 'Canada'
+                  <Badge count={Object.values(filters).filter(v =>
+                    Array.isArray(v) ? v.length > 0 : v !== null && v !== false && v !== 'Canada' && v !== 'all'
                   ).length} />
                 )}
               </Space>
@@ -619,6 +630,27 @@ const PuppiesPage: React.FC = () => {
               </div>
               
 
+              {/* Verification Level */}
+              <div>
+                <Text strong>Verification Level</Text>
+                <Select
+                  value={filters.verificationLevel}
+                  onChange={(value: 'all' | 'verified' | 'premium_verified') => {
+                    setFilters(prev => ({ ...prev, verificationLevel: value }));
+                    setCurrentPage(1);
+                  }}
+                  style={{ width: '100%', marginTop: '8px' }}
+                >
+                  <Option value="all">All Breeders</Option>
+                  <Option value="verified">
+                    <Space><CheckCircleOutlined style={{ color: '#52c41a' }} />Verified</Space>
+                  </Option>
+                  <Option value="premium_verified">
+                    <Space><CrownOutlined style={{ color: '#faad14' }} />Premium Verified</Space>
+                  </Option>
+                </Select>
+              </div>
+
               {/* Checkboxes */}
               <div>
                 <Space direction="vertical">
@@ -631,17 +663,8 @@ const PuppiesPage: React.FC = () => {
                   >
                     Shipping Available
                   </Checkbox>
-                  <Checkbox
-                    checked={filters.verified}
-                    onChange={(e) => {
-                      setFilters(prev => ({ ...prev, verified: e.target.checked }));
-                      setCurrentPage(1);
-                    }}
-                  >
-                    Verified Breeders Only
-                  </Checkbox>
                 </Space>
-                </div>
+              </div>
             </Space>
           </Card>
         </Col>
