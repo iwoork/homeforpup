@@ -14,6 +14,7 @@ import { configureAmplify } from './src/services/authService';
 import { AuthProvider } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import pushNotificationService from './src/services/pushNotificationService';
 
 // Configure Amplify
 console.log('App.tsx: Starting app initialization');
@@ -27,6 +28,8 @@ try {
 function App(): React.JSX.Element {
   useEffect(() => {
     console.log('App.tsx: App component mounted');
+    // Initialize push notification listeners early
+    pushNotificationService.initialize();
   }, []);
 
   console.log('App.tsx: Rendering app');

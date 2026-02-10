@@ -9,18 +9,23 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
+import pushNotificationService from '../../services/pushNotificationService';
 
 const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation();
   const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pushPermissionGranted, setPushPermissionGranted] = useState(false);
+  const [deviceTokenRegistered, setDeviceTokenRegistered] = useState(false);
+  const [requestingPermission, setRequestingPermission] = useState(false);
 
   const [preferences, setPreferences] = useState({
     emailNotifications: user?.preferences?.notifications?.email ?? true,
@@ -28,7 +33,7 @@ const NotificationsScreen: React.FC = () => {
     pushNotifications: user?.preferences?.notifications?.push ?? true,
   });
 
-  // Fetch latest preferences from API
+  // Fetch latest preferences and check push permission status
   useEffect(() => {
     const fetchPreferences = async () => {
       if (!user?.userId) return;
@@ -51,8 +56,47 @@ const NotificationsScreen: React.FC = () => {
       }
     };
 
+    const checkPushStatus = async () => {
+      if (Platform.OS !== 'ios') return;
+      const permissions = await pushNotificationService.checkPermissions();
+      setPushPermissionGranted(!!permissions.alert);
+
+      const storedToken = await pushNotificationService.getStoredToken();
+      setDeviceTokenRegistered(!!storedToken);
+    };
+
     fetchPreferences();
+    checkPushStatus();
   }, [user?.userId]);
+
+  const handleRequestPushPermission = async () => {
+    setRequestingPermission(true);
+    try {
+      const permissions = await pushNotificationService.requestPermissions();
+      setPushPermissionGranted(!!permissions.alert);
+
+      if (permissions.alert) {
+        // Wait a moment for the token to be received
+        setTimeout(async () => {
+          const registered = await pushNotificationService.registerWithBackend();
+          setDeviceTokenRegistered(registered);
+          if (registered) {
+            Alert.alert('Success', 'Push notifications are now enabled for this device.');
+          }
+          setRequestingPermission(false);
+        }, 1500);
+      } else {
+        Alert.alert(
+          'Permissions Denied',
+          'Push notifications were not enabled. You can enable them in your device Settings.',
+        );
+        setRequestingPermission(false);
+      }
+    } catch (error) {
+      console.error('Error requesting push permission:', error);
+      setRequestingPermission(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user?.userId) {
@@ -64,11 +108,15 @@ const NotificationsScreen: React.FC = () => {
     try {
       const updateData = {
         preferences: {
-          ...user.preferences,
           notifications: {
             email: preferences.emailNotifications,
             sms: preferences.smsNotifications,
             push: preferences.pushNotifications,
+          },
+          privacy: user.preferences?.privacy ?? {
+            showEmail: true,
+            showPhone: false,
+            showLocation: true,
           },
         },
       };
@@ -81,6 +129,12 @@ const NotificationsScreen: React.FC = () => {
 
       if (updateUser && response.data?.user) {
         updateUser(response.data.user);
+      }
+
+      // If push is enabled and device isn't registered yet, register
+      if (preferences.pushNotifications && pushPermissionGranted && !deviceTokenRegistered) {
+        await pushNotificationService.registerWithBackend();
+        setDeviceTokenRegistered(true);
       }
 
       Alert.alert('Success', 'Notification preferences updated successfully!', [
@@ -149,24 +203,68 @@ const NotificationsScreen: React.FC = () => {
           </Text>
         </View>
 
+        {/* Push Notification Device Registration */}
+        {Platform.OS === 'ios' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Device Registration</Text>
+            <View style={styles.deviceCard}>
+              <View style={styles.deviceCardHeader}>
+                <Icon
+                  name={pushPermissionGranted ? 'checkmark-circle' : 'alert-circle'}
+                  size={28}
+                  color={pushPermissionGranted ? theme.colors.success : theme.colors.warning}
+                />
+                <View style={styles.deviceCardText}>
+                  <Text style={styles.deviceCardTitle}>
+                    {pushPermissionGranted ? 'Push Notifications Enabled' : 'Push Notifications Not Enabled'}
+                  </Text>
+                  <Text style={styles.deviceCardDescription}>
+                    {pushPermissionGranted
+                      ? deviceTokenRegistered
+                        ? 'This device is registered to receive push notifications.'
+                        : 'Permissions granted. Registering device...'
+                      : 'Enable push notifications to receive real-time updates.'}
+                  </Text>
+                </View>
+              </View>
+              {!pushPermissionGranted && (
+                <TouchableOpacity
+                  style={styles.enableButton}
+                  onPress={handleRequestPushPermission}
+                  disabled={requestingPermission}
+                >
+                  {requestingPermission ? (
+                    <ActivityIndicator color="#ffffff" size="small" />
+                  ) : (
+                    <>
+                      <Icon name="notifications" size={18} color="#ffffff" />
+                      <Text style={styles.enableButtonText}>Enable Push Notifications</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Notification Preferences */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Notification Channels</Text>
-          
+
           {renderSwitch(
             'Email Notifications',
             'emailNotifications',
             'Receive notifications via email',
             'mail'
           )}
-          
+
           {renderSwitch(
             'SMS Notifications',
             'smsNotifications',
             'Receive notifications via text message',
             'chatbox'
           )}
-          
+
           {renderSwitch(
             'Push Notifications',
             'pushNotifications',
@@ -313,6 +411,49 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 18,
   },
+  deviceCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: theme.spacing.lg,
+  },
+  deviceCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+  },
+  deviceCardText: {
+    flex: 1,
+  },
+  deviceCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  deviceCardDescription: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    lineHeight: 18,
+  },
+  enableButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.sm + 2,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  enableButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   infoList: {
     paddingHorizontal: theme.spacing.lg,
   },
@@ -368,4 +509,3 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationsScreen;
-

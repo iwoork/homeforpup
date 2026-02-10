@@ -112,6 +112,103 @@ export interface BreedsResponse {
   };
 }
 
+export interface WaitlistEntry {
+  id: string;
+  litterId: string;
+  breederId: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone?: string;
+  position: number;
+  status: 'active' | 'matched' | 'passed' | 'cancelled';
+  depositAmount?: number;
+  depositPaid: boolean;
+  genderPreference?: string;
+  colorPreference?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface WaitlistResponse {
+  entries: WaitlistEntry[];
+}
+
+export interface Contract {
+  id: string;
+  breederId: string;
+  buyerName: string;
+  buyerEmail: string;
+  litterId?: string;
+  puppyId?: string;
+  status: 'draft' | 'sent' | 'signed' | 'completed' | 'cancelled';
+  contractType: 'puppy_sale' | 'co_ownership' | 'breeding_rights';
+  totalAmount?: number;
+  depositAmount?: number;
+  depositPaid: boolean;
+  terms?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractsResponse {
+  contracts: Contract[];
+}
+
+export type ActivityType =
+  | 'kennel_created'
+  | 'kennel_updated'
+  | 'dog_added'
+  | 'dog_updated'
+  | 'litter_created'
+  | 'litter_updated'
+  | 'puppy_listed'
+  | 'puppy_updated'
+  | 'puppy_removed'
+  | 'message_received'
+  | 'message_sent'
+  | 'inquiry_received'
+  | 'inquiry_responded'
+  | 'health_record_updated'
+  | 'photo_uploaded'
+  | 'profile_updated'
+  | 'account_created'
+  | 'login'
+  | string;
+
+export type ActivityCategory =
+  | 'engagement'
+  | 'communication'
+  | 'profile'
+  | 'content'
+  | 'business'
+  | 'system'
+  | 'security'
+  | 'marketing';
+
+export interface Activity {
+  id: string;
+  userId: string;
+  type: ActivityType;
+  title: string;
+  description: string;
+  metadata?: Record<string, any>;
+  timestamp: string;
+  read: boolean;
+  priority: 'low' | 'medium' | 'high';
+  category: ActivityCategory;
+}
+
+export interface ActivitiesResponse {
+  activities: Activity[];
+  total: number;
+  hasMore: boolean;
+  stats?: {
+    total: number;
+    unread: number;
+  };
+}
+
 export interface LittersResponse {
   litters: Litter[];
   total: number;
@@ -614,19 +711,18 @@ class ApiService {
   }
 
   // Activities API (for recent activity)
-  // Note: This endpoint may not be deployed yet. See API_ENDPOINTS.md
   async getActivities(
     params: {
-      page?: number;
       limit?: number;
+      offset?: number;
     } = {},
-  ): Promise<ApiResponse<any>> {
+  ): Promise<ApiResponse<ActivitiesResponse>> {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.offset) queryParams.append('offset', params.offset.toString());
 
     const endpoint = `/activities?${queryParams.toString()}`;
-    return this.makeRequest<any>(endpoint);
+    return this.makeRequest<ActivitiesResponse>(endpoint);
   }
 
   // Litters API
@@ -827,6 +923,114 @@ class ApiService {
     return this.makeRequest<void>(`/veterinarians/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // Waitlist API
+  async getWaitlist(litterId: string): Promise<ApiResponse<WaitlistResponse>> {
+    return this.makeRequest<WaitlistResponse>(`/litters/${litterId}/waitlist`);
+  }
+
+  async addWaitlistEntry(
+    litterId: string,
+    data: {
+      buyerName: string;
+      buyerEmail: string;
+      buyerPhone?: string;
+      genderPreference?: string;
+      colorPreference?: string;
+      notes?: string;
+      depositAmount?: number;
+      depositPaid?: boolean;
+    },
+  ): Promise<ApiResponse<{ entry: WaitlistEntry }>> {
+    return this.makeRequest<{ entry: WaitlistEntry }>(`/litters/${litterId}/waitlist`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateWaitlistEntry(
+    litterId: string,
+    entryId: string,
+    data: Partial<Omit<WaitlistEntry, 'id' | 'litterId' | 'breederId' | 'createdAt'>>,
+  ): Promise<ApiResponse<{ entry: WaitlistEntry }>> {
+    return this.makeRequest<{ entry: WaitlistEntry }>(`/litters/${litterId}/waitlist/${entryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteWaitlistEntry(
+    litterId: string,
+    entryId: string,
+  ): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(`/litters/${litterId}/waitlist/${entryId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Contracts API
+  async getContracts(breederId: string): Promise<ApiResponse<ContractsResponse>> {
+    return this.makeRequest<ContractsResponse>(`/contracts?breederId=${encodeURIComponent(breederId)}`);
+  }
+
+  async createContract(
+    data: {
+      buyerName: string;
+      buyerEmail: string;
+      litterId?: string;
+      puppyId?: string;
+      status?: string;
+      contractType?: string;
+      totalAmount?: number;
+      depositAmount?: number;
+      depositPaid?: boolean;
+      terms?: string;
+    },
+  ): Promise<ApiResponse<{ contract: Contract }>> {
+    return this.makeRequest<{ contract: Contract }>('/contracts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateContract(
+    id: string,
+    data: Partial<Omit<Contract, 'id' | 'breederId' | 'createdAt'>>,
+  ): Promise<ApiResponse<{ contract: Contract }>> {
+    return this.makeRequest<{ contract: Contract }>(`/contracts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getContract(id: string): Promise<ApiResponse<{ contract: Contract }>> {
+    return this.makeRequest<{ contract: Contract }>(`/contracts/${id}`);
+  }
+
+  // Push Notification Device Token methods
+  async registerDeviceToken(
+    deviceToken: string,
+    platform: string = 'ios',
+    deviceName?: string,
+  ): Promise<ApiResponse<{ registration: any }>> {
+    return this.makeRequest<{ registration: any }>('/notifications/register', {
+      method: 'POST',
+      body: JSON.stringify({ deviceToken, platform, deviceName }),
+    });
+  }
+
+  async unregisterDeviceToken(
+    deviceToken: string,
+  ): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(
+      `/notifications/register?deviceToken=${encodeURIComponent(deviceToken)}`,
+      { method: 'DELETE' },
+    );
+  }
+
+  async getDeviceTokens(): Promise<ApiResponse<{ tokens: any[] }>> {
+    return this.makeRequest<{ tokens: any[] }>('/notifications/register');
   }
 }
 

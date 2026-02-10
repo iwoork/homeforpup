@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,27 +9,14 @@ import {
   FlatList,
   TextInput,
   Modal,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
 import { Litter } from '../../types';
-
-interface WaitlistEntry {
-  id: string;
-  buyerName: string;
-  buyerEmail: string;
-  buyerPhone?: string;
-  position: number;
-  preferredGender?: 'male' | 'female' | 'no_preference';
-  preferredColor?: string;
-  depositPaid: boolean;
-  depositAmount?: number;
-  notes?: string;
-  contactedDate: string;
-  addedDate: string;
-  status: 'active' | 'matched' | 'passed' | 'cancelled';
-}
+import { apiService, WaitlistEntry } from '../../services/apiService';
 
 interface RouteParams {
   litter: Litter;
@@ -40,50 +27,10 @@ const ManageWaitlistScreen: React.FC = () => {
   const navigation = useNavigation();
   const { litter } = route.params as RouteParams;
 
-  // Mock waitlist data - in real app, this would come from API
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([
-    {
-      id: '1',
-      buyerName: 'Sarah Johnson',
-      buyerEmail: 'sarah.j@email.com',
-      buyerPhone: '+1 (555) 123-4567',
-      position: 1,
-      preferredGender: 'female',
-      preferredColor: 'Golden',
-      depositPaid: true,
-      depositAmount: 500,
-      notes: 'Prefers a calm temperament. Has a large yard.',
-      contactedDate: '2024-01-15T10:00:00Z',
-      addedDate: '2024-01-10T14:30:00Z',
-      status: 'active',
-    },
-    {
-      id: '2',
-      buyerName: 'Mike Chen',
-      buyerEmail: 'mike.chen@email.com',
-      buyerPhone: '+1 (555) 234-5678',
-      position: 2,
-      preferredGender: 'male',
-      depositPaid: true,
-      depositAmount: 500,
-      notes: 'First-time dog owner. Looking for a family companion.',
-      contactedDate: '2024-01-18T09:15:00Z',
-      addedDate: '2024-01-12T11:20:00Z',
-      status: 'active',
-    },
-    {
-      id: '3',
-      buyerName: 'Emily Rodriguez',
-      buyerEmail: 'emily.r@email.com',
-      position: 3,
-      preferredGender: 'no_preference',
-      depositPaid: false,
-      notes: 'Interested in show quality puppy.',
-      contactedDate: '2024-01-20T16:20:00Z',
-      addedDate: '2024-01-18T13:45:00Z',
-      status: 'active',
-    },
-  ]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEntry, setNewEntry] = useState({
@@ -95,7 +42,37 @@ const ManageWaitlistScreen: React.FC = () => {
     notes: '',
   });
 
-  // Set up navigation header with add button and subtitle
+  const fetchWaitlist = useCallback(async () => {
+    try {
+      setError(null);
+      const response = await apiService.getWaitlist(litter.id);
+      if (response.success && response.data) {
+        setWaitlist(response.data.entries);
+      } else {
+        setError(response.error || 'Failed to load waitlist');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    }
+  }, [litter.id]);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    await fetchWaitlist();
+    setLoading(false);
+  }, [fetchWaitlist]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchWaitlist();
+    setRefreshing(false);
+  }, [fetchWaitlist]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Set up navigation header with add button
   useEffect(() => {
     const AddButton = () => (
       <TouchableOpacity
@@ -142,79 +119,75 @@ const ManageWaitlistScreen: React.FC = () => {
     }
   };
 
-  const handleAddToWaitlist = () => {
+  const handleAddToWaitlist = async () => {
     if (!newEntry.buyerName.trim() || !newEntry.buyerEmail.trim()) {
       Alert.alert('Error', 'Please enter buyer name and email');
       return;
     }
 
-    const entry: WaitlistEntry = {
-      id: Date.now().toString(),
+    const response = await apiService.addWaitlistEntry(litter.id, {
       buyerName: newEntry.buyerName,
       buyerEmail: newEntry.buyerEmail,
       buyerPhone: newEntry.buyerPhone || undefined,
-      position: waitlist.length + 1,
-      preferredGender: newEntry.preferredGender,
-      preferredColor: newEntry.preferredColor || undefined,
-      depositPaid: false,
+      genderPreference:
+        newEntry.preferredGender === 'no_preference'
+          ? undefined
+          : newEntry.preferredGender,
+      colorPreference: newEntry.preferredColor || undefined,
       notes: newEntry.notes || undefined,
-      contactedDate: new Date().toISOString(),
-      addedDate: new Date().toISOString(),
-      status: 'active',
-    };
-
-    setWaitlist([...waitlist, entry]);
-    setShowAddModal(false);
-    setNewEntry({
-      buyerName: '',
-      buyerEmail: '',
-      buyerPhone: '',
-      preferredGender: 'no_preference',
-      preferredColor: '',
-      notes: '',
     });
 
-    Alert.alert('Success', 'Buyer added to waitlist');
+    if (response.success) {
+      setShowAddModal(false);
+      setNewEntry({
+        buyerName: '',
+        buyerEmail: '',
+        buyerPhone: '',
+        preferredGender: 'no_preference',
+        preferredColor: '',
+        notes: '',
+      });
+      Alert.alert('Success', 'Buyer added to waitlist');
+      fetchWaitlist();
+    } else {
+      Alert.alert('Error', response.error || 'Failed to add entry');
+    }
   };
 
-  const handleMoveUp = (entry: WaitlistEntry) => {
+  const handleMoveUp = async (entry: WaitlistEntry) => {
     if (entry.position === 1) return;
 
-    const newWaitlist = [...waitlist];
-    const currentIndex = newWaitlist.findIndex(e => e.id === entry.id);
-    const previousIndex = newWaitlist.findIndex(
-      e => e.position === entry.position - 1,
-    );
+    const swapEntry = waitlist.find(e => e.position === entry.position - 1);
+    if (!swapEntry) return;
 
-    if (currentIndex !== -1 && previousIndex !== -1) {
-      // Swap positions
-      newWaitlist[currentIndex].position -= 1;
-      newWaitlist[previousIndex].position += 1;
+    await Promise.all([
+      apiService.updateWaitlistEntry(litter.id, entry.id, {
+        position: entry.position - 1,
+      }),
+      apiService.updateWaitlistEntry(litter.id, swapEntry.id, {
+        position: entry.position,
+      }),
+    ]);
 
-      // Sort by position
-      newWaitlist.sort((a, b) => a.position - b.position);
-      setWaitlist(newWaitlist);
-    }
+    fetchWaitlist();
   };
 
-  const handleMoveDown = (entry: WaitlistEntry) => {
+  const handleMoveDown = async (entry: WaitlistEntry) => {
     if (entry.position === waitlist.length) return;
 
-    const newWaitlist = [...waitlist];
-    const currentIndex = newWaitlist.findIndex(e => e.id === entry.id);
-    const nextIndex = newWaitlist.findIndex(
-      e => e.position === entry.position + 1,
-    );
+    const swapEntry = waitlist.find(e => e.position === entry.position + 1);
+    if (!swapEntry) return;
 
-    if (currentIndex !== -1 && nextIndex !== -1) {
-      // Swap positions
-      newWaitlist[currentIndex].position += 1;
-      newWaitlist[nextIndex].position -= 1;
+    await Promise.all([
+      apiService.updateWaitlistEntry(litter.id, entry.id, {
+        position: entry.position + 1,
+      }),
+      apiService.updateWaitlistEntry(litter.id, swapEntry.id, {
+        position: entry.position,
+      }),
+    ]);
 
-      // Sort by position
-      newWaitlist.sort((a, b) => a.position - b.position);
-      setWaitlist(newWaitlist);
-    }
+    fetchWaitlist();
   };
 
   const handleMarkDeposit = (entry: WaitlistEntry) => {
@@ -222,14 +195,18 @@ const ManageWaitlistScreen: React.FC = () => {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Mark as Paid',
-        onPress: () => {
-          const newWaitlist = waitlist.map(e =>
-            e.id === entry.id
-              ? { ...e, depositPaid: true, depositAmount: 500 }
-              : e,
+        onPress: async () => {
+          const response = await apiService.updateWaitlistEntry(
+            litter.id,
+            entry.id,
+            { depositPaid: true, depositAmount: 500 },
           );
-          setWaitlist(newWaitlist);
-          Alert.alert('Success', 'Deposit marked as paid');
+          if (response.success) {
+            Alert.alert('Success', 'Deposit marked as paid');
+            fetchWaitlist();
+          } else {
+            Alert.alert('Error', response.error || 'Failed to update');
+          }
         },
       },
     ]);
@@ -240,12 +217,18 @@ const ManageWaitlistScreen: React.FC = () => {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Match',
-        onPress: () => {
-          const newWaitlist = waitlist.map(e =>
-            e.id === entry.id ? { ...e, status: 'matched' as const } : e,
+        onPress: async () => {
+          const response = await apiService.updateWaitlistEntry(
+            litter.id,
+            entry.id,
+            { status: 'matched' },
           );
-          setWaitlist(newWaitlist);
-          Alert.alert('Success', 'Buyer matched with puppy');
+          if (response.success) {
+            Alert.alert('Success', 'Buyer matched with puppy');
+            fetchWaitlist();
+          } else {
+            Alert.alert('Error', response.error || 'Failed to update');
+          }
         },
       },
     ]);
@@ -262,7 +245,6 @@ const ManageWaitlistScreen: React.FC = () => {
         {
           text: 'Send Email',
           onPress: () => {
-            // TODO: Implement email functionality
             console.log('Send email to:', entry.buyerEmail);
           },
         },
@@ -270,7 +252,6 @@ const ManageWaitlistScreen: React.FC = () => {
           ? {
               text: 'Call',
               onPress: () => {
-                // TODO: Implement call functionality
                 console.log('Call:', entry.buyerPhone);
               },
             }
@@ -288,12 +269,17 @@ const ManageWaitlistScreen: React.FC = () => {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => {
-            const newWaitlist = waitlist
-              .filter(e => e.id !== entry.id)
-              .map((e, index) => ({ ...e, position: index + 1 }));
-            setWaitlist(newWaitlist);
-            Alert.alert('Success', 'Buyer removed from waitlist');
+          onPress: async () => {
+            const response = await apiService.deleteWaitlistEntry(
+              litter.id,
+              entry.id,
+            );
+            if (response.success) {
+              Alert.alert('Success', 'Buyer removed from waitlist');
+              fetchWaitlist();
+            } else {
+              Alert.alert('Error', response.error || 'Failed to remove');
+            }
           },
         },
       ],
@@ -337,26 +323,28 @@ const ManageWaitlistScreen: React.FC = () => {
             <Text style={styles.detailText}>{item.buyerPhone}</Text>
           </View>
         )}
-        {item.preferredGender && item.preferredGender !== 'no_preference' && (
+        {item.genderPreference && (
           <View style={styles.detailRow}>
             <Icon
-              name={item.preferredGender === 'male' ? 'male' : 'female'}
+              name={item.genderPreference === 'male' ? 'male' : 'female'}
               size={16}
-              color={item.preferredGender === 'male' ? '#3b82f6' : '#ec4899'}
+              color={item.genderPreference === 'male' ? '#3b82f6' : '#ec4899'}
             />
             <Text style={styles.detailText}>
-              Prefers {item.preferredGender}
+              Prefers {item.genderPreference}
             </Text>
           </View>
         )}
-        {item.preferredColor && (
+        {item.colorPreference && (
           <View style={styles.detailRow}>
             <Icon
               name="color-palette"
               size={16}
               color={theme.colors.textSecondary}
             />
-            <Text style={styles.detailText}>Color: {item.preferredColor}</Text>
+            <Text style={styles.detailText}>
+              Color: {item.colorPreference}
+            </Text>
           </View>
         )}
         {item.notes && (
@@ -392,7 +380,7 @@ const ManageWaitlistScreen: React.FC = () => {
           </Text>
         </View>
         <Text style={styles.dateText}>
-          Added {new Date(item.addedDate).toLocaleDateString()}
+          Added {new Date(item.createdAt).toLocaleDateString()}
         </Text>
       </View>
 
@@ -469,9 +457,34 @@ const ManageWaitlistScreen: React.FC = () => {
     </View>
   );
 
+  const renderErrorState = () => (
+    <View style={styles.emptyState}>
+      <Icon
+        name="alert-circle-outline"
+        size={64}
+        color={theme.colors.textTertiary}
+      />
+      <Text style={styles.emptyTitle}>Something went wrong</Text>
+      <Text style={styles.emptySubtitle}>{error}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+        <Icon name="refresh" size={20} color="#ffffff" />
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const activeWaitlist = waitlist.filter(e => e.status === 'active');
   const matchedCount = waitlist.filter(e => e.status === 'matched').length;
   const depositCount = waitlist.filter(e => e.depositPaid).length;
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Loading waitlist...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -495,7 +508,9 @@ const ManageWaitlistScreen: React.FC = () => {
 
       {/* Waitlist */}
       <View style={styles.listContainer}>
-        {waitlist.length === 0 ? (
+        {error ? (
+          renderErrorState()
+        ) : waitlist.length === 0 ? (
           renderEmptyState()
         ) : (
           <FlatList
@@ -504,6 +519,14 @@ const ManageWaitlistScreen: React.FC = () => {
             keyExtractor={item => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[theme.colors.primary]}
+                tintColor={theme.colors.primary}
+              />
+            }
           />
         )}
       </View>
@@ -657,6 +680,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
+  loadingText: {
+    marginTop: theme.spacing.md,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
   statsContainer: {
     paddingHorizontal: theme.spacing.lg,
@@ -817,6 +851,21 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: theme.spacing.lg,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
