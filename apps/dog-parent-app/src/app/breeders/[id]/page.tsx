@@ -10,7 +10,8 @@ import {
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
   HomeOutlined, TrophyOutlined, HeartOutlined, HeartFilled, TeamOutlined, StarOutlined,
   LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined,
-  CommentOutlined, SendOutlined, SafetyCertificateOutlined
+  CommentOutlined, SendOutlined, SafetyCertificateOutlined,
+  CheckCircleOutlined, CrownOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -130,6 +131,60 @@ const getTrustScoreColor = (score: number): string => {
   if (score >= 60) return '#1890ff'; // blue
   if (score >= 40) return '#fa8c16'; // orange
   return '#ff4d4f'; // red
+};
+
+// Badge level types
+type BadgeLevel = 'unverified' | 'verified' | 'premium_verified';
+
+const getBadgeLevel = (verified: boolean, trustScore: number | null): BadgeLevel => {
+  if (!verified) return 'unverified';
+  if (trustScore !== null && trustScore >= 80) return 'premium_verified';
+  return 'verified';
+};
+
+// Verification Badge component with tooltip
+const VerificationBadge: React.FC<{
+  verified: boolean;
+  trustScore: number | null;
+  verificationDate?: string;
+}> = ({ verified, trustScore, verificationDate }) => {
+  const level = getBadgeLevel(verified, trustScore);
+
+  if (level === 'unverified') return null;
+
+  const isPremium = level === 'premium_verified';
+  const badgeColor = isPremium ? 'gold' : 'green';
+  const badgeIcon = isPremium ? <CrownOutlined /> : <CheckCircleOutlined />;
+  const badgeLabel = isPremium ? 'Premium Verified' : 'Verified Breeder';
+
+  const tooltipContent = (
+    <div style={{ maxWidth: '220px' }}>
+      <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{badgeLabel}</div>
+      {verificationDate && (
+        <div style={{ fontSize: '12px', marginBottom: '2px' }}>
+          Verified: {new Date(verificationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+      )}
+      {trustScore !== null && (
+        <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+          Trust Score: {trustScore}/100
+        </div>
+      )}
+      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginTop: '4px' }}>
+        {isPremium
+          ? 'This breeder has been verified by HomeForPup and maintains an exceptional trust score.'
+          : 'This breeder has been verified by HomeForPup.'}
+      </div>
+    </div>
+  );
+
+  return (
+    <Tooltip title={tooltipContent}>
+      <Tag color={badgeColor} icon={badgeIcon} style={{ cursor: 'pointer' }}>
+        {badgeLabel}
+      </Tag>
+    </Tooltip>
+  );
 };
 
 // Trust Score Display component
@@ -1110,6 +1165,13 @@ const BreederProfilePage: React.FC = () => {
     }
   );
 
+  // Fetch trust score at page level for badge display
+  const { data: trustScoreData } = useSWR<TrustScoreData>(
+    breederId ? `/api/breeders/${breederId}/trust-score` : null,
+    trustScoreFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
   const breeder = data?.breeder;
   const { user: authUser, isAuthenticated } = useAuth();
   const isOwnProfile = authUser && breeder && authUser.userId === String(breeder.userId);
@@ -1206,9 +1268,10 @@ const BreederProfilePage: React.FC = () => {
                 </Text>
                 {breeder.verified && (
                   <div style={{ marginTop: '8px' }}>
-                    <Tag color="green" icon={<StarOutlined />}>
-                      Verified Breeder
-                    </Tag>
+                    <VerificationBadge
+                      verified={breeder.verified}
+                      trustScore={trustScoreData?.total ?? null}
+                    />
                   </div>
                 )}
               </div>

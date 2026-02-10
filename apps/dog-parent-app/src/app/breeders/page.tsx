@@ -35,6 +35,25 @@ import { canSeeVerifiedBadges } from '@homeforpup/shared-hooks';
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
+// Client-side trust score estimation using same formula as /api/breeders/[id]/trust-score
+const estimateTrustScore = (breeder: Breeder): number => {
+  const verifiedScore = breeder.verified ? 30 : 0;
+  const ratingScore = breeder.rating > 0 ? Math.round(((breeder.rating - 1) / 4) * 25) : 0;
+  const reviewsScore = Math.round(Math.min(breeder.reviewCount / 10, 1) * 15);
+  const responseScore = Math.round(breeder.responseRate * 15);
+  const experienceScore = Math.round(Math.min(breeder.experience / 10, 1) * 15);
+  return verifiedScore + ratingScore + reviewsScore + responseScore + experienceScore;
+};
+
+// Badge level types
+type BadgeLevel = 'unverified' | 'verified' | 'premium_verified';
+
+const getBadgeLevel = (verified: boolean, trustScore: number): BadgeLevel => {
+  if (!verified) return 'unverified';
+  if (trustScore >= 80) return 'premium_verified';
+  return 'verified';
+};
+
 // Breeder interface matching API response
 interface Breeder {
   id: number;
@@ -289,11 +308,37 @@ const BreederDirectoryPage: React.FC = () => {
               gap: '8px',
               flexWrap: 'wrap'
             }}>
-              {breeder.verified && hasPremiumAccess && (
-                <Tag color="green" icon={<CheckCircleOutlined />}>
-                  Verified
-                </Tag>
-              )}
+              {breeder.verified && hasPremiumAccess && (() => {
+                const trustScore = estimateTrustScore(breeder);
+                const level = getBadgeLevel(breeder.verified, trustScore);
+                const isPremium = level === 'premium_verified';
+                const tooltipContent = (
+                  <div style={{ maxWidth: '200px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                      {isPremium ? 'Premium Verified' : 'Verified Breeder'}
+                    </div>
+                    <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+                      Trust Score: {trustScore}/100
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>
+                      {isPremium
+                        ? 'Verified with an exceptional trust score.'
+                        : 'This breeder has been verified by HomeForPup.'}
+                    </div>
+                  </div>
+                );
+                return (
+                  <Tooltip title={tooltipContent}>
+                    <Tag
+                      color={isPremium ? 'gold' : 'green'}
+                      icon={isPremium ? <CrownOutlined /> : <CheckCircleOutlined />}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {isPremium ? 'Premium Verified' : 'Verified'}
+                    </Tag>
+                  </Tooltip>
+                );
+              })()}
               {breeder.verified && !hasPremiumAccess && (
                 <Tooltip title="Upgrade to Premium to see verified breeders">
                   <Tag color="gold" icon={<CrownOutlined />}>
