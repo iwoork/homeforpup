@@ -75,36 +75,52 @@ const ClientHeader: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Derive userType from the local useAuth hook
+  const userType = user?.userType;
+
   // Generate profile-specific navigation items
   const getProfileNavigationItems = React.useMemo(() => {
     if (!user) return [];
 
-    const baseItems = [
+    if (userType === 'breeder') {
+      return [
+        {
+          key: 'kennels',
+          icon: <HomeOutlined />,
+          label: <Link href="/kennel-management">Manage Kennels</Link>,
+        },
+        {
+          key: 'dogs',
+          icon: <TeamOutlined />,
+          label: <Link href="/dogs">My Dogs</Link>,
+        },
+        {
+          key: 'litters',
+          icon: <ShopOutlined />,
+          label: <Link href="/litters">My Litters</Link>,
+        },
+      ];
+    }
+
+    // dog-parent or default
+    return [
       {
         key: 'browse',
         icon: <HeartOutlined />,
         label: <Link href="/browse">Browse Puppies</Link>,
       },
+      {
+        key: 'breeds',
+        icon: <TeamOutlined />,
+        label: <Link href="/breeds">Dog Breeds</Link>,
+      },
+      {
+        key: 'adoption-guide',
+        icon: <HomeOutlined />,
+        label: <Link href="/adoption-guide">Adoption Guide</Link>,
+      },
     ];
-
-    // Add profile-specific items based on user type
-    if (user.userType === 'dog-parent' || user.userType === 'both') {
-      baseItems.push(
-        {
-          key: 'breeds',
-          icon: <TeamOutlined />,
-          label: <Link href="/breeds">Dog Breeds</Link>,
-        },
-        {
-          key: 'adoption-guide',
-          icon: <HomeOutlined />,
-          label: <Link href="/adoption-guide">Adoption Guide</Link>,
-        }
-      );
-    }
-
-    return baseItems;
-  }, [user]);
+  }, [user, userType]);
 
   // Create menu items as a function to ensure they re-render when state changes
   const getUserMenuItems = React.useMemo(() => {
@@ -124,11 +140,37 @@ const ClientHeader: React.FC = () => {
         icon: <SettingOutlined />,
         label: <Link href={`/users/${user?.userId}/edit`}>Edit Profile</Link>,
       },
-      {
-        key: 'favorites',
-        icon: <HeartOutlined />,
-        label: <Link href="/dashboard/favorites">My Favorites</Link>,
-      },
+    ];
+
+    if (userType === 'breeder') {
+      menuItems.push(
+        {
+          key: 'kennels',
+          icon: <HomeOutlined />,
+          label: <Link href="/kennel-management">Manage Kennels</Link>,
+        },
+        {
+          key: 'dogs',
+          icon: <TeamOutlined />,
+          label: <Link href="/dogs">My Dogs</Link>,
+        },
+        {
+          key: 'litters',
+          icon: <ShopOutlined />,
+          label: <Link href="/litters">My Litters</Link>,
+        },
+      );
+    } else {
+      menuItems.push(
+        {
+          key: 'favorites',
+          icon: <HeartOutlined />,
+          label: <Link href="/dashboard/favorites">My Favorites</Link>,
+        },
+      );
+    }
+
+    menuItems.push(
       {
         type: 'divider' as const,
       },
@@ -138,10 +180,10 @@ const ClientHeader: React.FC = () => {
         label: 'Sign Out',
         onClick: logout,
       }
-    ];
+    );
 
     return menuItems;
-  }, [user?.userId, logout]);
+  }, [user?.userId, userType, logout]);
 
   const userMenuItems = getUserMenuItems;
 

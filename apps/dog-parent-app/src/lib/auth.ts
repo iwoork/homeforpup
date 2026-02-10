@@ -324,12 +324,12 @@ export const authOptions: NextAuthOptions = {
             provider: account.provider,
           });
         }
-        
+
         try {
           // Store account info in token
           token.accessToken = account.access_token;
           token.refreshToken = account.refresh_token;
-          
+
           // Store user info from profile callback (user object)
           // The profile callback returns { id, email, name, ... }
           if (user) {
@@ -339,7 +339,7 @@ export const authOptions: NextAuthOptions = {
             token.userType = user.userType || 'dog-parent';
             token.picture = user.image || token.picture;
           }
-          
+
           // Fallback: if user is not available, try profile (raw from Cognito)
           if (!token.sub && profile) {
             token.sub = profile.sub || token.sub;
@@ -347,7 +347,13 @@ export const authOptions: NextAuthOptions = {
             token.name = profile.name || token.name;
             token.userType = profile['custom:userType'] || 'dog-parent';
           }
-          
+
+          // Extract Cognito groups from profile
+          if (profile) {
+            const groups = (profile as any)['cognito:groups'] || [];
+            token.groups = groups;
+          }
+
           // Let Cognito handle email verification - don't interfere
           // If user can authenticate, they should be able to access the app
           token.isVerified = true; // Always allow access for authenticated users
@@ -431,8 +437,9 @@ export const authOptions: NextAuthOptions = {
           }
           
           session.user.id = token.sub!;
-          session.user.userType = token.userType as string;
+          session.user.userType = (token.userType as string) || 'dog-parent';
           session.user.isVerified = token.isVerified as boolean;
+          session.user.groups = (token.groups as string[]) || [];
           session.accessToken = token.accessToken as string;
           
           console.log('✅ Session callback: Session updated with user data', {

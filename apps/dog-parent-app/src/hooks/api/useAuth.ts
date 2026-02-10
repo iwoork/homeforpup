@@ -116,11 +116,9 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [authContext]);
 
-  // Legacy properties for backward compatibility
-  // Note: userType is stored in Cognito session, not in User database object
-  // For now, default to 'dog-parent' for this app
-  const effectiveUserType = 'dog-parent' as 'breeder' | 'dog-parent' | null;
-  const canSwitchProfiles = false; // userType from Cognito session not available here
+  // Derive userType from authContext user data or session
+  const effectiveUserType = (authContext.user?.userType || (session as any)?.user?.userType || 'dog-parent') as 'breeder' | 'dog-parent' | null;
+  const canSwitchProfiles = false;
   const activeProfileType = effectiveUserType;
   const isSwitchingProfile = false; // Not implemented in current version
   const clearAllAuthData = () => {

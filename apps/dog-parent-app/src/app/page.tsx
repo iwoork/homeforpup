@@ -131,11 +131,11 @@ const HomePage: React.FC = () => {
           <Row justify="center" gutter={[24, 12]} className="hero-buttons">
             <Col xs={24} sm={12} md={8}>
               <Link href="/puppy-journey">
-                <Button 
-                  size="large" 
+                <Button
+                  size="large"
                   block
-                  style={{ 
-                    height: '56px', 
+                  style={{
+                    height: '56px',
                     fontSize: '20px',
                     fontWeight: '600',
                     background: 'linear-gradient(135deg, #E8A87C 0%, #D4A574 50%, #E8A87C 100%)',
@@ -156,21 +156,21 @@ const HomePage: React.FC = () => {
                     e.currentTarget.style.boxShadow = '0 4px 15px rgba(232, 168, 124, 0.3)';
                   }}
                 >
-                  ✨ Start Your Journey
+                  Looking for a Puppy?
                 </Button>
               </Link>
             </Col>
             <Col xs={24} sm={12} md={8}>
-              <Link href="/browse">
-                <Button 
-                  size="large" 
+              <Link href="/auth/signup?role=breeder">
+                <Button
+                  size="large"
                   block
-                  style={{ 
-                    height: '56px', 
+                  style={{
+                    height: '56px',
                     fontSize: '20px',
                     fontWeight: '600',
-                    background: 'linear-gradient(135deg, #6B9BD2 0%, #5A8BC2 50%, #6B9BD2 100%)', 
-                    color: 'white', 
+                    background: 'linear-gradient(135deg, #6B9BD2 0%, #5A8BC2 50%, #6B9BD2 100%)',
+                    color: 'white',
                     borderColor: 'transparent',
                     boxShadow: '0 4px 15px rgba(107, 155, 210, 0.3)',
                     transition: 'all 0.3s ease',
@@ -187,7 +187,7 @@ const HomePage: React.FC = () => {
                     e.currentTarget.style.boxShadow = '0 4px 15px rgba(107, 155, 210, 0.3)';
                   }}
                 >
-                  🐕 Meet Available Puppies
+                  Are You a Breeder?
                 </Button>
               </Link>
             </Col>
@@ -254,6 +254,59 @@ const HomePage: React.FC = () => {
               <Paragraph>Bring home your perfectly matched companion and join a community that supports your lifelong journey together.</Paragraph>
             </Col>
           </Row>
+        </div>
+      </section>
+
+      {/* For Breeders Section */}
+      <section style={{ padding: '64px 24px', background: 'linear-gradient(135deg, #E6F7F7 0%, #f0fafa 100%)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <Title level={2} style={{ textAlign: 'center', marginBottom: '16px' }}>
+            For Breeders
+          </Title>
+          <Paragraph style={{ textAlign: 'center', fontSize: '18px', color: '#666', maxWidth: '600px', margin: '0 auto 48px auto' }}>
+            Professional tools to manage your breeding program and connect with loving families.
+          </Paragraph>
+          <Row gutter={[32, 32]}>
+            <Col xs={24} md={6}>
+              <Card style={cardStyle}>
+                <HomeOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
+                <Title level={4}>Kennel Management</Title>
+                <Paragraph>Organize your kennel profile, showcase your facilities, and build trust with prospective families.</Paragraph>
+              </Card>
+            </Col>
+            <Col xs={24} md={6}>
+              <Card style={cardStyle}>
+                <SafetyOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
+                <Title level={4}>Litter Tracking</Title>
+                <Paragraph>Track litters from birth to placement, with health records and photo galleries.</Paragraph>
+              </Card>
+            </Col>
+            <Col xs={24} md={6}>
+              <Card style={cardStyle}>
+                <UserOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
+                <Title level={4}>Waitlist Management</Title>
+                <Paragraph>Manage applicant waitlists, deposits, and preferences all in one place.</Paragraph>
+              </Card>
+            </Col>
+            <Col xs={24} md={6}>
+              <Card style={cardStyle}>
+                <CheckCircleOutlined style={{ fontSize: '36px', color: '#08979C', marginBottom: '16px', display: 'block' }} />
+                <Title level={4}>Verified Badge</Title>
+                <Paragraph>Earn verification status to stand out and build confidence with potential puppy parents.</Paragraph>
+              </Card>
+            </Col>
+          </Row>
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <Link href="/auth/signup?role=breeder">
+              <Button
+                type="primary"
+                size="large"
+                style={{ height: '48px', fontSize: '16px', background: '#08979C', borderColor: '#08979C' }}
+              >
+                Join as a Breeder
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

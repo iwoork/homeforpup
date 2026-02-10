@@ -50,7 +50,7 @@ const LoginPage: React.FC = () => {
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #08979C 0%, #0E6B6E 100%)',
       padding: '20px'
     }}>
       <Card 
@@ -62,7 +62,7 @@ const LoginPage: React.FC = () => {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <UserOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+          <UserOutlined style={{ fontSize: '48px', color: '#08979C', marginBottom: '16px' }} />
           <Title level={2} style={{ margin: 0, color: '#262626' }}>
             Welcome Back
           </Title>
@@ -96,30 +96,30 @@ const LoginPage: React.FC = () => {
             loading={loading}
             style={{ width: '100%', height: '48px' }}
           >
-            Sign In with AWS Cognito
+            Sign In
           </Button>
 
           <Divider style={{ margin: '16px 0' }}>
             <span style={{ color: '#8c8c8c' }}>New to Home for Pup?</span>
           </Divider>
 
-          <Button
-            size="large"
-            icon={<UserAddOutlined />}
-            onClick={handleLogin}
-            loading={loading}
-            style={{ width: '100%', height: '48px' }}
-          >
-            Create Account
-          </Button>
+          <Link href="/auth/signup">
+            <Button
+              size="large"
+              icon={<UserAddOutlined />}
+              style={{ width: '100%', height: '48px' }}
+            >
+              Create Account
+            </Button>
+          </Link>
         </Space>
 
         <div style={{ textAlign: 'center', marginTop: '24px' }}>
           <Paragraph style={{ color: '#8c8c8c', fontSize: '12px' }}>
             By signing in, you agree to our{' '}
-            <Link href="/terms" style={{ color: '#1890ff' }}>Terms of Service</Link>
+            <Link href="/terms" style={{ color: '#08979C' }}>Terms of Service</Link>
             {' '}and{' '}
-            <Link href="/privacy" style={{ color: '#1890ff' }}>Privacy Policy</Link>
+            <Link href="/privacy" style={{ color: '#08979C' }}>Privacy Policy</Link>
           </Paragraph>
         </div>
       </Card>

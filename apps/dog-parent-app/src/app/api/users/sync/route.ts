@@ -2,6 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  CognitoIdentityProviderClient,
+  AdminAddUserToGroupCommand,
+} from '@aws-sdk/client-cognito-identity-provider';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -18,6 +22,10 @@ const dynamodb = DynamoDBDocumentClient.from(client, {
   marshallOptions: {
     removeUndefinedValues: true // Remove undefined values automatically
   }
+});
+
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
 });
 
 // Use profiles table if available, fallback to users table for backward compatibility
@@ -178,7 +186,25 @@ export async function POST(request: NextRequest) {
       isNewUser
     });
 
-    return NextResponse.json({ 
+    // If user is a breeder, ensure they are in the Cognito breeders group
+    if (userData.userType === 'breeder') {
+      const userPoolId = process.env.NEXT_PUBLIC_AWS_USER_POOL_ID;
+      if (userPoolId && email) {
+        try {
+          await cognitoClient.send(new AdminAddUserToGroupCommand({
+            UserPoolId: userPoolId,
+            Username: email,
+            GroupName: 'breeders',
+          }));
+          console.log('Added user to breeders Cognito group');
+        } catch (groupError: any) {
+          // Non-fatal: user can still function without group assignment
+          console.warn('Failed to add user to breeders group:', groupError.message);
+        }
+      }
+    }
+
+    return NextResponse.json({
       user: userData,
       isNewUser,
       message: `User ${isNewUser ? 'created' : 'updated'} successfully`

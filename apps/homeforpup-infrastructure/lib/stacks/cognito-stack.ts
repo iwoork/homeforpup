@@ -92,6 +92,13 @@ export class CognitoStack extends cdk.Stack {
       cdk.Tags.of(this.userPool).add('Application', 'HomeForPup');
       cdk.Tags.of(this.userPool).add('Purpose', 'User-authentication');
 
+      // Create breeders group for role-based access
+      new cognito.CfnUserPoolGroup(this, 'BreedersGroup', {
+        userPoolId: this.userPool.userPoolId,
+        groupName: 'breeders',
+        description: 'Breeder users who manage kennels, dogs, and litters',
+      });
+
       // Create User Pool Client
       this.userPoolClient = this.userPool.addClient('UserPoolClient', {
         userPoolClientName: `homeforpup-client-${env}`,
