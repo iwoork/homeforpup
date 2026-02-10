@@ -3,6 +3,9 @@ export * from './api';
 export * from './api-puppies';
 export * from './types';
 
+// Matching
+export * from './matching';
+
 // Breeds functionality
 export * from './breeds-api';
 export * from './breeds-types';
