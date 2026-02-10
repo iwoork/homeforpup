@@ -10,7 +10,7 @@ import {
   GlobalOutlined, ClockCircleOutlined, ShoppingOutlined,
   HomeOutlined, TrophyOutlined, HeartOutlined, HeartFilled, TeamOutlined, StarOutlined,
   LoadingOutlined, PictureOutlined, EditOutlined, LockOutlined,
-  CommentOutlined, SendOutlined
+  CommentOutlined, SendOutlined, SafetyCertificateOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -101,6 +101,141 @@ const puppiesFetcher = async (url: string): Promise<{ puppies: PuppyFromApi[]; t
     throw new Error('Failed to fetch puppies');
   }
   return response.json();
+};
+
+// Trust score response type
+interface TrustScoreData {
+  total: number;
+  breakdown: {
+    verified: { score: number; max: number; value: boolean };
+    rating: { score: number; max: number; value: number };
+    reviews: { score: number; max: number; value: number };
+    responseRate: { score: number; max: number; value: number };
+    experience: { score: number; max: number; value: number };
+  };
+}
+
+// Fetcher for trust score
+const trustScoreFetcher = async (url: string): Promise<TrustScoreData> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch trust score');
+  }
+  return response.json();
+};
+
+// Helper to get color based on trust score
+const getTrustScoreColor = (score: number): string => {
+  if (score >= 80) return '#52c41a'; // green
+  if (score >= 60) return '#1890ff'; // blue
+  if (score >= 40) return '#fa8c16'; // orange
+  return '#ff4d4f'; // red
+};
+
+// Trust Score Display component
+const TrustScoreDisplay: React.FC<{ breederId: string; cardStyle: React.CSSProperties }> = ({ breederId, cardStyle }) => {
+  const { data: trustScore, isLoading } = useSWR<TrustScoreData>(
+    breederId ? `/api/breeders/${breederId}/trust-score` : null,
+    trustScoreFetcher,
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  if (isLoading) {
+    return (
+      <Card title="Trust Score" style={cardStyle}>
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <Spin size="small" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (!trustScore) return null;
+
+  const color = getTrustScoreColor(trustScore.total);
+  const circumference = 2 * Math.PI * 45;
+  const offset = circumference - (trustScore.total / 100) * circumference;
+
+  const breakdownItems = [
+    { label: 'Verified Status', score: trustScore.breakdown.verified.score, max: trustScore.breakdown.verified.max, detail: trustScore.breakdown.verified.value ? 'Verified' : 'Not verified' },
+    { label: 'Review Rating', score: trustScore.breakdown.rating.score, max: trustScore.breakdown.rating.max, detail: `${trustScore.breakdown.rating.value}/5` },
+    { label: 'Review Count', score: trustScore.breakdown.reviews.score, max: trustScore.breakdown.reviews.max, detail: `${trustScore.breakdown.reviews.value} reviews` },
+    { label: 'Response Rate', score: trustScore.breakdown.responseRate.score, max: trustScore.breakdown.responseRate.max, detail: `${trustScore.breakdown.responseRate.value}%` },
+    { label: 'Experience', score: trustScore.breakdown.experience.score, max: trustScore.breakdown.experience.max, detail: `${trustScore.breakdown.experience.value} years` },
+  ];
+
+  return (
+    <Card
+      title={
+        <span>
+          <SafetyCertificateOutlined style={{ color: '#08979C', marginRight: '8px' }} />
+          Trust Score
+        </span>
+      }
+      style={cardStyle}
+    >
+      {/* Circular Progress Indicator */}
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <div style={{ position: 'relative', display: 'inline-block', width: '120px', height: '120px' }}>
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle
+              cx="60" cy="60" r="45"
+              fill="none" stroke="#f0f0f0" strokeWidth="10"
+            />
+            <circle
+              cx="60" cy="60" r="45"
+              fill="none" stroke={color} strokeWidth="10"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+              transform="rotate(-90 60 60)"
+              style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+            />
+          </svg>
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', color, lineHeight: 1.2 }}>
+              {trustScore.total}
+            </div>
+            <div style={{ fontSize: '12px', color: '#999' }}>out of 100</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Score Breakdown */}
+      <div>
+        {breakdownItems.map((item) => (
+          <div key={item.label} style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <Text style={{ fontSize: '13px' }}>{item.label}</Text>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                {item.detail} ({item.score}/{item.max})
+              </Text>
+            </div>
+            <div style={{
+              height: '6px',
+              background: '#f0f0f0',
+              borderRadius: '3px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${item.max > 0 ? (item.score / item.max) * 100 : 0}%`,
+                height: '100%',
+                background: getTrustScoreColor((item.score / item.max) * 100),
+                borderRadius: '3px',
+                transition: 'width 0.3s ease',
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
 };
 
 const BreederPuppiesTab: React.FC<{ breederId: string; cardStyle: React.CSSProperties }> = ({ breederId, cardStyle }) => {
@@ -1179,6 +1314,9 @@ const BreederProfilePage: React.FC = () => {
       <Row gutter={[24, 24]}>
         {/* Left Sidebar - Breeder Info */}
         <Col xs={24} lg={8}>
+          {/* Trust Score */}
+          <TrustScoreDisplay breederId={breederId} cardStyle={cardStyle} />
+
           {/* About */}
           <Card title="About" style={cardStyle}>
             <Paragraph style={{ fontSize: '14px' }}>{breeder.about}</Paragraph>
