@@ -8,13 +8,19 @@ import {
   Alert,
   Image,
   FlatList,
+  Modal,
+  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { theme } from '../../utils/theme';
 import { Litter, Dog } from '../../types';
 import apiService from '../../services/apiService';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface RouteParams {
   litter: Litter;
@@ -24,10 +30,13 @@ const LitterDetailScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { litter: initialLitter } = route.params as RouteParams;
-  const [litter] = useState<Litter>(initialLitter);
+  const [litter, setLitter] = useState<Litter>(initialLitter);
   const [puppies] = useState<Dog[]>([]); // Will be fetched from API
   const [sire, setSire] = useState<Dog | null>(null);
   const [dam, setDam] = useState<Dog | null>(null);
+  const [photos, setPhotos] = useState<string[]>(initialLitter.photos || []);
+  const [uploading, setUploading] = useState(false);
+  const [fullScreenPhoto, setFullScreenPhoto] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -123,6 +132,89 @@ const LitterDetailScreen: React.FC = () => {
       { litter } as never,
     );
   };
+
+  const handleAddPhoto = async () => {
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        selectionLimit: 1,
+      });
+
+      if (result.didCancel || result.errorCode) {
+        if (result.errorCode) {
+          Alert.alert('Error', result.errorMessage || 'Failed to select image');
+        }
+        return;
+      }
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+
+      setUploading(true);
+      try {
+        const uploadResponse = await apiService.getUploadUrl({
+          fileName: asset.fileName || 'litter-photo.jpg',
+          contentType: asset.type || 'image/jpeg',
+          uploadPath: 'litter-photos',
+        });
+
+        if (!uploadResponse.success || !uploadResponse.data) {
+          Alert.alert('Error', uploadResponse.error || 'Failed to get upload URL');
+          return;
+        }
+
+        const { uploadUrl, photoUrl } = uploadResponse.data;
+
+        const fileResponse = await fetch(asset.uri);
+        const blob = await fileResponse.blob();
+
+        const uploadSuccess = await apiService.uploadToS3(
+          uploadUrl,
+          blob,
+          asset.type || 'image/jpeg',
+        );
+
+        if (uploadSuccess) {
+          const updatedPhotos = [...photos, photoUrl];
+          const updateResponse = await apiService.updateLitter(litter.id, {
+            photos: updatedPhotos,
+          });
+
+          if (updateResponse.success) {
+            setPhotos(updatedPhotos);
+            setLitter({ ...litter, photos: updatedPhotos });
+            Alert.alert('Success', 'Photo uploaded successfully');
+          } else {
+            Alert.alert('Error', 'Photo uploaded but failed to save to litter');
+          }
+        } else {
+          Alert.alert('Error', 'Failed to upload photo');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        Alert.alert(
+          'Error',
+          error instanceof Error ? error.message : 'Upload failed',
+        );
+      } finally {
+        setUploading(false);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to open image picker');
+    }
+  };
+
+  const renderPhotoItem = ({ item, index }: { item: string; index: number }) => (
+    <TouchableOpacity
+      onPress={() => setFullScreenPhoto(item)}
+      activeOpacity={0.9}
+      style={styles.photoItem}
+    >
+      <Image source={{ uri: item }} style={styles.photoImage} />
+    </TouchableOpacity>
+  );
 
   const renderPuppyCard = ({ item }: { item: Dog }) => (
     <TouchableOpacity
@@ -331,6 +423,70 @@ const LitterDetailScreen: React.FC = () => {
           </View>
         </View>
       )}
+
+      {/* Photo Gallery */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Photos</Text>
+          <TouchableOpacity
+            style={styles.addPhotoButton}
+            onPress={handleAddPhoto}
+            activeOpacity={0.8}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <>
+                <Icon name="camera-outline" size={20} color={theme.colors.primary} />
+                <Text style={styles.addPhotoText}>Add Photo</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+        {photos.length === 0 ? (
+          <View style={styles.emptyPhotos}>
+            <Icon name="images-outline" size={48} color={theme.colors.textSecondary} />
+            <Text style={styles.emptyPhotosText}>No photos yet</Text>
+            <Text style={styles.emptyPhotosSubtext}>
+              Add photos to share puppy updates
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={photos}
+            renderItem={renderPhotoItem}
+            keyExtractor={(item, index) => `photo-${index}`}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.photoList}
+          />
+        )}
+      </View>
+
+      {/* Full Screen Photo Viewer */}
+      <Modal
+        visible={fullScreenPhoto !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullScreenPhoto(null)}
+      >
+        <View style={styles.fullScreenContainer}>
+          <TouchableOpacity
+            style={styles.fullScreenClose}
+            onPress={() => setFullScreenPhoto(null)}
+          >
+            <Icon name="close" size={28} color="#ffffff" />
+          </TouchableOpacity>
+          {fullScreenPhoto && (
+            <Image
+              source={{ uri: fullScreenPhoto }}
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
 
       {/* Puppies List */}
       <View style={styles.section}>
@@ -637,6 +793,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+  },
+  addPhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    minWidth: 120,
+    justifyContent: 'center',
+  },
+  addPhotoText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.primary,
+    marginLeft: theme.spacing.xs,
+  },
+  photoList: {
+    paddingVertical: theme.spacing.xs,
+  },
+  photoItem: {
+    marginRight: theme.spacing.sm,
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    ...theme.shadows.sm,
+  },
+  photoImage: {
+    width: 160,
+    height: 160,
+    borderRadius: theme.borderRadius.lg,
+  },
+  emptyPhotos: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    ...theme.shadows.sm,
+  },
+  emptyPhotosText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
+  },
+  emptyPhotosSubtext: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: theme.spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: theme.borderRadius.full,
+  },
+  fullScreenImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.8,
   },
 });
 
