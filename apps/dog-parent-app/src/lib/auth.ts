@@ -293,6 +293,18 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    async signIn({ user, account, profile }: any) {
+      // Redirect breeders to the dedicated breeder app
+      const userType = user?.userType || (profile as any)?.['custom:userType'];
+      if (userType === 'breeder') {
+        const breederAppUrl = process.env.NEXT_PUBLIC_BREEDER_APP_URL;
+        if (breederAppUrl) {
+          console.log('🔀 Breeder detected, redirecting to breeder app:', breederAppUrl);
+          return breederAppUrl;
+        }
+      }
+      return true;
+    },
     async jwt({ token, account, profile, trigger, user }: any) {
       // Log all JWT callback invocations for debugging
       console.log('🔑 JWT callback invoked:', {

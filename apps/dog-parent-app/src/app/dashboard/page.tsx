@@ -3,13 +3,21 @@
 import React from 'react';
 import { Spin } from 'antd';
 import { useAuth } from '@/hooks';
-import BreederDashboard from '@/components/dashboard/BreederDashboard';
 import DogParentDashboard from '@/components/dashboard/DogParentDashboard';
+
+const BREEDER_APP_URL = process.env.NEXT_PUBLIC_BREEDER_APP_URL;
 
 const DashboardPage: React.FC = () => {
   const { effectiveUserType, loading } = useAuth();
 
-  if (loading) {
+  // Redirect breeders to the dedicated breeder app (fallback if signIn callback didn't catch it)
+  React.useEffect(() => {
+    if (!loading && effectiveUserType === 'breeder' && BREEDER_APP_URL) {
+      window.location.href = BREEDER_APP_URL;
+    }
+  }, [loading, effectiveUserType]);
+
+  if (loading || (effectiveUserType === 'breeder' && BREEDER_APP_URL)) {
     return (
       <div style={{
         display: 'flex',
@@ -20,13 +28,9 @@ const DashboardPage: React.FC = () => {
         gap: '16px'
       }}>
         <Spin size="large" />
-        <div>Loading dashboard...</div>
+        <div>{effectiveUserType === 'breeder' ? 'Redirecting to breeder portal...' : 'Loading dashboard...'}</div>
       </div>
     );
-  }
-
-  if (effectiveUserType === 'breeder') {
-    return <BreederDashboard />;
   }
 
   return <DogParentDashboard />;
