@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Typography, Progress, Tag, Space, Spin, Button, Empty, Tooltip } from 'antd';
+import { Row, Col, Card, Typography, Progress, Tag, Space, Spin, Button, Empty, Tooltip, Slider, Select, Radio, message } from 'antd';
 import {
   CheckCircleOutlined,
   ThunderboltOutlined,
@@ -11,6 +11,8 @@ import {
   DownOutlined,
   UpOutlined,
   WarningOutlined,
+  EditOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -69,8 +71,28 @@ const RecommendationsPage: React.FC = () => {
   const [results, setResults] = useState<MatchResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedBreeds, setExpandedBreeds] = useState<Record<string, boolean>>({});
+  const [showPreferenceEditor, setShowPreferenceEditor] = useState(false);
+  const [editPrefs, setEditPrefs] = useState({
+    activityLevel: 'moderate' as string,
+    livingSpace: 'house-medium' as string,
+    familySize: 'couple' as string,
+    experienceLevel: 'some-experience' as string,
+  });
+  const [updatingResults, setUpdatingResults] = useState(false);
 
   useEffect(() => {
+    // Load saved preferences for the editor
+    const storedPrefs = sessionStorage.getItem('matchPreferences');
+    if (storedPrefs) {
+      const prefs = JSON.parse(storedPrefs);
+      setEditPrefs({
+        activityLevel: prefs.activityLevel || 'moderate',
+        livingSpace: prefs.livingSpace || 'house-medium',
+        familySize: prefs.familySize || 'couple',
+        experienceLevel: prefs.experienceLevel || 'some-experience',
+      });
+    }
+
     // Try session storage first
     const stored = sessionStorage.getItem('matchResults');
     if (stored) {
@@ -116,6 +138,38 @@ const RecommendationsPage: React.FC = () => {
     if (score >= 60) return '#1890ff';
     if (score >= 40) return '#faad14';
     return '#ff4d4f';
+  };
+
+  const handleUpdatePreferences = async () => {
+    setUpdatingResults(true);
+    try {
+      const storedPrefs = sessionStorage.getItem('matchPreferences');
+      const fullPrefs = storedPrefs ? { ...JSON.parse(storedPrefs), ...editPrefs } : { ...editPrefs, childrenAges: [], size: [] };
+
+      // Save updated preferences
+      fetch('/api/matching/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullPrefs),
+      }).catch(() => {});
+
+      // Re-fetch recommendations
+      const res = await fetch('/api/matching/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullPrefs),
+      });
+      if (!res.ok) throw new Error('Failed to update');
+      const data = await res.json();
+      setResults(data);
+      sessionStorage.setItem('matchResults', JSON.stringify(data));
+      sessionStorage.setItem('matchPreferences', JSON.stringify(fullPrefs));
+      message.success('Recommendations updated!');
+    } catch {
+      message.error('Failed to update recommendations');
+    } finally {
+      setUpdatingResults(false);
+    }
   };
 
   if (loading) {
@@ -170,7 +224,93 @@ const RecommendationsPage: React.FC = () => {
         <Text type="secondary" style={{ fontSize: '16px' }}>
           Based on your lifestyle preferences, we scored {results.totalBreedsScored} breeds to find your best matches
         </Text>
+        <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => setShowPreferenceEditor(!showPreferenceEditor)}
+            style={{ borderColor: '#08979C', color: '#08979C' }}
+          >
+            Adjust Preferences
+          </Button>
+          <Link href="/browse">
+            <Button icon={<ReloadOutlined />}>
+              Retake Full Questionnaire
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Preference Editor */}
+      {showPreferenceEditor && (
+        <Card
+          title="Adjust Your Preferences"
+          style={{ marginBottom: '32px', borderColor: '#08979C' }}
+          extra={
+            <Button
+              type="primary"
+              loading={updatingResults}
+              onClick={handleUpdatePreferences}
+              style={{ background: '#08979C', borderColor: '#08979C' }}
+            >
+              Update Results
+            </Button>
+          }
+        >
+          <Row gutter={[24, 16]}>
+            <Col xs={24} sm={12}>
+              <Text strong>Activity Level</Text>
+              <Radio.Group
+                value={editPrefs.activityLevel}
+                onChange={(e) => setEditPrefs((p) => ({ ...p, activityLevel: e.target.value }))}
+                style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}
+              >
+                <Radio value="low">Low - Calm, relaxed</Radio>
+                <Radio value="moderate">Moderate - Regular walks</Radio>
+                <Radio value="high">High - Active adventures</Radio>
+              </Radio.Group>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Text strong>Living Space</Text>
+              <Select
+                value={editPrefs.livingSpace}
+                onChange={(value) => setEditPrefs((p) => ({ ...p, livingSpace: value }))}
+                style={{ width: '100%', marginTop: '8px' }}
+              >
+                <Select.Option value="apartment">Apartment or Condo</Select.Option>
+                <Select.Option value="house-small">Small House</Select.Option>
+                <Select.Option value="house-medium">Medium House</Select.Option>
+                <Select.Option value="house-large">Large House</Select.Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Text strong>Family Size</Text>
+              <Select
+                value={editPrefs.familySize}
+                onChange={(value) => setEditPrefs((p) => ({ ...p, familySize: value }))}
+                style={{ width: '100%', marginTop: '8px' }}
+              >
+                <Select.Option value="single">Just me</Select.Option>
+                <Select.Option value="couple">Couple</Select.Option>
+                <Select.Option value="small-family">Small family (3-4)</Select.Option>
+                <Select.Option value="large-family">Large family (5+)</Select.Option>
+              </Select>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Text strong>Experience Level</Text>
+              <Select
+                value={editPrefs.experienceLevel}
+                onChange={(value) => setEditPrefs((p) => ({ ...p, experienceLevel: value }))}
+                style={{ width: '100%', marginTop: '8px' }}
+              >
+                <Select.Option value="first-time">First-time owner</Select.Option>
+                <Select.Option value="some-experience">Some experience</Select.Option>
+                <Select.Option value="experienced">Experienced</Select.Option>
+                <Select.Option value="very-experienced">Very experienced</Select.Option>
+              </Select>
+            </Col>
+          </Row>
+        </Card>
+      )}
 
       {/* Breed Recommendations */}
       <Row gutter={[16, 16]} style={{ marginBottom: '48px' }}>
