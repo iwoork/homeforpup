@@ -5,6 +5,8 @@ import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag
 import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { message } from 'antd';
 import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
@@ -19,6 +21,8 @@ const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
 const PuppiesPage: React.FC = () => {
+  const router = useRouter();
+  const [matchingLoading, setMatchingLoading] = useState(false);
   const [filters, setFilters] = useState({
     country: 'Canada', // Default to Canada
     state: [] as string[],
@@ -174,17 +178,46 @@ const PuppiesPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearchWizardComplete = (criteria: any) => {
-    setFilters({
-      country: criteria.country || 'Canada',
-      state: criteria.state || [],
-      breed: criteria.breeds?.[0] || null,
-      gender: criteria.gender || null,
-      shipping: criteria.shipping || false,
-      verified: criteria.verifiedOnly || false,
-    });
-    setCurrentPage(1);
-    setShowSearchWizard(false);
+  const handleSearchWizardComplete = async (criteria: any) => {
+    setMatchingLoading(true);
+    try {
+      const preferences = {
+        activityLevel: criteria.activityLevel,
+        livingSpace: criteria.livingSpace,
+        familySize: criteria.familySize,
+        childrenAges: criteria.childrenAges || [],
+        experienceLevel: criteria.experienceLevel,
+        size: criteria.size || [],
+      };
+
+      // Save preferences if authenticated
+      if (isAuthenticated) {
+        fetch('/api/matching/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(preferences),
+        }).catch(() => {});
+      }
+
+      // Get recommendations
+      const res = await fetch('/api/matching/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preferences),
+      });
+
+      if (!res.ok) throw new Error('Failed to get recommendations');
+
+      const results = await res.json();
+      sessionStorage.setItem('matchResults', JSON.stringify(results));
+      sessionStorage.setItem('matchPreferences', JSON.stringify(preferences));
+      setShowSearchWizard(false);
+      router.push('/recommendations');
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      message.error('Failed to generate recommendations. Please try again.');
+      setMatchingLoading(false);
+    }
   };
 
   // Check if any filters are active
@@ -388,6 +421,19 @@ const PuppiesPage: React.FC = () => {
   }
 
   if (showSearchWizard) {
+    if (matchingLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '24px' }}>
+            <Title level={3} style={{ color: '#08979C' }}>Finding Your Perfect Match...</Title>
+            <Text type="secondary" style={{ fontSize: '16px' }}>
+              Analyzing breed compatibility with your lifestyle preferences
+            </Text>
+          </div>
+        </div>
+      );
+    }
     return (
       <PuppySearchWizard
         onComplete={handleSearchWizardComplete}
