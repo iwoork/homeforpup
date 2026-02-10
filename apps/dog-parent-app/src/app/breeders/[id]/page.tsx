@@ -18,6 +18,7 @@ import useSWR from 'swr';
 import { useAuth } from '@homeforpup/shared-auth';
 import { generateBreadcrumbSchema } from '@/lib/utils/seo';
 import StructuredData from '@/components/StructuredData';
+import ContactBreederModal from '@/components/ContactBreederModal';
 
 const { Title, Paragraph, Text } = Typography;
 const { TabPane } = Tabs;
@@ -975,8 +976,18 @@ const BreederProfilePage: React.FC = () => {
   );
 
   const breeder = data?.breeder;
-  const { user: authUser } = useAuth();
+  const { user: authUser, isAuthenticated } = useAuth();
   const isOwnProfile = authUser && breeder && authUser.userId === String(breeder.userId);
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+
+  // Check if an existing thread with this breeder exists
+  const breederUserId = breeder?.userId ? String(breeder.userId) : null;
+  const { data: threadData } = useSWR<{ exists: boolean; threadId: string | null }>(
+    isAuthenticated && breederUserId ? `/api/messages/thread-with/${breederUserId}` : null,
+    (url: string) => fetch(url).then(res => res.json()),
+    { revalidateOnFocus: false }
+  );
+  const hasExistingThread = threadData?.exists === true;
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -1126,20 +1137,33 @@ const BreederProfilePage: React.FC = () => {
                   </div>
                   
                   <Space>
-                    <Button 
-                      type="primary" 
-                      icon={<MailOutlined />}
-                      style={{ background: '#FA8072', borderColor: '#FA8072' }}
-                    >
-                      Send Message
-                    </Button>
-                    <Button 
+                    {hasExistingThread ? (
+                      <Link href="/dashboard/messages">
+                        <Button
+                          type="primary"
+                          icon={<MailOutlined />}
+                          style={{ background: '#08979C', borderColor: '#08979C' }}
+                        >
+                          Continue Conversation
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        type="primary"
+                        icon={<MailOutlined />}
+                        style={{ background: '#FA8072', borderColor: '#FA8072' }}
+                        onClick={() => setContactModalVisible(true)}
+                      >
+                        Send Message
+                      </Button>
+                    )}
+                    <Button
                       icon={<PhoneOutlined />}
                       onClick={() => window.open(`tel:${breeder.phone}`)}
                     >
                       Call Now
                     </Button>
-                    <Button 
+                    <Button
                       icon={<HeartOutlined />}
                     >
                       Add to Favorites
@@ -1336,15 +1360,30 @@ const BreederProfilePage: React.FC = () => {
       <Card style={{ marginTop: '24px', ...cardStyle }}>
         <Row gutter={[16, 16]} justify="center">
           <Col xs={24} sm={8}>
-            <Button 
-              type="primary" 
-              block 
-              size="large"
-              icon={<MailOutlined />}
-              style={{ background: '#FA8072', borderColor: '#FA8072' }}
-            >
-              Send Message
-            </Button>
+            {hasExistingThread ? (
+              <Link href="/dashboard/messages">
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  icon={<MailOutlined />}
+                  style={{ background: '#08979C', borderColor: '#08979C' }}
+                >
+                  Continue Conversation
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                type="primary"
+                block
+                size="large"
+                icon={<MailOutlined />}
+                style={{ background: '#FA8072', borderColor: '#FA8072' }}
+                onClick={() => setContactModalVisible(true)}
+              >
+                Send Message
+              </Button>
+            )}
           </Col>
           <Col xs={24} sm={8}>
             <Button 
@@ -1369,12 +1408,24 @@ const BreederProfilePage: React.FC = () => {
       </Card>
 
       {/* Structured Data */}
-      <StructuredData 
+      <StructuredData
         data={generateBreadcrumbSchema([
           { name: 'Home', url: '/' },
           { name: 'Breeders', url: '/breeders' },
           { name: breeder.businessName, url: `/breeders/${breeder.id}` }
-        ])} 
+        ])}
+      />
+
+      {/* Contact Breeder Modal */}
+      <ContactBreederModal
+        visible={contactModalVisible}
+        onCancel={() => setContactModalVisible(false)}
+        puppyName={breeder.businessName}
+        breederName={breeder.businessName}
+        breederId={breederUserId || undefined}
+        senderName={authUser?.name || authUser?.displayName || 'Guest User'}
+        senderEmail={authUser?.email || ''}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

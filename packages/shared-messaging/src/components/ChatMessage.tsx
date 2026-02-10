@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Avatar, Typography, Space, Tag, Badge } from 'antd';
-import { UserOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Avatar, Typography, Space, Tag, Badge, Image } from 'antd';
+import { UserOutlined, ClockCircleOutlined, PaperClipOutlined } from '@ant-design/icons';
 import { Message } from '../types';
 
 const { Text } = Typography;
@@ -127,18 +127,58 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           </div>
           
           {/* Message content */}
-          <div
-            style={{
-              whiteSpace: 'pre-wrap',
-              lineHeight: '1.5',
-              marginBottom: '4px',
-              fontSize: '14px',
-              wordBreak: 'break-word'
-            }}
-          >
-            {message.content}
-          </div>
-          
+          {message.content && (
+            <div
+              style={{
+                whiteSpace: 'pre-wrap',
+                lineHeight: '1.5',
+                marginBottom: '4px',
+                fontSize: '14px',
+                wordBreak: 'break-word'
+              }}
+            >
+              {message.content}
+            </div>
+          )}
+
+          {/* Attachments */}
+          {message.attachments && message.attachments.length > 0 && (
+            <div style={{ marginTop: '8px', marginBottom: '4px' }}>
+              <Image.PreviewGroup>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {message.attachments.map((attachment) => (
+                    <Image
+                      key={attachment.id}
+                      src={attachment.url}
+                      alt={attachment.filename}
+                      width={120}
+                      height={90}
+                      style={{
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        border: isOwnMessage ? '1px solid rgba(255,255,255,0.3)' : '1px solid #d9d9d9',
+                      }}
+                    />
+                  ))}
+                </div>
+              </Image.PreviewGroup>
+              <div style={{ marginTop: '4px' }}>
+                <Space size="small">
+                  <PaperClipOutlined style={{ fontSize: '10px', opacity: 0.7 }} />
+                  <Text
+                    style={{
+                      fontSize: '10px',
+                      color: isOwnMessage ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.45)',
+                    }}
+                  >
+                    {message.attachments.length} {message.attachments.length === 1 ? 'attachment' : 'attachments'}
+                  </Text>
+                </Space>
+              </div>
+            </div>
+          )}
+
           {/* Message timestamp */}
           <div
             style={{

@@ -1,31 +1,41 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Layout, Button, Dropdown, Avatar, Badge, Drawer, Menu } from 'antd';
 import { UserOutlined, LogoutOutlined, SettingOutlined, MessageOutlined, DashboardOutlined, SwapOutlined, HeartOutlined, ShopOutlined, TeamOutlined, HomeOutlined, BellOutlined, BookOutlined, MenuOutlined, EnvironmentOutlined, GlobalOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
+import useSWR from 'swr';
 import { useAuth } from '@/hooks';
 import { useSession } from 'next-auth/react';
 
+const unreadFetcher = (url: string) =>
+  fetch(url, { credentials: 'include' }).then(res => res.ok ? res.json() : { unreadCount: 0 });
+
 const ClientHeader: React.FC = () => {
-  const { 
-    user, 
-    signOut: logout, 
-    signIn: login, 
-    isAuthenticated, 
-    loading, 
-    getToken
+  const {
+    user,
+    signOut: logout,
+    signIn: login,
+    isAuthenticated,
+    loading
   } = useAuth();
   const { data: session } = useSession();
   const [isMobile, setIsMobile] = React.useState(false);
-  const [unreadCount, setUnreadCount] = React.useState(0);
   const [forceLoading, setForceLoading] = React.useState(true);
   const [drawerVisible, setDrawerVisible] = React.useState(false);
 
+  // Fetch unread message count using SWR with auto-refresh
+  const { data: unreadData } = useSWR(
+    isAuthenticated ? '/api/messages/unread-count' : null,
+    unreadFetcher,
+    { refreshInterval: 30000, revalidateOnFocus: true }
+  );
+  const unreadCount = unreadData?.unreadCount || 0;
+
   // Get display name from user data or fallback to session
   const displayName = user?.name || session?.user?.name || 'User';
-  
+
   console.log('Header render - Auth state:', {
     user: user ? { userId: user.userId?.substring(0, 10) + '...', name: user.name, userType: user.userType } : null,
     session: session ? { name: session.user?.name, email: session.user?.email } : null,
@@ -33,57 +43,6 @@ const ClientHeader: React.FC = () => {
     isAuthenticated,
     loading
   });
-
-  // Fetch unread message count
-  const fetchUnreadCount = React.useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      setUnreadCount(0);
-      return;
-    }
-
-    try {
-      const token = await getToken();
-      
-      if (!token) {
-        console.log('No access token available for unread count fetch');
-        setUnreadCount(0);
-        return;
-      }
-
-      const response = await fetch('/api/messages/threads', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Threads data for unread count:', data);
-        
-        // Count unread messages across all threads
-        const unread = data.threads?.reduce((total: number, thread: any) => {
-          const threadUnread = thread.unreadCount?.[user.userId] || 0;
-          console.log(`Thread ${thread.id} unread for user ${user.userId}:`, threadUnread);
-          return total + threadUnread;
-        }, 0) || 0;
-        
-        console.log('Total unread count:', unread);
-        setUnreadCount(unread);
-      } else {
-        console.error('Failed to fetch threads:', response.status, response.statusText);
-        setUnreadCount(0);
-      }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-      setUnreadCount(0);
-    }
-  }, [isAuthenticated, user, getToken]);
-
-  // Header mounted
-  React.useEffect(() => {
-    console.log('🔄 Header mounted');
-  }, []);
 
   // Force loading to false after timeout to prevent stuck spinner
   React.useEffect(() => {
@@ -103,21 +62,6 @@ const ClientHeader: React.FC = () => {
       setForceLoading(false);
     }
   }, [loading]);
-
-  // Fetch unread count when user changes
-  React.useEffect(() => {
-    if (!isAuthenticated || !user) {
-      setUnreadCount(0);
-      return;
-    }
-    
-    fetchUnreadCount();
-    
-    // Set up polling for unread count
-    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
-    
-    return () => clearInterval(interval);
-  }, [isAuthenticated, user, fetchUnreadCount]);
 
   // Check for mobile screen size
   React.useEffect(() => {

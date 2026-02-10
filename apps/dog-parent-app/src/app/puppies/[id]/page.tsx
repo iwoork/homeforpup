@@ -215,6 +215,15 @@ const PuppyDetailPage: React.FC = () => {
     { revalidateOnFocus: false, revalidateOnReconnect: false }
   );
 
+  // Check if an existing thread with this breeder exists
+  const breederOwnerId = puppy?.ownerId || puppy?.kennel?.ownerId;
+  const { data: threadData } = useSWR<{ exists: boolean; threadId: string | null }>(
+    isAuthenticated && breederOwnerId ? `/api/messages/thread-with/${breederOwnerId}` : null,
+    (url: string) => fetch(url).then(res => res.json()),
+    { revalidateOnFocus: false }
+  );
+  const hasExistingThread = threadData?.exists === true;
+
   // Loading state
   if (isLoading) {
     return (
@@ -767,16 +776,30 @@ const PuppyDetailPage: React.FC = () => {
 
                 <Divider style={{ margin: '12px 0' }} />
 
-                <Button
-                  type="primary"
-                  icon={<MessageOutlined />}
-                  block
-                  size="large"
-                  style={{ background: '#08979C', borderColor: '#08979C' }}
-                  onClick={() => setContactModalVisible(true)}
-                >
-                  Contact Breeder
-                </Button>
+                {hasExistingThread ? (
+                  <Link href="/dashboard/messages">
+                    <Button
+                      type="primary"
+                      icon={<MessageOutlined />}
+                      block
+                      size="large"
+                      style={{ background: '#08979C', borderColor: '#08979C' }}
+                    >
+                      Continue Conversation
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    type="primary"
+                    icon={<MessageOutlined />}
+                    block
+                    size="large"
+                    style={{ background: '#08979C', borderColor: '#08979C' }}
+                    onClick={() => setContactModalVisible(true)}
+                  >
+                    Contact Breeder
+                  </Button>
+                )}
               </>
             ) : (
               <Empty
@@ -797,8 +820,10 @@ const PuppyDetailPage: React.FC = () => {
         onCancel={() => setContactModalVisible(false)}
         puppyName={puppy.name}
         breederName={kennel?.name || 'Breeder'}
+        breederId={puppy.ownerId || kennel?.ownerId}
         senderName={user?.name || user?.displayName || 'Guest User'}
         senderEmail={user?.email || ''}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

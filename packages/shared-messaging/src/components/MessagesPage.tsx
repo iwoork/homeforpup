@@ -6,7 +6,6 @@ import {
   List,
   Button,
   Input,
-  Select,
   Space,
   Typography,
   Tag,
@@ -20,13 +19,13 @@ import {
   Divider,
   Row,
   Col,
-  Drawer
+  Drawer,
+  Radio
 } from 'antd';
 import {
   MessageOutlined,
   SendOutlined,
   SearchOutlined,
-  FilterOutlined,
   PlusOutlined,
   UserOutlined,
   ClockCircleOutlined,
@@ -40,14 +39,14 @@ import { useMessaging } from '../hooks/useMessaging';
 import ComposeMessage from './ComposeMessage';
 import ChatMessage from './ChatMessage';
 import InlineReplyForm from './InlineReplyForm';
-import { Message, MessageThread } from '../types';
+import { Message, MessageThread, MessageAttachment } from '../types';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
-const { Option } = Select;
 const { TextArea } = Input;
 
 type MessageType = "general" | "inquiry" | "business" | "urgent";
+type ThreadFilter = 'all' | 'unread' | 'inquiries' | 'general';
 
 interface MessagesPageProps {
   userId?: string;
@@ -72,7 +71,7 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
   const [composeVisible, setComposeVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [messageTypeFilter, setMessageTypeFilter] = useState<MessageType | 'all'>('all');
+  const [threadFilter, setThreadFilter] = useState<ThreadFilter>('all');
   const [loadingThread, setLoadingThread] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showThreadList, setShowThreadList] = useState(true);
@@ -172,9 +171,15 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
   const filteredThreads = threads.filter(thread => {
     const matchesSearch = thread.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       thread.participants.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesType = messageTypeFilter === 'all' || 
-      thread.lastMessage?.messageType === messageTypeFilter;
-    return matchesSearch && matchesType;
+    let matchesFilter = true;
+    if (threadFilter === 'unread') {
+      matchesFilter = (thread.unreadCount[userId || ''] || 0) > 0;
+    } else if (threadFilter === 'inquiries') {
+      matchesFilter = thread.lastMessage?.messageType === 'inquiry';
+    } else if (threadFilter === 'general') {
+      matchesFilter = thread.lastMessage?.messageType === 'general';
+    }
+    return matchesSearch && matchesFilter;
   });
 
   const getMessageTypeColor = (type: string) => {
@@ -265,19 +270,18 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                     prefix={<SearchOutlined />}
                     size="large"
                   />
-                  <Select
-                    value={messageTypeFilter}
-                    onChange={setMessageTypeFilter}
-                    style={{ width: '100%' }}
-                    placeholder="Filter by type"
-                    size="large"
+                  <Radio.Group
+                    value={threadFilter}
+                    onChange={(e) => setThreadFilter(e.target.value)}
+                    optionType="button"
+                    buttonStyle="solid"
+                    style={{ width: '100%', display: 'flex' }}
                   >
-                    <Option value="all">All Types</Option>
-                    <Option value="general">General</Option>
-                    <Option value="inquiry">Inquiry</Option>
-                    <Option value="business">Business</Option>
-                    <Option value="urgent">Urgent</Option>
-                  </Select>
+                    <Radio.Button value="all" style={{ flex: 1, textAlign: 'center' }}>All</Radio.Button>
+                    <Radio.Button value="unread" style={{ flex: 1, textAlign: 'center' }}>Unread</Radio.Button>
+                    <Radio.Button value="inquiries" style={{ flex: 1, textAlign: 'center' }}>Inquiries</Radio.Button>
+                    <Radio.Button value="general" style={{ flex: 1, textAlign: 'center' }}>General</Radio.Button>
+                  </Radio.Group>
                 </Space>
               </div>
 
@@ -381,11 +385,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                     {!loadingThread && (
                       <InlineReplyForm
                         threadId={selectedThread.id}
-                        onSendMessage={async (content: string, messageType: string) => {
+                        onSendMessage={async (content: string, messageType: string, attachments?: MessageAttachment[]) => {
                           try {
                             const recipientId = selectedThread.participants.find(p => p !== userId) || '';
                             const recipientName = selectedThread.participantNames?.[recipientId] || 'Unknown User';
-                            
+
                             const response = await fetch('/api/messages/reply', {
                               method: 'POST',
                               headers: {
@@ -397,7 +401,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                                 content,
                                 receiverId: recipientId,
                                 receiverName: recipientName,
-                                subject: `Re: ${selectedThread.subject}`
+                                subject: `Re: ${selectedThread.subject}`,
+                                ...(attachments && attachments.length > 0 ? { attachments } : {})
                               })
                             });
 
@@ -484,18 +489,18 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                 onChange={(e) => setSearchTerm(e.target.value)}
                 prefix={<SearchOutlined />}
               />
-              <Select
-                value={messageTypeFilter}
-                onChange={setMessageTypeFilter}
-                style={{ width: '100%' }}
-                placeholder="Filter by type"
+              <Radio.Group
+                value={threadFilter}
+                onChange={(e) => setThreadFilter(e.target.value)}
+                optionType="button"
+                buttonStyle="solid"
+                style={{ width: '100%', display: 'flex' }}
               >
-                <Option value="all">All Types</Option>
-                <Option value="general">General</Option>
-                <Option value="inquiry">Inquiry</Option>
-                <Option value="business">Business</Option>
-                <Option value="urgent">Urgent</Option>
-              </Select>
+                <Radio.Button value="all" style={{ flex: 1, textAlign: 'center' }}>All</Radio.Button>
+                <Radio.Button value="unread" style={{ flex: 1, textAlign: 'center' }}>Unread</Radio.Button>
+                <Radio.Button value="inquiries" style={{ flex: 1, textAlign: 'center' }}>Inquiries</Radio.Button>
+                <Radio.Button value="general" style={{ flex: 1, textAlign: 'center' }}>General</Radio.Button>
+              </Radio.Group>
             </Space>
 
             <List
@@ -605,11 +610,11 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
             {selectedThread && !loadingThread && (
               <InlineReplyForm
                 threadId={selectedThread.id}
-                onSendMessage={async (content: string, messageType: string) => {
+                onSendMessage={async (content: string, messageType: string, attachments?: MessageAttachment[]) => {
                   try {
                     const recipientId = selectedThread.participants.find(p => p !== userId) || '';
                     const recipientName = selectedThread.participantNames?.[recipientId] || 'Unknown User';
-                    
+
                     const response = await fetch('/api/messages/reply', {
                       method: 'POST',
                       headers: {
@@ -621,7 +626,8 @@ const MessagesPage: React.FC<MessagesPageProps> = ({ userId, userType = 'dog-par
                         content,
                         receiverId: recipientId,
                         receiverName: recipientName,
-                        subject: `Re: ${selectedThread.subject}`
+                        subject: `Re: ${selectedThread.subject}`,
+                        ...(attachments && attachments.length > 0 ? { attachments } : {})
                       })
                     });
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, message, Typography, Space, Divider, Alert } from 'antd';
-import { UserOutlined, MailOutlined, MessageOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Button, message, Typography, Space, Divider } from 'antd';
+import { UserOutlined, MailOutlined, MessageOutlined, CheckCircleOutlined, LoginOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -10,8 +11,10 @@ interface ContactBreederModalProps {
   onCancel: () => void;
   puppyName: string;
   breederName: string;
+  breederId?: string;
   senderName: string;
   senderEmail: string;
+  isAuthenticated?: boolean;
 }
 
 const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
@@ -19,8 +22,10 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
   onCancel,
   puppyName,
   breederName,
+  breederId,
   senderName,
   senderEmail,
+  isAuthenticated = false,
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -30,17 +35,18 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
     console.log('Form submitted with values:', values);
     setLoading(true);
     try {
-      const response = await fetch('/api/contact-breeder', {
+      const response = await fetch('/api/messages/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
-          puppyName,
-          breederName,
-          senderName,
-          senderEmail,
-          message: values.message,
+          recipientId: breederId,
+          recipientName: breederName,
+          subject: `Inquiry about ${puppyName}`,
+          content: values.message,
+          messageType: 'inquiry',
         }),
       });
 
@@ -51,14 +57,6 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
         const responseData = await response.json();
         console.log('Response data:', responseData);
         setSuccess(true);
-        message.success('Your message has been sent successfully! We\'ll get back to you soon.');
-        
-        // Auto-close after 2 seconds
-        setTimeout(() => {
-          form.resetFields();
-          setSuccess(false);
-          onCancel();
-        }, 2000);
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
@@ -93,15 +91,35 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
       centered
     >
       <div style={{ padding: '20px 0' }}>
-        {success ? (
+        {!isAuthenticated ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <LoginOutlined style={{ fontSize: '48px', color: '#08979C', marginBottom: '16px' }} />
+            <Text strong style={{ fontSize: '18px', display: 'block', marginBottom: '8px' }}>
+              Sign in to message this breeder
+            </Text>
+            <Text type="secondary" style={{ display: 'block', marginBottom: '24px' }}>
+              Create an account or sign in to send messages to {breederName} about {puppyName}.
+            </Text>
+            <Link href="/api/auth/signin">
+              <Button type="primary" size="large" icon={<LoginOutlined />}>
+                Sign In
+              </Button>
+            </Link>
+          </div>
+        ) : success ? (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <CheckCircleOutlined style={{ fontSize: '48px', color: '#52c41a', marginBottom: '16px' }} />
             <Text strong style={{ fontSize: '18px', color: '#52c41a', display: 'block', marginBottom: '8px' }}>
               Message Sent Successfully!
             </Text>
-            <Text type="secondary">
-              We've forwarded your message to {breederName} and will copy you on their response.
+            <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
+              Your message about {puppyName} has been sent to {breederName}.
             </Text>
+            <Link href="/dashboard/messages">
+              <Button type="primary" icon={<MessageOutlined />}>
+                View Your Messages
+              </Button>
+            </Link>
           </div>
         ) : (
           <>
@@ -111,7 +129,7 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
               </Text>
               <br />
               <Text type="secondary">
-                Send a message to {breederName} and we'll help you connect.
+                Send a message to {breederName} and start a conversation.
               </Text>
             </div>
 
@@ -119,7 +137,7 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
           </>
         )}
 
-        {!success && (
+        {isAuthenticated && !success && (
           <Form
             form={form}
             layout="vertical"
@@ -128,11 +146,11 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
           >
           <div style={{ marginBottom: '16px' }}>
             <Text strong>Your Information:</Text>
-            <div style={{ 
-              background: '#f5f5f5', 
-              padding: '12px', 
-              borderRadius: '6px', 
-              marginTop: '8px' 
+            <div style={{
+              background: '#f5f5f5',
+              padding: '12px',
+              borderRadius: '6px',
+              marginTop: '8px'
             }}>
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -164,16 +182,16 @@ const ContactBreederModal: React.FC<ContactBreederModalProps> = ({
             />
           </Form.Item>
 
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginTop: '24px',
             paddingTop: '16px',
             borderTop: '1px solid #f0f0f0'
           }}>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              We'll forward your message to the breeder and copy you on the response.
+              Your message will appear in your Messages inbox.
             </Text>
             <Space>
               <Button onClick={handleCancel}>
