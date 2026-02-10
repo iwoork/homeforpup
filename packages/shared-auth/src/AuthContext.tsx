@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             userId,
             name: session?.user?.name || 'User',
             email: session?.user?.email || '',
-            userType: (session?.user as any)?.userType || 'dog-parent'
+            userType: (session?.user as any)?.userType || (typeof window !== 'undefined' ? localStorage.getItem('pendingUserType') : null) || 'dog-parent'
           }),
         });
 

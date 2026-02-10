@@ -5,6 +5,7 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dyn
 import {
   CognitoIdentityProviderClient,
   AdminAddUserToGroupCommand,
+  AdminGetUserCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -80,8 +81,8 @@ export async function POST(request: NextRequest) {
     console.log('Session verification successful for user sync:', decodedToken.userId.substring(0, 10) + '...');
 
     const body = await request.json();
-    const { 
-      userType = 'dog-parent',
+    const {
+      userType: bodyUserType,
       phone,
       location,
       bio,
@@ -90,8 +91,33 @@ export async function POST(request: NextRequest) {
       galleryPhotos,
       preferences,
       breederInfo,
-      adopterInfo 
+      adopterInfo
     } = body;
+
+    // Resolve userType: body > session > Cognito attribute > default
+    // The body/session may pass 'dog-parent' as a default even for breeders,
+    // so look up the actual Cognito custom:userType as the authoritative source
+    let userType = bodyUserType || (session.user as any)?.userType || 'dog-parent';
+    if (userType === 'dog-parent') {
+      const userPoolId = process.env.NEXT_PUBLIC_AWS_USER_POOL_ID;
+      if (userPoolId && decodedToken.email) {
+        try {
+          const cognitoUser = await cognitoClient.send(new AdminGetUserCommand({
+            UserPoolId: userPoolId,
+            Username: decodedToken.email,
+          }));
+          const cognitoUserType = cognitoUser.UserAttributes?.find(
+            attr => attr.Name === 'custom:userType'
+          )?.Value;
+          if (cognitoUserType) {
+            userType = cognitoUserType;
+            console.log('Resolved userType from Cognito attribute:', userType);
+          }
+        } catch (cognitoErr: any) {
+          console.warn('Could not look up Cognito userType:', cognitoErr.message);
+        }
+      }
+    }
 
     const { userId, name, email } = decodedToken;
     const timestamp = new Date().toISOString();

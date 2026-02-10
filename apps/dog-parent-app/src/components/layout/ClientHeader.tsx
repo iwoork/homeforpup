@@ -211,11 +211,28 @@ const ClientHeader: React.FC = () => {
         icon: <SettingOutlined />,
         label: <Link href={`/users/${user?.userId}/edit`}>Edit Profile</Link>,
       },
-      {
-        key: 'favorites',
-        icon: <HeartOutlined />,
-        label: <Link href="/dashboard/favorites">My Favorites</Link>,
-      },
+    ];
+
+    // Role-specific mobile menu items
+    if (userType === 'breeder') {
+      mobileItems.push(
+        {
+          key: 'verification',
+          icon: <GlobalOutlined />,
+          label: <Link href="/verification">Verification</Link>,
+        },
+      );
+    } else {
+      mobileItems.push(
+        {
+          key: 'favorites',
+          icon: <HeartOutlined />,
+          label: <Link href="/dashboard/favorites">My Favorites</Link>,
+        },
+      );
+    }
+
+    mobileItems.push(
       {
         key: 'messages',
         icon: <MessageOutlined />,
@@ -236,10 +253,10 @@ const ClientHeader: React.FC = () => {
         label: 'Sign Out',
         onClick: logout,
       }
-    ];
+    );
 
     return mobileItems;
-  }, [user, getProfileNavigationItems, unreadCount, logout]);
+  }, [user, userType, getProfileNavigationItems, unreadCount, logout]);
 
 
   const headerStyle = {
