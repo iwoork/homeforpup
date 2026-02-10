@@ -215,13 +215,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Logout function
+  // Logout function - clears NextAuth session then redirects to Cognito logout
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
       setUser(null);
       setError(null);
+
+      // Clear the NextAuth local session first
       await signOut({ redirect: false });
+
+      // Redirect to Cognito's logout endpoint to clear the Cognito session
+      const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+      const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
+
+      if (cognitoDomain && clientId) {
+        const logoutUri = encodeURIComponent(window.location.origin);
+        window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
+      } else {
+        // Fallback: redirect to home if Cognito config is missing
+        window.location.href = '/';
+      }
     } catch (err) {
       console.error('Logout failed:', err);
       setError('Logout failed');
