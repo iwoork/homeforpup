@@ -1,86 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Alert,
   FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../../utils/theme';
+import { apiService, Contract } from '../../services/apiService';
+import { useAuth } from '../../contexts/AuthContext';
 
-type ContractStatus = 'draft' | 'sent' | 'signed' | 'active' | 'completed' | 'cancelled';
-
-interface Contract {
-  id: string;
-  title: string;
-  buyerName: string;
-  buyerEmail: string;
-  puppyName: string;
-  litterId: string;
-  status: ContractStatus;
-  price: number;
-  depositAmount: number;
-  depositPaid: boolean;
-  createdAt: string;
-  updatedAt: string;
-  signedAt?: string;
-  completedAt?: string;
-}
+type ContractStatus = Contract['status'];
 
 const ManageContractsScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
 
-  // Mock data - in real app, this would come from API
-  const [contracts] = useState<Contract[]>([
-    {
-      id: '1',
-      title: 'Akita Puppy Contract - Max',
-      buyerName: 'Sarah Johnson',
-      buyerEmail: 'sarah.j@email.com',
-      puppyName: 'Max',
-      litterId: 'litter-1',
-      status: 'active',
-      price: 2500,
-      depositAmount: 500,
-      depositPaid: true,
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-20T14:30:00Z',
-      signedAt: '2024-01-20T14:30:00Z',
-    },
-    {
-      id: '2',
-      title: 'Golden Retriever Contract - Luna',
-      buyerName: 'Mike Chen',
-      buyerEmail: 'mike.chen@email.com',
-      puppyName: 'Luna',
-      litterId: 'litter-2',
-      status: 'sent',
-      price: 1800,
-      depositAmount: 400,
-      depositPaid: false,
-      createdAt: '2024-01-18T09:15:00Z',
-      updatedAt: '2024-01-22T11:45:00Z',
-    },
-    {
-      id: '3',
-      title: 'German Shepherd Contract - Zeus',
-      buyerName: 'Emily Rodriguez',
-      buyerEmail: 'emily.r@email.com',
-      puppyName: 'Zeus',
-      litterId: 'litter-3',
-      status: 'draft',
-      price: 2200,
-      depositAmount: 450,
-      depositPaid: false,
-      createdAt: '2024-01-20T16:20:00Z',
-      updatedAt: '2024-01-20T16:20:00Z',
-    },
-  ]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchContracts = useCallback(async () => {
+    if (!user?.userId) return;
+    try {
+      setError(null);
+      const response = await apiService.getContracts(user.userId);
+      if (response.success && response.data) {
+        setContracts(response.data.contracts);
+      } else {
+        setError(response.error || 'Failed to load contracts');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    }
+  }, [user?.userId]);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    await fetchContracts();
+    setLoading(false);
+  }, [fetchContracts]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchContracts();
+    setRefreshing(false);
+  }, [fetchContracts]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getStatusColor = (status: ContractStatus) => {
     switch (status) {
@@ -90,8 +66,6 @@ const ManageContractsScreen: React.FC = () => {
         return '#f59e0b';
       case 'signed':
         return '#10b981';
-      case 'active':
-        return '#3b82f6';
       case 'completed':
         return '#059669';
       case 'cancelled':
@@ -109,8 +83,6 @@ const ManageContractsScreen: React.FC = () => {
         return 'Sent for Review';
       case 'signed':
         return 'Signed';
-      case 'active':
-        return 'Active';
       case 'completed':
         return 'Completed';
       case 'cancelled':
@@ -120,36 +92,86 @@ const ManageContractsScreen: React.FC = () => {
     }
   };
 
+  const getContractTypeLabel = (type: Contract['contractType']) => {
+    switch (type) {
+      case 'puppy_sale':
+        return 'Puppy Sale';
+      case 'co_ownership':
+        return 'Co-Ownership';
+      case 'breeding_rights':
+        return 'Breeding Rights';
+      default:
+        return type;
+    }
+  };
+
   const handleCreateContract = () => {
     Alert.alert(
       'Create New Contract',
       'This will open the contract creation wizard.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Create', onPress: () => {
-          // TODO: Navigate to CreateContractScreen
-          console.log('Navigate to CreateContractScreen');
+        { text: 'Create', onPress: async () => {
+          const response = await apiService.createContract({
+            buyerName: 'New Buyer',
+            buyerEmail: 'buyer@example.com',
+            contractType: 'puppy_sale',
+            status: 'draft',
+          });
+          if (response.success) {
+            Alert.alert('Success', 'Contract created');
+            fetchContracts();
+          } else {
+            Alert.alert('Error', response.error || 'Failed to create contract');
+          }
         }},
       ]
     );
   };
 
   const handleContractPress = (contract: Contract) => {
+    const statusActions: { text: string; newStatus: ContractStatus }[] = [];
+    if (contract.status === 'draft') {
+      statusActions.push({ text: 'Send for Review', newStatus: 'sent' });
+    }
+    if (contract.status === 'sent') {
+      statusActions.push({ text: 'Mark as Signed', newStatus: 'signed' });
+    }
+    if (contract.status === 'signed') {
+      statusActions.push({ text: 'Mark Completed', newStatus: 'completed' });
+    }
+    if (contract.status !== 'cancelled' && contract.status !== 'completed') {
+      statusActions.push({ text: 'Cancel Contract', newStatus: 'cancelled' });
+    }
+
+    const buttons: any[] = [{ text: 'Close', style: 'cancel' }];
+    statusActions.forEach(action => {
+      buttons.push({
+        text: action.text,
+        style: action.newStatus === 'cancelled' ? 'destructive' : 'default',
+        onPress: async () => {
+          const response = await apiService.updateContract(contract.id, {
+            status: action.newStatus,
+          });
+          if (response.success) {
+            Alert.alert('Success', `Contract ${action.newStatus}`);
+            fetchContracts();
+          } else {
+            Alert.alert('Error', response.error || 'Failed to update contract');
+          }
+        },
+      });
+    });
+
     Alert.alert(
       'Contract Details',
-      `Contract: ${contract.title}\nBuyer: ${contract.buyerName}\nStatus: ${getStatusLabel(contract.status)}\nPrice: $${contract.price}`,
-      [
-        { text: 'Close', style: 'cancel' },
-        { text: 'View Details', onPress: () => {
-          // TODO: Navigate to ContractDetailScreen
-          console.log('Navigate to ContractDetailScreen for:', contract.id);
-        }},
-      ]
+      `Type: ${getContractTypeLabel(contract.contractType)}\nBuyer: ${contract.buyerName}\nStatus: ${getStatusLabel(contract.status)}${contract.totalAmount ? `\nTotal: $${contract.totalAmount}` : ''}`,
+      buttons,
     );
   };
 
   const renderContractCard = ({ item }: { item: Contract }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.contractCard}
       onPress={() => handleContractPress(item)}
       activeOpacity={0.7}
@@ -157,9 +179,9 @@ const ManageContractsScreen: React.FC = () => {
       <View style={styles.contractHeader}>
         <View style={styles.contractTitleContainer}>
           <Text style={styles.contractTitle} numberOfLines={1}>
-            {item.title}
+            {getContractTypeLabel(item.contractType)} - {item.buyerName}
           </Text>
-          <Text style={styles.buyerName}>{item.buyerName}</Text>
+          <Text style={styles.buyerName}>{item.buyerEmail}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
           <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
@@ -169,18 +191,24 @@ const ManageContractsScreen: React.FC = () => {
       </View>
 
       <View style={styles.contractDetails}>
+        {item.totalAmount != null && (
+          <View style={styles.detailRow}>
+            <Icon name="cash" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>Total: ${item.totalAmount}</Text>
+          </View>
+        )}
+        {item.depositAmount != null && (
+          <View style={styles.detailRow}>
+            <Icon name="card" size={16} color={theme.colors.textSecondary} />
+            <Text style={styles.detailText}>
+              Deposit: ${item.depositAmount} {item.depositPaid ? '✅' : '⏳'}
+            </Text>
+          </View>
+        )}
         <View style={styles.detailRow}>
-          <Icon name="paw" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>Puppy: {item.puppyName}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Icon name="cash" size={16} color={theme.colors.textSecondary} />
-          <Text style={styles.detailText}>Price: ${item.price}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Icon name="card" size={16} color={theme.colors.textSecondary} />
+          <Icon name="document-text" size={16} color={theme.colors.textSecondary} />
           <Text style={styles.detailText}>
-            Deposit: ${item.depositAmount} {item.depositPaid ? '✅' : '⏳'}
+            {getContractTypeLabel(item.contractType)}
           </Text>
         </View>
       </View>
@@ -208,16 +236,37 @@ const ManageContractsScreen: React.FC = () => {
     </View>
   );
 
+  const renderErrorState = () => (
+    <View style={styles.emptyState}>
+      <Icon name="alert-circle-outline" size={64} color={theme.colors.textTertiary} />
+      <Text style={styles.emptyTitle}>Something went wrong</Text>
+      <Text style={styles.emptySubtitle}>{error}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+        <Icon name="refresh" size={20} color="#ffffff" />
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const getStatsData = () => {
     const total = contracts.length;
-    const active = contracts.filter(c => c.status === 'active').length;
+    const signed = contracts.filter(c => c.status === 'signed').length;
     const completed = contracts.filter(c => c.status === 'completed').length;
     const pending = contracts.filter(c => ['draft', 'sent'].includes(c.status)).length;
 
-    return { total, active, completed, pending };
+    return { total, signed, completed, pending };
   };
 
   const stats = getStatsData();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Loading contracts...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -227,7 +276,7 @@ const ManageContractsScreen: React.FC = () => {
         style={styles.headerGradient}
       >
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -251,8 +300,8 @@ const ManageContractsScreen: React.FC = () => {
             <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.active}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+            <Text style={styles.statValue}>{stats.signed}</Text>
+            <Text style={styles.statLabel}>Signed</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>{stats.completed}</Text>
@@ -268,7 +317,9 @@ const ManageContractsScreen: React.FC = () => {
       {/* Contracts List */}
       <View style={styles.listContainer}>
         <Text style={styles.sectionTitle}>Recent Contracts</Text>
-        {contracts.length === 0 ? (
+        {error ? (
+          renderErrorState()
+        ) : contracts.length === 0 ? (
           renderEmptyState()
         ) : (
           <FlatList
@@ -277,6 +328,14 @@ const ManageContractsScreen: React.FC = () => {
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[theme.colors.primary]}
+                tintColor={theme.colors.primary}
+              />
+            }
           />
         )}
       </View>
@@ -288,6 +347,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
+  loadingText: {
+    marginTop: theme.spacing.md,
+    fontSize: 16,
+    color: theme.colors.textSecondary,
   },
   headerGradient: {
     paddingTop: 50,
@@ -456,6 +526,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: theme.spacing.sm,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -134,6 +134,27 @@ export interface WaitlistResponse {
   entries: WaitlistEntry[];
 }
 
+export interface Contract {
+  id: string;
+  breederId: string;
+  buyerName: string;
+  buyerEmail: string;
+  litterId?: string;
+  puppyId?: string;
+  status: 'draft' | 'sent' | 'signed' | 'completed' | 'cancelled';
+  contractType: 'puppy_sale' | 'co_ownership' | 'breeding_rights';
+  totalAmount?: number;
+  depositAmount?: number;
+  depositPaid: boolean;
+  terms?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractsResponse {
+  contracts: Contract[];
+}
+
 export interface LittersResponse {
   litters: Litter[];
   total: number;
@@ -893,6 +914,45 @@ class ApiService {
     return this.makeRequest<void>(`/litters/${litterId}/waitlist/${entryId}`, {
       method: 'DELETE',
     });
+  }
+
+  // Contracts API
+  async getContracts(breederId: string): Promise<ApiResponse<ContractsResponse>> {
+    return this.makeRequest<ContractsResponse>(`/contracts?breederId=${encodeURIComponent(breederId)}`);
+  }
+
+  async createContract(
+    data: {
+      buyerName: string;
+      buyerEmail: string;
+      litterId?: string;
+      puppyId?: string;
+      status?: string;
+      contractType?: string;
+      totalAmount?: number;
+      depositAmount?: number;
+      depositPaid?: boolean;
+      terms?: string;
+    },
+  ): Promise<ApiResponse<{ contract: Contract }>> {
+    return this.makeRequest<{ contract: Contract }>('/contracts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateContract(
+    id: string,
+    data: Partial<Omit<Contract, 'id' | 'breederId' | 'createdAt'>>,
+  ): Promise<ApiResponse<{ contract: Contract }>> {
+    return this.makeRequest<{ contract: Contract }>(`/contracts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getContract(id: string): Promise<ApiResponse<{ contract: Contract }>> {
+    return this.makeRequest<{ contract: Contract }>(`/contracts/${id}`);
   }
 }
 
