@@ -112,6 +112,28 @@ export interface BreedsResponse {
   };
 }
 
+export interface WaitlistEntry {
+  id: string;
+  litterId: string;
+  breederId: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone?: string;
+  position: number;
+  status: 'active' | 'matched' | 'passed' | 'cancelled';
+  depositAmount?: number;
+  depositPaid: boolean;
+  genderPreference?: string;
+  colorPreference?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface WaitlistResponse {
+  entries: WaitlistEntry[];
+}
+
 export interface LittersResponse {
   litters: Litter[];
   total: number;
@@ -825,6 +847,50 @@ class ApiService {
 
   async deleteVeterinarian(id: string): Promise<ApiResponse<void>> {
     return this.makeRequest<void>(`/veterinarians/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Waitlist API
+  async getWaitlist(litterId: string): Promise<ApiResponse<WaitlistResponse>> {
+    return this.makeRequest<WaitlistResponse>(`/litters/${litterId}/waitlist`);
+  }
+
+  async addWaitlistEntry(
+    litterId: string,
+    data: {
+      buyerName: string;
+      buyerEmail: string;
+      buyerPhone?: string;
+      genderPreference?: string;
+      colorPreference?: string;
+      notes?: string;
+      depositAmount?: number;
+      depositPaid?: boolean;
+    },
+  ): Promise<ApiResponse<{ entry: WaitlistEntry }>> {
+    return this.makeRequest<{ entry: WaitlistEntry }>(`/litters/${litterId}/waitlist`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateWaitlistEntry(
+    litterId: string,
+    entryId: string,
+    data: Partial<Omit<WaitlistEntry, 'id' | 'litterId' | 'breederId' | 'createdAt'>>,
+  ): Promise<ApiResponse<{ entry: WaitlistEntry }>> {
+    return this.makeRequest<{ entry: WaitlistEntry }>(`/litters/${litterId}/waitlist/${entryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteWaitlistEntry(
+    litterId: string,
+    entryId: string,
+  ): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(`/litters/${litterId}/waitlist/${entryId}`, {
       method: 'DELETE',
     });
   }
