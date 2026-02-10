@@ -17,8 +17,11 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
 import { Dog, Kennel } from '@homeforpup/shared-types';
+import { calculateBreedScore, MatchPreferences, BreedScore } from '@homeforpup/shared-dogs';
+import { Breed } from '@homeforpup/shared-dogs';
 import ContactBreederModal from '@/components/ContactBreederModal';
 import { useAuth, useFavorites, useFavoriteStatus } from '@/hooks';
+import { Progress } from 'antd';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -150,6 +153,92 @@ const SimilarPuppies: React.FC<{ breed: string; currentPuppyId: string }> = ({ b
           </Col>
         ))}
       </Row>
+    </div>
+  );
+};
+
+const prefsFetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) return { matchPreferences: null };
+  return res.json();
+};
+
+const breedFetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) return { breeds: [] };
+  return res.json();
+};
+
+const MatchBadge: React.FC<{ breedName: string }> = ({ breedName }) => {
+  const { data: prefsData } = useSWR('/api/matching/preferences', prefsFetcher, {
+    revalidateOnFocus: false,
+  });
+  const { data: breedsData } = useSWR(
+    breedName ? `/api/breeds?search=${encodeURIComponent(breedName)}&limit=5` : null,
+    breedFetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const prefs: MatchPreferences | null = prefsData?.matchPreferences || null;
+  const breed: Breed | undefined = breedsData?.breeds?.find(
+    (b: Breed) => b.name.toLowerCase() === breedName.toLowerCase()
+  );
+
+  if (!prefs) {
+    return (
+      <div style={{
+        background: '#f6ffed',
+        border: '1px solid #b7eb8f',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginTop: '16px',
+      }}>
+        <Link href="/browse" style={{ color: '#08979C', fontWeight: 500 }}>
+          Take our quiz to see your match score
+        </Link>
+      </div>
+    );
+  }
+
+  if (!breed) return null;
+
+  const score: BreedScore = calculateBreedScore(breed, prefs);
+  const getColor = (s: number) => {
+    if (s >= 80) return '#52c41a';
+    if (s >= 60) return '#1890ff';
+    if (s >= 40) return '#faad14';
+    return '#ff4d4f';
+  };
+
+  return (
+    <div style={{
+      background: '#f6ffed',
+      border: '1px solid #b7eb8f',
+      borderRadius: '8px',
+      padding: '12px 16px',
+      marginTop: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+    }}>
+      <Progress
+        type="circle"
+        percent={score.total}
+        size={48}
+        strokeColor={getColor(score.total)}
+        format={(pct) => <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{pct}</span>}
+      />
+      <div style={{ flex: 1 }}>
+        <Text strong style={{ fontSize: '14px' }}>Your Match</Text>
+        <div style={{ marginTop: '4px' }}>
+          {score.matchReasons.slice(0, 3).map((reason, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} />
+              <Text style={{ fontSize: '12px' }}>{reason}</Text>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
@@ -506,6 +595,9 @@ const PuppyDetailPage: React.FC = () => {
                   {puppy.description}
                 </Paragraph>
               )}
+
+              {/* Match Score Badge */}
+              <MatchBadge breedName={puppy.breed} />
             </div>
           </Col>
         </Row>
