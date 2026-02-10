@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { User, ApiResponse } from '../types';
 import authService from '../services/authService';
 import apiService from '../services/apiService';
+import pushNotificationService from '../services/pushNotificationService';
 
 interface AuthContextType {
   user: User | null;
@@ -128,6 +129,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
           
           setUser(storedUser);
+
+          // Register push notification device token on session restore
+          pushNotificationService.registerWithBackend().catch((err) => {
+            console.warn('📱 Push token registration on restore failed:', err);
+          });
         } else {
           // Session expired, clear stored data
           await authService.logout();
@@ -160,6 +166,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Set the auth token in the API service
         apiService.setAuthToken(result.token);
         setUser(result.user);
+
+        // Register push notification device token with backend after login
+        pushNotificationService.registerWithBackend().catch((err) => {
+          console.warn('📱 Push token registration after login failed:', err);
+        });
+
         return { success: true, data: result.user };
       } else {
         setError(result.error || 'Login failed');
@@ -215,6 +227,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
+      // Unregister push token before clearing auth
+      await pushNotificationService.unregisterFromBackend().catch(() => {});
       await authService.logout();
       // Clear the auth token from the API service
       apiService.setAuthToken(null);

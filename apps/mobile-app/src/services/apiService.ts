@@ -1007,6 +1007,31 @@ class ApiService {
   async getContract(id: string): Promise<ApiResponse<{ contract: Contract }>> {
     return this.makeRequest<{ contract: Contract }>(`/contracts/${id}`);
   }
+
+  // Push Notification Device Token methods
+  async registerDeviceToken(
+    deviceToken: string,
+    platform: string = 'ios',
+    deviceName?: string,
+  ): Promise<ApiResponse<{ registration: any }>> {
+    return this.makeRequest<{ registration: any }>('/notifications/register', {
+      method: 'POST',
+      body: JSON.stringify({ deviceToken, platform, deviceName }),
+    });
+  }
+
+  async unregisterDeviceToken(
+    deviceToken: string,
+  ): Promise<ApiResponse<void>> {
+    return this.makeRequest<void>(
+      `/notifications/register?deviceToken=${encodeURIComponent(deviceToken)}`,
+      { method: 'DELETE' },
+    );
+  }
+
+  async getDeviceTokens(): Promise<ApiResponse<{ tokens: any[] }>> {
+    return this.makeRequest<{ tokens: any[] }>('/notifications/register');
+  }
 }
 
 // Create a singleton instance
