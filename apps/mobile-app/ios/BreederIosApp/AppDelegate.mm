@@ -1,5 +1,4 @@
 #import <React/RCTBundleURLProvider.h>
-#import <React/RCTPushNotificationManager.h>
 #import <UserNotifications/UserNotifications.h>
 
 #import "AppDelegate.h"
@@ -9,8 +8,6 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
   self.moduleName = @"HomeForPup";
-  // You can add your custom initial props in the dictionary below.
-  // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
 
   // Set UNUserNotificationCenter delegate for foreground notification handling
@@ -34,22 +31,32 @@
 #endif
 }
 
-// Required for push notification registration
+// Forward device token to JS via NSNotificationCenter
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
 {
-  [RCTPushNotificationManager didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+  const unsigned char *bytes = (const unsigned char *)[deviceToken bytes];
+  NSMutableString *tokenString = [NSMutableString stringWithCapacity:deviceToken.length * 2];
+  for (NSUInteger i = 0; i < deviceToken.length; i++) {
+    [tokenString appendFormat:@"%02x", bytes[i]];
+  }
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"RemoteNotificationsRegistered"
+                                                      object:nil
+                                                    userInfo:@{@"deviceToken": [tokenString copy]}];
 }
 
-// Required for push notification registration errors
 - (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
 {
-  [RCTPushNotificationManager didFailToRegisterForRemoteNotificationsWithError:error];
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"RemoteNotificationRegistrationFailed"
+                                                      object:nil
+                                                    userInfo:@{@"error": error.localizedDescription}];
 }
 
-// Required for receiving remote notifications
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
 {
-  [RCTPushNotificationManager didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"RemoteNotificationReceived"
+                                                      object:nil
+                                                    userInfo:userInfo];
+  completionHandler(UIBackgroundFetchResultNewData);
 }
 
 // Handle foreground notifications - show banner even when app is in foreground

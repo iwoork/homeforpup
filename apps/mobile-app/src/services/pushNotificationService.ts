@@ -1,10 +1,22 @@
-import { Platform, Alert } from 'react-native';
-import { PushNotificationIOS } from 'react-native';
+import { Platform, Alert, NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from './apiService';
 
 const DEVICE_TOKEN_KEY = '@homeforpup:deviceToken';
 const PUSH_PERMISSION_ASKED_KEY = '@homeforpup:pushPermissionAsked';
+
+// Check if the native push notification module is available
+const hasNativeModule = !!NativeModules.PushNotificationManager;
+
+// Lazy-load PushNotificationIOS only if native module exists
+let PushNotificationIOS: any = null;
+if (hasNativeModule) {
+  try {
+    PushNotificationIOS = require('react-native').PushNotificationIOS;
+  } catch {
+    // Native module not available
+  }
+}
 
 export interface PushNotificationPermissions {
   alert?: boolean;
@@ -15,6 +27,7 @@ export interface PushNotificationPermissions {
 class PushNotificationService {
   private deviceToken: string | null = null;
   private initialized = false;
+  private available = false;
 
   /**
    * Initialize push notification listeners.
@@ -23,6 +36,14 @@ class PushNotificationService {
   initialize(): void {
     if (this.initialized || Platform.OS !== 'ios') return;
     this.initialized = true;
+
+    if (!PushNotificationIOS || !hasNativeModule) {
+      console.log('📱 Push notifications: native module not available, skipping initialization');
+      this.loadStoredToken();
+      return;
+    }
+
+    this.available = true;
 
     // Listen for device token registration
     PushNotificationIOS.addEventListener('register', (token: string) => {
@@ -40,15 +61,12 @@ class PushNotificationService {
     );
 
     // Handle foreground notifications with in-app banner
-    PushNotificationIOS.addEventListener('notification', (notification) => {
+    PushNotificationIOS.addEventListener('notification', (notification: any) => {
       const message = notification.getMessage();
-      const title = typeof message === 'string' ? message : (message as any)?.title || 'New Notification';
-      const body = typeof message === 'string' ? message : (message as any)?.body || '';
+      const title = typeof message === 'string' ? message : message?.title || 'New Notification';
+      const body = typeof message === 'string' ? message : message?.body || '';
 
-      // Show in-app alert for foreground notifications
       Alert.alert(title, body, [{ text: 'OK' }]);
-
-      // Required: call finish to let iOS know we handled it
       notification.finish(PushNotificationIOS.FetchResult.NoData);
     });
 
@@ -61,7 +79,7 @@ class PushNotificationService {
    * Returns the granted permissions.
    */
   async requestPermissions(): Promise<PushNotificationPermissions> {
-    if (Platform.OS !== 'ios') {
+    if (Platform.OS !== 'ios' || !this.available) {
       return { alert: false, badge: false, sound: false };
     }
 
@@ -86,11 +104,11 @@ class PushNotificationService {
    */
   checkPermissions(): Promise<PushNotificationPermissions> {
     return new Promise((resolve) => {
-      if (Platform.OS !== 'ios') {
+      if (Platform.OS !== 'ios' || !this.available) {
         resolve({ alert: false, badge: false, sound: false });
         return;
       }
-      PushNotificationIOS.checkPermissions((permissions) => {
+      PushNotificationIOS.checkPermissions((permissions: PushNotificationPermissions) => {
         resolve(permissions);
       });
     });
@@ -164,7 +182,7 @@ class PushNotificationService {
    * Set the app icon badge number.
    */
   setBadgeCount(count: number): void {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' && this.available) {
       PushNotificationIOS.setApplicationIconBadgeNumber(count);
     }
   }
