@@ -62,24 +62,32 @@ export default function BillingPage() {
     fetcher
   );
 
-  // Sync subscription with Stripe after successful checkout
-  useEffect(() => {
-    if (searchParams.get('success') === 'true' && session) {
-      setSyncing(true);
-      fetch('/api/billing/sync', { method: 'POST' })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.synced) {
-            message.success('Subscription activated successfully!');
-            mutate(); // refresh subscription data
-          }
-        })
-        .catch(() => {
-          message.error('Failed to sync subscription. Please refresh.');
-        })
-        .finally(() => setSyncing(false));
+  const syncSubscription = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/billing/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.synced) {
+        mutate();
+        if (searchParams.get('success') === 'true') {
+          message.success('Subscription activated successfully!');
+        }
+      } else if (data.error) {
+        message.error(data.error);
+      }
+    } catch {
+      message.error('Failed to sync subscription. Please try again.');
+    } finally {
+      setSyncing(false);
     }
-  }, [searchParams, session, mutate]);
+  };
+
+  // Sync subscription with Stripe on page load
+  useEffect(() => {
+    if (session) {
+      syncSubscription();
+    }
+  }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: kennelsData } = useSWR(session ? '/api/kennels' : null, fetcher);
   const { data: dogsData } = useSWR(session ? '/api/dogs' : null, fetcher);
