@@ -9,6 +9,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 const { Title, Paragraph } = Typography;
 
+const breederAppUrl = process.env.NEXT_PUBLIC_BREEDER_APP_URL || 'http://localhost:3001';
+
 const LoginPage: React.FC = () => {
   const { login, loading } = useAuth();
   const searchParams = useSearchParams();
@@ -114,8 +116,19 @@ const LoginPage: React.FC = () => {
           </Link>
         </Space>
 
-        <div style={{ textAlign: 'center', marginTop: '24px' }}>
-          <Paragraph style={{ color: '#8c8c8c', fontSize: '12px' }}>
+        <div style={{
+          marginTop: '24px',
+          paddingTop: '16px',
+          borderTop: '1px solid #f0f0f0',
+          textAlign: 'center',
+        }}>
+          <Paragraph style={{ color: '#8c8c8c', marginBottom: '8px' }}>
+            Are you a breeder?{' '}
+            <a href={`${breederAppUrl}/auth/login`} style={{ color: '#08979C', fontWeight: 500 }}>
+              Sign in on the Breeder Portal
+            </a>
+          </Paragraph>
+          <Paragraph style={{ color: '#8c8c8c', fontSize: '12px', marginBottom: 0 }}>
             By signing in, you agree to our{' '}
             <Link href="/terms" style={{ color: '#08979C' }}>Terms of Service</Link>
             {' '}and{' '}

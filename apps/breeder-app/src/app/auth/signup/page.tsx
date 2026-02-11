@@ -146,15 +146,19 @@ const SignupContent: React.FC = () => {
           </ul>
         </div>
 
-        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #f0f0f0' }}>
-          <div style={{ textAlign: 'center' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              By creating an account, you agree to our{' '}
-              <Link href="/terms" style={{ color: '#1890ff' }}>Terms of Service</Link>
-              {' '}and{' '}
-              <Link href="/privacy" style={{ color: '#1890ff' }}>Privacy Policy</Link>
-            </Text>
-          </div>
+        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #f0f0f0', textAlign: 'center' }}>
+          <Paragraph style={{ color: '#8c8c8c', marginBottom: '8px' }}>
+            Looking for a puppy instead?{' '}
+            <a href="http://localhost:3000/auth/signup" style={{ color: '#1890ff', fontWeight: 500 }}>
+              Sign up as a Dog Parent
+            </a>
+          </Paragraph>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" style={{ color: '#1890ff' }}>Terms of Service</Link>
+            {' '}and{' '}
+            <Link href="/privacy" style={{ color: '#1890ff' }}>Privacy Policy</Link>
+          </Text>
         </div>
       </Card>
     </div>
