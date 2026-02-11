@@ -55,6 +55,7 @@ const nextConfig = {
     NEXT_PUBLIC_COGNITO_DOMAIN: process.env.NEXT_PUBLIC_COGNITO_DOMAIN,
     NEXT_PUBLIC_AWS_S3_BUCKET: process.env.NEXT_PUBLIC_AWS_S3_BUCKET,
     NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN: process.env.NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN,
+    NEXT_PUBLIC_BREEDER_APP_URL: process.env.NEXT_PUBLIC_BREEDER_APP_URL,
     // SECURITY: AWS credentials are NOT exposed to client - they should only be used server-side
     // AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are only available on the server
   },
