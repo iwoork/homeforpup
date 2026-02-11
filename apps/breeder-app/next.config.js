@@ -1,9 +1,14 @@
-// Load environment variables from root .env file
+// Load only Stripe env vars from root .env (breeder-app has its own Cognito config in .env.local)
 const path = require('path');
-const { config } = require('dotenv');
-
-// Load root .env file (go up two levels from apps/breeder-app to root)
-config({ path: path.resolve(__dirname, '../../.env') });
+const fs = require('fs');
+const rootEnvPath = path.resolve(__dirname, '../../.env');
+if (fs.existsSync(rootEnvPath)) {
+  const rootEnv = require('dotenv').parse(fs.readFileSync(rootEnvPath));
+  const stripeKeys = Object.entries(rootEnv).filter(([k]) => k.includes('STRIPE'));
+  for (const [key, value] of stripeKeys) {
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
