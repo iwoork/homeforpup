@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Tag, Segmented, Collapse } from 'antd';
+import { Card, Row, Col, Typography, Button, Space, Tag, Segmented, Collapse, message } from 'antd';
 import { CheckOutlined, CrownOutlined, RocketOutlined, StarOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -96,11 +96,18 @@ export default function PricingPage() {
         body: JSON.stringify({ tier, interval }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        message.error(data.error || 'Failed to start checkout');
+        return;
+      }
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        message.error('No checkout URL returned');
       }
     } catch (error) {
       console.error('Checkout error:', error);
+      message.error('Something went wrong. Please try again.');
     } finally {
       setLoadingTier(null);
     }
