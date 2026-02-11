@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Tag, Progress, Modal, Spin, Alert } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Typography, Button, Space, Tag, Progress, Modal, Spin, Alert, message } from 'antd';
 import {
   CrownOutlined,
   CreditCardOutlined,
@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { SUBSCRIPTION_TIERS, SubscriptionTier, TierLimits } from '@homeforpup/shared-types';
 
@@ -51,13 +52,34 @@ const fetcher = async (url: string) => {
 
 export default function BillingPage() {
   const { data: session, status: authStatus } = useSession();
+  const searchParams = useSearchParams();
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  const { data: subscription, isLoading } = useSWR<SubscriptionData>(
+  const { data: subscription, isLoading, mutate } = useSWR<SubscriptionData>(
     session ? '/api/billing/subscription' : null,
     fetcher
   );
+
+  // Sync subscription with Stripe after successful checkout
+  useEffect(() => {
+    if (searchParams.get('success') === 'true' && session) {
+      setSyncing(true);
+      fetch('/api/billing/sync', { method: 'POST' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.synced) {
+            message.success('Subscription activated successfully!');
+            mutate(); // refresh subscription data
+          }
+        })
+        .catch(() => {
+          message.error('Failed to sync subscription. Please refresh.');
+        })
+        .finally(() => setSyncing(false));
+    }
+  }, [searchParams, session, mutate]);
 
   const { data: kennelsData } = useSWR(session ? '/api/kennels' : null, fetcher);
   const { data: dogsData } = useSWR(session ? '/api/dogs' : null, fetcher);
@@ -78,7 +100,7 @@ export default function BillingPage() {
     }
   };
 
-  if (authStatus === 'loading' || isLoading) {
+  if (authStatus === 'loading' || isLoading || syncing) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
         <Spin size="large" />
