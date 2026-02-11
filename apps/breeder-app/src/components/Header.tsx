@@ -43,7 +43,17 @@ export const Header: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/' });
+    await signOut({ redirect: false });
+
+    const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+    const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
+
+    if (cognitoDomain && clientId) {
+      const logoutUri = encodeURIComponent(window.location.origin);
+      window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
+    } else {
+      window.location.href = '/';
+    }
   };
 
   const userMenuItems: MenuProps['items'] = [
