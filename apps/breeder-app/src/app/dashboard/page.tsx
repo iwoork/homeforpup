@@ -19,8 +19,16 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 // import { ActivityFeed, ActivityStats, activityTracker } from '@homeforpup/shared-activity'; // Temporarily disabled
 import useSWR from 'swr';
+import { SUBSCRIPTION_TIERS, SubscriptionTier } from '@homeforpup/shared-types';
 
 const { Title, Paragraph, Text } = Typography;
+
+const tierColors: Record<SubscriptionTier, string> = {
+  free: '#8c8c8c',
+  pro: '#52c41a',
+  premium: '#1890ff',
+  enterprise: '#722ed1',
+};
 
 interface BreederStats {
   activeKennels: number;
@@ -76,6 +84,19 @@ const BreederDashboard: React.FC = () => {
       }
     }
   );
+
+  const { data: subscriptionData } = useSWR(
+    isAuthenticated ? '/api/billing/subscription' : null,
+    async (url) => {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return res.json();
+    }
+  );
+
+  const currentTier: SubscriptionTier = subscriptionData?.tier || 'free';
+  const tierDef = SUBSCRIPTION_TIERS[currentTier];
+  const tierColor = tierColors[currentTier];
 
   // Calculate stats
   useEffect(() => {
@@ -245,25 +266,31 @@ const BreederDashboard: React.FC = () => {
       {/* Subscription Status */}
       <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
-          <Card style={{ ...cardStyle, borderLeft: '4px solid #52c41a' }}>
+          <Card style={{ ...cardStyle, borderLeft: `4px solid ${tierColor}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <CrownOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                <CrownOutlined style={{ fontSize: '24px', color: tierColor }} />
                 <div>
-                  <Text strong style={{ fontSize: '16px' }}>Free Plan</Text>
+                  <Text strong style={{ fontSize: '16px' }}>{tierDef.name} Plan</Text>
                   <br />
-                  <Text type="secondary">Upgrade to unlock more features and higher limits</Text>
+                  <Text type="secondary">
+                    {currentTier === 'free'
+                      ? 'Upgrade to unlock more features and higher limits'
+                      : tierDef.tagline}
+                  </Text>
                 </div>
               </div>
               <Space>
                 <Link href="/dashboard/billing">
                   <Button>Manage Billing</Button>
                 </Link>
-                <Link href="/pricing">
-                  <Button type="primary" style={{ background: '#52c41a', borderColor: '#52c41a' }}>
-                    Upgrade Plan
-                  </Button>
-                </Link>
+                {currentTier === 'free' && (
+                  <Link href="/pricing">
+                    <Button type="primary" style={{ background: '#52c41a', borderColor: '#52c41a' }}>
+                      Upgrade Plan
+                    </Button>
+                  </Link>
+                )}
               </Space>
             </div>
           </Card>
