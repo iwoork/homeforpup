@@ -32,10 +32,12 @@ export interface Profile {
   
   // Premium subscription
   isPremium?: boolean; // Whether user has premium subscription
-  subscriptionPlan?: 'basic' | 'premium' | 'pro'; // Subscription tier
-  subscriptionStatus?: 'active' | 'cancelled' | 'expired' | 'trial'; // Subscription status
+  subscriptionPlan?: 'free' | 'pro' | 'premium' | 'enterprise'; // Subscription tier
+  subscriptionStatus?: 'active' | 'cancelled' | 'expired' | 'trial' | 'past_due'; // Subscription status
   subscriptionStartDate?: string; // When subscription started
   subscriptionEndDate?: string; // When subscription ends/renews
+  stripeCustomerId?: string; // Stripe customer ID
+  stripeSubscriptionId?: string; // Stripe subscription ID
   
   // Preferences
   preferences?: {
@@ -712,6 +714,12 @@ export * from './kennel';
 // ============================================================================
 
 export * from './color';
+
+// ============================================================================
+// SUBSCRIPTION TYPES
+// ============================================================================
+
+export * from './subscription';
 
 // ============================================================================
 // DOG HEALTH & TRAINING TYPES

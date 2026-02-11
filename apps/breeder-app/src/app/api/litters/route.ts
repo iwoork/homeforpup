@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { CreateLitterRequest, LittersResponse, LitterFilter } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
+import { checkLitterCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
@@ -115,6 +116,15 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription limits
+    const guard = await checkLitterCreationAllowed(session.user.id);
+    if (!guard.allowed) {
+      return NextResponse.json(
+        { error: 'Subscription limit reached', message: guard.reason, tier: guard.tier, currentCount: guard.currentCount, limit: guard.limit },
+        { status: 403 }
+      );
     }
 
     const body: CreateLitterRequest = await request.json();

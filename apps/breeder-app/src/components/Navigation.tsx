@@ -13,7 +13,8 @@ import {
   LogoutOutlined,
   UserOutlined,
   PlusOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  CreditCardOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
@@ -75,6 +76,12 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
       icon: <MessageOutlined />,
       label: 'Messages',
       onClick: () => handleMenuClick('/dashboard/messages'),
+    },
+    {
+      key: '/dashboard/billing',
+      icon: <CreditCardOutlined />,
+      label: 'Billing',
+      onClick: () => handleMenuClick('/dashboard/billing'),
     },
     {
       type: 'divider',

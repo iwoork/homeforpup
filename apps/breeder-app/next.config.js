@@ -1,3 +1,10 @@
+// Load environment variables from root .env file
+const path = require('path');
+const { config } = require('dotenv');
+
+// Load root .env file (go up two levels from apps/breeder-app to root)
+config({ path: path.resolve(__dirname, '../../.env') });
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -47,8 +54,9 @@ const nextConfig = {
     NEXT_PUBLIC_AWS_S3_BUCKET: process.env.NEXT_PUBLIC_AWS_S3_BUCKET,
     NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN: process.env.NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN,
     NEXT_PUBLIC_COGNITO_DOMAIN: process.env.NEXT_PUBLIC_COGNITO_DOMAIN,
-    // SECURITY: AWS credentials are NOT exposed to client - they should only be used server-side
-    // AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are only available on the server
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    // SECURITY: AWS credentials and Stripe secret key are NOT exposed to client
+    // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, STRIPE_SECRET_KEY are only available on the server
   },
   typescript: {
     ignoreBuildErrors: false,

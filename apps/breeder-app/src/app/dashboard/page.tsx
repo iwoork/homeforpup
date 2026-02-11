@@ -2,17 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Typography, Button, Space, Statistic, Spin, Alert } from 'antd';
-import { 
-  HomeOutlined, 
-  TeamOutlined, 
-  MessageOutlined, 
+import {
+  HomeOutlined,
+  TeamOutlined,
+  MessageOutlined,
   BarChartOutlined,
   PlusOutlined,
   TrophyOutlined,
   BookOutlined,
   LogoutOutlined,
   UserOutlined,
-  LoginOutlined
+  LoginOutlined,
+  CrownOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
@@ -237,6 +238,34 @@ const BreederDashboard: React.FC = () => {
               prefix={<MessageOutlined style={{ color: '#f5222d' }} />}
               valueStyle={{ color: '#f5222d' }}
             />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Subscription Status */}
+      <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
+        <Col span={24}>
+          <Card style={{ ...cardStyle, borderLeft: '4px solid #52c41a' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <CrownOutlined style={{ fontSize: '24px', color: '#52c41a' }} />
+                <div>
+                  <Text strong style={{ fontSize: '16px' }}>Free Plan</Text>
+                  <br />
+                  <Text type="secondary">Upgrade to unlock more features and higher limits</Text>
+                </div>
+              </div>
+              <Space>
+                <Link href="/dashboard/billing">
+                  <Button>Manage Billing</Button>
+                </Link>
+                <Link href="/pricing">
+                  <Button type="primary" style={{ background: '#52c41a', borderColor: '#52c41a' }}>
+                    Upgrade Plan
+                  </Button>
+                </Link>
+              </Space>
+            </div>
           </Card>
         </Col>
       </Row>

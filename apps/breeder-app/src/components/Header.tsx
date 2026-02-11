@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Layout, Button, Space, Avatar, Dropdown } from 'antd';
-import { 
-  UserOutlined, 
-  LogoutOutlined, 
+import {
+  UserOutlined,
+  LogoutOutlined,
   LoginOutlined,
   SettingOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  CreditCardOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useSession, signOut, signIn } from 'next-auth/react';
@@ -68,6 +69,12 @@ export const Header: React.FC = () => {
       icon: <SettingOutlined />,
       label: 'Settings',
       onClick: () => router.push('/settings'),
+    },
+    {
+      key: 'billing',
+      icon: <CreditCardOutlined />,
+      label: 'Billing',
+      onClick: () => router.push('/dashboard/billing'),
     },
     {
       type: 'divider',

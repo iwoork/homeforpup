@@ -10,7 +10,8 @@ import {
   PlusOutlined,
   LoginOutlined,
   UserAddOutlined,
-  BookOutlined
+  BookOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
@@ -277,22 +278,22 @@ const BreederLandingContent: React.FC = () => {
           
           <Space size="middle" wrap style={{ width: '100%', justifyContent: 'center' }}>
             <Link href="/auth/signup">
-              <Button 
-                type="primary" 
-                size="large" 
+              <Button
+                type="primary"
+                size="large"
                 icon={<UserAddOutlined />}
                 style={{ height: '48px', fontSize: '16px', fontWeight: '500', minWidth: '180px' }}
               >
                 Create Your Account
               </Button>
             </Link>
-            <Link href="/docs">
-              <Button 
-                size="large" 
-                icon={<BookOutlined />}
+            <Link href="/pricing">
+              <Button
+                size="large"
+                icon={<DollarOutlined />}
                 style={{ height: '48px', fontSize: '16px', fontWeight: '500', minWidth: '140px' }}
               >
-                Learn More
+                View Pricing
               </Button>
             </Link>
           </Space>

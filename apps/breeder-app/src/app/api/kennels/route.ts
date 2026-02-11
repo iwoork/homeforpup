@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { CreateKennelRequest, KennelsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
+import { checkKennelCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 // Create the verifier outside the handler function for better performance
 let verifier: any = null;
 
@@ -161,6 +162,15 @@ export async function POST(request: NextRequest) {
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription limits
+    const guard = await checkKennelCreationAllowed(userId);
+    if (!guard.allowed) {
+      return NextResponse.json(
+        { error: 'Subscription limit reached', message: guard.reason, tier: guard.tier, currentCount: guard.currentCount, limit: guard.limit },
+        { status: 403 }
+      );
     }
 
     const body: CreateKennelRequest = await request.json();

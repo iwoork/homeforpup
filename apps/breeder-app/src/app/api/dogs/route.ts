@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 import { getUserAccessibleDogs } from '@/lib/auth/kennelAccess';
+import { checkDogCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 
 // GET /api/dogs - List dogs with filtering
 export async function GET(request: NextRequest) {
@@ -55,6 +56,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Check subscription limits for parent dogs
+    if (body.dogType === 'parent') {
+      const guard = await checkDogCreationAllowed(session.user.id);
+      if (!guard.allowed) {
+        return NextResponse.json(
+          { error: 'Subscription limit reached', message: guard.reason, tier: guard.tier, currentCount: guard.currentCount, limit: guard.limit },
+          { status: 403 }
+        );
+      }
+    }
+
     const dog = await dogsApiClient.createDog(body, session.user.id);
     
     return NextResponse.json(dog, { status: 201 });
