@@ -8,7 +8,11 @@ import {
   LoginOutlined,
   SettingOutlined,
   DashboardOutlined,
-  CreditCardOutlined
+  CreditCardOutlined,
+  HomeOutlined,
+  TeamOutlined,
+  HeartOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useSession, signOut, signIn } from 'next-auth/react';
@@ -130,6 +134,33 @@ export const Header: React.FC = () => {
           </span>
         </Link>
       </div>
+
+      {/* Desktop Navigation Links */}
+      {!isMobile && isAuthenticated && (
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {[
+            { href: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+            { href: '/kennels', icon: <HomeOutlined />, label: 'Kennels' },
+            { href: '/dogs', icon: <TeamOutlined />, label: 'Dogs' },
+            { href: '/litters', icon: <HeartOutlined />, label: 'Litters' },
+            { href: '/dashboard/messages', icon: <MessageOutlined />, label: 'Messages' },
+          ].map((item) => (
+            <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
+              <Button
+                type={pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href)) ? 'link' : 'text'}
+                icon={item.icon}
+                style={{
+                  fontWeight: pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href)) ? 600 : 400,
+                  color: pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href)) ? '#52c41a' : '#595959',
+                }}
+              >
+                {item.label}
+              </Button>
+            </Link>
+          ))}
+        </nav>
+      )}
+
       <style jsx>{`
         @media (max-width: 768px) {
           .brand-name {
