@@ -110,6 +110,11 @@ const ClientHeader: React.FC = () => {
         label: <Link href="/browse">Browse Puppies</Link>,
       },
       {
+        key: 'kennels',
+        icon: <ShopOutlined />,
+        label: <Link href="/kennels">Kennels</Link>,
+      },
+      {
         key: 'breeds',
         icon: <TeamOutlined />,
         label: <Link href="/breeds">Dog Breeds</Link>,
