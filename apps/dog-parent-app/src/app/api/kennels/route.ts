@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const search = searchParams.get('search');
+    const state = searchParams.get('state');
+    const specialty = searchParams.get('specialty');
+    const verified = searchParams.get('verified');
+    const hasAvailability = searchParams.get('hasAvailability');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
@@ -36,6 +40,19 @@ export async function GET(request: NextRequest) {
     const result = await dynamodb.send(command);
     let kennels = (result.Items || []) as any[];
 
+    // Build filter metadata from full (unfiltered) dataset
+    const allStates = new Set<string>();
+    const allSpecialties = new Set<string>();
+    let verifiedCount = 0;
+
+    for (const kennel of kennels) {
+      if (kennel.address?.state) allStates.add(kennel.address.state);
+      if (kennel.specialties) {
+        for (const s of kennel.specialties) allSpecialties.add(s);
+      }
+      if (kennel.verified) verifiedCount++;
+    }
+
     // Client-side search filter
     if (search && search.trim()) {
       const searchLower = search.trim().toLowerCase();
@@ -43,6 +60,30 @@ export async function GET(request: NextRequest) {
         (kennel.name || '').toLowerCase().includes(searchLower) ||
         (kennel.businessName || '').toLowerCase().includes(searchLower) ||
         (kennel.specialties || []).some((s: string) => s.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Client-side filters
+    if (state) {
+      kennels = kennels.filter((kennel) => kennel.address?.state === state);
+    }
+
+    if (specialty) {
+      const specLower = specialty.toLowerCase();
+      kennels = kennels.filter((kennel) =>
+        (kennel.specialties || []).some((s: string) => s.toLowerCase() === specLower)
+      );
+    }
+
+    if (verified === 'true') {
+      kennels = kennels.filter((kennel) => kennel.verified === true);
+    }
+
+    if (hasAvailability === 'true') {
+      kennels = kennels.filter((kennel) =>
+        kennel.capacity?.currentDogs != null &&
+        kennel.capacity?.maxDogs != null &&
+        kennel.capacity.currentDogs < kennel.capacity.maxDogs
       );
     }
 
@@ -60,6 +101,11 @@ export async function GET(request: NextRequest) {
       page,
       limit,
       hasMore: startIndex + limit < total,
+      filters: {
+        availableStates: Array.from(allStates).sort(),
+        availableSpecialties: Array.from(allSpecialties).sort(),
+        verifiedCount,
+      },
     });
   } catch (error: any) {
     console.error('Error fetching kennels:', error);
