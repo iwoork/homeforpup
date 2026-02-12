@@ -102,27 +102,17 @@ const ClientHeader: React.FC = () => {
       ];
     }
 
-    // dog-parent or default
+    // dog-parent or default — keep nav focused on the two core actions
     return [
       {
         key: 'browse',
         icon: <HeartOutlined />,
-        label: <Link href="/browse">Browse Puppies</Link>,
+        label: <Link href="/browse">Find Puppies</Link>,
       },
       {
         key: 'kennels',
         icon: <ShopOutlined />,
-        label: <Link href="/kennels">Kennels</Link>,
-      },
-      {
-        key: 'breeds',
-        icon: <TeamOutlined />,
-        label: <Link href="/breeds">Dog Breeds</Link>,
-      },
-      {
-        key: 'adoption-guide',
-        icon: <HomeOutlined />,
-        label: <Link href="/adoption-guide">Adoption Guide</Link>,
+        label: <Link href="/kennels">Explore Breeders</Link>,
       },
     ];
   }, [user, userType]);
