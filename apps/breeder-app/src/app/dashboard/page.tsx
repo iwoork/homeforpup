@@ -447,6 +447,16 @@ const BreederDashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card title="Quick Actions" style={cardStyle}>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <Link href="/dogs">
+                <Button
+                  block
+                  size="large"
+                  icon={<TeamOutlined />}
+                  style={{ height: '48px', fontSize: '16px' }}
+                >
+                  Manage Dogs
+                </Button>
+              </Link>
               <Link href="/dogs/new">
                 <Button
                   block
