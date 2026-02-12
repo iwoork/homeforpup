@@ -23,12 +23,16 @@ import {
 } from 'antd';
 import {
   ArrowLeftOutlined,
-  EditOutlined
+  EditOutlined,
+  PlusOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from 'swr';
-import type { Litter } from '@homeforpup/shared-types/kennel';
+import type { Litter, PuppyInfo } from '@homeforpup/shared-types/kennel';
+import { ColorSelector, useDogColors } from '@homeforpup/shared-dogs';
+import BreedSelector from '@/components/forms/BreedSelector';
 
 // The API stores kennelName on the litter record but it's not in the shared type
 type LitterWithKennelName = Litter & { kennelName?: string };
@@ -58,6 +62,20 @@ const statusLabels: Record<string, string> = {
 
 const allStatuses = ['expected', 'born', 'weaned', 'ready_for_homes', 'sold', 'completed'];
 
+const puppyStatusColors: Record<string, string> = {
+  available: 'green',
+  reserved: 'orange',
+  sold: 'purple',
+  kept: 'blue',
+};
+
+const puppyStatusLabels: Record<string, string> = {
+  available: 'Available',
+  reserved: 'Reserved',
+  sold: 'Adopted',
+  kept: 'Kept',
+};
+
 const LitterDetailPage: React.FC = () => {
   const { message } = App.useApp();
   const params = useParams();
@@ -66,6 +84,9 @@ const LitterDetailPage: React.FC = () => {
   const [editVisible, setEditVisible] = useState(false);
   const [editForm] = Form.useForm();
   const [saving, setSaving] = useState(false);
+  const [addPuppyVisible, setAddPuppyVisible] = useState(false);
+  const [addPuppyForm] = Form.useForm();
+  const { colors, loading: colorsLoading, error: colorsError } = useDogColors();
 
   const { data, error, isLoading, mutate } = useSWR<{ litter: LitterWithKennelName }>(
     `/api/litters/${litterId}`,
@@ -79,6 +100,110 @@ const LitterDetailPage: React.FC = () => {
   );
 
   const litter = data?.litter;
+
+  // Fetch kennel dogs for "add existing puppy" dropdown
+  const { data: dogsData } = useSWR<{ dogs: any[]; total: number }>(
+    litter?.kennelId ? `/api/dogs?kennelId=${litter.kennelId}&type=puppy&limit=100` : null,
+    async (url: string) => {
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch dogs');
+      return response.json();
+    }
+  );
+
+  const savePuppies = async (updatedPuppies: PuppyInfo[]) => {
+    try {
+      const response = await fetch(`/api/litters/${litterId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          id: litterId,
+          puppies: updatedPuppies,
+          actualPuppyCount: updatedPuppies.length,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update puppies');
+      }
+      mutate();
+    } catch (err) {
+      console.error('Error updating puppies:', err);
+      message.error(err instanceof Error ? err.message : 'Failed to update puppies');
+    }
+  };
+
+  const handleAddNewPuppy = async (values: any) => {
+    try {
+      const response = await fetch('/api/dogs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...values,
+          kennelId: litter?.kennelId,
+          type: 'puppy',
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create puppy');
+      }
+      const result = await response.json();
+      const createdDog = result.dog || result;
+      const newPuppy: PuppyInfo = {
+        id: createdDog.id,
+        name: createdDog.name,
+        gender: createdDog.gender,
+        color: createdDog.color,
+        markings: createdDog.markings,
+        weight: createdDog.weight,
+        status: 'available',
+        notes: createdDog.notes,
+      };
+      const updatedPuppies = [...(litter?.puppies || []), newPuppy];
+      await savePuppies(updatedPuppies);
+      setAddPuppyVisible(false);
+      addPuppyForm.resetFields();
+      message.success('Puppy created and added to litter');
+    } catch (err) {
+      console.error('Error creating puppy:', err);
+      message.error(err instanceof Error ? err.message : 'Failed to create puppy');
+    }
+  };
+
+  const handleAddExistingPuppy = async (dogId: string) => {
+    const dog = dogsData?.dogs.find((d: any) => d.id === dogId);
+    if (!dog) return;
+    const puppyInfo: PuppyInfo = {
+      id: dog.id,
+      name: dog.name,
+      gender: dog.gender,
+      color: dog.color,
+      markings: dog.markings,
+      weight: dog.weight,
+      status: 'available',
+      notes: dog.notes,
+    };
+    const updatedPuppies = [...(litter?.puppies || []), puppyInfo];
+    await savePuppies(updatedPuppies);
+    message.success('Puppy added to litter');
+  };
+
+  const handleRemovePuppy = async (puppyId: string) => {
+    const updatedPuppies = (litter?.puppies || []).filter((p) => p.id !== puppyId);
+    await savePuppies(updatedPuppies);
+    message.success('Puppy removed from litter');
+  };
+
+  const handlePuppyStatusChange = async (puppyId: string, newStatus: string) => {
+    const updatedPuppies = (litter?.puppies || []).map((p) =>
+      p.id === puppyId ? { ...p, status: newStatus as PuppyInfo['status'] } : p
+    );
+    await savePuppies(updatedPuppies);
+    message.success('Puppy status updated');
+  };
 
   const handleStatusChange = async (newStatus: string) => {
     try {
@@ -333,12 +458,49 @@ const LitterDetailPage: React.FC = () => {
       </Row>
 
       {/* Puppies section */}
-      {litter.puppies && litter.puppies.length > 0 && (
-        <Card title="Puppies" style={{ marginBottom: '24px' }}>
+      <Card title="Puppies" style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <Space wrap>
+            <Button
+              type="dashed"
+              icon={<PlusOutlined />}
+              onClick={() => setAddPuppyVisible(true)}
+            >
+              Add New Puppy
+            </Button>
+            <Select
+              placeholder="Add existing puppy"
+              style={{ width: 220 }}
+              showSearch
+              optionFilterProp="children"
+              value={undefined}
+              onSelect={(value) => { if (value) handleAddExistingPuppy(value); }}
+            >
+              {dogsData?.dogs
+                ?.filter((dog: any) => !litter.puppies?.some((p) => p.id === dog.id))
+                ?.map((dog: any) => (
+                  <Option key={dog.id} value={dog.id}>
+                    {dog.name} ({dog.gender})
+                  </Option>
+                ))}
+            </Select>
+          </Space>
+        </div>
+        {!litter.puppies || litter.puppies.length === 0 ? (
+          <Empty description="No puppies in this litter yet" />
+        ) : (
           <Row gutter={[16, 16]}>
             {litter.puppies.map((puppy) => (
               <Col xs={24} sm={12} md={8} key={puppy.id}>
-                <Card size="small">
+                <Card size="small" style={{ position: 'relative' }}>
+                  <Button
+                    type="text"
+                    danger
+                    size="small"
+                    icon={<CloseOutlined />}
+                    style={{ position: 'absolute', top: 4, right: 4 }}
+                    onClick={() => handleRemovePuppy(puppy.id)}
+                  />
                   <Descriptions column={1} size="small">
                     <Descriptions.Item label="Name">{puppy.name}</Descriptions.Item>
                     <Descriptions.Item label="Gender">
@@ -346,18 +508,35 @@ const LitterDetailPage: React.FC = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="Color">{puppy.color}</Descriptions.Item>
                     <Descriptions.Item label="Status">
-                      <Tag>{puppy.status}</Tag>
+                      <Select
+                        value={puppy.status}
+                        size="small"
+                        style={{ width: 120 }}
+                        onChange={(value: string) => handlePuppyStatusChange(puppy.id, value)}
+                      >
+                        {Object.entries(puppyStatusLabels).map(([key, label]) => (
+                          <Option key={key} value={key}>{label}</Option>
+                        ))}
+                      </Select>
                     </Descriptions.Item>
                     {puppy.weight && (
                       <Descriptions.Item label="Weight">{puppy.weight} lbs</Descriptions.Item>
                     )}
+                    {puppy.markings && (
+                      <Descriptions.Item label="Markings">{puppy.markings}</Descriptions.Item>
+                    )}
                   </Descriptions>
+                  <div style={{ marginTop: 4 }}>
+                    <Tag color={puppyStatusColors[puppy.status] || 'default'}>
+                      {puppyStatusLabels[puppy.status] || puppy.status}
+                    </Tag>
+                  </div>
                 </Card>
               </Col>
             ))}
           </Row>
-        </Card>
-      )}
+        )}
+      </Card>
 
       {/* Edit Modal */}
       <Modal
@@ -454,6 +633,128 @@ const LitterDetailPage: React.FC = () => {
           <Form.Item name="specialInstructions" label="Special Instructions">
             <TextArea rows={3} />
           </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Add New Puppy Modal */}
+      <Modal
+        title="Add New Puppy"
+        open={addPuppyVisible}
+        onCancel={() => {
+          setAddPuppyVisible(false);
+          addPuppyForm.resetFields();
+        }}
+        footer={null}
+        width={600}
+      >
+        <Form
+          form={addPuppyForm}
+          layout="vertical"
+          onFinish={handleAddNewPuppy}
+        >
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="name"
+                label="Puppy Name"
+                rules={[{ required: true, message: 'Please enter puppy name' }]}
+              >
+                <Input placeholder="Enter puppy name" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item name="callName" label="Call Name (Nickname)">
+                <Input placeholder="Enter nickname" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="breed"
+                label="Breed"
+                rules={[{ required: true, message: 'Please select breed' }]}
+              >
+                <BreedSelector
+                  placeholder="Select breed"
+                  showSearch={true}
+                  allowClear={true}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="gender"
+                label="Gender"
+                rules={[{ required: true, message: 'Please select gender' }]}
+              >
+                <Select placeholder="Select gender">
+                  <Option value="male">Male</Option>
+                  <Option value="female">Female</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="birthDate"
+                label="Birth Date"
+                rules={[{ required: true, message: 'Please enter birth date' }]}
+              >
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="color"
+                label="Color"
+                rules={[{ required: true, message: 'Please select color' }]}
+                help="Select the primary color or pattern"
+              >
+                <ColorSelector
+                  colors={colors}
+                  loading={colorsLoading}
+                  error={colorsError || undefined}
+                  showColorSwatches={true}
+                  showDescription={true}
+                  placeholder="Select color or pattern"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item name="weight" label="Weight (lbs)">
+                <InputNumber
+                  min={0}
+                  max={50}
+                  style={{ width: '100%' }}
+                  placeholder="Weight"
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="markings" label="Markings">
+                <Input placeholder="Describe any markings" />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="notes" label="Notes">
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Additional notes about this puppy"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setAddPuppyVisible(false);
+                addPuppyForm.resetFields();
+              }}>
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Create Puppy
+              </Button>
+            </Space>
+          </div>
         </Form>
       </Modal>
     </div>
