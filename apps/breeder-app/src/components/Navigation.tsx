@@ -7,6 +7,7 @@ import {
   DashboardOutlined,
   HomeOutlined,
   TeamOutlined,
+  HeartOutlined,
   MessageOutlined,
   BookOutlined,
   BarChartOutlined,
@@ -70,6 +71,12 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
       icon: <TeamOutlined />,
       label: 'Dogs',
       onClick: () => handleMenuClick('/dogs'),
+    },
+    {
+      key: '/litters',
+      icon: <HeartOutlined />,
+      label: 'Litters',
+      onClick: () => handleMenuClick('/litters'),
     },
     {
       key: '/dashboard/messages',
