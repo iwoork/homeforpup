@@ -20,13 +20,14 @@ import {
   App
 } from 'antd';
 import { 
-  PlusOutlined, 
-  EditOutlined, 
+  PlusOutlined,
+  EditOutlined,
   DeleteOutlined,
   SearchOutlined,
   FilterOutlined,
   HeartOutlined,
-  TeamOutlined
+  TeamOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { AddEditDogForm, useDogColors, useAllBreeds } from '@homeforpup/shared-dogs';
 import Link from 'next/link';
@@ -188,8 +189,10 @@ const DogsPage: React.FC = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string) => (
-        <div style={{ fontWeight: 500 }}>{text}</div>
+      render: (text: string, record: Dog) => (
+        <Link href={`/dogs/${record.id}`} style={{ fontWeight: 500, color: '#1890ff' }}>
+          {text}
+        </Link>
       ),
     },
     {
@@ -244,6 +247,15 @@ const DogsPage: React.FC = () => {
       key: 'actions',
       render: (_: any, record: Dog) => (
         <Space size="small">
+          <Link href={`/dogs/${record.id}`}>
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              size="small"
+            >
+              View
+            </Button>
+          </Link>
           <Button
             type="text"
             icon={<EditOutlined />}
