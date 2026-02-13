@@ -1104,7 +1104,7 @@ const DogDetailsPage: React.FC = () => {
               onPhotosChange={setProfilePhotoUrl}
               maxPhotos={1}
               aspect="square"
-              uploadPath="dog-photos"
+              uploadPath="dog-profile-photos"
             />
           </div>
         </div>
