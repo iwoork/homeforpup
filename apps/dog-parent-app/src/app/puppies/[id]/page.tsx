@@ -11,13 +11,13 @@ import {
   SafetyCertificateOutlined, SmileOutlined, TeamOutlined,
   CheckCircleOutlined, PhoneOutlined, MailOutlined, GlobalOutlined,
   MessageOutlined, ShareAltOutlined, HomeOutlined, FileProtectOutlined,
-  CloseCircleOutlined, LinkOutlined,
+  CloseCircleOutlined, LinkOutlined, PictureOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import useSWR from 'swr';
-import { Dog, Kennel } from '@homeforpup/shared-types';
+import { Dog, Kennel, VeterinaryVisit, LifeEvent, DogPhoto } from '@homeforpup/shared-types';
 import { calculateBreedScore, MatchPreferences, BreedScore } from '@homeforpup/shared-dogs';
 import { Breed } from '@homeforpup/shared-dogs';
 import ContactBreederModal from '@/components/ContactBreederModal';
@@ -30,6 +30,8 @@ interface PuppyDetail extends Dog {
   kennel?: Kennel;
   ageWeeks?: number;
   location?: string | null;
+  veterinaryVisits?: VeterinaryVisit[];
+  lifeEvents?: LifeEvent[];
 }
 
 const fetcher = async (url: string): Promise<PuppyDetail> => {
@@ -762,6 +764,132 @@ const PuppyDetailPage: React.FC = () => {
               />
             )}
           </Card>
+
+          {/* Veterinary History Section */}
+          {puppy.veterinaryVisits && puppy.veterinaryVisits.length > 0 && (
+            <Card style={cardStyle}>
+              <Title level={4} style={sectionTitleStyle}>
+                <MedicineBoxOutlined /> Veterinary History
+              </Title>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                {[...puppy.veterinaryVisits]
+                  .sort((a: VeterinaryVisit, b: VeterinaryVisit) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime())
+                  .map((visit: VeterinaryVisit) => (
+                    <div
+                      key={visit.id}
+                      style={{
+                        padding: '12px 16px',
+                        background: '#fafafa',
+                        borderRadius: '8px',
+                        border: '1px solid #f0f0f0',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <Text strong>{new Date(visit.visitDate).toLocaleDateString()}</Text>
+                        <Tag color="blue">{visit.visitType.replace(/_/g, ' ')}</Tag>
+                      </div>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: '13px' }}>
+                          {visit.veterinarian.name} — {visit.veterinarian.clinic}
+                        </Text>
+                      </div>
+                      <div style={{ marginTop: '4px' }}>
+                        <Text style={{ fontSize: '13px' }}>{visit.reason}</Text>
+                      </div>
+                      {visit.weight && (
+                        <div style={{ marginTop: '4px' }}>
+                          <Text type="secondary" style={{ fontSize: '12px' }}>Weight: {visit.weight} lbs</Text>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </Space>
+            </Card>
+          )}
+
+          {/* Life Events Section */}
+          {puppy.lifeEvents && puppy.lifeEvents.length > 0 && (
+            <Card style={cardStyle}>
+              <Title level={4} style={sectionTitleStyle}>
+                <CalendarOutlined /> Life Events
+              </Title>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                {[...puppy.lifeEvents]
+                  .sort((a: LifeEvent, b: LifeEvent) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())
+                  .map((event: LifeEvent) => (
+                    <div
+                      key={event.id}
+                      style={{
+                        padding: '12px 16px',
+                        background: '#fafafa',
+                        borderRadius: '8px',
+                        border: '1px solid #f0f0f0',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <Text strong>{new Date(event.eventDate).toLocaleDateString()}</Text>
+                        <Tag color={
+                          event.eventType === 'milestone' ? 'blue' :
+                          event.eventType === 'vaccination' ? 'green' :
+                          event.eventType === 'birthday' ? 'pink' :
+                          event.eventType === 'award' ? 'volcano' :
+                          event.eventType === 'show' ? 'gold' :
+                          event.eventType === 'gotcha_day' ? 'red' :
+                          'default'
+                        }>
+                          {event.eventType.replace(/_/g, ' ')}
+                        </Tag>
+                      </div>
+                      <div>
+                        <Text style={{ fontSize: '14px' }}>{event.title}</Text>
+                      </div>
+                      {event.description && (
+                        <div style={{ marginTop: '4px' }}>
+                          <Text type="secondary" style={{ fontSize: '13px' }}>{event.description}</Text>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </Space>
+            </Card>
+          )}
+
+          {/* Photo Gallery Section */}
+          {puppy.photoGallery && puppy.photoGallery.length > 1 && (
+            <Card style={cardStyle}>
+              <Title level={4} style={sectionTitleStyle}>
+                <PictureOutlined /> Photo Gallery
+              </Title>
+              <Row gutter={[12, 12]}>
+                {puppy.photoGallery.map((photo: DogPhoto) => (
+                  <Col key={photo.id} xs={12} sm={8} md={6}>
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      paddingBottom: '100%',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      background: '#f5f5f5',
+                    }}>
+                      <Image
+                        src={photo.url}
+                        alt={photo.caption || 'Dog photo'}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                      />
+                    </div>
+                    <div style={{ marginTop: '4px', textAlign: 'center' }}>
+                      {photo.caption && (
+                        <Text style={{ fontSize: '12px', display: 'block' }}>{photo.caption}</Text>
+                      )}
+                      <Tag style={{ fontSize: '10px', marginTop: '2px' }}>{photo.category}</Tag>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            </Card>
+          )}
 
           {/* Temperament Section */}
           {puppy.temperament && (

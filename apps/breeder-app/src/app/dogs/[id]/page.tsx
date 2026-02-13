@@ -49,7 +49,7 @@ import {
   EyeOutlined
 } from '@ant-design/icons';
 import { useParams, useRouter } from 'next/navigation';
-import { Dog, VeterinaryVisit, TrainingRecord, DogPhoto } from '@homeforpup/shared-types/kennel';
+import { Dog, VeterinaryVisit, TrainingRecord, DogPhoto, LifeEvent } from '@homeforpup/shared-types/kennel';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
 import { PhotoUpload, setS3Operations } from '@homeforpup/shared-photo-upload';
@@ -74,12 +74,14 @@ const DogDetailsPage: React.FC = () => {
   const [vetVisitVisible, setVetVisitVisible] = useState(false);
   const [trainingVisible, setTrainingVisible] = useState(false);
   const [photoVisible, setPhotoVisible] = useState(false);
+  const [lifeEventVisible, setLifeEventVisible] = useState(false);
   const [editingVisit, setEditingVisit] = useState<VeterinaryVisit | null>(null);
   const [editingTraining, setEditingTraining] = useState<TrainingRecord | null>(null);
   const [photoModalPhotos, setPhotoModalPhotos] = useState<string[]>([]);
   const [vetForm] = Form.useForm();
   const [trainingForm] = Form.useForm();
   const [photoForm] = Form.useForm();
+  const [lifeEventForm] = Form.useForm();
 
   const { data, error, isLoading, mutate } = useSWR<{ dog: Dog }>(
     `/api/dogs/${dogId}`,
@@ -184,6 +186,48 @@ const DogDetailsPage: React.FC = () => {
       mutate();
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Failed to add photo');
+    }
+  };
+
+  const handleAddLifeEvent = async (values: any) => {
+    try {
+      const response = await fetch(`/api/dogs/${dogId}/life-events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add life event');
+      }
+
+      message.success('Life event added successfully');
+      setLifeEventVisible(false);
+      lifeEventForm.resetFields();
+      mutate();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to add life event');
+    }
+  };
+
+  const getEventTypeColor = (eventType: string) => {
+    switch (eventType) {
+      case 'milestone': return 'blue';
+      case 'vaccination': return 'green';
+      case 'deworming': return 'lime';
+      case 'microchip': return 'cyan';
+      case 'spay_neuter': return 'purple';
+      case 'first_walk': return 'orange';
+      case 'socialization': return 'magenta';
+      case 'show': return 'gold';
+      case 'award': return 'volcano';
+      case 'birthday': return 'pink';
+      case 'gotcha_day': return 'red';
+      default: return 'default';
     }
   };
 
@@ -574,6 +618,65 @@ const DogDetailsPage: React.FC = () => {
             )}
           </Card>
             )
+          },
+          {
+            key: 'life-events',
+            label: 'Life Events',
+            children: (
+          <Card
+            title="Life Events"
+            extra={
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setLifeEventVisible(true)}
+              >
+                Add Life Event
+              </Button>
+            }
+          >
+            {dog.lifeEvents && dog.lifeEvents.length > 0 ? (
+              <Timeline
+                items={[...dog.lifeEvents]
+                  .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())
+                  .map((event: LifeEvent) => ({
+                    color: getEventTypeColor(event.eventType) === 'default' ? 'gray' : 'blue',
+                    children: (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <Text strong>{event.title}</Text>
+                          <Tag color={getEventTypeColor(event.eventType)}>
+                            {event.eventType.replace('_', ' ')}
+                          </Tag>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {dayjs(event.eventDate).format('MMMM DD, YYYY')}
+                        </Text>
+                        {event.description && (
+                          <div style={{ marginTop: '4px' }}>
+                            <Text style={{ fontSize: '13px' }}>{event.description}</Text>
+                          </div>
+                        )}
+                        {event.notes && (
+                          <div style={{ marginTop: '4px' }}>
+                            <Text type="secondary" style={{ fontSize: '12px', fontStyle: 'italic' }}>
+                              {event.notes}
+                            </Text>
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  }))
+                }
+              />
+            ) : (
+              <Empty
+                image={<CalendarOutlined style={{ fontSize: '48px', color: '#d9d9d9' }} />}
+                description="No life events recorded yet"
+              />
+            )}
+          </Card>
+            )
           }
         ]}
       />
@@ -850,6 +953,75 @@ const DogDetailsPage: React.FC = () => {
 
           <Form.Item name="isProfilePhoto" valuePropName="checked">
             <input type="checkbox" /> Set as profile photo
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Add Life Event Modal */}
+      <Modal
+        title="Add Life Event"
+        open={lifeEventVisible}
+        onCancel={() => {
+          setLifeEventVisible(false);
+          lifeEventForm.resetFields();
+        }}
+        onOk={() => lifeEventForm.submit()}
+        width={600}
+      >
+        <Form
+          form={lifeEventForm}
+          layout="vertical"
+          onFinish={handleAddLifeEvent}
+          preserve={false}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="eventDate"
+                label="Event Date"
+                rules={[{ required: true, message: 'Please select event date' }]}
+              >
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="eventType"
+                label="Event Type"
+                rules={[{ required: true, message: 'Please select event type' }]}
+              >
+                <Select>
+                  <Option value="milestone">Milestone</Option>
+                  <Option value="vaccination">Vaccination</Option>
+                  <Option value="deworming">Deworming</Option>
+                  <Option value="microchip">Microchip</Option>
+                  <Option value="spay_neuter">Spay/Neuter</Option>
+                  <Option value="first_walk">First Walk</Option>
+                  <Option value="socialization">Socialization</Option>
+                  <Option value="show">Show</Option>
+                  <Option value="award">Award</Option>
+                  <Option value="birthday">Birthday</Option>
+                  <Option value="gotcha_day">Gotcha Day</Option>
+                  <Option value="other">Other</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="title"
+            label="Title"
+            rules={[{ required: true, message: 'Please enter a title' }]}
+          >
+            <Input placeholder="e.g., First trip to the park" />
+          </Form.Item>
+
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} placeholder="What happened?" />
+          </Form.Item>
+
+          <Form.Item name="notes" label="Notes">
+            <TextArea rows={2} placeholder="Any additional notes..." />
           </Form.Item>
         </Form>
       </Modal>

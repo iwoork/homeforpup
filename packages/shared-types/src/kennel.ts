@@ -179,6 +179,19 @@ export interface DogPhoto {
   updatedAt: string;
 }
 
+export interface LifeEvent {
+  id: string;
+  dogId: string;
+  eventType: 'milestone' | 'vaccination' | 'deworming' | 'microchip' | 'spay_neuter' | 'first_walk' | 'socialization' | 'show' | 'award' | 'birthday' | 'gotcha_day' | 'other';
+  eventDate: string;
+  title: string;
+  description?: string;
+  notes?: string;
+  attachments?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Dog {
   id: string;
   name: string;
@@ -186,27 +199,27 @@ export interface Dog {
   breed: string;
   gender: 'male' | 'female';
   birthDate: string;
-  
+
   // Type classification
   type: 'parent' | 'puppy';
-  
+
   // Physical characteristics
   color: string;
   markings?: string;
   weight?: number; // in pounds
   height?: number; // in inches
   eyeColor?: string;
-  
+
   // Kennel association
   kennelId: string;
-  
+
   // Pedigree information
   sireId?: string; // Father dog ID
   damId?: string; // Mother dog ID
   sireName?: string;
   damName?: string;
   pedigree?: PedigreeInfo;
-  
+
   // Health records
   health: {
     microchipId?: string;
@@ -217,7 +230,7 @@ export interface Dog {
     currentHealthStatus: 'excellent' | 'good' | 'fair' | 'poor';
     lastVetVisit?: string;
   };
-  
+
   // Breeding information
   breeding: {
     isBreedingDog: boolean;
@@ -225,27 +238,28 @@ export interface Dog {
     breedingHistory: BreedingRecord[];
     geneticTests: GeneticTest[];
   };
-  
+
   // Status
   status: 'active' | 'retired' | 'deceased' | 'sold' | 'adopted';
-  
+
   // Timestamps
   createdAt: string;
   updatedAt: string;
-  
+
   // Media
   photos?: string[];
   videos?: string[];
-  
+
   // Additional info
   temperament?: string;
   specialNeeds?: string;
   notes?: string;
-  
+
   // Extended tracking features
   veterinaryVisits?: VeterinaryVisit[];
   trainingRecords?: TrainingRecord[];
   photoGallery?: DogPhoto[];
+  lifeEvents?: LifeEvent[];
 }
 
 export interface PedigreeInfo {

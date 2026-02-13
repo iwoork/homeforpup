@@ -1,7 +1,7 @@
 // Consolidated Types - Single source of truth for all type definitions
 
 // Import types from other modules
-import { DogPhoto } from './kennel';
+import { DogPhoto, LifeEvent } from './kennel';
 
 // ============================================================================
 // CORE ENTITIES
@@ -169,6 +169,7 @@ export interface Dog {
   color: string;
   photoUrl?: string;  
   photoGallery?: DogPhoto[]; // Array of photos for this dog
+  lifeEvents?: LifeEvent[]; // Life event milestones
   healthTests: string[]; // URLs to health test documents
   pedigree?: string; // URL to pedigree document
   description: string;
