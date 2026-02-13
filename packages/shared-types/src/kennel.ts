@@ -247,6 +247,7 @@ export interface Dog {
   updatedAt: string;
 
   // Media
+  photoUrl?: string; // Profile photo URL
   photos?: string[];
   videos?: string[];
 

@@ -77,6 +77,8 @@ const DogDetailsPage: React.FC = () => {
   const [lifeEventVisible, setLifeEventVisible] = useState(false);
   const [editingVisit, setEditingVisit] = useState<VeterinaryVisit | null>(null);
   const [editingTraining, setEditingTraining] = useState<TrainingRecord | null>(null);
+  const [profilePhotoVisible, setProfilePhotoVisible] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string[]>([]);
   const [photoModalPhotos, setPhotoModalPhotos] = useState<string[]>([]);
   const [vetForm] = Form.useForm();
   const [trainingForm] = Form.useForm();
@@ -211,6 +213,34 @@ const DogDetailsPage: React.FC = () => {
       mutate();
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Failed to add life event');
+    }
+  };
+
+  const handleUpdateProfilePhoto = async () => {
+    if (!profilePhotoUrl || profilePhotoUrl.length === 0) {
+      message.warning('No photo selected');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/dogs/${dogId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ photoUrl: profilePhotoUrl[0] }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile photo');
+      }
+
+      message.success('Profile photo updated successfully');
+      setProfilePhotoVisible(false);
+      setProfilePhotoUrl([]);
+      mutate();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to update profile photo');
     }
   };
 
@@ -382,12 +412,27 @@ const DogDetailsPage: React.FC = () => {
         
         <Row gutter={[24, 16]} align="middle">
           <Col>
-            <Avatar 
-              size={80} 
-              src={dog.photoGallery?.[0]?.url || dog.photos?.[0]} 
-              icon={<HeartOutlined />}
-              style={{ backgroundColor: '#f56a00' }}
-            />
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <Avatar
+                size={80}
+                src={dog.photoUrl || dog.photoGallery?.find(p => p.isProfilePhoto)?.url || dog.photos?.[0]}
+                icon={<HeartOutlined />}
+                style={{ backgroundColor: '#f56a00' }}
+              />
+              <Button
+                type="primary"
+                shape="circle"
+                size="small"
+                icon={<CameraOutlined />}
+                onClick={() => setProfilePhotoVisible(true)}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                }}
+              />
+            </div>
           </Col>
           <Col flex="auto">
             <Title level={2} style={{ margin: 0 }}>
@@ -1024,6 +1069,45 @@ const DogDetailsPage: React.FC = () => {
             <TextArea rows={2} placeholder="Any additional notes..." />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Profile Photo Modal */}
+      <Modal
+        title="Update Profile Photo"
+        open={profilePhotoVisible}
+        onCancel={() => {
+          setProfilePhotoVisible(false);
+          setProfilePhotoUrl([]);
+        }}
+        onOk={handleUpdateProfilePhoto}
+        okText="Save Profile Photo"
+        okButtonProps={{ disabled: profilePhotoUrl.length === 0 }}
+        width={500}
+      >
+        <div style={{ textAlign: 'center' }}>
+          {dog?.photoUrl && (
+            <div style={{ marginBottom: '16px' }}>
+              <Text type="secondary">Current profile photo:</Text>
+              <div style={{ marginTop: '8px' }}>
+                <Avatar size={100} src={dog.photoUrl} icon={<HeartOutlined />} />
+              </div>
+            </div>
+          )}
+          <Divider />
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+              Upload new profile photo
+            </Text>
+            <PhotoUpload
+              key={`profile-photo-${profilePhotoUrl.length}`}
+              photos={profilePhotoUrl}
+              onPhotosChange={setProfilePhotoUrl}
+              maxPhotos={1}
+              aspect="square"
+              uploadPath="dog-profile-photos"
+            />
+          </div>
+        </div>
       </Modal>
     </div>
   );
