@@ -240,6 +240,7 @@ const KennelDetailPage: React.FC = () => {
               <Row gutter={[16, 16]}>
                 {dogs.map((dog) => (
                   <Col xs={24} sm={12} key={dog.id}>
+                    <Link href={`/puppies/${dog.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                     <Card size="small" hoverable style={{ borderRadius: '8px' }}>
                       {dog.photos && dog.photos.length > 0 && (
                         <Image
@@ -266,6 +267,7 @@ const KennelDetailPage: React.FC = () => {
                         {dog.color && <Tag>{dog.color}</Tag>}
                       </Space>
                     </Card>
+                    </Link>
                   </Col>
                 ))}
               </Row>
@@ -321,7 +323,8 @@ const KennelDetailPage: React.FC = () => {
                           <Row gutter={[8, 8]}>
                             {litter.puppies.map((puppy: any, idx: number) => (
                               <Col xs={24} sm={12} key={puppy.id || idx}>
-                                <Card size="small" style={{ borderRadius: '6px' }}>
+                                <Link href={`/puppies/${puppy.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                                <Card size="small" hoverable style={{ borderRadius: '6px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                       <Text strong>{puppy.name || `Puppy ${idx + 1}`}</Text>
@@ -343,6 +346,7 @@ const KennelDetailPage: React.FC = () => {
                                     <Text type="secondary" style={{ fontSize: '12px' }}>{puppy.color}</Text>
                                   )}
                                 </Card>
+                                </Link>
                               </Col>
                             ))}
                           </Row>
