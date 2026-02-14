@@ -3,6 +3,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { checkDogAccess } from '@/lib/auth/kennelAccess';
 import { TrainingRecord } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,7 +46,8 @@ export async function POST(
     const existingDog = getResult.Item as any;
 
     // Check if user has permission
-    if (!existingDog.kennelOwners?.includes(session.user.id)) {
+    const access = await checkDogAccess(session.user.id, existingDog);
+    if (!access.hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -124,7 +126,8 @@ export async function GET(
     const dog = result.Item as any;
 
     // Check if user has access
-    if (!dog.kennelOwners?.includes(session.user.id)) {
+    const access = await checkDogAccess(session.user.id, dog);
+    if (!access.hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
