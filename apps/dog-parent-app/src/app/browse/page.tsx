@@ -588,7 +588,7 @@ const PuppiesPage: React.FC = () => {
                     setFilters(prev => ({ ...prev, state: value }));
                     setCurrentPage(1);
                   }}
-                  availableStates={availableFilters?.availableStates || []}
+                  country={filters.country}
                   style={{ width: '100%', marginTop: '8px' }}
                 />
               </div>

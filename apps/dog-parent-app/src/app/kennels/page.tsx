@@ -17,6 +17,8 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import useSWR from 'swr';
+import CountryFilter from '@/components/filters/CountryFilter';
+import StateFilter from '@/components/filters/StateFilter';
 
 const { Title, Text } = Typography;
 
@@ -48,7 +50,8 @@ const KennelListingPage: React.FC = () => {
   const [pageSize] = useState(20);
 
   // Filter state
-  const [selectedState, setSelectedState] = useState<string | undefined>(undefined);
+  const [selectedCountry, setSelectedCountry] = useState<string | undefined>(undefined);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [hasAvailability, setHasAvailability] = useState(false);
@@ -65,14 +68,15 @@ const KennelListingPage: React.FC = () => {
   const apiUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (debouncedSearch) params.append('search', debouncedSearch);
-    if (selectedState) params.append('state', selectedState);
+    if (selectedCountry) params.append('country', selectedCountry);
+    if (selectedStates.length > 0) params.append('state', selectedStates[0]);
     if (selectedSpecialty) params.append('specialty', selectedSpecialty);
     if (verifiedOnly) params.append('verified', 'true');
     if (hasAvailability) params.append('hasAvailability', 'true');
     params.append('page', currentPage.toString());
     params.append('limit', pageSize.toString());
     return `/api/kennels?${params.toString()}`;
-  }, [debouncedSearch, currentPage, pageSize, selectedState, selectedSpecialty, verifiedOnly, hasAvailability]);
+  }, [debouncedSearch, currentPage, pageSize, selectedCountry, selectedStates, selectedSpecialty, verifiedOnly, hasAvailability]);
 
   const { data, error, isLoading, mutate } = useSWR<KennelsResponse>(apiUrl, fetcher, {
     revalidateOnFocus: false,
@@ -83,7 +87,7 @@ const KennelListingPage: React.FC = () => {
   const total = data?.total || 0;
   const filters = data?.filters;
 
-  const activeFilterCount = [selectedState, selectedSpecialty, verifiedOnly, hasAvailability].filter(Boolean).length;
+  const activeFilterCount = [selectedCountry, selectedStates.length > 0 ? true : false, selectedSpecialty, verifiedOnly, hasAvailability].filter(Boolean).length;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -93,7 +97,8 @@ const KennelListingPage: React.FC = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setDebouncedSearch('');
-    setSelectedState(undefined);
+    setSelectedCountry(undefined);
+    setSelectedStates([]);
     setSelectedSpecialty(undefined);
     setVerifiedOnly(false);
     setHasAvailability(false);
@@ -145,19 +150,33 @@ const KennelListingPage: React.FC = () => {
 
             <Divider style={{ margin: '12px 0' }} />
 
-            {/* Location (State) */}
+            {/* Country */}
             <div style={{ marginBottom: '16px' }}>
               <Text strong style={{ display: 'block', marginBottom: '8px' }}>
                 <EnvironmentOutlined style={{ marginRight: '6px' }} />
-                Location
+                Country
               </Text>
-              <Select
-                placeholder="All states"
-                value={selectedState}
-                onChange={(value) => { setSelectedState(value); handleFilterChange(); }}
-                allowClear
+              <CountryFilter
+                value={selectedCountry}
+                onChange={(value) => {
+                  setSelectedCountry(value);
+                  setSelectedStates([]);
+                  handleFilterChange();
+                }}
                 style={{ width: '100%' }}
-                options={(filters?.availableStates || []).map((s) => ({ label: s, value: s }))}
+              />
+            </div>
+
+            {/* Location (State/Province) */}
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                State / Province
+              </Text>
+              <StateFilter
+                value={selectedStates}
+                onChange={(value) => { setSelectedStates(value); handleFilterChange(); }}
+                country={selectedCountry}
+                style={{ width: '100%' }}
               />
             </div>
 

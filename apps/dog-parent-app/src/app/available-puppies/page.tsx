@@ -138,9 +138,13 @@ const AvailablePuppiesPage: React.FC = () => {
 
   // Handle filter changes
   const handleFilterChange = (key: keyof PuppyFilters, value: any) => {
+    if (key === 'country') {
+      setSelectedStates([]);
+    }
     setFilters(prev => ({
       ...prev,
       [key]: value,
+      ...(key === 'country' ? { state: undefined } : {}),
       page: 1, // Reset to first page when filters change
     }));
     setCurrentPage(1);
@@ -292,7 +296,7 @@ const AvailablePuppiesPage: React.FC = () => {
                           <StateFilter
                             value={selectedStates}
                             onChange={handleStateChange}
-                            availableStates={availableFilters?.availableStates || []}
+                            country={filters.country}
                             style={{ width: '100%', marginTop: '8px' }}
                           />
                         </div>
