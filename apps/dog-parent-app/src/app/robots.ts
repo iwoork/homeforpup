@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         '/dashboard/',
         '/auth/',
         '/users/[id]/edit',
-        '/breeders/[id]',
+        '/kennels/[id]',
         '/users/[id]',
       ],
     },

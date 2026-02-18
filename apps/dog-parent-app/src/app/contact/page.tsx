@@ -430,7 +430,7 @@ const ContactPage: React.FC = () => {
           <Space size="large">
             <Link href="/">Home</Link>
             <Link href="/browse">Browse Puppies</Link>
-            <Link href="/breeders">Find Breeders</Link>
+            <Link href="/kennels">Find Breeders</Link>
             <Link href="/about">About Us</Link>
           </Space>
         </div>

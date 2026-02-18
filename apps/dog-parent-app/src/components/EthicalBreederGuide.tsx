@@ -519,7 +519,7 @@ const EthicalBreederGuide: React.FC = () => {
             type="primary" 
             size="large"
             icon={<EyeOutlined />}
-            href="/breeders"
+            href="/kennels"
           >
             Browse Verified Breeders
           </Button>

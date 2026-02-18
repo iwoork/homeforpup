@@ -823,7 +823,7 @@ const AdoptionGuidePage: React.FC = () => {
               Research Breeds
             </Button>
           </Link>
-          <Link href="/breeders">
+          <Link href="/kennels">
             <Button 
               size="large" 
               icon={<TeamOutlined />}

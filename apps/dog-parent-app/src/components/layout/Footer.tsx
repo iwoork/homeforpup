@@ -98,7 +98,7 @@ const Footer: React.FC = () => {
                 <Link href="/adopt" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Adopt from Shelters
                 </Link>
-                <Link href="/breeders" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
+                <Link href="/kennels" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>
                   Find Ethical Breeders
                 </Link>
                 <Link href="/adoption-guide" style={linkStyle} onMouseEnter={(e) => e.currentTarget.style.color = '#08979C'} onMouseLeave={(e) => e.currentTarget.style.color = '#666'}>

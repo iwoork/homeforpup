@@ -23,7 +23,7 @@ const staticRoutes = [
     priority: 0.8,
   },
   {
-    url: `${baseUrl}/breeders`,
+    url: `${baseUrl}/kennels`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
     priority: 0.8,

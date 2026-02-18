@@ -500,7 +500,7 @@ const DogParentDashboard: React.FC = () => {
                 </Button>
               </Link>
 
-              <Link href="/breeders">
+              <Link href="/kennels">
                 <Button
                   block
                   size="large"

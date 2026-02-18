@@ -572,7 +572,7 @@ const BreedsPage: React.FC = () => {
                           type="primary"
                           size="small"
                           style={{ background: '#1890ff', borderColor: '#1890ff' }}
-                          onClick={() => window.open(`/breeders?breed=${encodeURIComponent(breed.name)}`, '_blank')}
+                          onClick={() => window.open(`/kennels?breed=${encodeURIComponent(breed.name)}`, '_blank')}
                         >
                           Find Breeders ({breed.breederCount})
                         </Button>

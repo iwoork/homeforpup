@@ -117,7 +117,7 @@ export const PAGE_METADATA = {
     title: 'Find Trusted Dog Professionals',
     description: 'Connect with verified and trusted breeders in your area. Browse profiles, read reviews, and find the perfect match for your family.',
     keywords: ['breeders', 'trusted breeders', 'professional breeders', 'breeder directory'],
-    url: '/breeders',
+    url: '/kennels',
   },
   users: {
     title: 'Browse Puppy Parents Community',

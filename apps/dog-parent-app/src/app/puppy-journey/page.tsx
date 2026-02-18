@@ -125,7 +125,7 @@ const PuppyJourneyPage: React.FC = () => {
                 Read Adoption Guide
               </Button>
             </Link>
-            <Link href="/breeders">
+            <Link href="/kennels">
               <Button size="large" icon={<TeamOutlined />}>
                 Browse Breeders
               </Button>
@@ -290,7 +290,7 @@ const PuppyJourneyPage: React.FC = () => {
               children: (
                 <Row gutter={[24, 24]}>
                   <Col xs={24} md={8}>
-                    <Link href="/breeders">
+                    <Link href="/kennels">
                       <Card hoverable style={{ textAlign: 'center', height: '100%' }}>
                         <TeamOutlined style={{ fontSize: '32px', color: '#08979C', marginBottom: '12px' }} />
                         <Title level={4}>Find Breeders</Title>

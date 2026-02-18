@@ -183,7 +183,7 @@ const FAQPage: React.FC = () => {
   const quickLinks = [
     { title: 'Getting Started Guide', href: '/adoption-guide' },
     { title: 'Browse Available Puppies', href: '/browse' },
-    { title: 'Find Breeders', href: '/breeders' },
+    { title: 'Find Breeders', href: '/kennels' },
     { title: 'Learn About Breeds', href: '/breeds' },
     { title: 'Contact Support', href: 'mailto:support@homeforpup.com' }
   ];
@@ -387,7 +387,7 @@ const FAQPage: React.FC = () => {
                   Browse Puppies
                 </Button>
               </Link>
-              <Link href="/breeders">
+              <Link href="/kennels">
                 <Button size="large" icon={<TeamOutlined />}>
                   Find Breeders
                 </Button>
