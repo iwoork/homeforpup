@@ -11,25 +11,19 @@ export interface Activity {
   category: ActivityCategory;
 }
 
-export type ActivityType = 
+export type ActivityType =
   // Dog Parent Activities
   | 'puppy_favorited'
   | 'puppy_unfavorited'
   | 'breeder_contacted'
   | 'message_received'
   | 'message_sent'
-  | 'profile_viewed'
-  | 'search_performed'
-  | 'breed_explored'
-  | 'kennel_visited'
-  | 'puppy_viewed'
-  | 'adoption_guide_viewed'
   | 'preferences_updated'
   | 'profile_updated'
   | 'account_created'
   | 'login'
   | 'logout'
-  
+
   // Breeder Activities
   | 'kennel_created'
   | 'kennel_updated'
@@ -42,9 +36,6 @@ export type ActivityType =
   | 'announcement_updated'
   | 'inquiry_received'
   | 'inquiry_responded'
-  | 'profile_viewed_by_dog_parent'
-  | 'kennel_viewed_by_dog_parent'
-  | 'puppy_viewed_by_dog_parent'
   | 'favorite_received'
   | 'message_received_from_dog_parent'
   | 'message_sent_to_dog_parent'
@@ -97,11 +88,6 @@ export interface ActivityMetadata {
   messageContent?: string;
   messageType?: 'general' | 'inquiry' | 'business' | 'urgent';
   threadId?: string;
-  
-  // Search-related
-  searchQuery?: string;
-  searchFilters?: Record<string, any>;
-  searchResults?: number;
   
   // Profile-related
   profileField?: string;

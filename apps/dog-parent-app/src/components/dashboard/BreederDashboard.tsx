@@ -19,7 +19,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
-import { ActivityFeed, activityTracker } from '@homeforpup/shared-activity';
+import { ActivityFeed } from '@homeforpup/shared-activity';
 import useSWR from 'swr';
 
 const { Title, Paragraph, Text } = Typography;
@@ -59,12 +59,6 @@ const BreederDashboard: React.FC = () => {
     isAuthenticated && user?.userId ? `/api/contracts?breederId=${user.userId}` : null,
     fetcher
   );
-
-  useEffect(() => {
-    if (user?.userId) {
-      activityTracker.trackPageView(user.userId, 'breeder-dashboard');
-    }
-  }, [user?.userId]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {

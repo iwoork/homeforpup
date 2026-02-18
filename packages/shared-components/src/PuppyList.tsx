@@ -188,26 +188,7 @@ const PuppyList: React.FC<PuppyListProps> = ({
     }
   };
 
-  const handleViewDetails = async (puppy: PuppyWithBreeder) => {
-    // Track puppy view activity
-    if (currentUserId) {
-      await activityTracker.trackPuppyActivity(
-        currentUserId,
-        'puppy_viewed',
-        puppy.id,
-        puppy.name,
-        puppy.breed,
-        puppy.breeder.id,
-        puppy.breeder.businessName,
-        {
-          puppyPrice: puppy.price,
-          puppyAge: puppy.ageWeeks,
-          puppyGender: puppy.gender,
-          puppyPhotos: puppy.image ? [puppy.image] : [],
-        }
-      );
-    }
-
+  const handleViewDetails = (puppy: PuppyWithBreeder) => {
     if (onViewDetails) {
       onViewDetails(puppy);
     }

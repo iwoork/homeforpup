@@ -17,7 +17,7 @@ import { Progress } from 'antd';
 import type { MessageThread } from '@homeforpup/shared-types';
 import Link from 'next/link';
 import { useAuth } from '@homeforpup/shared-auth';
-import { ActivityFeed, activityTracker } from '@homeforpup/shared-activity';
+import { ActivityFeed } from '@homeforpup/shared-activity';
 import useSWR from 'swr';
 
 const { Title, Paragraph, Text } = Typography;
@@ -171,13 +171,6 @@ const DogParentDashboard: React.FC = () => {
       });
     }
   }, [favoritesData, threadsData, user]);
-
-  // Track page view activity
-  useEffect(() => {
-    if (user?.userId) {
-      activityTracker.trackPageView(user.userId, 'dashboard');
-    }
-  }, [user?.userId]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) {

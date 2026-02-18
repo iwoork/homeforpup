@@ -69,7 +69,7 @@ export class ActivityTracker {
    */
   public async trackPuppyActivity(
     userId: string,
-    type: 'puppy_viewed' | 'puppy_favorited' | 'puppy_unfavorited',
+    type: 'puppy_favorited' | 'puppy_unfavorited',
     puppyId: string,
     puppyName: string,
     puppyBreed: string,
@@ -78,13 +78,11 @@ export class ActivityTracker {
     additionalMetadata: Partial<ActivityMetadata> = {}
   ): Promise<Activity | null> {
     const titles = {
-      puppy_viewed: `Viewed ${puppyName}`,
       puppy_favorited: `Added ${puppyName} to favorites`,
       puppy_unfavorited: `Removed ${puppyName} from favorites`,
     };
 
     const descriptions = {
-      puppy_viewed: `Viewed ${puppyBreed} puppy from ${breederName}`,
       puppy_favorited: `Added ${puppyBreed} puppy to your favorites`,
       puppy_unfavorited: `Removed ${puppyBreed} puppy from your favorites`,
     };
@@ -113,7 +111,7 @@ export class ActivityTracker {
    */
   public async trackBreederActivity(
     userId: string,
-    type: 'breeder_contacted' | 'kennel_visited' | 'profile_viewed',
+    type: 'breeder_contacted',
     breederId: string,
     breederName: string,
     kennelId?: string,
@@ -122,14 +120,10 @@ export class ActivityTracker {
   ): Promise<Activity | null> {
     const titles = {
       breeder_contacted: `Contacted ${breederName}`,
-      kennel_visited: `Visited ${kennelName || breederName}'s kennel`,
-      profile_viewed: `Viewed ${breederName}'s profile`,
     };
 
     const descriptions = {
       breeder_contacted: `Sent a message to ${breederName}`,
-      kennel_visited: `Browsed ${kennelName || breederName}'s kennel profile`,
-      profile_viewed: `Viewed ${breederName}'s breeder profile`,
     };
 
     return this.trackActivity(
@@ -193,36 +187,11 @@ export class ActivityTracker {
   }
 
   /**
-   * Track search activities
-   */
-  public async trackSearchActivity(
-    userId: string,
-    searchQuery: string,
-    searchFilters: Record<string, any> = {},
-    searchResults: number,
-    additionalMetadata: Partial<ActivityMetadata> = {}
-  ): Promise<Activity | null> {
-    return this.trackActivity(
-      userId,
-      'search_performed',
-      `Searched for "${searchQuery}"`,
-      `Found ${searchResults} results for "${searchQuery}"`,
-      {
-        searchQuery,
-        searchFilters,
-        searchResults,
-        ...additionalMetadata,
-      },
-      'engagement'
-    );
-  }
-
-  /**
    * Track profile activities
    */
   public async trackProfileActivity(
     userId: string,
-    type: 'profile_updated' | 'preferences_updated' | 'profile_viewed',
+    type: 'profile_updated' | 'preferences_updated',
     field?: string,
     value?: any,
     additionalMetadata: Partial<ActivityMetadata> = {}
@@ -230,13 +199,11 @@ export class ActivityTracker {
     const titles = {
       profile_updated: 'Profile updated',
       preferences_updated: 'Preferences updated',
-      profile_viewed: 'Profile viewed',
     };
 
     const descriptions = {
       profile_updated: field ? `Updated ${field}` : 'Updated profile information',
       preferences_updated: 'Updated your preferences',
-      profile_viewed: 'Your profile was viewed',
     };
 
     return this.trackActivity(
@@ -301,27 +268,6 @@ export class ActivityTracker {
     return 'desktop';
   }
 
-  /**
-   * Track page view
-   */
-  public async trackPageView(
-    userId: string,
-    page: string,
-    additionalMetadata: Partial<ActivityMetadata> = {}
-  ): Promise<Activity | null> {
-    return this.trackActivity(
-      userId,
-      'profile_viewed',
-      `Viewed ${page}`,
-      `Visited ${page} page`,
-      {
-        targetId: page,
-        targetType: 'user',
-        ...additionalMetadata,
-      },
-      'engagement'
-    );
-  }
 }
 
 // Export singleton instance

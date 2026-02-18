@@ -2,15 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, List, Avatar, Typography, Tag, Button, Space, Spin, Empty, Select, DatePicker, Badge } from 'antd';
-import { 
-  HeartOutlined, 
-  MessageOutlined, 
-  EyeOutlined, 
+import {
+  HeartOutlined,
+  MessageOutlined,
   UserOutlined,
-  SearchOutlined,
   CalendarOutlined,
   TeamOutlined,
-  TrophyOutlined,
   SettingOutlined,
   BellOutlined,
   StarOutlined,
@@ -19,7 +16,7 @@ import {
   DeleteOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  InfoCircleOutlined
+  TrophyOutlined
 } from '@ant-design/icons';
 import { Activity, ActivityType, ActivityCategory, ActivityFilter } from '@homeforpup/shared-types';
 import { formatDistanceToNow } from 'date-fns';
@@ -114,18 +111,12 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       breeder_contacted: <MessageOutlined style={{ color: '#1890ff' }} />,
       message_received: <MessageOutlined style={{ color: '#52c41a' }} />,
       message_sent: <MessageOutlined style={{ color: '#1890ff' }} />,
-      profile_viewed: <EyeOutlined style={{ color: '#52c41a' }} />,
-      search_performed: <SearchOutlined style={{ color: '#722ed1' }} />,
-      breed_explored: <TrophyOutlined style={{ color: '#fa8c16' }} />,
-      kennel_visited: <TeamOutlined style={{ color: '#13c2c2' }} />,
-      puppy_viewed: <EyeOutlined style={{ color: '#52c41a' }} />,
-      adoption_guide_viewed: <InfoCircleOutlined style={{ color: '#722ed1' }} />,
       preferences_updated: <SettingOutlined style={{ color: '#fa8c16' }} />,
       profile_updated: <EditOutlined style={{ color: '#1890ff' }} />,
       account_created: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
       login: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
       logout: <ExclamationCircleOutlined style={{ color: '#fa8c16' }} />,
-      
+
       // Breeder activities
       kennel_created: <TeamOutlined style={{ color: '#52c41a' }} />,
       kennel_updated: <EditOutlined style={{ color: '#1890ff' }} />,
@@ -138,9 +129,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       announcement_updated: <EditOutlined style={{ color: '#1890ff' }} />,
       inquiry_received: <MessageOutlined style={{ color: '#52c41a' }} />,
       inquiry_responded: <MessageOutlined style={{ color: '#1890ff' }} />,
-      profile_viewed_by_dog_parent: <EyeOutlined style={{ color: '#52c41a' }} />,
-      kennel_viewed_by_dog_parent: <TeamOutlined style={{ color: '#52c41a' }} />,
-      puppy_viewed_by_dog_parent: <EyeOutlined style={{ color: '#52c41a' }} />,
       favorite_received: <HeartOutlined style={{ color: '#f5222d' }} />,
       message_received_from_dog_parent: <MessageOutlined style={{ color: '#52c41a' }} />,
       message_sent_to_dog_parent: <MessageOutlined style={{ color: '#1890ff' }} />,
@@ -365,8 +353,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
               <Option value="puppy_favorited">Puppy Favorited</Option>
               <Option value="message_received">Message Received</Option>
               <Option value="breeder_contacted">Breeder Contacted</Option>
-              <Option value="profile_viewed">Profile Viewed</Option>
-              <Option value="search_performed">Search Performed</Option>
             </Select>
             
             <Select
