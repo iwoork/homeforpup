@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Typography, Button, Space, Statistic, Spin, Tag, Empty } from 'antd';
+import { Card, Row, Col, Typography, Button, Space, Statistic, Spin, Tag, Empty, Modal, Form, Input, InputNumber, Select, DatePicker, Checkbox, message } from 'antd';
 import {
   HomeOutlined,
   TeamOutlined,
@@ -21,6 +21,8 @@ import useSWR from 'swr';
 import { SUBSCRIPTION_TIERS, SubscriptionTier } from '@homeforpup/shared-types';
 
 const { Title, Paragraph, Text } = Typography;
+const { Option } = Select;
+const { TextArea } = Input;
 
 const tierColors: Record<SubscriptionTier, string> = {
   free: '#8c8c8c',
@@ -63,13 +65,16 @@ const BreederDashboard: React.FC = () => {
   const { status } = useSession();
   const [upcomingVetVisits, setUpcomingVetVisits] = useState<VetVisitInfo[]>([]);
   const [vetVisitsLoading, setVetVisitsLoading] = useState(false);
+  const [vetVisitModalVisible, setVetVisitModalVisible] = useState(false);
+  const [submittingVetVisit, setSubmittingVetVisit] = useState(false);
+  const [vetForm] = Form.useForm();
 
   const isAuthenticated = status === 'authenticated';
   const loading = status === 'loading';
 
   // Data fetching
   const { data: kennelsData } = useSWR('/api/kennels', safeFetcher);
-  const { data: parentDogsData } = useSWR('/api/dogs?type=parent', safeFetcher);
+  const { data: parentDogsData, mutate: mutateParentDogs } = useSWR('/api/dogs?type=parent', safeFetcher);
   const { data: puppiesData } = useSWR('/api/dogs?type=puppy&breedingStatus=available', safeFetcher);
   const { data: littersData } = useSWR('/api/litters', safeFetcher);
   const { data: subscriptionData } = useSWR(
@@ -134,6 +139,32 @@ const BreederDashboard: React.FC = () => {
 
     fetchVetVisits();
   }, [parentDogsData]);
+
+  const handleAddVetVisit = async (values: any) => {
+    setSubmittingVetVisit(true);
+    try {
+      const response = await fetch(`/api/dogs/${values.dogId}/vet-visits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add vet visit');
+      }
+
+      message.success('Vet visit added successfully');
+      setVetVisitModalVisible(false);
+      vetForm.resetFields();
+      mutateParentDogs();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Failed to add vet visit');
+    } finally {
+      setSubmittingVetVisit(false);
+    }
+  };
 
   const cardStyle: React.CSSProperties = {
     borderRadius: '12px',
@@ -396,6 +427,16 @@ const BreederDashboard: React.FC = () => {
               <span><MedicineBoxOutlined style={{ marginRight: '8px' }} />Upcoming Vet Visits</span>
             }
             style={cardStyle}
+            extra={
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                size="small"
+                onClick={() => setVetVisitModalVisible(true)}
+              >
+                Add Visit
+              </Button>
+            }
           >
             {vetVisitsLoading ? (
               <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -511,6 +552,146 @@ const BreederDashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Add Vet Visit Modal */}
+      <Modal
+        title="Add Veterinary Visit"
+        open={vetVisitModalVisible}
+        onCancel={() => {
+          setVetVisitModalVisible(false);
+          vetForm.resetFields();
+        }}
+        onOk={() => vetForm.submit()}
+        confirmLoading={submittingVetVisit}
+        width={600}
+      >
+        <Form
+          form={vetForm}
+          layout="vertical"
+          onFinish={handleAddVetVisit}
+          preserve={false}
+        >
+          <Form.Item
+            name="dogId"
+            label="Dog"
+            rules={[{ required: true, message: 'Please select a dog' }]}
+          >
+            <Select placeholder="Select a dog">
+              {(parentDogsData?.dogs ?? []).map((dog: any) => (
+                <Option key={dog.id} value={dog.id}>{dog.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="visitDate"
+                label="Visit Date"
+                rules={[{ required: true, message: 'Please select visit date' }]}
+              >
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="visitType"
+                label="Visit Type"
+                rules={[{ required: true, message: 'Please select visit type' }]}
+              >
+                <Select>
+                  <Option value="routine">Routine</Option>
+                  <Option value="emergency">Emergency</Option>
+                  <Option value="follow-up">Follow-up</Option>
+                  <Option value="vaccination">Vaccination</Option>
+                  <Option value="surgery">Surgery</Option>
+                  <Option value="checkup">Checkup</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name={['veterinarian', 'name']}
+                label="Veterinarian Name"
+                rules={[{ required: true, message: 'Please enter veterinarian name' }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name={['veterinarian', 'clinic']}
+                label="Clinic"
+                rules={[{ required: true, message: 'Please enter clinic name' }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="reason"
+            label="Reason for Visit"
+            rules={[{ required: true, message: 'Please enter reason for visit' }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="weight" label="Weight (lbs)">
+                <InputNumber style={{ width: '100%' }} min={0} max={300} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="temperature" label="Temperature (°F)">
+                <InputNumber style={{ width: '100%' }} min={90} max={110} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="heartRate" label="Heart Rate (BPM)">
+                <InputNumber style={{ width: '100%' }} min={40} max={200} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="diagnosis" label="Diagnosis">
+            <Input />
+          </Form.Item>
+
+          <Form.Item name="treatment" label="Treatment">
+            <TextArea rows={3} />
+          </Form.Item>
+
+          <Form.Item name="notes" label="Notes">
+            <TextArea rows={3} />
+          </Form.Item>
+
+          <Form.Item name="followUpRequired" valuePropName="checked">
+            <Checkbox>Follow-up Required</Checkbox>
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prev, cur) => prev.followUpRequired !== cur.followUpRequired}
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('followUpRequired') ? (
+                <Form.Item
+                  name="followUpDate"
+                  label="Follow-up Date"
+                  rules={[{ required: true, message: 'Please select follow-up date' }]}
+                >
+                  <DatePicker style={{ width: '100%' }} />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
