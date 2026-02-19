@@ -130,7 +130,7 @@ const HomePage: React.FC = () => {
           </Paragraph>
           <Row justify="center" gutter={[24, 12]} className="hero-buttons">
             <Col xs={24} sm={12} md={8}>
-              <Link href="/puppy-journey">
+              <Link href="/browse">
                 <Button
                   size="large"
                   block

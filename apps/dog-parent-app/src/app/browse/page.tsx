@@ -1,17 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Typography, Select, Slider, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Statistic, Tooltip, Badge, Divider } from 'antd';
+import { Row, Col, Card, Typography, Select, Checkbox, Button, Rate, Tag, Space, Spin, Alert, Pagination, Tooltip, Badge, Divider } from 'antd';
 import { HeartOutlined, HeartFilled, EnvironmentOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, CheckCircleOutlined, TruckOutlined, HomeOutlined, FilterOutlined, CrownOutlined } from '@ant-design/icons';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { message } from 'antd';
 import { usePuppies, PuppyWithBreeder } from '@/hooks/api/usePuppies';
 import CountryFilter from '@/components/filters/CountryFilter';
 import StateFilter from '@/components/filters/StateFilter';
 import ContactBreederModal from '@/components/ContactBreederModal';
-import PuppySearchWizard from '@/components/PuppySearchWizard';
 import { BreedSelector } from '@/components';
 import { useAuth, useBulkFavoriteStatus, useFavorites } from '@/hooks';
 import { calculateBreedScore, MatchPreferences, Breed } from '@homeforpup/shared-dogs';
@@ -22,8 +19,6 @@ const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 
 const PuppiesPage: React.FC = () => {
-  const router = useRouter();
-  const [matchingLoading, setMatchingLoading] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [matchPrefs, setMatchPrefs] = useState<MatchPreferences | null>(null);
   const [breedsForMatch, setBreedsForMatch] = useState<Breed[]>([]);
@@ -38,7 +33,6 @@ const PuppiesPage: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
-  const [showSearchWizard, setShowSearchWizard] = useState(false);
 
   // Get user data
   const { user, loading: userLoading, isAuthenticated } = useAuth();
@@ -214,59 +208,6 @@ const PuppiesPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleSearchWizardComplete = async (criteria: any) => {
-    setMatchingLoading(true);
-    try {
-      const preferences = {
-        activityLevel: criteria.activityLevel,
-        livingSpace: criteria.livingSpace,
-        familySize: criteria.familySize,
-        childrenAges: criteria.childrenAges || [],
-        experienceLevel: criteria.experienceLevel,
-        size: criteria.size || [],
-      };
-
-      // Save preferences if authenticated
-      if (isAuthenticated) {
-        fetch('/api/matching/preferences', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(preferences),
-        }).catch(() => {});
-      }
-
-      // Get recommendations
-      const res = await fetch('/api/matching/recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preferences),
-      });
-
-      if (!res.ok) throw new Error('Failed to get recommendations');
-
-      const results = await res.json();
-      sessionStorage.setItem('matchResults', JSON.stringify(results));
-      sessionStorage.setItem('matchPreferences', JSON.stringify(preferences));
-      setShowSearchWizard(false);
-      router.push('/recommendations');
-    } catch (error) {
-      console.error('Error getting recommendations:', error);
-      message.error('Failed to generate recommendations. Applying filters instead.');
-      // Fallback: apply criteria as filters
-      setFilters({
-        country: criteria.country || 'Canada',
-        state: criteria.state || [],
-        breed: criteria.breeds?.[0] || null,
-        gender: criteria.gender || null,
-        shipping: criteria.shipping || false,
-        verificationLevel: criteria.verifiedOnly ? 'verified' : 'all',
-      });
-      setCurrentPage(1);
-      setShowSearchWizard(false);
-      setMatchingLoading(false);
-    }
   };
 
   // Check if any filters are active
@@ -469,77 +410,13 @@ const PuppiesPage: React.FC = () => {
     );
   }
 
-  if (showSearchWizard) {
-    if (matchingLoading) {
-      return (
-        <div style={{ textAlign: 'center', padding: '100px 20px' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: '24px' }}>
-            <Title level={3} style={{ color: '#08979C' }}>Finding Your Perfect Match...</Title>
-            <Text type="secondary" style={{ fontSize: '16px' }}>
-              Analyzing breed compatibility with your lifestyle preferences
-            </Text>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <PuppySearchWizard
-        onComplete={handleSearchWizardComplete}
-        onCancel={() => setShowSearchWizard(false)}
-      />
-    );
-  }
-
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ marginBottom: '24px' }}>
         <Title level={1} style={{ color: '#08979C', margin: 0 }}>
           Available Puppies
         </Title>
-        <Button 
-          type="primary" 
-          size="large"
-          onClick={() => setShowSearchWizard(true)}
-          style={{ background: '#08979C', borderColor: '#08979C' }}
-        >
-          Find My Perfect Puppy
-        </Button>
       </div>
-
-      {/* Stats */}
-      {stats && (
-        <Row gutter={16} style={{ marginBottom: '24px' }}>
-          <Col xs={24} sm={8}>
-            <Card>
-              <Statistic
-                title="Total Puppies"
-                value={stats.totalPuppies}
-                prefix="🐕"
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card>
-              <Statistic
-                title="Average Age"
-                value={stats.averageAge}
-                suffix="weeks"
-                prefix="📅"
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card>
-              <Statistic
-                title="Verified Breeders"
-                value={stats.verifiedBreeders}
-                prefix="✅"
-              />
-            </Card>
-          </Col>
-        </Row>
-      )}
 
       <Row gutter={24}>
         {/* Filters Sidebar */}
