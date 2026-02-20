@@ -8,10 +8,13 @@ export interface EnvironmentConfig {
 
   // Clerk
   clerkSecretKey: string;
-  
-  // DynamoDB Tables
+
+  // Supabase PostgreSQL (replaces DynamoDB)
+  databaseUrl: string;
+
+  // DynamoDB Tables (kept temporarily for migration reference)
   tables: {
-    profiles: string; // Renamed from users - contains application profile data only
+    profiles: string;
     dogs: string;
     kennels: string;
     litters: string;
@@ -22,22 +25,22 @@ export interface EnvironmentConfig {
     activities: string;
     breeds: string;
   };
-  
+
   // S3
   uploadBucket: string;
   imageBucket?: string;
   photosBucket?: string;
-  
+
   // Lambda
   lambda: {
     memorySize: number;
     timeout: number;
     runtime: string;
   };
-  
+
   // CORS
   allowedOrigins: string[];
-  
+
   // Feature flags
   features: {
     caching: boolean;
@@ -49,24 +52,25 @@ export interface EnvironmentConfig {
 export function getEnvironmentConfig(environment: string): EnvironmentConfig {
   const region = process.env.AWS_REGION || process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1';
 
-  // Read Clerk config from environment
   const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+  const databaseUrl = process.env.DATABASE_URL || '';
 
   console.log('\nEnvironment Configuration:');
   console.log(`   Region: ${region}`);
   console.log(`   Clerk Secret Key: ${clerkSecretKey ? 'SET' : 'NOT FOUND'}`);
+  console.log(`   Database URL: ${databaseUrl ? 'SET' : 'NOT FOUND'}`);
 
   if (!clerkSecretKey) {
     console.error('\nERROR: Missing required environment variable CLERK_SECRET_KEY');
-    console.error('\nTo fix this, set CLERK_SECRET_KEY in your .env file or environment.');
     throw new Error('Missing required environment variable: CLERK_SECRET_KEY');
   }
 
-  console.log('Clerk configuration loaded successfully.');
+  console.log('Configuration loaded successfully.');
 
   const baseConfig = {
     region,
     clerkSecretKey,
+    databaseUrl,
     uploadBucket: process.env.S3_UPLOAD_BUCKET || '',
     imageBucket: process.env.S3_IMAGE_BUCKET,
     photosBucket: process.env.S3_PHOTOS_BUCKET || 'homeforpup-images',
@@ -177,4 +181,3 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
       };
   }
 }
-

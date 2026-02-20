@@ -1,25 +1,5 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, breedsSimple, eq, sql } from '@homeforpup/database';
 import { Breed, BreedsResponse, BreedItem, UseBreedsOptions } from './breeds-types';
-
-// Configure AWS SDK v3
-const createDynamoClient = () => {
-  const client = new DynamoDBClient({
-    region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
-
-  return DynamoDBDocumentClient.from(client, {
-    marshallOptions: {
-      removeUndefinedValues: true,
-    },
-  });
-};
-
-const BREEDS_TABLE = process.env.BREEDS_TABLE_NAME || 'homeforpup-breeds-simple';
 
 // Normalize size categories
 const normalizeSize = (size: string): string => {
@@ -51,39 +31,15 @@ const normalizeCategory = (group: string): string => {
 // Generate characteristics based on breed group and size
 const generateCharacteristics = (group: string, _size: string, _type: string) => {
   const baseCharacteristics = {
-    energyLevel: 5,
-    trainability: 5,
-    friendliness: 5,
-    groomingNeeds: 5,
-    exerciseNeeds: 5,
-    barking: 5,
-    shedding: 5,
-    goodWithKids: 5,
-    goodWithDogs: 5,
-    goodWithCats: 5,
-    goodWithStrangers: 5,
-    protective: 5,
-    playful: 5,
-    calm: 5,
-    intelligent: 5,
-    independent: 5,
-    affectionate: 5,
-    social: 5,
-    confident: 5,
-    gentle: 5,
-    patient: 5,
-    energetic: 5,
-    loyal: 5,
-    alert: 5,
-    brave: 5,
-    stubborn: 5,
-    sensitive: 5,
-    adaptable: 5,
-    vocal: 5,
-    territorial: 5,
+    energyLevel: 5, trainability: 5, friendliness: 5, groomingNeeds: 5,
+    exerciseNeeds: 5, barking: 5, shedding: 5, goodWithKids: 5,
+    goodWithDogs: 5, goodWithCats: 5, goodWithStrangers: 5, protective: 5,
+    playful: 5, calm: 5, intelligent: 5, independent: 5, affectionate: 5,
+    social: 5, confident: 5, gentle: 5, patient: 5, energetic: 5,
+    loyal: 5, alert: 5, brave: 5, stubborn: 5, sensitive: 5,
+    adaptable: 5, vocal: 5, territorial: 5,
   };
 
-  // Adjust based on breed group
   switch (group.toLowerCase()) {
     case 'sporting':
       return { ...baseCharacteristics, energyLevel: 8, exerciseNeeds: 8, trainability: 8, friendliness: 7 };
@@ -102,76 +58,43 @@ const generateCharacteristics = (group: string, _size: string, _type: string) =>
   }
 };
 
-// Generate physical traits
 const generatePhysicalTraits = (size: string, group: string): string[] => {
-  const traits = [];
-  
+  const traits: string[] = [];
   switch (size.toLowerCase()) {
-    case 'toy':
-      traits.push('Compact size', 'Lightweight', 'Portable');
-      break;
-    case 'small':
-      traits.push('Small stature', 'Manageable size', 'Apartment-friendly');
-      break;
-    case 'medium':
-      traits.push('Balanced proportions', 'Versatile size', 'Family-friendly');
-      break;
-    case 'large':
-      traits.push('Substantial build', 'Strong presence', 'Athletic frame');
-      break;
-    case 'giant':
-      traits.push('Impressive size', 'Powerful build', 'Commanding presence');
-      break;
+    case 'toy': traits.push('Compact size', 'Lightweight', 'Portable'); break;
+    case 'small': traits.push('Small stature', 'Manageable size', 'Apartment-friendly'); break;
+    case 'medium': traits.push('Balanced proportions', 'Versatile size', 'Family-friendly'); break;
+    case 'large': traits.push('Substantial build', 'Strong presence', 'Athletic frame'); break;
+    case 'giant': traits.push('Impressive size', 'Powerful build', 'Commanding presence'); break;
   }
-
   switch (group.toLowerCase()) {
-    case 'sporting':
-      traits.push('Athletic build', 'Water-resistant coat', 'Webbed feet');
-      break;
-    case 'working':
-      traits.push('Strong build', 'Dense coat', 'Powerful jaws');
-      break;
-    case 'herding':
-      traits.push('Agile build', 'Alert expression', 'Quick reflexes');
-      break;
-    case 'hound':
-      traits.push('Sleek build', 'Long ears', 'Scenting ability');
-      break;
-    case 'terrier':
-      traits.push('Compact build', 'Wire coat', 'Determined expression');
-      break;
+    case 'sporting': traits.push('Athletic build', 'Water-resistant coat', 'Webbed feet'); break;
+    case 'working': traits.push('Strong build', 'Dense coat', 'Powerful jaws'); break;
+    case 'herding': traits.push('Agile build', 'Alert expression', 'Quick reflexes'); break;
+    case 'hound': traits.push('Sleek build', 'Long ears', 'Scenting ability'); break;
+    case 'terrier': traits.push('Compact build', 'Wire coat', 'Determined expression'); break;
   }
-
   return traits;
 };
 
-// Generate temperament traits
 const generateTemperament = (group: string, _type: string): string[] => {
-  const baseTemperament = ['Loyal', 'Affectionate', 'Intelligent'];
-  
+  const base = ['Loyal', 'Affectionate', 'Intelligent'];
   switch (group.toLowerCase()) {
-    case 'sporting':
-      return [...baseTemperament, 'Energetic', 'Friendly', 'Trainable'];
-    case 'working':
-      return [...baseTemperament, 'Protective', 'Confident', 'Alert'];
-    case 'herding':
-      return [...baseTemperament, 'Alert', 'Responsive', 'Energetic'];
-    case 'hound':
-      return [...baseTemperament, 'Independent', 'Gentle', 'Calm'];
-    case 'terrier':
-      return [...baseTemperament, 'Spirited', 'Bold', 'Playful'];
-    case 'toy':
-      return [...baseTemperament, 'Gentle', 'Playful', 'Companionable'];
-    default:
-      return baseTemperament;
+    case 'sporting': return [...base, 'Energetic', 'Friendly', 'Trainable'];
+    case 'working': return [...base, 'Protective', 'Confident', 'Alert'];
+    case 'herding': return [...base, 'Alert', 'Responsive', 'Energetic'];
+    case 'hound': return [...base, 'Independent', 'Gentle', 'Calm'];
+    case 'terrier': return [...base, 'Spirited', 'Bold', 'Playful'];
+    case 'toy': return [...base, 'Gentle', 'Playful', 'Companionable'];
+    default: return base;
   }
 };
 
-const transformBreed = async (item: BreedItem): Promise<Breed> => {
+const transformBreed = (item: BreedItem): Breed => {
   const size = normalizeSize(item.size_category);
   const category = normalizeCategory(item.breed_group);
   const characteristics = generateCharacteristics(item.breed_group, item.size_category, item.breed_type);
-  
+
   return {
     id: `breed-${item.id}`,
     name: item.name,
@@ -208,12 +131,6 @@ const transformBreed = async (item: BreedItem): Promise<Breed> => {
 };
 
 export class BreedsApiClient {
-  private dynamodb: DynamoDBDocumentClient;
-
-  constructor() {
-    this.dynamodb = createDynamoClient();
-  }
-
   async getBreeds(options: UseBreedsOptions = {}): Promise<BreedsResponse> {
     const {
       search = '',
@@ -225,125 +142,74 @@ export class BreedsApiClient {
       sortBy = 'name'
     } = options;
 
-    console.log('API Request params:', { search, category, size, breedType, page, limit, sortBy });
+    // Build conditions
+    const conditions: any[] = [];
 
-    // Build DynamoDB query parameters
-    const params: any = {
-      TableName: BREEDS_TABLE,
-    };
+    // Only live breeds
+    conditions.push(eq(breedsSimple.live, 'True'));
 
-    const filterExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
-
-    // Only show live breeds
-    filterExpressions.push('#live = :live');
-    expressionAttributeNames['#live'] = 'live';
-    expressionAttributeValues[':live'] = 'True';
-
-    // Category filter using GSI if available
     if (category && category !== 'All') {
       const categoryMap: { [key: string]: string } = {
-        'Sporting': 'sporting',
-        'Hound': 'hound',
-        'Working': 'working',
-        'Terrier': 'terrier',
-        'Toy': 'toy',
-        'Non-Sporting': 'non-sporting',
-        'Herding': 'herding',
-        'Mixed': 'mixed'
+        'Sporting': 'sporting', 'Hound': 'hound', 'Working': 'working',
+        'Terrier': 'terrier', 'Toy': 'toy', 'Non-Sporting': 'non-sporting',
+        'Herding': 'herding', 'Mixed': 'mixed'
       };
-      
       if (categoryMap[category]) {
-        filterExpressions.push('#breed_group = :breed_group');
-        expressionAttributeNames['#breed_group'] = 'breed_group';
-        expressionAttributeValues[':breed_group'] = categoryMap[category];
+        conditions.push(eq(breedsSimple.breedGroup, categoryMap[category]));
       }
     }
 
-    // Size filter
     if (size && size !== 'All') {
       const sizeMap: { [key: string]: string } = {
-        'Toy': 'toy',
-        'Small': 'small',
-        'Medium': 'medium',
-        'Large': 'large',
-        'Giant': 'giant'
+        'Toy': 'toy', 'Small': 'small', 'Medium': 'medium', 'Large': 'large', 'Giant': 'giant'
       };
-      
       if (sizeMap[size]) {
-        filterExpressions.push('#size_category = :size_category');
-        expressionAttributeNames['#size_category'] = 'size_category';
-        expressionAttributeValues[':size_category'] = sizeMap[size];
+        conditions.push(eq(breedsSimple.sizeCategory, sizeMap[size]));
       }
     }
 
-    // Breed type filter
     if (breedType && breedType !== 'All') {
-      filterExpressions.push('#breed_type = :breed_type');
-      expressionAttributeNames['#breed_type'] = 'breed_type';
-      expressionAttributeValues[':breed_type'] = breedType.toLowerCase();
+      conditions.push(eq(breedsSimple.breedType, breedType.toLowerCase()));
     }
 
-    // Search filter
     if (search) {
-      filterExpressions.push('(contains(#name, :search) OR contains(alt_names, :search) OR contains(search_terms, :search))');
-      expressionAttributeNames['#name'] = 'name';
-      expressionAttributeValues[':search'] = search.toLowerCase();
+      conditions.push(
+        sql`(${breedsSimple.name} ILIKE ${'%' + search.toLowerCase() + '%'} OR ${breedsSimple.altNames} ILIKE ${'%' + search.toLowerCase() + '%'} OR ${breedsSimple.searchTerms} ILIKE ${'%' + search.toLowerCase() + '%'})`
+      );
     }
 
-    // Apply filters
-    if (filterExpressions.length > 0) {
-      params.FilterExpression = filterExpressions.join(' AND ');
-      params.ExpressionAttributeNames = expressionAttributeNames;
-      params.ExpressionAttributeValues = expressionAttributeValues;
-    }
+    const { and } = await import('drizzle-orm');
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    console.log('DynamoDB params:', JSON.stringify(params, null, 2));
-
-    // Execute scan
-    const result = await this.dynamodb.send(new ScanCommand(params));
-    const items = result.Items as BreedItem[] || [];
-
-    console.log(`Found ${items.length} breeds in DynamoDB`);
+    const items = await db
+      .select()
+      .from(breedsSimple)
+      .where(whereClause) as unknown as BreedItem[];
 
     // Transform all breeds
-    const allTransformedBreeds = await Promise.all(
-      items.map(item => transformBreed(item))
-    );
+    const allTransformedBreeds = items.map(item => transformBreed(item));
 
     // Apply sorting
     const sortedBreeds = [...allTransformedBreeds];
     switch (sortBy) {
       case 'name':
-        sortedBreeds.sort((a, b) => a.name.localeCompare(b.name));
-        break;
+        sortedBreeds.sort((a, b) => a.name.localeCompare(b.name)); break;
       case 'category':
-        sortedBreeds.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-        break;
+        sortedBreeds.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)); break;
       case 'size':
         const sizeOrder = ['Toy', 'Small', 'Medium', 'Large', 'Giant'];
-        sortedBreeds.sort((a, b) => {
-          const aIndex = sizeOrder.indexOf(a.size);
-          const bIndex = sizeOrder.indexOf(b.size);
-          return aIndex - bIndex || a.name.localeCompare(b.name);
-        });
+        sortedBreeds.sort((a, b) => sizeOrder.indexOf(a.size) - sizeOrder.indexOf(b.size) || a.name.localeCompare(b.name));
         break;
       case 'breedType':
-        sortedBreeds.sort((a, b) => a.breedType.localeCompare(b.breedType) || a.name.localeCompare(b.name));
-        break;
+        sortedBreeds.sort((a, b) => a.breedType.localeCompare(b.breedType) || a.name.localeCompare(b.name)); break;
     }
 
-    // Apply pagination
+    // Pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedBreeds = sortedBreeds.slice(startIndex, endIndex);
     const totalCount = sortedBreeds.length;
     const totalPages = Math.ceil(totalCount / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    console.log(`Returning ${paginatedBreeds.length} breeds for page ${page} of ${totalPages}`);
 
     return {
       breeds: paginatedBreeds,
@@ -351,8 +217,8 @@ export class BreedsApiClient {
       total: totalCount,
       page,
       limit,
-      hasNextPage,
-      hasPrevPage,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
       totalPages,
       startIndex: startIndex + 1,
       endIndex: Math.min(endIndex, totalCount),
@@ -366,5 +232,4 @@ export class BreedsApiClient {
   }
 }
 
-// Create a singleton instance
 export const breedsApiClient = new BreedsApiClient();

@@ -1,28 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, messages, messageThreads, eq, sql } from '@homeforpup/database';
 import { v4 as uuidv4 } from 'uuid';
 
 import { auth, currentUser } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-    convertEmptyValues: false,
-    convertClassInstanceToMap: false,
-  },
-});
-
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,13 +25,14 @@ export async function POST(request: NextRequest) {
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // Create the new message with the correct DynamoDB structure
+    const senderName = clerkUser?.fullName || clerkUser?.firstName || '' || 'Unknown User';
+
+    // Create the new message
     const newMessage = {
-      PK: threadId, // Partition key is threadId
-      SK: messageId, // Sort key is messageId
+      id: messageId,
       threadId,
       senderId: userId,
-      senderName: clerkUser?.fullName || clerkUser?.firstName || '' || 'Unknown User',
+      senderName,
       receiverId,
       receiverName: receiverName || 'Unknown User',
       content,
@@ -60,50 +41,36 @@ export async function POST(request: NextRequest) {
       read: false,
       timestamp,
       createdAt: timestamp,
-      updatedAt: timestamp,
-      // GSI keys for querying by sender/receiver
-      GSI1PK: userId, // senderId
-      GSI1SK: timestamp,
-      GSI2PK: receiverId, // receiverId
-      GSI2SK: timestamp
     };
 
     // Save the message
-    await dynamodb.send(new PutCommand({
-      TableName: MESSAGES_TABLE,
-      Item: newMessage
-    }));
+    await db.insert(messages).values(newMessage);
 
-    // Update the thread participant records for both users
-    const updatePromises = [userId, receiverId].map(participantId => 
-      dynamodb.send(new UpdateCommand({
-        TableName: THREADS_TABLE,
-        Key: { PK: `${threadId}#${participantId}` },
-        UpdateExpression: 'SET lastMessage = :lastMessage, messageCount = messageCount + :inc, updatedAt = :updatedAt, unreadCount.#receiverId = unreadCount.#receiverId + :inc',
-        ExpressionAttributeNames: {
-          '#receiverId': receiverId
+    // Update the thread
+    const [thread] = await db.select().from(messageThreads).where(eq(messageThreads.id, threadId)).limit(1);
+    if (thread) {
+      const unreadCount = (thread.unreadCount as Record<string, number>) || {};
+      unreadCount[receiverId] = (unreadCount[receiverId] || 0) + 1;
+
+      await db.update(messageThreads).set({
+        lastMessage: {
+          id: messageId,
+          content,
+          senderId: userId,
+          senderName,
+          messageType: 'general',
+          timestamp
         },
-        ExpressionAttributeValues: {
-          ':lastMessage': {
-            id: messageId,
-            content,
-            senderId: userId,
-            senderName: clerkUser?.fullName || clerkUser?.firstName || '' || 'Unknown User',
-            messageType: 'general',
-            timestamp
-          },
-          ':inc': 1,
-          ':updatedAt': timestamp
-        }
-      }))
-    );
+        messageCount: (thread.messageCount || 0) + 1,
+        updatedAt: timestamp,
+        unreadCount,
+      }).where(eq(messageThreads.id, threadId));
+    }
 
-    await Promise.all(updatePromises);
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Reply sent successfully',
       messageId,
-      threadId 
+      threadId
     });
 
   } catch (error) {

@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
-
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-const FAVORITES_TABLE = process.env.FAVORITES_TABLE_NAME || 'homeforpup-favorites';
+import { db, favorites, eq, and, inArray } from '@homeforpup/database';
 
 // GET /api/favorites/check - Check if a puppy is favorited by the user
 export async function GET(request: NextRequest) {
@@ -30,19 +17,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Puppy ID is required' }, { status: 400 });
     }
 
-    const params = {
-      TableName: FAVORITES_TABLE,
-      Key: {
-        userId,
-        puppyId
-      }
-    };
-
-    const result = await dynamodb.send(new GetCommand(params));
+    const [result] = await db.select().from(favorites)
+      .where(and(eq(favorites.userId, userId), eq(favorites.puppyId, puppyId)))
+      .limit(1);
 
     return NextResponse.json({
-      isFavorited: !!result.Item,
-      favorite: result.Item || null
+      isFavorited: !!result,
+      favorite: result || null
     });
 
   } catch (error) {
@@ -68,35 +49,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Puppy IDs must be an array' }, { status: 400 });
     }
 
-    // Check each puppy individually (DynamoDB doesn't have a batch get for different partition keys)
-    const results = await Promise.all(
-      puppyIds.map(async (puppyId: string) => {
-        const params = {
-          TableName: FAVORITES_TABLE,
-          Key: {
-            userId,
-            puppyId
-          }
-        };
+    if (puppyIds.length === 0) {
+      return NextResponse.json({ favoriteStatus: {}, results: [] });
+    }
 
-        const result = await dynamodb.send(new GetCommand(params));
-        return {
-          puppyId,
-          isFavorited: !!result.Item,
-          favorite: result.Item || null
-        };
-      })
-    );
+    // Batch query all favorites for this user with given puppyIds
+    const results = await db.select().from(favorites)
+      .where(and(eq(favorites.userId, userId), inArray(favorites.puppyId, puppyIds)));
 
-    // Convert to object for easier lookup
-    const favoriteStatus = results.reduce((acc, result) => {
+    const favoritedPuppyIds = new Set(results.map(r => r.puppyId));
+
+    // Build response
+    const detailedResults = puppyIds.map((puppyId: string) => {
+      const fav = results.find(r => r.puppyId === puppyId);
+      return {
+        puppyId,
+        isFavorited: favoritedPuppyIds.has(puppyId),
+        favorite: fav || null
+      };
+    });
+
+    const favoriteStatus = detailedResults.reduce((acc, result) => {
       acc[result.puppyId] = result.isFavorited;
       return acc;
     }, {} as Record<string, boolean>);
 
     return NextResponse.json({
       favoriteStatus,
-      results
+      results: detailedResults
     });
 
   } catch (error) {

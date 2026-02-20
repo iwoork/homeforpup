@@ -1,16 +1,4 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-
-const dynamoClient = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
+import { db, kennels, dogs, eq, or, sql, and, inArray } from '@homeforpup/database';
 
 export interface KennelAccessResult {
   hasAccess: boolean;
@@ -23,8 +11,8 @@ export interface KennelAccessResult {
  * Check if a user has access to a dog through direct ownership or kennel ownership
  */
 export async function checkDogAccess(
-  userId: string, 
-  dog: { id: string; ownerId: string; kennelId?: string; name: string }
+  userId: string,
+  dog: { id: string; ownerId: string; kennelId?: string | null; name: string }
 ): Promise<KennelAccessResult> {
   // Direct ownership check
   if (dog.ownerId === userId) {
@@ -44,13 +32,9 @@ export async function checkDogAccess(
 
   // Check kennel ownership
   try {
-    const kennelCommand = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: dog.kennelId },
-    });
+    const [kennel] = await db.select().from(kennels).where(eq(kennels.id, dog.kennelId)).limit(1);
 
-    const kennelResult = await docClient.send(kennelCommand);
-    if (!kennelResult.Item) {
+    if (!kennel) {
       console.log(`Kennel ${dog.kennelId} not found for dog ${dog.id}`);
       return {
         hasAccess: false,
@@ -58,10 +42,8 @@ export async function checkDogAccess(
       };
     }
 
-    const kennel = kennelResult.Item as any;
-    
-    // Check if user is kennel owner
-    if (kennel.owners && kennel.owners.includes(userId)) {
+    // Check if user is kennel owner (jsonb array contains)
+    if (kennel.owners && (kennel.owners as string[]).includes(userId)) {
       return {
         hasAccess: true,
         accessType: 'kennel_owner',
@@ -70,8 +52,8 @@ export async function checkDogAccess(
       };
     }
 
-    // Check if user is kennel manager
-    if (kennel.managers && kennel.managers.includes(userId)) {
+    // Check if user is kennel manager (jsonb array contains)
+    if (kennel.managers && (kennel.managers as string[]).includes(userId)) {
       return {
         hasAccess: true,
         accessType: 'kennel_manager',
@@ -101,19 +83,16 @@ export async function checkDogAccess(
 export async function getUserKennelIds(userId: string): Promise<string[]> {
   try {
     console.log('Getting kennel IDs for user:', userId);
-    
-    const scanCommand = new ScanCommand({
-      TableName: KENNELS_TABLE,
-      FilterExpression: 'contains(owners, :userId) OR contains(managers, :userId)',
-      ExpressionAttributeValues: {
-        ':userId': userId,
-      },
-    });
 
-    const result = await docClient.send(scanCommand);
-    const kennels = (result.Items || []) as any[];
-    const kennelIds = kennels.map(kennel => kennel.id);
-    
+    const userKennels = await db.select({ id: kennels.id }).from(kennels).where(
+      or(
+        sql`${kennels.owners}::jsonb @> ${JSON.stringify([userId])}::jsonb`,
+        sql`${kennels.managers}::jsonb @> ${JSON.stringify([userId])}::jsonb`
+      )
+    );
+
+    const kennelIds = userKennels.map(kennel => kennel.id);
+
     console.log(`Found ${kennelIds.length} accessible kennels for user ${userId}:`, kennelIds);
     return kennelIds;
   } catch (error) {
@@ -128,80 +107,61 @@ export async function getUserKennelIds(userId: string): Promise<string[]> {
 export async function getUserAccessibleDogs(userId: string, options: any = {}): Promise<{ dogs: any[]; total: number }> {
   try {
     console.log('Getting accessible dogs for user:', userId);
-    
+
     // Get user's accessible kennel IDs
     const kennelIds = await getUserKennelIds(userId);
-    
-    // Build filter expression for dogs
-    const filterExpressions: string[] = [];
-    const expressionAttributeValues: Record<string, any> = {};
-    
+
+    // Build where conditions
+    const conditions: any[] = [];
+
     // Include dogs owned directly by the user OR in user's kennels
     if (kennelIds.length > 0) {
-      const kennelFilters = kennelIds.map((_, index) => `kennelId = :kennelId${index}`);
-      filterExpressions.push(`(ownerId = :userId OR ${kennelFilters.join(' OR ')})`);
-      expressionAttributeValues[':userId'] = userId;
-      kennelIds.forEach((kennelId, index) => {
-        expressionAttributeValues[`:kennelId${index}`] = kennelId;
-      });
+      conditions.push(
+        or(
+          eq(dogs.ownerId, userId),
+          inArray(dogs.kennelId, kennelIds)
+        )
+      );
     } else {
-      // If no kennels, just filter by direct ownership
-      filterExpressions.push('ownerId = :userId');
-      expressionAttributeValues[':userId'] = userId;
+      conditions.push(eq(dogs.ownerId, userId));
     }
-    
+
     // Add other filters from options
-    const expressionAttributeNames: Record<string, string> = {};
-    
     if (options.search) {
-      filterExpressions.push('(contains(#name, :search) OR contains(callName, :search) OR contains(breed, :search))');
-      expressionAttributeNames['#name'] = 'name';
-      expressionAttributeValues[':search'] = options.search;
+      conditions.push(
+        or(
+          sql`${dogs.name} ILIKE ${'%' + options.search + '%'}`,
+          sql`${dogs.callName} ILIKE ${'%' + options.search + '%'}`,
+          sql`${dogs.breed} ILIKE ${'%' + options.search + '%'}`
+        )
+      );
     }
-    
+
     if (options.type) {
-      filterExpressions.push('#dogType = :dogType');
-      expressionAttributeNames['#dogType'] = 'dogType';
-      expressionAttributeValues[':dogType'] = options.type;
+      conditions.push(eq(dogs.dogType, options.type));
     }
-    
+
     if (options.gender) {
-      filterExpressions.push('gender = :gender');
-      expressionAttributeValues[':gender'] = options.gender;
+      conditions.push(eq(dogs.gender, options.gender));
     }
-    
+
     if (options.breed) {
-      filterExpressions.push('breed = :breed');
-      expressionAttributeValues[':breed'] = options.breed;
+      conditions.push(eq(dogs.breed, options.breed));
     }
-    
+
     if (options.breedingStatus) {
-      filterExpressions.push('breedingStatus = :breedingStatus');
-      expressionAttributeValues[':breedingStatus'] = options.breedingStatus;
+      conditions.push(eq(dogs.breedingStatus, options.breedingStatus));
     }
-    
-    const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
-    
-    const scanCommand = new ScanCommand({
-      TableName: DOGS_TABLE,
-      FilterExpression: filterExpressions.join(' AND '),
-      ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-      ExpressionAttributeValues: expressionAttributeValues,
-    });
-    
-    console.log('Scanning dogs with filter:', {
-      FilterExpression: filterExpressions.join(' AND '),
-      ExpressionAttributeValues: expressionAttributeValues
-    });
-    
-    const result = await docClient.send(scanCommand);
-    const dogs = (result.Items || []) as any[];
-    
-    console.log(`Found ${dogs.length} accessible dogs for user ${userId}`);
-    
+
+    console.log('Querying dogs with filters for user:', userId);
+
+    const allDogs = await db.select().from(dogs).where(and(...conditions));
+
+    console.log(`Found ${allDogs.length} accessible dogs for user ${userId}`);
+
     // Apply sorting
     const sortBy = options.sortBy || 'updatedAt';
-    const sortedDogs = [...dogs];
+    const sortedDogs = [...allDogs];
     switch (sortBy) {
       case 'name':
         sortedDogs.sort((a, b) => a.name.localeCompare(b.name));
@@ -217,7 +177,7 @@ export async function getUserAccessibleDogs(userId: string, options: any = {}): 
         sortedDogs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         break;
     }
-    
+
     // Apply pagination
     const page = options.page || 1;
     const limit = options.limit || 20;
@@ -225,9 +185,9 @@ export async function getUserAccessibleDogs(userId: string, options: any = {}): 
     const startIndex = offset;
     const endIndex = startIndex + limit;
     const paginatedDogs = sortedDogs.slice(startIndex, endIndex);
-    
+
     console.log(`Returning ${paginatedDogs.length} dogs (page ${page}, limit ${limit})`);
-    
+
     return {
       dogs: paginatedDogs,
       total: sortedDogs.length

@@ -1,35 +1,27 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, QueryCommand, GetCommand } from '../../../../shared/dynamodb';
+import { getDb, messages, messageThreads, eq, and, or, desc, sql } from '../../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../../types/lambda';
 import { wrapHandler } from '../../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../../middleware/auth';
 
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE || 'homeforpup-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE || 'homeforpup-message-threads';
-
 interface MessageItem {
-  PK: string; // threadId
-  SK: string; // messageId
+  id: string;
   threadId: string;
   senderId: string;
   senderName: string;
   receiverId: string;
-  receiverName: string;
-  subject: string;
+  receiverName: string | null;
+  subject: string | null;
   content: string;
   timestamp: string;
   read: boolean;
   messageType: string;
   attachments?: any[];
-  GSI1PK: string; // senderId
-  GSI1SK: string; // timestamp
-  GSI2PK: string; // receiverId
-  GSI2SK: string; // timestamp
 }
 
 const transformMessage = (item: MessageItem) => {
   return {
-    id: item.SK,
+    id: item.id,
     senderId: item.senderId,
     senderName: item.senderName,
     receiverId: item.receiverId,
@@ -48,7 +40,7 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   // Require authentication
   requireAuth(event as any);
   const userId = getUserIdFromEvent(event as any);
-  
+
   const threadId = event.pathParameters?.threadId;
   if (!threadId) {
     return errorResponse('Thread ID is required', 400);
@@ -57,20 +49,18 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   console.log('Fetching messages for thread:', threadId, 'user:', userId.substring(0, 10) + '...');
 
   try {
-    // First, verify user has access to this thread by checking participant record
-    const threadAccessCommand = new GetCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: `${threadId}#${userId}` }
-    });
+    const db = getDb();
 
-    const threadAccessResult = await dynamodb.send(threadAccessCommand);
-    if (!threadAccessResult.Item) {
+    // First, verify user has access to this thread
+    const [threadData] = await db.select().from(messageThreads).where(eq(messageThreads.id, threadId)).limit(1);
+
+    if (!threadData) {
       console.log('User does not have access to thread:', threadId);
       return errorResponse('Thread not found or access denied', 403);
     }
 
     // Verify user is actually a participant in the thread
-    const threadParticipants = threadAccessResult.Item.participants || [];
+    const threadParticipants = (threadData.participants as string[]) || [];
     if (!threadParticipants.includes(userId)) {
       console.log('User is not a participant in thread:', threadId);
       return errorResponse('Access denied - not a participant', 403);
@@ -80,27 +70,16 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     const limit = parseInt(event.queryStringParameters?.limit || '50');
 
     // Query messages for this thread
-    const queryParams = {
-      TableName: MESSAGES_TABLE,
-      KeyConditionExpression: 'PK = :threadId',
-      ExpressionAttributeValues: {
-        ':threadId': threadId
-      },
-      ScanIndexForward: false, // Most recent first
-      Limit: limit
-    };
+    const items = await db.select().from(messages)
+      .where(eq(messages.threadId, threadId))
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
 
-    console.log('DynamoDB Query params:', queryParams);
+    console.log('Database messages results:', items.length);
 
-    const command = new QueryCommand(queryParams);
-    const result = await dynamodb.send(command);
-    const items = (result.Items as MessageItem[]) || [];
-
-    console.log('Raw DynamoDB messages results:', items.length);
-
-    // Additional security check: Filter messages to only include those where current user 
+    // Additional security check: Filter messages to only include those where current user
     // is either sender or receiver
-    const authorizedMessages = items.filter(item => 
+    const authorizedMessages = items.filter((item: any) =>
       item.senderId === userId || item.receiverId === userId
     );
 
@@ -109,11 +88,11 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     }
 
     // Transform messages for frontend
-    const messages = authorizedMessages.map(transformMessage);
+    const transformedMessages = authorizedMessages.map((item: any) => transformMessage(item as MessageItem));
 
-    console.log('Transformed authorized messages:', messages.length);
+    console.log('Transformed authorized messages:', transformedMessages.length);
 
-    return successResponse({ messages });
+    return successResponse({ messages: transformedMessages });
 
   } catch (error) {
     console.error('Error fetching messages:', error);
@@ -125,4 +104,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

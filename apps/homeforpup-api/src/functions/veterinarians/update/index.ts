@@ -1,13 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, veterinarians, eq } from '../../../shared/dynamodb';
 import { Veterinarian } from '@homeforpup/shared-types';
 import { getUserIdFromEvent } from '../../../middleware/auth';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VETERINARIANS_TABLE || 'Veterinarians';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -53,17 +47,12 @@ export const handler = async (
     // Parse request body
     const updateData = JSON.parse(event.body || '{}') as Partial<Veterinarian>;
 
+    const db = getDb();
+
     // First, get the existing veterinarian
-    const getCommand = new GetCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        id: veterinarianId
-      }
-    });
+    const [existingVeterinarian] = await db.select().from(veterinarians).where(eq(veterinarians.id, veterinarianId)).limit(1);
 
-    const existingResult = await docClient.send(getCommand);
-
-    if (!existingResult.Item) {
+    if (!existingVeterinarian) {
       return {
         statusCode: 404,
         headers: {
@@ -78,11 +67,9 @@ export const handler = async (
       };
     }
 
-    const existingVeterinarian = existingResult.Item as Veterinarian;
-
     // Merge existing data with update data
     const updatedVeterinarian: Veterinarian = {
-      ...existingVeterinarian,
+      ...(existingVeterinarian as any),
       ...updateData,
       id: veterinarianId, // Ensure ID doesn't change
       createdAt: existingVeterinarian.createdAt, // Preserve creation date
@@ -105,11 +92,8 @@ export const handler = async (
       };
     }
 
-    // Save updated veterinarian to DynamoDB
-    await docClient.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: updatedVeterinarian
-    }));
+    // Save updated veterinarian to database
+    await db.update(veterinarians).set(updatedVeterinarian as any).where(eq(veterinarians.id, veterinarianId));
 
     console.log('Veterinarian updated successfully:', veterinarianId);
 
@@ -128,7 +112,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error updating veterinarian:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

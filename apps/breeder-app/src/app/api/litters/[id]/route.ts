@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { db, litters, eq } from '@homeforpup/database';
 import { UpdateLitterRequest } from '@homeforpup/shared-types';
 
 import { auth } from '@clerk/nextjs/server';
-const dynamoClient = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const LITTERS_TABLE = process.env.LITTERS_TABLE_NAME || 'homeforpup-litters';
 
 // GET /api/litters/[id] - Get litter details
 export async function GET(
@@ -28,20 +17,14 @@ export async function GET(
 
     const { id: litterId } = await params;
 
-    const getCommand = new GetCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id: litterId },
-    });
+    const [litter] = await db.select().from(litters).where(eq(litters.id, litterId)).limit(1);
 
-    const result = await docClient.send(getCommand);
-    if (!result.Item) {
+    if (!litter) {
       return NextResponse.json({ error: 'Litter not found' }, { status: 404 });
     }
 
-    const litter = result.Item as any; // Using any to handle kennelOwners property
-
-    // Check if user has access to this litter's kennel
-    if (!litter.kennelOwners?.includes(userId)) {
+    // Check if user has access to this litter
+    if (litter.breederId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -67,31 +50,22 @@ export async function PUT(
     const body: UpdateLitterRequest = await request.json();
 
     // Get existing litter
-    const getCommand = new GetCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id: litterId },
-    });
+    const [existingLitter] = await db.select().from(litters).where(eq(litters.id, litterId)).limit(1);
 
-    const getResult = await docClient.send(getCommand);
-    if (!getResult.Item) {
+    if (!existingLitter) {
       return NextResponse.json({ error: 'Litter not found' }, { status: 404 });
     }
 
-    const existingLitter = getResult.Item as any; // Using any to handle kennelOwners property
-
     // Check if user has permission to update
-    if (!existingLitter.kennelOwners?.includes(userId)) {
+    if (existingLitter.breederId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Build update expression
-    let updateExpression = 'SET updatedAt = :updatedAt';
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {
-      ':updatedAt': new Date().toISOString(),
+    // Build update data
+    const updateData: Record<string, any> = {
+      updatedAt: new Date().toISOString(),
     };
 
-    // Add fields to update
     const fieldsToUpdate = [
       'name', 'expectedPuppyCount', 'actualPuppyCount', 'status',
       'birthDate', 'health', 'notes', 'specialInstructions', 'puppies'
@@ -99,23 +73,14 @@ export async function PUT(
 
     fieldsToUpdate.forEach(field => {
       if (body[field as keyof UpdateLitterRequest] !== undefined) {
-        updateExpression += `, #${field} = :${field}`;
-        expressionAttributeNames[`#${field}`] = field;
-        expressionAttributeValues[`:${field}`] = body[field as keyof UpdateLitterRequest];
+        updateData[field] = body[field as keyof UpdateLitterRequest];
       }
     });
 
-    const updateCommand = new UpdateCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id: litterId },
-      UpdateExpression: updateExpression,
-      ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW',
-    });
-
-    const result = await docClient.send(updateCommand);
-    const updatedLitter = result.Attributes as any;
+    const [updatedLitter] = await db.update(litters)
+      .set(updateData)
+      .where(eq(litters.id, litterId))
+      .returning();
 
     return NextResponse.json({ litter: updatedLitter });
   } catch (error) {
@@ -138,35 +103,27 @@ export async function DELETE(
     const { id: litterId } = await params;
 
     // Get existing litter
-    const getCommand = new GetCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id: litterId },
-    });
+    const [existingLitter] = await db.select().from(litters).where(eq(litters.id, litterId)).limit(1);
 
-    const getResult = await docClient.send(getCommand);
-    if (!getResult.Item) {
+    if (!existingLitter) {
       return NextResponse.json({ error: 'Litter not found' }, { status: 404 });
     }
 
-    const existingLitter = getResult.Item as any; // Using any to handle kennelOwners property
-
     // Check if user has permission to delete
-    if (!existingLitter.kennelOwners?.includes(userId)) {
+    if (existingLitter.breederId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Check if litter has puppies
-    if (existingLitter.puppies && existingLitter.puppies.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete litter with existing puppies. Please remove all puppies first.' 
+    const litterPuppies = (existingLitter.puppies as any[]) || [];
+    if (litterPuppies.length > 0) {
+      return NextResponse.json({
+        error: 'Cannot delete litter with existing puppies. Please remove all puppies first.'
       }, { status: 400 });
     }
 
     // Delete litter
-    await docClient.send(new DeleteCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id: litterId },
-    }));
+    await db.delete(litters).where(eq(litters.id, litterId));
 
     return NextResponse.json({ message: 'Litter deleted successfully' });
   } catch (error) {

@@ -1,20 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { breedsApiClient } from '@homeforpup/shared-dogs';
 import { calculateBreedScore, MatchPreferences } from '@homeforpup/shared-dogs';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, breeders, breedsSimple, eq, and, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
 
-const dynamodb = DynamoDBDocumentClient.from(client);
-const BREEDERS_TABLE = process.env.BREEDERS_TABLE_NAME || 'homeforpup-breeders';
+// Normalize size categories
+const normalizeSize = (size: string): string => {
+  const sizeMap: { [key: string]: string } = {
+    'toy': 'Toy', 'small': 'Small', 'medium': 'Medium', 'large': 'Large', 'giant': 'Giant'
+  };
+  return sizeMap[size.toLowerCase()] || 'Medium';
+};
+
+// Normalize breed groups to categories
+const normalizeCategory = (group: string): string => {
+  const categoryMap: { [key: string]: string } = {
+    'sporting': 'Sporting', 'hound': 'Hound', 'working': 'Working',
+    'terrier': 'Terrier', 'toy': 'Toy', 'non-sporting': 'Non-Sporting',
+    'herding': 'Herding', 'mixed': 'Mixed'
+  };
+  return categoryMap[group.toLowerCase()] || 'Mixed';
+};
+
+const generateCharacteristics = (group: string, _size: string, _type: string) => {
+  const baseCharacteristics = {
+    energyLevel: 5, trainability: 5, friendliness: 5, groomingNeeds: 5,
+    exerciseNeeds: 5, barking: 5, shedding: 5, goodWithKids: 5,
+    goodWithDogs: 5, goodWithCats: 5, goodWithStrangers: 5, protective: 5,
+    playful: 5, calm: 5, intelligent: 5, independent: 5, affectionate: 5,
+    social: 5, confident: 5, gentle: 5, patient: 5, energetic: 5,
+    loyal: 5, alert: 5, brave: 5, stubborn: 5, sensitive: 5,
+    adaptable: 5, vocal: 5, territorial: 5,
+  };
+  switch (group.toLowerCase()) {
+    case 'sporting': return { ...baseCharacteristics, energyLevel: 8, exerciseNeeds: 8, trainability: 8, friendliness: 7 };
+    case 'working': return { ...baseCharacteristics, energyLevel: 7, protective: 8, intelligent: 8, loyal: 9 };
+    case 'herding': return { ...baseCharacteristics, energyLevel: 9, intelligent: 9, trainability: 9, alert: 8 };
+    case 'hound': return { ...baseCharacteristics, independent: 7, vocal: 7, stubborn: 6, energyLevel: 6 };
+    case 'terrier': return { ...baseCharacteristics, energyLevel: 8, stubborn: 7, vocal: 7, brave: 8 };
+    case 'toy': return { ...baseCharacteristics, energyLevel: 4, goodWithKids: 6, barking: 7, shedding: 3 };
+    default: return baseCharacteristics;
+  }
+};
+
+const transformBreedItem = (item: any) => {
+  const size = normalizeSize(item.sizeCategory || 'medium');
+  const category = normalizeCategory(item.breedGroup || 'mixed');
+  const breedType = item.breedType || 'purebred';
+  const characteristics = generateCharacteristics(item.breedGroup || 'mixed', item.sizeCategory || 'medium', breedType);
+
+  return {
+    id: `breed-${item.id}`,
+    name: item.name,
+    altNames: item.altNames ? [item.altNames] : [],
+    category,
+    size,
+    breedType,
+    image: item.coverPhotoUrl || `https://placedog.net/500?r&id=${item.name}`,
+    characteristics,
+  };
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,13 +73,17 @@ export async function POST(request: NextRequest) {
       size: body.size || [],
     };
 
-    // Fetch all breeds
-    const breedsData = await breedsApiClient.getBreeds({ limit: 500 });
-    const breeds = breedsData.breeds;
+    // Fetch all live breeds directly from breedsSimple
+    const items = await db
+      .select()
+      .from(breedsSimple)
+      .where(eq(breedsSimple.live, 'True'));
+
+    const breeds = items.map(item => transformBreedItem(item));
 
     // Score each breed
     const scoredBreeds = breeds.map((breed) => {
-      const score = calculateBreedScore(breed, preferences);
+      const score = calculateBreedScore(breed as any, preferences);
       return {
         breed,
         score: score.total,
@@ -50,16 +99,8 @@ export async function POST(request: NextRequest) {
     // Fetch available puppies for the top breeds
     const topBreedNames = topBreeds.map((b) => b.breed.name);
 
-    const breedersResult = await dynamodb.send(
-      new ScanCommand({
-        TableName: BREEDERS_TABLE,
-        FilterExpression: '#active = :active AND available_puppies > :zero',
-        ExpressionAttributeNames: { '#active': 'active' },
-        ExpressionAttributeValues: { ':active': 'True', ':zero': 0 },
-      })
-    );
-
-    const breeders = breedersResult.Items || [];
+    const breedersList = await db.select().from(breeders)
+      .where(sql`${breeders.verified} = 'True' AND ${breeders.availablePuppies} > 0`);
 
     // Build puppy list from breeders whose breeds match top recommendations
     const puppies: Array<{
@@ -80,15 +121,15 @@ export async function POST(request: NextRequest) {
     const maleNames = ['Max', 'Charlie', 'Cooper', 'Buddy', 'Rocky', 'Tucker', 'Jack', 'Bear', 'Duke', 'Zeus'];
     const femaleNames = ['Bella', 'Luna', 'Lucy', 'Daisy', 'Mia', 'Sophie', 'Ruby', 'Lola', 'Zoe', 'Molly'];
 
-    for (const breeder of breeders) {
-      const breederBreeds: string[] = breeder.breeds || [];
+    for (const breeder of breedersList) {
+      const breederBreeds: string[] = (breeder.breeds as string[]) || [];
       const matchingBreeds = breederBreeds.filter((b: string) =>
         topBreedNames.some((name) => name.toLowerCase() === b.toLowerCase())
       );
 
       if (matchingBreeds.length === 0) continue;
 
-      const puppyCount = Math.min(breeder.available_puppies || 0, 3);
+      const puppyCount = Math.min(breeder.availablePuppies || 0, 3);
       for (let i = 0; i < puppyCount; i++) {
         const gender = i % 2 === 0 ? 'male' : 'female';
         const breedName = matchingBreeds[i % matchingBreeds.length];
@@ -96,6 +137,7 @@ export async function POST(request: NextRequest) {
           (b) => b.breed.name.toLowerCase() === breedName.toLowerCase()
         );
         const names = gender === 'male' ? maleNames : femaleNames;
+        const breederId = parseInt(breeder.id) || 0;
 
         let basePrice = 2000;
         if (breeder.pricing) {
@@ -109,15 +151,15 @@ export async function POST(request: NextRequest) {
 
         puppies.push({
           id: `${breeder.id}-puppy-${i + 1}`,
-          name: names[(breeder.id * 10 + i) % names.length],
+          name: names[(breederId * 10 + i) % names.length],
           breed: breedName,
           gender,
-          ageWeeks: 8 + ((breeder.id + i) % 12),
+          ageWeeks: 8 + ((breederId + i) % 12),
           price: basePrice,
           location: `${breeder.city}, ${breeder.state}`,
-          breederName: breeder.business_name,
+          breederName: breeder.businessName || breeder.name,
           breederVerified: breeder.verified === 'True',
-          image: `https://placedog.net/400/300?random=${breeder.id * 10 + i}`,
+          image: `https://placedog.net/400/300?random=${breederId * 10 + i}`,
           matchScore: matchedBreed?.score || 0,
           matchReasons: matchedBreed?.matchReasons || [],
         });

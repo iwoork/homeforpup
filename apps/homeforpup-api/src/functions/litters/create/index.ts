@@ -1,11 +1,9 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, PutCommand } from '../../../shared/dynamodb';
+import { getDb, litters } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
-
-const LITTERS_TABLE = process.env.LITTERS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -48,13 +46,10 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
       updatedAt: new Date().toISOString(),
     };
 
-    // Save to DynamoDB
-    const command = new PutCommand({
-      TableName: LITTERS_TABLE,
-      Item: litter,
-    });
+    const db = getDb();
 
-    await dynamodb.send(command);
+    // Save to database
+    await db.insert(litters).values(litter);
 
     return successResponse({ litter }, 201);
   } catch (error) {
@@ -71,4 +66,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, kennels, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,27 +15,18 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
-    // Scan for active kennels only — status is a reserved word so we alias it
-    const command = new ScanCommand({
-      TableName: KENNELS_TABLE,
-      FilterExpression: '#status = :active',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-      },
-      ExpressionAttributeValues: {
-        ':active': 'active',
-      },
-    });
+    // Query for active kennels
+    let allKennels = await db.select().from(kennels)
+      .where(eq(kennels.status, 'active'));
 
-    const result = await dynamodb.send(command);
-    let kennels = (result.Items || []) as any[];
+    let kennelsList = allKennels as any[];
 
     // Build filter metadata from full (unfiltered) dataset
     const allStates = new Set<string>();
     const allSpecialties = new Set<string>();
     let verifiedCount = 0;
 
-    for (const kennel of kennels) {
+    for (const kennel of kennelsList) {
       if (kennel.address?.state) allStates.add(kennel.address.state);
       if (kennel.specialties) {
         for (const s of kennel.specialties) allSpecialties.add(s);
@@ -57,7 +37,7 @@ export async function GET(request: NextRequest) {
     // Client-side search filter
     if (search && search.trim()) {
       const searchLower = search.trim().toLowerCase();
-      kennels = kennels.filter((kennel) =>
+      kennelsList = kennelsList.filter((kennel: any) =>
         (kennel.name || '').toLowerCase().includes(searchLower) ||
         (kennel.businessName || '').toLowerCase().includes(searchLower) ||
         (kennel.specialties || []).some((s: string) => s.toLowerCase().includes(searchLower))
@@ -66,22 +46,22 @@ export async function GET(request: NextRequest) {
 
     // Client-side filters
     if (state) {
-      kennels = kennels.filter((kennel) => kennel.address?.state === state);
+      kennelsList = kennelsList.filter((kennel: any) => kennel.address?.state === state);
     }
 
     if (specialty) {
       const specLower = specialty.toLowerCase();
-      kennels = kennels.filter((kennel) =>
+      kennelsList = kennelsList.filter((kennel: any) =>
         (kennel.specialties || []).some((s: string) => s.toLowerCase() === specLower)
       );
     }
 
     if (verified === 'true') {
-      kennels = kennels.filter((kennel) => kennel.verified === true);
+      kennelsList = kennelsList.filter((kennel: any) => kennel.verified === true);
     }
 
     if (hasAvailability === 'true') {
-      kennels = kennels.filter((kennel) =>
+      kennelsList = kennelsList.filter((kennel: any) =>
         kennel.capacity?.currentDogs != null &&
         kennel.capacity?.maxDogs != null &&
         kennel.capacity.currentDogs < kennel.capacity.maxDogs
@@ -89,12 +69,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Strip sensitive fields before returning
-    kennels = kennels.map(({ owners, managers, createdBy, ...rest }) => rest);
+    kennelsList = kennelsList.map(({ owners, managers, createdBy, ...rest }: any) => rest);
 
     // Client-side pagination
-    const total = kennels.length;
+    const total = kennelsList.length;
     const startIndex = (page - 1) * limit;
-    const paginatedKennels = kennels.slice(startIndex, startIndex + limit);
+    const paginatedKennels = kennelsList.slice(startIndex, startIndex + limit);
 
     return NextResponse.json({
       kennels: paginatedKennels,
@@ -110,21 +90,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error fetching kennels:', error);
-
-    if (
-      error.name === 'ResourceNotFoundException' ||
-      error.message?.includes('ResourceNotFoundException') ||
-      error.__type === 'com.amazonaws.dynamodb.v20120810#ResourceNotFoundException'
-    ) {
-      return NextResponse.json(
-        {
-          error: 'Kennels table not found',
-          message: `The DynamoDB table "${KENNELS_TABLE}" does not exist.`,
-          tableName: KENNELS_TABLE,
-        },
-        { status: 503 }
-      );
-    }
 
     return NextResponse.json(
       {

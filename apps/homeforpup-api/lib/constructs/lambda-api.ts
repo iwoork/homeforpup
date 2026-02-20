@@ -17,7 +17,8 @@ export interface LambdaApiProps {
 }
 
 /**
- * Reusable construct for creating Lambda functions with best practices
+ * Reusable construct for creating Lambda functions with best practices.
+ * All functions receive DATABASE_URL for Supabase PostgreSQL access.
  */
 export class LambdaApi extends Construct {
   public readonly function: nodejs.NodejsFunction;
@@ -46,13 +47,15 @@ export class LambdaApi extends Construct {
       environment: {
         NODE_ENV: config.environment,
         AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
+        // Single DATABASE_URL replaces all *_TABLE env vars
+        DATABASE_URL: config.databaseUrl,
         ...environment,
       },
       bundling: {
         minify: false,
         sourceMap: true,
+        // Only externalize aws-sdk (for S3); drizzle-orm + postgres must be bundled
         externalModules: [
-          '@aws-sdk/*',
           'aws-sdk',
         ],
       },
@@ -94,40 +97,6 @@ export class LambdaApi extends Construct {
   }
 
   /**
-   * Grant DynamoDB access to the Lambda function
-   */
-  public grantDynamoDBAccess(tableNames: string[]) {
-    const resources: string[] = [];
-    
-    // Add table ARNs and index ARNs
-    tableNames.forEach((tableName) => {
-      const tableArn = `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${
-        cdk.Stack.of(this).account
-      }:table/${tableName}`;
-      
-      resources.push(tableArn);
-      // Also grant access to all indexes on the table
-      resources.push(`${tableArn}/index/*`);
-    });
-    
-    this.function.addToRolePolicy(
-      new cdk.aws_iam.PolicyStatement({
-        actions: [
-          'dynamodb:GetItem',
-          'dynamodb:PutItem',
-          'dynamodb:UpdateItem',
-          'dynamodb:DeleteItem',
-          'dynamodb:Query',
-          'dynamodb:Scan',
-          'dynamodb:BatchGetItem',
-          'dynamodb:BatchWriteItem',
-        ],
-        resources,
-      })
-    );
-  }
-
-  /**
    * Grant S3 access to the Lambda function
    */
   public grantS3Access(bucketName: string, readonly: boolean = false) {
@@ -156,4 +125,3 @@ export class LambdaApi extends Construct {
     });
   }
 }
-

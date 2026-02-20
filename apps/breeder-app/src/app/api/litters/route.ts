@@ -1,27 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, kennels, dogs, litters, eq, and, or, sql, inArray } from '@homeforpup/database';
 import { CreateLitterRequest, LittersResponse, LitterFilter } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 import { checkLitterCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 
 import { auth } from '@clerk/nextjs/server';
-const dynamoClient = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-const LITTERS_TABLE = process.env.LITTERS_TABLE_NAME || 'homeforpup-litters';
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 
 // GET /api/litters - List litters with filtering
 export async function GET(request: NextRequest) {
@@ -41,65 +24,51 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate') || '';
     const endDate = searchParams.get('endDate') || '';
 
-    // Build filter expression
-    let filterExpression = '';
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    // Build where conditions
+    const conditions: any[] = [];
 
-    // Filter by user's kennels
-    filterExpression = 'contains(kennelOwners, :userId)';
-    expressionAttributeValues[':userId'] = userId;
+    // Filter by user's litters (breeder_id = userId)
+    conditions.push(eq(litters.breederId, userId));
 
     if (search) {
-      filterExpression += ' AND (contains(#name, :search) OR contains(sireName, :search) OR contains(damName, :search))';
-      expressionAttributeNames['#name'] = 'name';
-      expressionAttributeValues[':search'] = search;
+      conditions.push(
+        or(
+          sql`${litters.name} ILIKE ${'%' + search + '%'}`,
+          sql`${litters.sireName} ILIKE ${'%' + search + '%'}`,
+          sql`${litters.damName} ILIKE ${'%' + search + '%'}`
+        )
+      );
     }
 
     if (kennelId) {
-      filterExpression += ' AND kennelId = :kennelId';
-      expressionAttributeValues[':kennelId'] = kennelId;
+      conditions.push(eq(litters.kennelId, kennelId));
     }
 
     if (status) {
-      filterExpression += ' AND #status = :status';
-      expressionAttributeNames['#status'] = 'status';
-      expressionAttributeValues[':status'] = status;
+      conditions.push(eq(litters.status, status));
     }
 
     if (breed) {
-      filterExpression += ' AND breed = :breed';
-      expressionAttributeValues[':breed'] = breed;
+      conditions.push(eq(litters.breed, breed));
     }
 
     if (startDate) {
-      filterExpression += ' AND birthDate >= :startDate';
-      expressionAttributeValues[':startDate'] = startDate;
+      conditions.push(sql`${litters.birthDate} >= ${startDate}`);
     }
 
     if (endDate) {
-      filterExpression += ' AND birthDate <= :endDate';
-      expressionAttributeValues[':endDate'] = endDate;
+      conditions.push(sql`${litters.birthDate} <= ${endDate}`);
     }
 
-    const scanCommand = new ScanCommand({
-      TableName: LITTERS_TABLE,
-      FilterExpression: filterExpression,
-      ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
-      Limit: limit,
-    });
-
-    const result = await docClient.send(scanCommand);
-    const litters = (result.Items as any[]) || [];
+    const allLitters = await db.select().from(litters).where(and(...conditions));
 
     // Sort by birthDate descending
-    litters.sort((a, b) => new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime());
+    allLitters.sort((a, b) => new Date(b.birthDate || '').getTime() - new Date(a.birthDate || '').getTime());
 
     const response: LittersResponse = {
-      litters: litters.slice(offset, offset + limit),
-      total: litters.length,
-      hasMore: litters.length > offset + limit,
+      litters: allLitters.slice(offset, offset + limit) as any[],
+      total: allLitters.length,
+      hasMore: allLitters.length > offset + limit,
     };
 
     return NextResponse.json(response);
@@ -137,40 +106,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to the kennel
-    const kennelCommand = new ScanCommand({
-      TableName: KENNELS_TABLE,
-      FilterExpression: 'id = :kennelId AND (contains(owners, :userId) OR contains(managers, :userId))',
-      ExpressionAttributeValues: {
-        ':kennelId': body.kennelId,
-        ':userId': userId,
-      },
-    });
+    const [kennel] = await db.select().from(kennels).where(eq(kennels.id, body.kennelId)).limit(1);
 
-    const kennelResult = await docClient.send(kennelCommand);
-    if (!kennelResult.Items || kennelResult.Items.length === 0) {
+    if (!kennel) {
       return NextResponse.json({ error: 'Kennel not found or access denied' }, { status: 404 });
     }
 
-    const kennel = kennelResult.Items[0] as any;
+    const kennelOwners = (kennel.owners as string[]) || [];
+    const kennelManagers = (kennel.managers as string[]) || [];
+    if (!kennelOwners.includes(userId) && !kennelManagers.includes(userId)) {
+      return NextResponse.json({ error: 'Kennel not found or access denied' }, { status: 404 });
+    }
 
     // Verify sire and dam exist and belong to the kennel
-    const dogsCommand = new ScanCommand({
-      TableName: DOGS_TABLE,
-      FilterExpression: 'id IN (:sireId, :damId) AND kennelId = :kennelId',
-      ExpressionAttributeValues: {
-        ':sireId': body.sireId,
-        ':damId': body.damId,
-        ':kennelId': body.kennelId,
-      },
-    });
+    const parentDogs = await db.select().from(dogs).where(
+      and(
+        inArray(dogs.id, [body.sireId, body.damId]),
+        eq(dogs.kennelId, body.kennelId)
+      )
+    );
 
-    const dogsResult = await docClient.send(dogsCommand);
-    if (!dogsResult.Items || dogsResult.Items.length !== 2) {
+    if (parentDogs.length !== 2) {
       return NextResponse.json({ error: 'Sire and dam must exist and belong to the kennel' }, { status: 400 });
     }
 
-    const sire = dogsResult.Items.find(dog => dog.id === body.sireId);
-    const dam = dogsResult.Items.find(dog => dog.id === body.damId);
+    const sire = parentDogs.find(dog => dog.id === body.sireId);
+    const dam = parentDogs.find(dog => dog.id === body.damId);
 
     if (!sire || !dam) {
       return NextResponse.json({ error: 'Sire and dam not found' }, { status: 404 });
@@ -185,13 +146,14 @@ export async function POST(request: NextRequest) {
 
     const litter: any = {
       id: litterId,
+      breederId: userId,
       name: body.name,
       kennelId: body.kennelId,
-      kennelName: kennel.name,
       sireId: body.sireId,
       sireName: sire.name,
       damId: body.damId,
       damName: dam.name,
+      breed: sire.breed,
       birthDate: body.expectedBirthDate || new Date().toISOString(),
       expectedPuppyCount: body.expectedPuppyCount,
       actualPuppyCount: 0,
@@ -209,14 +171,7 @@ export async function POST(request: NextRequest) {
       notes: body.notes,
     };
 
-    await docClient.send(new PutCommand({
-      TableName: LITTERS_TABLE,
-      Item: {
-        ...litter,
-        kennelOwners: kennel.owners, // For filtering by user's kennels
-        breed: sire.breed, // For filtering by breed
-      },
-    }));
+    await db.insert(litters).values(litter);
 
     return NextResponse.json({ litter }, { status: 201 });
   } catch (error) {

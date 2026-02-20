@@ -1,11 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, DeleteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VET_VISITS_TABLE || 'VetVisits';
+import { getDb, vetVisits, eq } from '../../../shared/dynamodb';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -30,17 +24,12 @@ export const handler = async (
       };
     }
 
+    const db = getDb();
+
     // First, check if the vet visit exists
-    const getCommand = new GetCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        id: vetVisitId
-      }
-    });
+    const [existing] = await db.select().from(vetVisits).where(eq(vetVisits.id, vetVisitId)).limit(1);
 
-    const existingResult = await docClient.send(getCommand);
-
-    if (!existingResult.Item) {
+    if (!existing) {
       return {
         statusCode: 404,
         headers: {
@@ -55,13 +44,8 @@ export const handler = async (
       };
     }
 
-    // Delete the vet visit from DynamoDB
-    await docClient.send(new DeleteCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        id: vetVisitId
-      }
-    }));
+    // Delete the vet visit from database
+    await db.delete(vetVisits).where(eq(vetVisits.id, vetVisitId));
 
     console.log('Vet visit deleted successfully:', vetVisitId);
 
@@ -81,7 +65,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error deleting vet visit:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

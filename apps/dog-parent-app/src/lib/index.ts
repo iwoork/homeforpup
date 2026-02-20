@@ -1,7 +1,8 @@
 // Library exports organized by type
 
 // API utilities
-export * from './api/dynamodb';
+// Note: dynamodb.ts (database operations) is NOT re-exported here to avoid
+// pulling postgres/drizzle into client bundles. Import directly where needed.
 export * from './api/s3';
 
 // Utilities

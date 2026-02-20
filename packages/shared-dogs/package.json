@@ -10,8 +10,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.0.0",
-    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@homeforpup/database": "*",
     "@homeforpup/shared-types": "*",
     "@homeforpup/shared-photo-upload": "*",
     "swr": "^2.0.0",

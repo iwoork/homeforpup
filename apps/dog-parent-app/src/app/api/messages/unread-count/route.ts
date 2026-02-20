@@ -1,25 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { db, messageThreads, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-    convertEmptyValues: false,
-    convertClassInstanceToMap: false,
-  },
-});
-
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,26 +11,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ unreadCount: 0 }, { status: 401 });
     }
 
-    // Query threads where user is a participant using GSI1
-    const command = new QueryCommand({
-      TableName: THREADS_TABLE,
-      IndexName: 'GSI1',
-      KeyConditionExpression: 'GSI1PK = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId,
-      },
-    });
+    // Query threads where user is a participant
+    const threads = await db.select().from(messageThreads)
+      .where(sql`${messageThreads.participants}::jsonb @> ${JSON.stringify([userId])}::jsonb`);
 
-    const result = await dynamodb.send(command);
-    const items = result.Items || [];
-
-    // Filter to participant records and sum unread counts
-    const totalUnread = items
-      .filter(item => item.PK?.includes('#') && item.PK?.includes(userId))
-      .reduce((total, item) => {
-        const threadUnread = item.unreadCount?.[userId] || 0;
-        return total + threadUnread;
-      }, 0);
+    // Sum unread counts for this user across all threads
+    const totalUnread = threads.reduce((total, thread) => {
+      const threadUnread = (thread.unreadCount as Record<string, number>)?.[userId] || 0;
+      return total + threadUnread;
+    }, 0);
 
     return NextResponse.json({ unreadCount: totalUnread });
   } catch (error) {

@@ -1,12 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, vetVisits } from '../../../shared/dynamodb';
 import { VetVisit } from '@homeforpup/shared-types';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VET_VISITS_TABLE || 'VetVisits';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -16,7 +10,7 @@ export const handler = async (
   try {
     // Parse request body
     const vetVisitData = JSON.parse(event.body || '{}') as Partial<VetVisit>;
-    
+
     // Validate required fields
     if (!vetVisitData.dogId) {
       return {
@@ -95,7 +89,7 @@ export const handler = async (
 
     // Generate ID
     const id = `vet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Create vet visit object
     const vetVisit: VetVisit = {
       id,
@@ -125,11 +119,9 @@ export const handler = async (
       updatedAt: new Date().toISOString()
     };
 
-    // Save to DynamoDB
-    await docClient.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: vetVisit
-    }));
+    // Save to database
+    const db = getDb();
+    await db.insert(vetVisits).values(vetVisit as any);
 
     console.log('Vet visit created successfully:', id);
 
@@ -148,7 +140,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error creating vet visit:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

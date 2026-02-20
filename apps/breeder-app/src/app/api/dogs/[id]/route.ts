@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dogsApiClient } from '@homeforpup/shared-dogs';
+import { db, dogs, eq } from '@homeforpup/database';
 import { checkDogAccess } from '@/lib/auth/kennelAccess';
 
 import { auth } from '@clerk/nextjs/server';
@@ -15,7 +15,7 @@ export async function GET(
     }
 
     const { id: dogId } = await params;
-    const dog = await dogsApiClient.getDogById(dogId);
+    const [dog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
 
     if (!dog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
@@ -27,22 +27,22 @@ export async function GET(
     console.log('- Dog ownerId:', dog.ownerId);
     console.log('- Session user ID:', userId);
     console.log('- Dog kennelId:', dog.kennelId);
-    
+
     const accessResult = await checkDogAccess(userId, dog);
     console.log('- Access result:', accessResult);
-    
+
     if (!accessResult.hasAccess) {
       console.log('Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
-    
+
     console.log(`Access granted via ${accessResult.accessType}${accessResult.kennelName ? ` (${accessResult.kennelName})` : ''}`);
 
     return NextResponse.json({ dog });
   } catch (error) {
     console.error('Error fetching dog:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error fetching dog',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },
@@ -63,9 +63,9 @@ export async function PUT(
     }
 
     const { id: dogId } = await params;
-    
+
     // First check if dog exists and user has access
-    const existingDog = await dogsApiClient.getDogById(dogId);
+    const [existingDog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
     if (!existingDog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
@@ -75,17 +75,21 @@ export async function PUT(
       console.log('PUT - Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
-    
+
     console.log(`PUT - Access granted via ${accessResult.accessType}${accessResult.kennelName ? ` (${accessResult.kennelName})` : ''}`);
 
     const body = await request.json();
-    const updatedDog = await dogsApiClient.updateDog({ id: dogId, ...body });
-    
+    const [updatedDog] = await db
+      .update(dogs)
+      .set({ ...body, updatedAt: new Date().toISOString() })
+      .where(eq(dogs.id, dogId))
+      .returning();
+
     return NextResponse.json(updatedDog);
   } catch (error) {
     console.error('Error updating dog:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error updating dog',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },
@@ -106,9 +110,9 @@ export async function DELETE(
     }
 
     const { id: dogId } = await params;
-    
+
     // First check if dog exists and user has access
-    const existingDog = await dogsApiClient.getDogById(dogId);
+    const [existingDog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
     if (!existingDog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
@@ -118,16 +122,16 @@ export async function DELETE(
       console.log('DELETE - Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
-    
+
     console.log(`DELETE - Access granted via ${accessResult.accessType}${accessResult.kennelName ? ` (${accessResult.kennelName})` : ''}`);
 
-    await dogsApiClient.deleteDog(dogId);
-    
+    await db.delete(dogs).where(eq(dogs.id, dogId));
+
     return NextResponse.json({ message: 'Dog deleted successfully' });
   } catch (error) {
     console.error('Error deleting dog:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error deleting dog',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },

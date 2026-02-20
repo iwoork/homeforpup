@@ -1,32 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { auth } from '@clerk/nextjs/server';
-import { 
-  DynamoDBDocumentClient, 
-  PutCommand, 
-  DeleteCommand, 
-  QueryCommand
-} from '@aws-sdk/lib-dynamodb';
-
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-const FAVORITES_TABLE = process.env.FAVORITES_TABLE_NAME || 'homeforpup-favorites';
-
-interface FavoriteItem {
-  userId: string;
-  puppyId: string;
-  GSI1PK: string; // For querying by puppyId
-  createdAt: string;
-  puppyData?: any; // Store some puppy data for quick access
-}
+import { db, favorites, eq, and, desc } from '@homeforpup/database';
 
 // GET /api/favorites - Get user's favorites
 export async function GET(request: NextRequest) {
@@ -38,27 +12,18 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
-    const lastKey = searchParams.get('lastKey');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    const params = {
-      TableName: FAVORITES_TABLE,
-      KeyConditionExpression: 'userId = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId,
-      },
-      Limit: limit,
-      ScanIndexForward: false, // Most recent first
-      ...(lastKey && {
-        ExclusiveStartKey: JSON.parse(decodeURIComponent(lastKey))
-      })
-    };
-
-    const result = await dynamodb.send(new QueryCommand(params));
+    const result = await db.select().from(favorites)
+      .where(eq(favorites.userId, userId))
+      .orderBy(desc(favorites.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     return NextResponse.json({
-      favorites: result.Items || [],
-      lastKey: result.LastEvaluatedKey ? encodeURIComponent(JSON.stringify(result.LastEvaluatedKey)) : null,
-      count: result.Count || 0
+      favorites: result,
+      lastKey: null,
+      count: result.length
     });
 
   } catch (error) {
@@ -84,24 +49,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Puppy ID is required' }, { status: 400 });
     }
 
-    const favoriteItem: FavoriteItem = {
+    const favoriteItem = {
       userId,
       puppyId,
-      GSI1PK: `FAVORITE#${puppyId}`, // For querying by puppyId
       createdAt: new Date().toISOString(),
       puppyData: puppyData || null
     };
 
-    const params = {
-      TableName: FAVORITES_TABLE,
-      Item: favoriteItem
-    };
+    await db.insert(favorites).values(favoriteItem);
 
-    await dynamodb.send(new PutCommand(params));
-
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Added to favorites',
-      favorite: favoriteItem 
+      favorite: favoriteItem
     });
 
   } catch (error) {
@@ -128,18 +87,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Puppy ID is required' }, { status: 400 });
     }
 
-    const params = {
-      TableName: FAVORITES_TABLE,
-      Key: {
-        userId,
-        puppyId
-      }
-    };
+    await db.delete(favorites).where(
+      and(eq(favorites.userId, userId), eq(favorites.puppyId, puppyId))
+    );
 
-    await dynamodb.send(new DeleteCommand(params));
-
-    return NextResponse.json({ 
-      message: 'Removed from favorites' 
+    return NextResponse.json({
+      message: 'Removed from favorites'
     });
 
   } catch (error) {

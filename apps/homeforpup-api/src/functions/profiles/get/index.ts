@@ -1,9 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand } from '../../../shared/dynamodb';
+import { getDb, profiles, eq } from '../../../shared/dynamodb';
 import { successResponse } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
-
-const PROFILES_TABLE = process.env.PROFILES_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const userId = event.pathParameters?.id;
@@ -13,22 +11,19 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   }
 
   try {
-    const command = new GetCommand({
-      TableName: PROFILES_TABLE,
-      Key: { userId },
-    });
+    const db = getDb();
 
-    const result = await dynamodb.send(command);
+    const [result] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
 
-    if (!result.Item) {
+    if (!result) {
       throw new ApiError('Profile not found', 404);
     }
 
     // Profile data (application-specific data)
     // Note: Identity fields (firstName, lastName, username, picture, phone, address, bio)
     // should be fetched from Cognito user attributes separately
-    const profile = { ...result.Item };
-    
+    const profile = { ...result } as any;
+
     // Remove any sensitive fields that shouldn't be exposed
     delete profile.passwordHash;
     delete profile.refreshToken;
@@ -47,4 +42,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

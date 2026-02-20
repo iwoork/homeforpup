@@ -1,50 +1,26 @@
 // src/app/api/messages/send/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, messages, messageThreads, profiles, eq } from '@homeforpup/database';
 import { v4 as uuidv4 } from 'uuid';
 
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3 with removeUndefinedValues option
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
 
-// Configure DynamoDB Document Client to remove undefined values
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true, // This will fix the error
-    convertEmptyValues: false,
-    convertClassInstanceToMap: false,
-  },
-});
-
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
-
-// Helper function to get user info from users table
+// Helper function to get user info from profiles table
 async function getUserInfo(userId: string) {
   try {
-    const result = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: userId }
-    }));
-    
-    if (result.Item) {
+    const [result] = await db.select().from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
+
+    if (result) {
       return {
-        name: result.Item.displayName || result.Item.name || result.Item.firstName || 'Unknown User',
-        displayName: result.Item.displayName || null,
-        profileImage: result.Item.profileImage || null,
-        userType: result.Item.userType || 'dog-parent'
+        name: result.displayName || result.name || 'Unknown User',
+        displayName: result.displayName || null,
+        profileImage: result.profileImage || null,
+        userType: result.userType || 'dog-parent'
       };
     }
-    
-    // Fallback: return basic info with truncated user ID
+
     return {
       name: `User ${userId.slice(-4)}`,
       displayName: null,
@@ -62,61 +38,33 @@ async function getUserInfo(userId: string) {
   }
 }
 
-// Helper function to clean undefined values from objects
-function cleanUndefinedValues(obj: any): any {
-  if (obj === null || obj === undefined) {
-    return null;
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(cleanUndefinedValues).filter(item => item !== undefined);
-  }
-  
-  if (typeof obj === 'object') {
-    const cleaned: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        cleaned[key] = cleanUndefinedValues(value);
-      }
-    }
-    return cleaned;
-  }
-  
-  return obj;
-}
-
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user
     const { userId } = await auth();
-    
+
     if (!userId) {
       console.log('No valid session found for send message request');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Your session has expired. Please refresh the page to continue.',
         code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
 
     const authenticatedUserId = userId;
-    const authenticatedUserNameFromSession = 'User';
-        
+
     const body = await request.json();
     const { recipientId, recipientName, subject, content, messageType } = body;
 
     // Validate required fields
     if (!recipientId || !subject || !content) {
       return NextResponse.json(
-        { error: 'Missing required fields: recipientId, subject, content' }, 
+        { error: 'Missing required fields: recipientId, subject, content' },
         { status: 400 }
       );
     }
 
     // Security checks
-    if (!authenticatedUserId) {
-      return NextResponse.json({ error: 'Invalid user authentication' }, { status: 401 });
-    }
-
     if (authenticatedUserId === recipientId) {
       return NextResponse.json({ error: 'Cannot send message to yourself' }, { status: 400 });
     }
@@ -125,7 +73,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid recipient ID' }, { status: 400 });
     }
 
-    // Validate content length
     if (content.length > 10000) {
       return NextResponse.json({ error: 'Message content too long' }, { status: 400 });
     }
@@ -142,11 +89,8 @@ export async function POST(request: NextRequest) {
 
     // Get comprehensive user info for both sender and recipient
     const [senderInfo, receiverInfo] = await Promise.all([
-      // For sender: get from database (JWT name might not be reliable)
       getUserInfo(authenticatedUserId),
-      
-      // For recipient: use provided name if valid, otherwise lookup in database
-      (recipientName && recipientName !== 'Unknown User' && recipientName.trim() !== '') 
+      (recipientName && recipientName !== 'Unknown User' && recipientName.trim() !== '')
         ? Promise.resolve({
             name: recipientName,
             displayName: recipientName,
@@ -162,8 +106,8 @@ export async function POST(request: NextRequest) {
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
 
-    // Create message with comprehensive user info - clean undefined values
-    const message = cleanUndefinedValues({
+    // Create message
+    const message = {
       id: messageId,
       threadId,
       senderId: authenticatedUserId,
@@ -175,10 +119,11 @@ export async function POST(request: NextRequest) {
       content,
       timestamp,
       read: false,
-      messageType: messageType || 'general'
-    });
+      messageType: messageType || 'general',
+      createdAt: timestamp,
+    };
 
-    const thread = cleanUndefinedValues({
+    const thread = {
       id: threadId,
       subject,
       participants: [authenticatedUserId, recipientId],
@@ -200,7 +145,14 @@ export async function POST(request: NextRequest) {
           userType: receiverInfo.userType
         }
       },
-      lastMessage: message,
+      lastMessage: {
+        id: messageId,
+        content,
+        senderId: authenticatedUserId,
+        senderName: senderInfo.name,
+        messageType: messageType || 'general',
+        timestamp
+      },
       messageCount: 1,
       unreadCount: {
         [authenticatedUserId]: 0,
@@ -208,73 +160,13 @@ export async function POST(request: NextRequest) {
       },
       createdAt: timestamp,
       updatedAt: timestamp
+    };
+
+    // Use a transaction to create both thread and message atomically
+    await db.transaction(async (tx) => {
+      await tx.insert(messageThreads).values(thread);
+      await tx.insert(messages).values(message);
     });
-
-    // Transaction to create both thread and message atomically
-    const transactItems = [
-      // Create message
-      {
-        Put: {
-          TableName: MESSAGES_TABLE,
-          Item: cleanUndefinedValues({
-            PK: threadId,
-            SK: messageId,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp,
-            GSI2PK: recipientId,
-            GSI2SK: timestamp,
-            ...message
-          })
-        }
-      },
-      // Create main thread record
-      {
-        Put: {
-          TableName: THREADS_TABLE,
-          Item: cleanUndefinedValues({
-            PK: threadId,
-            threadId,
-            ...thread,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp
-          })
-        }
-      },
-      // Create participant record for sender
-      {
-        Put: {
-          TableName: THREADS_TABLE,
-          Item: cleanUndefinedValues({
-            PK: `${threadId}#${authenticatedUserId}`,
-            threadId,
-            participantId: authenticatedUserId,
-            ...thread,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp
-          })
-        }
-      },
-      // Create participant record for recipient
-      {
-        Put: {
-          TableName: THREADS_TABLE,
-          Item: cleanUndefinedValues({
-            PK: `${threadId}#${recipientId}`,
-            threadId,
-            participantId: recipientId,
-            ...thread,
-            GSI1PK: recipientId,
-            GSI1SK: timestamp
-          })
-        }
-      }
-    ];
-
-    const command = new TransactWriteCommand({
-      TransactItems: transactItems
-    });
-
-    await dynamodb.send(command);
 
     console.log('Thread and message created successfully:', {
       threadId,
@@ -287,8 +179,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error sending message:', error);
-    
-    // Handle specific JWT errors
+
     if (error instanceof Error) {
       if (error.message.includes('Token expired') || error.message.includes('Invalid token')) {
         return NextResponse.json({ error: 'Authentication expired. Please log in again.' }, { status: 401 });
@@ -297,12 +188,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid authentication.' }, { status: 401 });
       }
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to send message',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

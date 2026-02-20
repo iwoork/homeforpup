@@ -1,11 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, PutCommand } from '../../../shared/dynamodb';
+import { getDb, kennels } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
-
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -80,12 +78,8 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
       socialMedia: body.socialMedia,
     };
 
-    await dynamodb.send(
-      new PutCommand({
-        TableName: KENNELS_TABLE,
-        Item: kennel,
-      })
-    );
+    const db = getDb();
+    await db.insert(kennels).values(kennel);
 
     return successResponse({ kennel }, 201);
   } catch (error) {
@@ -96,4 +90,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

@@ -1,11 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, TransactWriteCommand, GetCommand, UpdateCommand } from '../../../shared/dynamodb';
+import { getDb, messages, messageThreads, eq, and, sql } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE || 'homeforpup-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE || 'homeforpup-message-threads';
 
 // Helper to remove undefined values
 const cleanUndefinedValues = (obj: any): any => {
@@ -40,26 +37,29 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
       return errorResponse('Missing required fields: threadId, content, receiverId', 400);
     }
 
-    // Verify user has access to this thread
-    const threadAccessCommand = new GetCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: `${threadId}#${authenticatedUserId}` }
-    });
+    const db = getDb();
 
-    const threadAccessResult = await dynamodb.send(threadAccessCommand);
-    if (!threadAccessResult.Item) {
+    // Verify user has access to this thread
+    const [threadData] = await db.select().from(messageThreads).where(eq(messageThreads.id, threadId)).limit(1);
+
+    if (!threadData) {
       return errorResponse('Thread not found or access denied', 403);
     }
 
-    const threadData = threadAccessResult.Item;
-    
+    // Verify user is a participant
+    const participants = (threadData.participants as string[]) || [];
+    if (!participants.includes(authenticatedUserId)) {
+      return errorResponse('Thread not found or access denied', 403);
+    }
+
     // Generate IDs
     const timestamp = new Date().toISOString();
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Get sender name from thread data
-    const senderName = threadData.participantNames?.[authenticatedUserId] || 'Unknown';
-    const finalReceiverName = receiverName || threadData.participantNames?.[receiverId] || 'Unknown';
+    const participantNames = (threadData.participantNames as Record<string, string>) || {};
+    const senderName = participantNames[authenticatedUserId] || 'Unknown';
+    const finalReceiverName = receiverName || participantNames[receiverId] || 'Unknown';
 
     // Create message
     const message = cleanUndefinedValues({
@@ -73,85 +73,30 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
       content,
       timestamp,
       read: false,
-      messageType: threadData.lastMessage?.messageType || 'general',
+      messageType: (threadData.lastMessage as any)?.messageType || 'general',
       attachments: []
     });
 
     // Update thread's unread count for receiver
-    const currentUnreadCount = threadData.unreadCount || {};
+    const currentUnreadCount = (threadData.unreadCount as Record<string, number>) || {};
     const newUnreadCount = {
       ...currentUnreadCount,
       [receiverId]: (currentUnreadCount[receiverId] || 0) + 1
     };
 
-    // Transaction to create message and update threads
-    const transactItems = [
+    // Transaction to create message and update thread
+    await db.transaction(async (tx) => {
       // Create message
-      {
-        Put: {
-          TableName: MESSAGES_TABLE,
-          Item: cleanUndefinedValues({
-            PK: threadId,
-            SK: messageId,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp,
-            GSI2PK: receiverId,
-            GSI2SK: timestamp,
-            ...message
-          })
-        }
-      },
-      // Update main thread record
-      {
-        Update: {
-          TableName: THREADS_TABLE,
-          Key: { PK: threadId },
-          UpdateExpression: 'SET lastMessage = :lastMessage, updatedAt = :updatedAt, messageCount = messageCount + :inc, unreadCount = :unreadCount',
-          ExpressionAttributeValues: {
-            ':lastMessage': message,
-            ':updatedAt': timestamp,
-            ':inc': 1,
-            ':unreadCount': newUnreadCount
-          }
-        }
-      },
-      // Update sender's participant record
-      {
-        Update: {
-          TableName: THREADS_TABLE,
-          Key: { PK: `${threadId}#${authenticatedUserId}` },
-          UpdateExpression: 'SET lastMessage = :lastMessage, updatedAt = :updatedAt, messageCount = messageCount + :inc, unreadCount = :unreadCount, GSI1SK = :timestamp',
-          ExpressionAttributeValues: {
-            ':lastMessage': message,
-            ':updatedAt': timestamp,
-            ':inc': 1,
-            ':unreadCount': newUnreadCount,
-            ':timestamp': timestamp
-          }
-        }
-      },
-      // Update receiver's participant record
-      {
-        Update: {
-          TableName: THREADS_TABLE,
-          Key: { PK: `${threadId}#${receiverId}` },
-          UpdateExpression: 'SET lastMessage = :lastMessage, updatedAt = :updatedAt, messageCount = messageCount + :inc, unreadCount = :unreadCount, GSI1SK = :timestamp',
-          ExpressionAttributeValues: {
-            ':lastMessage': message,
-            ':updatedAt': timestamp,
-            ':inc': 1,
-            ':unreadCount': newUnreadCount,
-            ':timestamp': timestamp
-          }
-        }
-      }
-    ];
+      await tx.insert(messages).values(message);
 
-    const command = new TransactWriteCommand({
-      TransactItems: transactItems
+      // Update thread record
+      await tx.update(messageThreads).set({
+        lastMessage: message,
+        updatedAt: timestamp,
+        messageCount: (threadData.messageCount || 0) + 1,
+        unreadCount: newUnreadCount,
+      }).where(eq(messageThreads.id, threadId));
     });
-
-    await dynamodb.send(command);
 
     console.log('Reply sent successfully:', {
       threadId,
@@ -172,4 +117,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

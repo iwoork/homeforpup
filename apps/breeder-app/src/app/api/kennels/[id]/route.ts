@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, kennels, dogs, litters, eq, sql } from '@homeforpup/database';
 import { Kennel, UpdateKennelRequest, KennelResponse } from '@homeforpup/shared-types';
 
 import { auth } from '@clerk/nextjs/server';
-const dynamoClient = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
-const LITTERS_TABLE = process.env.LITTERS_TABLE_NAME || 'homeforpup-litters';
 
 // GET /api/kennels/[id] - Get kennel details with dogs and litters
 export async function GET(
@@ -31,63 +18,41 @@ export async function GET(
     const { id: kennelId } = await params;
 
     // Get kennel
-    const kennelCommand = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-    });
+    const [kennel] = await db.select().from(kennels).where(eq(kennels.id, kennelId)).limit(1);
 
-    const kennelResult = await docClient.send(kennelCommand);
-    if (!kennelResult.Item) {
+    if (!kennel) {
       return NextResponse.json({ error: 'Kennel not found' }, { status: 404 });
     }
 
-    const kennel = kennelResult.Item as any; // Using any to handle kennel properties
-
     // Check if user has access to this kennel
-    if (!kennel.owners.includes(userId) && !kennel.managers.includes(userId)) {
+    const owners = (kennel.owners as string[]) || [];
+    const managers = (kennel.managers as string[]) || [];
+    if (!owners.includes(userId) && !managers.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Get dogs in this kennel
-    const dogsCommand = new ScanCommand({
-      TableName: DOGS_TABLE,
-      FilterExpression: 'kennelId = :kennelId',
-      ExpressionAttributeValues: {
-        ':kennelId': kennelId,
-      },
-    });
-
-    const dogsResult = await docClient.send(dogsCommand);
-    const dogs = (dogsResult.Items || []) as any[];
+    const kennelDogs = await db.select().from(dogs).where(eq(dogs.kennelId, kennelId));
 
     // Get litters in this kennel
-    const littersCommand = new ScanCommand({
-      TableName: LITTERS_TABLE,
-      FilterExpression: 'kennelId = :kennelId',
-      ExpressionAttributeValues: {
-        ':kennelId': kennelId,
-      },
-    });
-
-    const littersResult = await docClient.send(littersCommand);
-    const litters = (littersResult.Items || []) as any[];
+    const kennelLitters = await db.select().from(litters).where(eq(litters.kennelId, kennelId));
 
     // Calculate stats
     const stats = {
-      totalDogs: dogs.length,
-      totalLitters: litters.length,
-      totalPuppies: litters.reduce((sum, litter) => sum + (litter.actualPuppyCount || 0), 0),
-      activeBreedingDogs: dogs.filter(dog => 
-        dog.type === 'parent' && 
-        dog.breeding?.isBreedingDog && 
-        dog.breeding?.breedingStatus === 'available'
+      totalDogs: kennelDogs.length,
+      totalLitters: kennelLitters.length,
+      totalPuppies: kennelLitters.reduce((sum, litter) => sum + ((litter as any).actualPuppyCount || 0), 0),
+      activeBreedingDogs: kennelDogs.filter(dog =>
+        dog.dogType === 'parent' &&
+        (dog.breeding as any)?.isBreedingDog &&
+        (dog.breeding as any)?.breedingStatus === 'available'
       ).length,
     };
 
     const response: KennelResponse = {
-      kennel,
-      dogs,
-      litters,
+      kennel: kennel as any,
+      dogs: kennelDogs as any[],
+      litters: kennelLitters as any[],
       stats,
     };
 
@@ -111,7 +76,7 @@ export async function PUT(
 
     const { id: kennelId } = await params;
     const body: UpdateKennelRequest = await request.json();
-    
+
     console.log('Received update request for kennel:', kennelId);
     console.log('Request body:', body);
     console.log('Facilities in request:', body.facilities);
@@ -120,31 +85,24 @@ export async function PUT(
     console.log('Is specialties array:', Array.isArray(body.specialties));
 
     // Get existing kennel
-    const getCommand = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-    });
+    const [existingKennel] = await db.select().from(kennels).where(eq(kennels.id, kennelId)).limit(1);
 
-    const getResult = await docClient.send(getCommand);
-    if (!getResult.Item) {
+    if (!existingKennel) {
       return NextResponse.json({ error: 'Kennel not found' }, { status: 404 });
     }
 
-    const existingKennel = getResult.Item as any; // Using any to handle kennel properties
-
     // Check if user has permission to update
-    if (!existingKennel.owners.includes(userId) && !existingKennel.managers.includes(userId)) {
+    const owners = (existingKennel.owners as string[]) || [];
+    const managers = (existingKennel.managers as string[]) || [];
+    if (!owners.includes(userId) && !managers.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Build update expression
-    let updateExpression = 'SET updatedAt = :updatedAt';
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {
-      ':updatedAt': new Date().toISOString(),
+    // Build update data
+    const updateData: Record<string, any> = {
+      updatedAt: new Date().toISOString(),
     };
 
-    // Add fields to update
     const fieldsToUpdate = [
       'name', 'description', 'businessName', 'website', 'phone', 'email',
       'address', 'facilities', 'capacity', 'specialties', 'socialMedia'
@@ -152,29 +110,18 @@ export async function PUT(
 
     fieldsToUpdate.forEach(field => {
       if (body[field as keyof UpdateKennelRequest] !== undefined) {
-        updateExpression += `, #${field} = :${field}`;
-        expressionAttributeNames[`#${field}`] = field;
-        expressionAttributeValues[`:${field}`] = body[field as keyof UpdateKennelRequest];
+        updateData[field] = body[field as keyof UpdateKennelRequest];
       }
     });
 
-    console.log('Update expression:', updateExpression);
-    console.log('Expression attribute names:', expressionAttributeNames);
-    console.log('Expression attribute values:', expressionAttributeValues);
+    console.log('Update data:', updateData);
 
-    const updateCommand = new UpdateCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-      UpdateExpression: updateExpression,
-      ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW',
-    });
+    const [updatedKennel] = await db.update(kennels)
+      .set(updateData)
+      .where(eq(kennels.id, kennelId))
+      .returning();
 
-    const result = await docClient.send(updateCommand);
-    const updatedKennel = result.Attributes as any;
-    
-    console.log('Updated kennel from DynamoDB:', updatedKennel);
+    console.log('Updated kennel:', updatedKennel);
     console.log('Updated facilities:', updatedKennel?.facilities);
     console.log('Facilities type:', typeof updatedKennel?.facilities);
     console.log('Is facilities object:', updatedKennel?.facilities && typeof updatedKennel?.facilities === 'object');
@@ -200,61 +147,36 @@ export async function DELETE(
     const { id: kennelId } = await params;
 
     // Get existing kennel
-    const getCommand = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-    });
+    const [existingKennel] = await db.select().from(kennels).where(eq(kennels.id, kennelId)).limit(1);
 
-    const getResult = await docClient.send(getCommand);
-    if (!getResult.Item) {
+    if (!existingKennel) {
       return NextResponse.json({ error: 'Kennel not found' }, { status: 404 });
     }
 
-    const existingKennel = getResult.Item as any; // Using any to handle kennel properties
-
     // Check if user is the owner (only owners can delete)
-    if (!existingKennel.owners.includes(userId)) {
+    const owners = (existingKennel.owners as string[]) || [];
+    if (!owners.includes(userId)) {
       return NextResponse.json({ error: 'Only kennel owners can delete kennels' }, { status: 403 });
     }
 
-    // Check if kennel has dogs or litters
-    const dogsCommand = new ScanCommand({
-      TableName: DOGS_TABLE,
-      FilterExpression: 'kennelId = :kennelId',
-      ExpressionAttributeValues: {
-        ':kennelId': kennelId,
-      },
-      Limit: 1,
-    });
-
-    const dogsResult = await docClient.send(dogsCommand);
-    if (dogsResult.Items && dogsResult.Items.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete kennel with existing dogs. Please remove all dogs first.' 
+    // Check if kennel has dogs
+    const kennelDogs = await db.select({ id: dogs.id }).from(dogs).where(eq(dogs.kennelId, kennelId)).limit(1);
+    if (kennelDogs.length > 0) {
+      return NextResponse.json({
+        error: 'Cannot delete kennel with existing dogs. Please remove all dogs first.'
       }, { status: 400 });
     }
 
-    const littersCommand = new ScanCommand({
-      TableName: LITTERS_TABLE,
-      FilterExpression: 'kennelId = :kennelId',
-      ExpressionAttributeValues: {
-        ':kennelId': kennelId,
-      },
-      Limit: 1,
-    });
-
-    const littersResult = await docClient.send(littersCommand);
-    if (littersResult.Items && littersResult.Items.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete kennel with existing litters. Please remove all litters first.' 
+    // Check if kennel has litters
+    const kennelLitters = await db.select({ id: litters.id }).from(litters).where(eq(litters.kennelId, kennelId)).limit(1);
+    if (kennelLitters.length > 0) {
+      return NextResponse.json({
+        error: 'Cannot delete kennel with existing litters. Please remove all litters first.'
       }, { status: 400 });
     }
 
     // Delete kennel
-    await docClient.send(new DeleteCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-    }));
+    await db.delete(kennels).where(eq(kennels.id, kennelId));
 
     return NextResponse.json({ message: 'Kennel deleted successfully' });
   } catch (error) {

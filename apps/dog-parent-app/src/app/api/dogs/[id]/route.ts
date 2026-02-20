@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dogsApiClient } from '@homeforpup/shared-dogs';
+import { db, dogs, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
 // GET /api/dogs/[id] - Get dog details
@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const { id: dogId } = await context.params;
-    const dog = await dogsApiClient.getDogById(dogId);
+    const [dog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
 
     if (!dog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
@@ -31,7 +31,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching dog:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error fetching dog',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },
@@ -52,9 +52,9 @@ export async function PUT(
     }
 
     const { id: dogId } = await context.params;
-    
+
     // First check if dog exists and user has access
-    const existingDog = await dogsApiClient.getDogById(dogId);
+    const [existingDog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
     if (!existingDog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
@@ -64,13 +64,17 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const updatedDog = await dogsApiClient.updateDog({ id: dogId, ...body });
-    
+    const [updatedDog] = await db
+      .update(dogs)
+      .set({ ...body, updatedAt: new Date().toISOString() })
+      .where(eq(dogs.id, dogId))
+      .returning();
+
     return NextResponse.json(updatedDog);
   } catch (error) {
     console.error('Error updating dog:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error updating dog',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },

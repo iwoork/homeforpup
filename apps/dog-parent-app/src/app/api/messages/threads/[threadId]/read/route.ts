@@ -1,27 +1,8 @@
 // src/app/api/messages/threads/[threadId]/read/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, messages, messageThreads, eq, and, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-    convertEmptyValues: false,
-    convertClassInstanceToMap: false,
-  },
-});
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'homeforpup-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'homeforpup-message-threads';
 
 export async function PATCH(
   request: NextRequest,
@@ -30,112 +11,76 @@ export async function PATCH(
   try {
     const routeParams = await params;
     const { threadId } = routeParams;
-    
+
     // Get authenticated user
     const { userId } = await auth();
-    
+
     if (!userId) {
       console.log('No valid session found for mark as read request');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Your session has expired. Please refresh the page to continue.',
         code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
-    
+
     console.log('Marking thread as read:', threadId, 'for user:', userId.substring(0, 10) + '...');
 
     // First, verify user has access to this thread
-    const threadResult = await dynamodb.send(new GetCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: `${threadId}#${userId}` }
-    }));
+    const [thread] = await db.select().from(messageThreads)
+      .where(eq(messageThreads.id, threadId))
+      .limit(1);
 
-    if (!threadResult.Item) {
+    if (!thread) {
       console.log('Thread not found or access denied for user:', userId);
       return NextResponse.json({ error: 'Thread not found or access denied' }, { status: 403 });
     }
 
     // Verify user is actually a participant in the thread
-    const threadParticipants = threadResult.Item.participants || [];
+    const threadParticipants = (thread.participants as string[]) || [];
     if (!threadParticipants.includes(userId)) {
       console.log('User is not a participant in thread:', threadId);
       return NextResponse.json({ error: 'Access denied - not a participant' }, { status: 403 });
     }
 
     // Mark all unread messages in thread as read for this user
-    // Only mark messages where the current user is the receiver (for security)
-    const messagesResult = await dynamodb.send(new QueryCommand({
-      TableName: MESSAGES_TABLE,
-      KeyConditionExpression: 'PK = :threadId',
-      FilterExpression: 'receiverId = :userId AND #read = :false',
-      ExpressionAttributeNames: {
-        '#read': 'read'
-      },
-      ExpressionAttributeValues: {
-        ':threadId': threadId,
-        ':userId': userId,
-        ':false': false
-      }
-    }));
-
-    const unreadMessages = messagesResult.Items || [];
+    const unreadMessages = await db.select().from(messages)
+      .where(and(
+        eq(messages.threadId, threadId),
+        eq(messages.receiverId, userId),
+        eq(messages.read, false)
+      ));
 
     console.log(`Found ${unreadMessages.length} unread messages for user ${userId} in thread ${threadId}`);
 
     // Update each unread message to mark as read
-    const updatePromises = unreadMessages.map(message => {
-      return dynamodb.send(new UpdateCommand({
-        TableName: MESSAGES_TABLE,
-        Key: { PK: message.PK, SK: message.SK },
-        UpdateExpression: 'SET #read = :true',
-        ExpressionAttributeNames: {
-          '#read': 'read'
-        },
-        ExpressionAttributeValues: {
-          ':true': true
-        }
-      }));
-    });
+    if (unreadMessages.length > 0) {
+      await db.update(messages)
+        .set({ read: true })
+        .where(and(
+          eq(messages.threadId, threadId),
+          eq(messages.receiverId, userId),
+          eq(messages.read, false)
+        ));
+    }
 
-    await Promise.all(updatePromises);
+    // Reset unread count for user in thread
+    const currentUnread = (thread.unreadCount as Record<string, number>) || {};
+    const updatedUnread = { ...currentUnread, [userId]: 0 };
 
-    // Reset unread count for user in thread participant records
-    await dynamodb.send(new UpdateCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: `${threadId}#${userId}` },
-      UpdateExpression: 'SET unreadCount.#user = :zero',
-      ExpressionAttributeNames: {
-        '#user': userId
-      },
-      ExpressionAttributeValues: {
-        ':zero': 0
-      }
-    }));
-
-    // Also update the main thread record
-    await dynamodb.send(new UpdateCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: threadId },
-      UpdateExpression: 'SET unreadCount.#user = :zero',
-      ExpressionAttributeNames: {
-        '#user': userId
-      },
-      ExpressionAttributeValues: {
-        ':zero': 0
-      }
-    }));
+    await db.update(messageThreads)
+      .set({ unreadCount: updatedUnread })
+      .where(eq(messageThreads.id, threadId));
 
     console.log('Thread marked as read successfully. Updated', unreadMessages.length, 'messages');
 
-    return NextResponse.json({ 
-      success: true, 
-      messagesMarked: unreadMessages.length 
+    return NextResponse.json({
+      success: true,
+      messagesMarked: unreadMessages.length
     });
 
   } catch (error) {
     console.error('Error marking thread as read:', error);
-    
-    // Handle specific JWT errors
+
     if (error instanceof Error) {
       if (error.message.includes('Token expired') || error.message.includes('Invalid token')) {
         return NextResponse.json({ error: 'Authentication expired. Please log in again.' }, { status: 401 });
@@ -144,12 +89,12 @@ export async function PATCH(
         return NextResponse.json({ error: 'Invalid authentication.' }, { status: 401 });
       }
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to mark thread as read',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

@@ -1,9 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand } from '../../../shared/dynamodb';
+import { getDb, kennels, eq } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
-
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const kennelId = event.pathParameters?.id;
@@ -13,18 +11,15 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   }
 
   try {
-    const command = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-    });
+    const db = getDb();
 
-    const result = await dynamodb.send(command);
+    const [kennel] = await db.select().from(kennels).where(eq(kennels.id, kennelId)).limit(1);
 
-    if (!result.Item) {
+    if (!kennel) {
       return errorResponse('Kennel not found', 404);
     }
 
-    return successResponse({ kennel: result.Item });
+    return successResponse({ kennel });
   } catch (error) {
     console.error('Error getting kennel:', error);
     return errorResponse('Failed to get kennel', 500);
@@ -33,4 +28,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

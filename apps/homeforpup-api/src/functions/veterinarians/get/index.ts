@@ -1,13 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, veterinarians, eq } from '../../../shared/dynamodb';
 import { Veterinarian } from '@homeforpup/shared-types';
 import { getUserIdFromEvent } from '../../../middleware/auth';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VETERINARIANS_TABLE || 'Veterinarians';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -50,17 +44,12 @@ export const handler = async (
       };
     }
 
-    // Get veterinarian from DynamoDB
-    const getCommand = new GetCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        id: veterinarianId
-      }
-    });
+    const db = getDb();
 
-    const result = await docClient.send(getCommand);
+    // Get veterinarian from database
+    const [veterinarian] = await db.select().from(veterinarians).where(eq(veterinarians.id, veterinarianId)).limit(1);
 
-    if (!result.Item) {
+    if (!veterinarian) {
       return {
         statusCode: 404,
         headers: {
@@ -74,8 +63,6 @@ export const handler = async (
         })
       };
     }
-
-    const veterinarian = result.Item as Veterinarian;
 
     // Check if the veterinarian belongs to the authenticated user
     if (veterinarian.ownerId !== userId) {
@@ -111,7 +98,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error getting veterinarian:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

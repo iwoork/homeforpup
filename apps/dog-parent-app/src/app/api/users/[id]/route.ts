@@ -1,21 +1,9 @@
 // app/api/users/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 // Base user interface for database storage (all required fields)
 interface DatabaseUserItem {
@@ -46,12 +34,12 @@ interface DatabaseUserItem {
       showLocation: boolean;
     };
   };
-  adopterInfo?: {
+  puppyParentInfo?: {
     housingType?: 'house' | 'apartment' | 'condo' | 'townhouse' | 'farm';
     yardSize?: 'none' | 'small' | 'medium' | 'large' | 'acreage';
-    hasOtherPets: boolean;
-    experienceLevel: 'first-time' | 'some-experience' | 'very-experienced';
-    preferredBreeds: string[];
+    hasOtherPets?: boolean;
+    experienceLevel?: 'first-time' | 'some-experience' | 'very-experienced';
+    preferredBreeds?: string[];
     agePreference?: 'puppy' | 'young' | 'adult' | 'senior' | 'any';
     sizePreference?: 'toy' | 'small' | 'medium' | 'large' | 'giant' | 'any';
     activityLevel?: 'low' | 'moderate' | 'high' | 'very-high';
@@ -64,8 +52,8 @@ interface DatabaseUserItem {
   breederInfo?: {
     kennelName?: string;
     license?: string;
-    specialties: string[];
-    experience: number;
+    specialties?: string[];
+    experience?: number;
     website?: string;
   };
   createdAt: string;
@@ -89,20 +77,14 @@ type UserProfileResponse = PublicUserItem | PrivateUserItem;
 
 // Type-safe sanitization function
 const sanitizeUserData = (user: DatabaseUserItem, isOwnProfile: boolean): UserProfileResponse => {
-  // Transform adopterInfo to puppyParentInfo for frontend compatibility
-  const transformedUser = {
-    ...user,
-    puppyParentInfo: user.adopterInfo
-  };
-
   if (isOwnProfile) {
     // Return full profile for own profile
-    return transformedUser as PrivateUserItem;
+    return user as PrivateUserItem;
   }
 
   // Create public profile by omitting sensitive fields and selectively including privacy-controlled fields
-  const { email, phone, location, ...basePublicFields } = transformedUser;
-  
+  const { email, phone, location, ...basePublicFields } = user;
+
   // Build public profile (accountStatus is implicitly excluded by not being in basePublicFields)
   const publicProfile: PublicUserItem = {
     ...basePublicFields
@@ -148,7 +130,7 @@ export async function GET(
   try {
     const params = await context.params;
     const userId = params.id;
-    
+
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json(
         { message: 'Invalid user ID' },
@@ -169,33 +151,24 @@ export async function GET(
       console.log('No session found, showing public profile only');
     }
 
-    // Get user by ID using GetCommand
-    const command = new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId }
-    });
+    // Get user by ID
+    const [userItem] = await db.select().from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
 
-    const result = await dynamodb.send(command);
-    
-    if (!result.Item) {
+    if (!userItem) {
       return NextResponse.json(
         { message: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Type assertion with runtime validation
-    const userItem = result.Item as DatabaseUserItem;
-    
     console.log('User data from database:', {
       userId: userItem.userId,
       userType: userItem.userType,
       name: userItem.name
     });
-    
-    // Also log the full user item to see what's actually in the database
-    console.log('Full user item from database:', JSON.stringify(userItem, null, 2));
-    
+
     // Validate required fields exist
     if (!userItem.userId || !userItem.email || !userItem.accountStatus) {
       console.error('Invalid user data structure:', userItem);
@@ -204,7 +177,7 @@ export async function GET(
         { status: 500 }
       );
     }
-    
+
     // Check if user is active
     if (userItem.accountStatus !== 'active') {
       return NextResponse.json(
@@ -217,7 +190,7 @@ export async function GET(
     const isOwnProfile = currentUserId === userId;
 
     // Sanitize user data based on privacy settings
-    const sanitizedUser = sanitizeUserData(userItem, isOwnProfile);
+    const sanitizedUser = sanitizeUserData(userItem as unknown as DatabaseUserItem, isOwnProfile);
 
     console.log('Successfully fetched user profile:', userItem.displayName || userItem.name);
 
@@ -230,7 +203,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error fetching user profile',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },
@@ -249,8 +222,8 @@ interface UserUpdateRequest {
   coverPhoto?: string;
   galleryPhotos?: string[];
   preferences?: DatabaseUserItem['preferences'];
-  adopterInfo?: DatabaseUserItem['adopterInfo'];
-  puppyParentInfo?: DatabaseUserItem['adopterInfo']; // Alias for adopterInfo
+  puppyParentInfo?: DatabaseUserItem['puppyParentInfo'];
+  adopterInfo?: DatabaseUserItem['puppyParentInfo']; // Alias for puppyParentInfo
   breederInfo?: DatabaseUserItem['breederInfo'];
 }
 
@@ -262,7 +235,7 @@ export async function PUT(
   try {
     const params = await context.params;
     const userId = params.id;
-    
+
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json(
         { message: 'Invalid user ID' },
@@ -286,12 +259,10 @@ export async function PUT(
 
     const updates: UserUpdateRequest = await request.json();
 
-    // Build update expression for allowed fields
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, unknown> = {};
+    // Build the update object for allowed fields
+    const updateData: Record<string, unknown> = {};
 
-    // Define allowed fields that users can update (type-safe)
+    // Define allowed fields that users can update
     const allowedFields: (keyof UserUpdateRequest)[] = [
       'displayName',
       'phone',
@@ -302,42 +273,32 @@ export async function PUT(
       'galleryPhotos'
     ];
 
-    // Handle simple field updates with type safety
+    // Handle simple field updates
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
-        updateExpressions.push(`#${field} = :${field}`);
-        expressionAttributeNames[`#${field}`] = field;
-        expressionAttributeValues[`:${field}`] = updates[field];
+        updateData[field] = updates[field];
       }
     }
 
-    // Handle nested object updates with proper typing
+    // Handle nested object updates
     if (updates.preferences) {
-      updateExpressions.push('#preferences = :preferences');
-      expressionAttributeNames['#preferences'] = 'preferences';
-      expressionAttributeValues[':preferences'] = updates.preferences;
+      updateData.preferences = updates.preferences;
     }
 
-    // Handle both adopterInfo and puppyParentInfo (they're the same data)
-    const adopterData = updates.adopterInfo || updates.puppyParentInfo;
-    if (adopterData) {
-      updateExpressions.push('#adopterInfo = :adopterInfo');
-      expressionAttributeNames['#adopterInfo'] = 'adopterInfo';
-      expressionAttributeValues[':adopterInfo'] = adopterData;
+    // Handle both adopterInfo and puppyParentInfo (they map to puppyParentInfo in the schema)
+    const puppyParentData = updates.puppyParentInfo || updates.adopterInfo;
+    if (puppyParentData) {
+      updateData.puppyParentInfo = puppyParentData;
     }
 
     if (updates.breederInfo) {
-      updateExpressions.push('#breederInfo = :breederInfo');
-      expressionAttributeNames['#breederInfo'] = 'breederInfo';
-      expressionAttributeValues[':breederInfo'] = updates.breederInfo;
+      updateData.breederInfo = updates.breederInfo;
     }
 
     // Always update timestamp
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+    updateData.updatedAt = new Date().toISOString();
 
-    if (updateExpressions.length === 1) { // Only timestamp was added
+    if (Object.keys(updateData).length === 1) { // Only timestamp was added
       return NextResponse.json(
         { message: 'No valid fields to update' },
         { status: 400 }
@@ -345,18 +306,12 @@ export async function PUT(
     }
 
     // Execute update
-    const updateCommand = new UpdateCommand({
-      TableName: USERS_TABLE,
-      Key: { userId },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW'
-    });
+    const [updatedUser] = await db.update(profiles)
+      .set(updateData)
+      .where(eq(profiles.userId, userId))
+      .returning();
 
-    const result = await dynamodb.send(updateCommand);
-
-    if (!result.Attributes) {
+    if (!updatedUser) {
       return NextResponse.json(
         { message: 'Update failed' },
         { status: 500 }
@@ -366,8 +321,7 @@ export async function PUT(
     console.log('User profile updated successfully:', userId.substring(0, 10) + '...');
 
     // Return the updated user data (user's own profile, so return all data)
-    const updatedUser = result.Attributes as DatabaseUserItem;
-    const sanitizedUser = sanitizeUserData(updatedUser, true); // Always own profile for updates
+    const sanitizedUser = sanitizeUserData(updatedUser as unknown as DatabaseUserItem, true); // Always own profile for updates
 
     return NextResponse.json({
       user: sanitizedUser,
@@ -378,7 +332,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating user profile:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error updating user profile',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },

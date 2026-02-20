@@ -1,32 +1,14 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  PutCommand,
-  UpdateCommand,
-  DeleteCommand,
-  QueryCommand,
-  ScanCommand,
-  BatchGetCommand,
-  TransactWriteCommand,
-} from '@aws-sdk/lib-dynamodb';
+// Database client for Lambda handlers (Supabase PostgreSQL via Drizzle ORM)
+import { createLambdaDb } from '@homeforpup/database';
+export type { Database } from '@homeforpup/database';
 
-// Create DynamoDB client
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-});
+let _db: ReturnType<typeof createLambdaDb>;
 
-// Create document client with better defaults
-export const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-    convertClassInstanceToMap: true,
-  },
-  unmarshallOptions: {
-    wrapNumbers: false,
-  },
-});
+export function getDb() {
+  if (!_db) _db = createLambdaDb();
+  return _db;
+}
 
-// Export command types for convenience
-export { GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand, BatchGetCommand, TransactWriteCommand };
-
+// Re-export schema tables and operators for convenience
+export { profiles, dogs, kennels, litters, messages, messageThreads, favorites, activities, breeds, breedsSimple, veterinarians, vetVisits, breeders } from '@homeforpup/database';
+export { eq, ne, gt, gte, lt, lte, and, or, not, inArray, sql, desc, asc } from '@homeforpup/database';

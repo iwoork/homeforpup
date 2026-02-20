@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { db, dogs, eq } from '@homeforpup/database';
 import { checkDogAccess } from '@/lib/auth/kennelAccess';
 import { DogPhoto } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 
 import { auth } from '@clerk/nextjs/server';
-const dynamoClient = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 
 // POST /api/dogs/[id]/photos - Add photo
 export async function POST(
@@ -36,20 +21,14 @@ export async function POST(
     const body = await request.json();
 
     // Get existing dog
-    const getCommand = new GetCommand({
-      TableName: DOGS_TABLE,
-      Key: { id: dogId },
-    });
+    const [existingDog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
 
-    const getResult = await docClient.send(getCommand);
-    if (!getResult.Item) {
+    if (!existingDog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    const existingDog = getResult.Item as any;
-
     // Check if user has permission
-    const access = await checkDogAccess(userId, existingDog);
+    const access = await checkDogAccess(userId, existingDog as any);
     if (!access.hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
@@ -77,7 +56,7 @@ export async function POST(
     if (body.photographer) newPhoto.photographer = body.photographer;
 
     // Update dog with new photo
-    const existingPhotos = existingDog.photoGallery || [];
+    const existingPhotos = (existingDog.photoGallery as any[]) || [];
     const updatedPhotos = [...existingPhotos, newPhoto];
 
     // If this is set as profile photo, unset any existing profile photos
@@ -89,17 +68,9 @@ export async function POST(
       });
     }
 
-    const updateCommand = new UpdateCommand({
-      TableName: DOGS_TABLE,
-      Key: { id: dogId },
-      UpdateExpression: 'SET photoGallery = :photos, updatedAt = :updatedAt',
-      ExpressionAttributeValues: {
-        ':photos': updatedPhotos,
-        ':updatedAt': timestamp,
-      },
-    });
-
-    await docClient.send(updateCommand);
+    await db.update(dogs)
+      .set({ photoGallery: updatedPhotos, updatedAt: timestamp })
+      .where(eq(dogs.id, dogId));
 
     return NextResponse.json({ photo: newPhoto }, { status: 201 });
   } catch (error) {
@@ -121,25 +92,19 @@ export async function GET(
 
     const { id: dogId } = await params;
 
-    const getCommand = new GetCommand({
-      TableName: DOGS_TABLE,
-      Key: { id: dogId },
-    });
+    const [dog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
 
-    const result = await docClient.send(getCommand);
-    if (!result.Item) {
+    if (!dog) {
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    const dog = result.Item as any;
-
     // Check if user has access
-    const access = await checkDogAccess(userId, dog);
+    const access = await checkDogAccess(userId, dog as any);
     if (!access.hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const photos = dog.photoGallery || [];
+    const photos = (dog.photoGallery as any[]) || [];
 
     return NextResponse.json({ photos });
   } catch (error) {

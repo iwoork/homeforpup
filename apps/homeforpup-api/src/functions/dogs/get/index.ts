@@ -1,10 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand } from '../../../shared/dynamodb';
+import { getDb, dogs, kennels, eq } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
-
-const DOGS_TABLE = process.env.DOGS_TABLE!;
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const dogId = event.pathParameters?.id;
@@ -14,30 +11,21 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   }
 
   try {
-    const command = new GetCommand({
-      TableName: DOGS_TABLE,
-      Key: { id: dogId },
-    });
+    const db = getDb();
 
-    const result = await dynamodb.send(command);
+    const [dog] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
 
-    if (!result.Item) {
+    if (!dog) {
       throw new ApiError('Dog not found', 404);
     }
-
-    const dog = result.Item;
 
     // Fetch kennel information if kennelId exists
     let kennel = null;
     if (dog.kennelId) {
       try {
-        const kennelCommand = new GetCommand({
-          TableName: KENNELS_TABLE,
-          Key: { id: dog.kennelId },
-        });
-        const kennelResult = await dynamodb.send(kennelCommand);
-        if (kennelResult.Item) {
-          kennel = kennelResult.Item;
+        const [kennelResult] = await db.select().from(kennels).where(eq(kennels.id, dog.kennelId)).limit(1);
+        if (kennelResult) {
+          kennel = kennelResult;
         }
       } catch (kennelError) {
         console.warn(`Failed to fetch kennel ${dog.kennelId} for dog ${dogId}:`, kennelError);
@@ -60,4 +48,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

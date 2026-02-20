@@ -1,23 +1,6 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, kennels, dogs, litters, eq, and, sql, inArray } from '@homeforpup/database';
 import { getProfileByUserId } from './subscriptionDb';
 import { SubscriptionTier, getTierLimits, isWithinLimit } from '@homeforpup/shared-types';
-
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: { removeUndefinedValues: true },
-});
-
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
-const LITTERS_TABLE = process.env.LITTERS_TABLE_NAME || 'homeforpup-litters';
 
 interface GuardResult {
   allowed: boolean;
@@ -32,15 +15,12 @@ export async function checkKennelCreationAllowed(userId: string): Promise<GuardR
   const tier: SubscriptionTier = (profile?.subscriptionPlan as SubscriptionTier) || 'free';
   const limits = getTierLimits(tier);
 
-  // Count user's existing kennels
-  const result = await dynamodb.send(new ScanCommand({
-    TableName: KENNELS_TABLE,
-    FilterExpression: 'contains(owners, :userId)',
-    ExpressionAttributeValues: { ':userId': userId },
-    Select: 'COUNT',
-  }));
+  // Count user's existing kennels using jsonb @> operator
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(kennels).where(
+    sql`${kennels.owners}::jsonb @> ${JSON.stringify([userId])}::jsonb`
+  );
 
-  const currentCount = result.Count || 0;
+  const currentCount = Number(result?.count) || 0;
   const allowed = isWithinLimit(currentCount, limits.maxKennels);
 
   return {
@@ -57,27 +37,23 @@ export async function checkDogCreationAllowed(userId: string): Promise<GuardResu
   const tier: SubscriptionTier = (profile?.subscriptionPlan as SubscriptionTier) || 'free';
   const limits = getTierLimits(tier);
 
-  // Count user's existing parent dogs across all kennels
-  const kennelsResult = await dynamodb.send(new ScanCommand({
-    TableName: KENNELS_TABLE,
-    FilterExpression: 'contains(owners, :userId)',
-    ExpressionAttributeValues: { ':userId': userId },
-  }));
+  // Get user's kennel IDs
+  const userKennels = await db.select({ id: kennels.id }).from(kennels).where(
+    sql`${kennels.owners}::jsonb @> ${JSON.stringify([userId])}::jsonb`
+  );
 
-  const kennelIds = (kennelsResult.Items || []).map((k: any) => k.id);
+  const kennelIds = userKennels.map((k) => k.id);
   let currentCount = 0;
 
   if (kennelIds.length > 0) {
-    // Count dogs in all user's kennels (parent dogs only)
-    for (const kennelId of kennelIds) {
-      const dogsResult = await dynamodb.send(new ScanCommand({
-        TableName: DOGS_TABLE,
-        FilterExpression: 'kennelId = :kennelId AND dogType = :parentType',
-        ExpressionAttributeValues: { ':kennelId': kennelId, ':parentType': 'parent' },
-        Select: 'COUNT',
-      }));
-      currentCount += dogsResult.Count || 0;
-    }
+    // Count parent dogs in all user's kennels
+    const [result] = await db.select({ count: sql<number>`count(*)` }).from(dogs).where(
+      and(
+        inArray(dogs.kennelId, kennelIds),
+        eq(dogs.dogType, 'parent')
+      )
+    );
+    currentCount = Number(result?.count) || 0;
   }
 
   const allowed = isWithinLimit(currentCount, limits.maxParentDogs);
@@ -97,21 +73,14 @@ export async function checkLitterCreationAllowed(userId: string): Promise<GuardR
   const limits = getTierLimits(tier);
 
   // Count user's active litters
-  const result = await dynamodb.send(new ScanCommand({
-    TableName: LITTERS_TABLE,
-    FilterExpression: 'contains(kennelOwners, :userId) AND #s IN (:s1, :s2, :s3, :s4)',
-    ExpressionAttributeNames: { '#s': 'status' },
-    ExpressionAttributeValues: {
-      ':userId': userId,
-      ':s1': 'planned',
-      ':s2': 'expecting',
-      ':s3': 'born',
-      ':s4': 'weaning',
-    },
-    Select: 'COUNT',
-  }));
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(litters).where(
+    and(
+      sql`${litters.breederId} = ${userId}`,
+      inArray(litters.status, ['planned', 'expecting', 'born', 'weaning'])
+    )
+  );
 
-  const currentCount = result.Count || 0;
+  const currentCount = Number(result?.count) || 0;
   const allowed = isWithinLimit(currentCount, limits.maxActiveLitters);
 
   return {

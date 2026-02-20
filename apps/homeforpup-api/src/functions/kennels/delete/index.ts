@@ -1,10 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand, DeleteCommand } from '../../../shared/dynamodb';
+import { getDb, kennels, eq } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -31,19 +29,14 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   }
 
   try {
+    const db = getDb();
+
     // Get existing kennel to check ownership
-    const getCommand = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: kennelId },
-    });
+    const [existingKennel] = await db.select().from(kennels).where(eq(kennels.id, kennelId)).limit(1);
 
-    const result = await dynamodb.send(getCommand);
-
-    if (!result.Item) {
+    if (!existingKennel) {
       return errorResponse('Kennel not found', 404);
     }
-
-    const existingKennel = result.Item;
 
     // Log kennel ownership for debugging
     console.log('Checking kennel ownership for deletion:', {
@@ -56,13 +49,13 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
     // Check if user is owner (only owners can delete) - check multiple ownership fields for backward compatibility
     // Handle both array and string cases for owners
-    const ownersArray = Array.isArray(existingKennel.owners) 
-      ? existingKennel.owners 
+    const ownersArray = Array.isArray(existingKennel.owners)
+      ? existingKennel.owners
       : (existingKennel.owners ? [existingKennel.owners] : []);
 
-    const isOwner = 
-      ownersArray.includes(userId) || 
-      existingKennel.ownerId === userId || 
+    const isOwner =
+      (ownersArray as string[]).includes(userId) ||
+      existingKennel.ownerId === userId ||
       existingKennel.createdBy === userId;
 
     console.log('Authorization check for deletion:', { isOwner });
@@ -72,12 +65,7 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     }
 
     // Delete kennel
-    await dynamodb.send(
-      new DeleteCommand({
-        TableName: KENNELS_TABLE,
-        Key: { id: kennelId },
-      })
-    );
+    await db.delete(kennels).where(eq(kennels.id, kennelId));
 
     return successResponse({ message: 'Kennel deleted successfully' });
   } catch (error) {
@@ -88,4 +76,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

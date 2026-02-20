@@ -1,12 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, vetVisits, eq } from '../../../shared/dynamodb';
 import { VetVisit } from '@homeforpup/shared-types';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VET_VISITS_TABLE || 'VetVisits';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -22,63 +16,35 @@ export const handler = async (
     const visitType = queryParams.visitType;
     const status = queryParams.status;
 
-    let vetVisits: VetVisit[] = [];
+    const db = getDb();
+
+    let allVisits: any[];
 
     if (dogId) {
-      // Query by dogId (if using GSI)
-      const queryCommand = new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: 'DogIdIndex', // Assuming we have a GSI on dogId
-        KeyConditionExpression: 'dogId = :dogId',
-        ExpressionAttributeValues: {
-          ':dogId': dogId
-        },
-        ScanIndexForward: false, // Sort by visit date descending
-        Limit: limit
-      });
-
-      const result = await docClient.send(queryCommand);
-      vetVisits = (result.Items as VetVisit[]) || [];
+      // Query by dogId
+      allVisits = await db.select().from(vetVisits).where(eq(vetVisits.dogId, dogId));
     } else if (ownerId) {
-      // Query by ownerId (if using GSI)
-      const queryCommand = new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: 'OwnerIdIndex', // Assuming we have a GSI on ownerId
-        KeyConditionExpression: 'ownerId = :ownerId',
-        ExpressionAttributeValues: {
-          ':ownerId': ownerId
-        },
-        ScanIndexForward: false, // Sort by visit date descending
-        Limit: limit
-      });
-
-      const result = await docClient.send(queryCommand);
-      vetVisits = (result.Items as VetVisit[]) || [];
+      // Query by ownerId
+      allVisits = await db.select().from(vetVisits).where(eq(vetVisits.ownerId, ownerId));
     } else {
       // Scan all vet visits (for admin purposes)
-      const scanCommand = new ScanCommand({
-        TableName: TABLE_NAME,
-        Limit: limit
-      });
-
-      const result = await docClient.send(scanCommand);
-      vetVisits = (result.Items as VetVisit[]) || [];
+      allVisits = await db.select().from(vetVisits);
     }
 
     // Apply additional filters
     if (visitType) {
-      vetVisits = vetVisits.filter(visit => visit.visitType === visitType);
+      allVisits = allVisits.filter((visit: any) => visit.visitType === visitType);
     }
 
     if (status) {
-      vetVisits = vetVisits.filter(visit => visit.status === status);
+      allVisits = allVisits.filter((visit: any) => visit.status === status);
     }
 
     // Sort by visit date (most recent first)
-    vetVisits.sort((a, b) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime());
+    allVisits.sort((a: any, b: any) => new Date(b.visitDate).getTime() - new Date(a.visitDate).getTime());
 
     // Calculate pagination
-    const total = vetVisits.length;
+    const total = allVisits.length;
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
@@ -86,7 +52,7 @@ export const handler = async (
     // Apply pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedVisits = vetVisits.slice(startIndex, endIndex);
+    const paginatedVisits = allVisits.slice(startIndex, endIndex);
 
     console.log(`Found ${total} vet visits, returning ${paginatedVisits.length}`);
 
@@ -111,7 +77,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error listing vet visits:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

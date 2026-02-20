@@ -1,71 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-  QueryCommand,
-} from '@aws-sdk/lib-dynamodb';
-
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
-const COMMENTS_TABLE = process.env.COMMENTS_TABLE_NAME || 'homeforpup-comments';
-
-interface CommentItem {
-  id: string;
-  postId: string;
-  authorId: string;
-  authorName: string;
-  content: string;
-  createdAt: string;
-}
-
-let tableVerified = false;
-
-async function ensureTableExists(): Promise<void> {
-  if (tableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: COMMENTS_TABLE }));
-    tableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: COMMENTS_TABLE,
-          KeySchema: [
-            { AttributeName: 'postId', KeyType: 'HASH' },
-            { AttributeName: 'id', KeyType: 'RANGE' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'postId', AttributeType: 'S' },
-            { AttributeName: 'id', AttributeType: 'S' },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${COMMENTS_TABLE} created successfully`);
-      tableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
+import { db, comments, eq, asc } from '@homeforpup/database';
 
 // GET /api/posts/[postId]/comments - Get comments for a post
 export async function GET(
@@ -85,33 +20,18 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
-    const lastKey = searchParams.get('lastKey');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    await ensureTableExists();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const queryParams: any = {
-      TableName: COMMENTS_TABLE,
-      KeyConditionExpression: 'postId = :postId',
-      ExpressionAttributeValues: {
-        ':postId': postId,
-      },
-      Limit: limit,
-      ScanIndexForward: true, // ascending by createdAt (id contains timestamp)
-    };
-
-    if (lastKey) {
-      queryParams.ExclusiveStartKey = JSON.parse(decodeURIComponent(lastKey));
-    }
-
-    const result = await dynamodb.send(new QueryCommand(queryParams));
+    const result = await db.select().from(comments)
+      .where(eq(comments.postId, postId))
+      .orderBy(asc(comments.createdAt))
+      .limit(limit)
+      .offset(offset);
 
     return NextResponse.json({
-      comments: result.Items || [],
-      lastKey: result.LastEvaluatedKey
-        ? encodeURIComponent(JSON.stringify(result.LastEvaluatedKey))
-        : null,
-      count: result.Count || 0,
+      comments: result,
+      lastKey: null,
+      count: result.length,
     });
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -154,25 +74,17 @@ export async function POST(
       );
     }
 
-    await ensureTableExists();
-
     const now = new Date().toISOString();
-    const commentItem: CommentItem = {
+    const commentItem = {
       id: `comment-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       postId,
       authorId: userId,
-      authorName:
-        clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
+      authorName: clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
       content: content.trim(),
       createdAt: now,
     };
 
-    await dynamodb.send(
-      new PutCommand({
-        TableName: COMMENTS_TABLE,
-        Item: commentItem,
-      })
-    );
+    await db.insert(comments).values(commentItem);
 
     return NextResponse.json({
       message: 'Comment created successfully',

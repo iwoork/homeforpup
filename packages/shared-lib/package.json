@@ -12,10 +12,8 @@
   },
   "dependencies": {
     "@homeforpup/shared-types": "*",
-    "@aws-sdk/client-dynamodb": "^3.891.0",
     "@aws-sdk/client-s3": "^3.891.0",
     "@aws-sdk/client-ses": "^3.896.0",
-    "@aws-sdk/lib-dynamodb": "^3.891.0",
     "@aws-sdk/s3-request-presigner": "^3.665.0",
     "next-auth": "^4.24.11",
     "jsonwebtoken": "^9.0.2",

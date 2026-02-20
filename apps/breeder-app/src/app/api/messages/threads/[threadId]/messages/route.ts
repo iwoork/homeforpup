@@ -1,53 +1,13 @@
 // src/app/api/messages/threads/[threadId]/messages/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, messages, messageThreads, eq, and, or, desc, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-    convertEmptyValues: false,
-    convertClassInstanceToMap: false,
-  },
-});
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE_NAME || 'puppy-platform-dev-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-message-threads';
-
-// Message interface matching DynamoDB structure
-interface MessageItem {
-  PK: string; // threadId
-  SK: string; // messageId
-  threadId: string;
-  senderId: string;
-  senderName: string;
-  receiverId: string;
-  receiverName: string;
-  subject: string;
-  content: string;
-  timestamp: string;
-  read: boolean;
-  messageType: string;
-  attachments?: any[];
-  GSI1PK: string; // senderId
-  GSI1SK: string; // timestamp
-  GSI2PK: string; // receiverId
-  GSI2SK: string; // timestamp
-}
 
 // Transform message data for frontend
-const transformMessage = (item: MessageItem) => {
+const transformMessage = (item: any) => {
   return {
-    id: item.SK,
+    id: item.id,
     threadId: item.threadId,
     senderId: item.senderId,
     senderName: item.senderName,
@@ -69,34 +29,30 @@ export async function GET(
   try {
     const routeParams = await params;
     const { threadId } = routeParams;
-    
+
     // Get authenticated user
     const { userId } = await auth();
-    
+
     if (!userId) {
       console.log('No valid session found for messages request');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Your session has expired. Please refresh the page to continue.',
         code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
-    
+
     console.log('Fetching messages for thread:', threadId, 'user:', userId.substring(0, 10) + '...');
 
-    // First, verify user has access to this thread by checking participant record
-    const threadAccessCommand = new GetCommand({
-      TableName: THREADS_TABLE,
-      Key: { PK: `${threadId}#${userId}` }
-    });
+    // First, verify user has access to this thread
+    const [thread] = await db.select().from(messageThreads).where(eq(messageThreads.id, threadId)).limit(1);
 
-    const threadAccessResult = await dynamodb.send(threadAccessCommand);
-    if (!threadAccessResult.Item) {
+    if (!thread) {
       console.log('User does not have access to thread:', threadId);
       return NextResponse.json({ error: 'Thread not found or access denied' }, { status: 403 });
     }
 
     // Verify user is actually a participant in the thread
-    const threadParticipants = threadAccessResult.Item.participants || [];
+    const threadParticipants = (thread.participants as string[]) || [];
     if (!threadParticipants.includes(userId)) {
       console.log('User is not a participant in thread:', threadId);
       return NextResponse.json({ error: 'Access denied - not a participant' }, { status: 403 });
@@ -107,27 +63,16 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Query messages for this thread
-    const queryParams = {
-      TableName: MESSAGES_TABLE,
-      KeyConditionExpression: 'PK = :threadId',
-      ExpressionAttributeValues: {
-        ':threadId': threadId
-      },
-      ScanIndexForward: false, // Most recent first
-      Limit: limit
-    };
+    const items = await db.select().from(messages)
+      .where(eq(messages.threadId, threadId))
+      .orderBy(desc(messages.timestamp))
+      .limit(limit);
 
-    console.log('DynamoDB Query params:', queryParams);
+    console.log('Raw messages results:', items.length);
 
-    const command = new QueryCommand(queryParams);
-    const result = await dynamodb.send(command);
-    const items = (result.Items as MessageItem[]) || [];
-
-    console.log('Raw DynamoDB messages results:', items.length);
-
-    // Additional security check: Filter messages to only include those where current user 
+    // Additional security check: Filter messages to only include those where current user
     // is either sender or receiver
-    const authorizedMessages = items.filter(item => 
+    const authorizedMessages = items.filter(item =>
       item.senderId === userId || item.receiverId === userId
     );
 
@@ -136,19 +81,19 @@ export async function GET(
     }
 
     // Transform messages for frontend
-    const messages = authorizedMessages.map(transformMessage);
+    const transformedMessages = authorizedMessages.map(transformMessage);
 
-    console.log('Transformed authorized messages:', messages.length);
+    console.log('Transformed authorized messages:', transformedMessages.length);
 
-    return NextResponse.json({ messages });
+    return NextResponse.json({ messages: transformedMessages });
 
   } catch (error) {
     console.error('Error fetching messages:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch messages',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

@@ -1,28 +1,6 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, dogs, kennels, breeders, eq, and, sql } from '@homeforpup/database';
 import { Dog, Kennel } from '@homeforpup/shared-types';
 import { PuppyWithKennel } from './components/PuppyCard';
-
-// Configure AWS SDK v3
-const createDynamoClient = () => {
-  const client = new DynamoDBClient({
-    region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
-
-  return DynamoDBDocumentClient.from(client, {
-    marshallOptions: {
-      removeUndefinedValues: true,
-    },
-  });
-};
-
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
-const BREEDERS_TABLE = process.env.BREEDERS_TABLE_NAME || 'homeforpup-breeders';
 
 export interface PuppyFilters {
   country?: string;
@@ -53,12 +31,6 @@ export interface PuppiesResponse {
 }
 
 export class PuppiesApiClient {
-  private dynamodb: DynamoDBDocumentClient;
-
-  constructor() {
-    this.dynamodb = createDynamoClient();
-  }
-
   async getAvailablePuppies(filters: PuppyFilters = {}): Promise<PuppiesResponse> {
     const {
       country,
@@ -71,158 +43,92 @@ export class PuppiesApiClient {
       limit = 12,
     } = filters;
 
-    console.log('Fetching available puppies with filters:', filters);
+    // Build conditions for dogs query
+    const conditions: any[] = [
+      eq(dogs.dogType, 'puppy'),
+      eq(dogs.breedingStatus, 'available'),
+    ];
 
-    // First, get all available puppies from the dogs table
-    const dogsParams: any = {
-      TableName: DOGS_TABLE,
-      FilterExpression: 'dogType = :dogType AND breedingStatus = :status',
-      ExpressionAttributeValues: {
-        ':dogType': 'puppy',
-        ':status': 'available',
-      },
-    };
+    if (breed) conditions.push(eq(dogs.breed, breed));
+    if (gender) conditions.push(eq(dogs.gender, gender));
 
-    // Add additional filters
-    const filterExpressions = ['dogType = :dogType', 'breedingStatus = :status'];
-    const expressionAttributeNames: Record<string, string> = {};
+    const allDogs = await db
+      .select()
+      .from(dogs)
+      .where(and(...conditions)) as Dog[];
 
-    if (breed) {
-      filterExpressions.push('breed = :breed');
-      dogsParams.ExpressionAttributeValues[':breed'] = breed;
-    }
-
-    if (gender) {
-      filterExpressions.push('gender = :gender');
-      dogsParams.ExpressionAttributeValues[':gender'] = gender;
-    }
-
-    dogsParams.FilterExpression = filterExpressions.join(' AND ');
-    if (Object.keys(expressionAttributeNames).length > 0) {
-      dogsParams.ExpressionAttributeNames = expressionAttributeNames;
-    }
-
-    console.log('Dogs query params:', JSON.stringify(dogsParams, null, 2));
-
-    const dogsResult = await this.dynamodb.send(new ScanCommand(dogsParams));
-    const dogs = (dogsResult.Items as Dog[]) || [];
-
-    console.log(`Found ${dogs.length} available puppies`);
-    
-    // If no real puppies found, fall back to generating from breeders (like the old system)
-    if (dogs.length === 0) {
-      console.log('No real puppies found in dogs table. Falling back to breeder-based puppy generation.');
+    if (allDogs.length === 0) {
       return this.generatePuppiesFromBreeders(filters);
     }
 
-    // Get unique kennel IDs from the dogs
-    const kennelIds = [...new Set(dogs.map(dog => dog.kennelId).filter(Boolean))] as string[];
-    
-    console.log(`Need to fetch ${kennelIds.length} kennels:`, kennelIds);
+    // Get unique kennel IDs
+    const kennelIds = [...new Set(allDogs.map(d => d.kennelId).filter(Boolean))] as string[];
 
-    // Fetch all kennels in parallel
-    const kennelPromises = kennelIds.map(async (kennelId) => {
-      try {
-        const kennelParams = {
-          TableName: KENNELS_TABLE,
-          Key: { id: kennelId },
-        };
-        const result = await this.dynamodb.send(new GetCommand(kennelParams));
-        return result.Item as Kennel;
-      } catch (error) {
-        console.error(`Error fetching kennel ${kennelId}:`, error);
-        return null;
-      }
-    });
+    // Fetch all kennels
+    let kennelList: Kennel[] = [];
+    if (kennelIds.length > 0) {
+      const { inArray } = await import('drizzle-orm');
+      kennelList = await db
+        .select()
+        .from(kennels)
+        .where(inArray(kennels.id, kennelIds)) as unknown as Kennel[];
+    }
 
-    const kennels = (await Promise.all(kennelPromises)).filter(Boolean) as Kennel[];
-    console.log(`Successfully fetched ${kennels.length} kennels`);
-
-    // Create a kennel lookup map
     const kennelMap = new Map<string, Kennel>();
-    kennels.forEach(kennel => {
-      if (kennel) {
-        kennelMap.set(kennel.id, kennel);
-      }
-    });
+    kennelList.forEach(k => kennelMap.set(k.id, k));
 
-    // Combine dogs with their kennel information
-    let puppiesWithKennels: PuppyWithKennel[] = dogs.map(dog => {
+    // Combine dogs with kennel info
+    let puppiesWithKennels: PuppyWithKennel[] = allDogs.map(dog => {
       const kennel = dog.kennelId ? kennelMap.get(dog.kennelId) : undefined;
-      
-      // Calculate age in weeks
       const birthDate = new Date(dog.birthDate);
       const now = new Date();
       const ageWeeks = Math.floor((now.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
-      // Extract profile photo from photoGallery if available
-      const profilePhoto = dog.photoGallery?.find((photo: any) => photo.isProfilePhoto)?.url;
-      const firstPhoto = dog.photoGallery?.[0]?.url;
+      const profilePhoto = (dog as any).photoGallery?.find((p: any) => p.isProfilePhoto)?.url;
+      const firstPhoto = (dog as any).photoGallery?.[0]?.url;
       const dogPhotoUrl = dog.photoUrl || profilePhoto || firstPhoto;
-      
+
       return {
         ...dog,
         kennel,
-        image: dogPhotoUrl || this.generateDogImage(parseInt(dog.id.slice(-3)), 0), // Fallback to generated image if no photo
-        photoUrl: dogPhotoUrl, // Ensure photoUrl is also set for compatibility
+        image: dogPhotoUrl || this.generateDogImage(parseInt(dog.id.slice(-3)), 0),
+        photoUrl: dogPhotoUrl,
         ageWeeks,
-        location: kennel?.address ? `${kennel.address.city}, ${kennel.address.state}` : 'Location not specified',
-        country: kennel?.address?.country || 'Country not specified',
+        location: kennel?.address ? `${(kennel.address as any).city}, ${(kennel.address as any).state}` : 'Location not specified',
+        country: (kennel?.address as any)?.country || 'Country not specified',
       };
     });
 
     // Apply kennel-based filters
     if (country) {
-      puppiesWithKennels = puppiesWithKennels.filter(puppy => 
-        puppy.kennel?.address?.country?.toLowerCase() === country.toLowerCase()
+      puppiesWithKennels = puppiesWithKennels.filter(p =>
+        (p.kennel?.address as any)?.country?.toLowerCase() === country.toLowerCase()
       );
     }
-
     if (state) {
-      puppiesWithKennels = puppiesWithKennels.filter(puppy => 
-        puppy.kennel?.address?.state?.toLowerCase() === state.toLowerCase()
+      puppiesWithKennels = puppiesWithKennels.filter(p =>
+        (p.kennel?.address as any)?.state?.toLowerCase() === state.toLowerCase()
       );
     }
-
     if (verified) {
-      puppiesWithKennels = puppiesWithKennels.filter(puppy => 
-        puppy.kennel?.isActive === true
+      puppiesWithKennels = puppiesWithKennels.filter(p =>
+        (p.kennel as any)?.isActive === true
       );
     }
 
-
-    // Sort by creation date (newest first)
-    puppiesWithKennels.sort((a, b) => 
+    puppiesWithKennels.sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    // Calculate pagination
     const totalCount = puppiesWithKennels.length;
     const totalPages = Math.ceil(totalCount / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedPuppies = puppiesWithKennels.slice(startIndex, endIndex);
 
-    // Extract filter options from all puppies (before pagination)
-    const availableCountries = [...new Set(puppiesWithKennels
-      .map(p => p.kennel?.address?.country)
-      .filter((country): country is string => Boolean(country))
-    )].sort();
-    
-    const availableStates = [...new Set(puppiesWithKennels
-      .map(p => p.kennel?.address?.state)
-      .filter((state): state is string => Boolean(state))
-    )].sort();
-    
-    const availableBreeds = [...new Set(puppiesWithKennels
-      .map(p => p.breed)
-      .filter((breed): breed is string => Boolean(breed))
-    )].sort();
-
-    // Calculate stats
-    const totalPuppies = puppiesWithKennels.length;
-
-    console.log(`Returning ${paginatedPuppies.length} puppies for page ${page} of ${totalPages}`);
+    const availableCountries = [...new Set(puppiesWithKennels.map(p => (p.kennel?.address as any)?.country).filter(Boolean))].sort();
+    const availableStates = [...new Set(puppiesWithKennels.map(p => (p.kennel?.address as any)?.state).filter(Boolean))].sort();
+    const availableBreeds = [...new Set(puppiesWithKennels.map(p => p.breed).filter(Boolean))].sort();
 
     return {
       puppies: paginatedPuppies,
@@ -231,110 +137,40 @@ export class PuppiesApiClient {
       page,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-      filters: {
-        availableStates,
-        availableBreeds,
-        availableCountries,
-      },
-      stats: {
-        totalPuppies: totalCount,
-      },
+      filters: { availableStates, availableBreeds, availableCountries },
+      stats: { totalPuppies: totalCount },
     };
   }
 
-  // Fallback method: Generate puppies from breeders (like the old system)
   async generatePuppiesFromBreeders(filters: PuppyFilters = {}): Promise<PuppiesResponse> {
-    const {
-      country,
-      state,
-      breed,
-      gender,
-      shipping = false,
-      verified = false,
-      page = 1,
-      limit = 12,
-    } = filters;
+    const { country, state, breed, gender, shipping = false, verified = false, page = 1, limit = 12 } = filters;
 
-    console.log('Generating puppies from breeders with filters:', filters);
+    const conditions: any[] = [sql`${breeders.availablePuppies} > 0`];
+    if (country) conditions.push(eq(breeders.country, country));
+    if (state) conditions.push(eq(breeders.state, state));
+    if (breed) conditions.push(sql`${breeders.breeds}::jsonb @> ${JSON.stringify([breed])}::jsonb`);
+    if (verified) conditions.push(eq(breeders.verified, 'True'));
 
-    // Build DynamoDB query parameters for breeders
-    const params: any = {
-      TableName: BREEDERS_TABLE,
-      FilterExpression: 'available_puppies > :zero',
-      ExpressionAttributeValues: {
-        ':zero': 0,
-      },
-    };
+    const { and: andOp } = await import('drizzle-orm');
+    const allBreeders = await db
+      .select()
+      .from(breeders)
+      .where(andOp(...conditions));
 
-    const filterExpressions = ['available_puppies > :zero'];
+    let puppiesList = this.generatePuppiesFromBreedersData(allBreeders as any[]);
 
-    // Add country filter
-    if (country) {
-      filterExpressions.push('country = :country');
-      params.ExpressionAttributeValues[':country'] = country;
-    }
+    if (gender) puppiesList = puppiesList.filter(p => p.gender === gender);
 
-    // Add state filter
-    if (state) {
-      filterExpressions.push('#state = :state');
-      params.ExpressionAttributeNames = { '#state': 'state' };
-      params.ExpressionAttributeValues[':state'] = state;
-    }
+    puppiesList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Add breed filter
-    if (breed) {
-      filterExpressions.push('contains(breeds, :breed)');
-      params.ExpressionAttributeValues[':breed'] = breed;
-    }
-
-    // Add verified filter
-    if (verified) {
-      filterExpressions.push('#verified = :verified');
-      params.ExpressionAttributeNames = { ...params.ExpressionAttributeNames, '#verified': 'verified' };
-      params.ExpressionAttributeValues[':verified'] = 'True';
-    }
-
-    // Add shipping filter
-    if (shipping) {
-      filterExpressions.push('#shipping = :shipping');
-      params.ExpressionAttributeNames = { ...params.ExpressionAttributeNames, '#shipping': 'shipping' };
-      params.ExpressionAttributeValues[':shipping'] = true;
-    }
-
-    params.FilterExpression = filterExpressions.join(' AND ');
-
-    console.log('Breeders query params:', JSON.stringify(params, null, 2));
-
-    // Scan breeders
-    const result = await this.dynamodb.send(new ScanCommand(params));
-    const breeders = result.Items || [];
-
-    console.log(`Found ${breeders.length} breeders with available puppies`);
-
-    // Generate puppies from breeders
-    let puppies = this.generatePuppiesFromBreedersData(breeders);
-
-    // Apply additional filters
-    if (gender) {
-      puppies = puppies.filter(p => p.gender === gender);
-    }
-
-    // Sort by creation date (newest first)
-    puppies.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // Pagination
-    const totalCount = puppies.length;
+    const totalCount = puppiesList.length;
     const totalPages = Math.ceil(totalCount / limit);
     const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedPuppies = puppies.slice(startIndex, endIndex);
+    const paginatedPuppies = puppiesList.slice(startIndex, startIndex + limit);
 
-    // Extract filter options
-    const availableStates = [...new Set(breeders.map((b: any) => b.state))].sort();
-    const availableBreeds = [...new Set(breeders.flatMap((b: any) => b.breeds))].sort();
-    const availableCountries = [...new Set(breeders.map((b: any) => b.country))].sort();
-
-    console.log(`Returning ${paginatedPuppies.length} generated puppies for page ${page} of ${totalPages}`);
+    const availableStates = [...new Set(allBreeders.map((b: any) => b.state))].sort();
+    const availableBreeds = [...new Set(allBreeders.flatMap((b: any) => (b.breeds as string[]) || []))].sort();
+    const availableCountries = [...new Set(allBreeders.map((b: any) => b.country))].sort();
 
     return {
       puppies: paginatedPuppies,
@@ -343,44 +179,28 @@ export class PuppiesApiClient {
       page,
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
-      filters: {
-        availableStates,
-        availableBreeds,
-        availableCountries,
-      },
-      stats: {
-        totalPuppies: totalCount,
-      },
+      filters: { availableStates, availableBreeds, availableCountries },
+      stats: { totalPuppies: totalCount },
     };
   }
 
-  // Helper method to generate puppies from breeder data
-  private generatePuppiesFromBreedersData(breeders: any[]): PuppyWithKennel[] {
-    const puppies: PuppyWithKennel[] = [];
-    
-    breeders.forEach((breeder, index) => {
-      if (breeder.available_puppies > 0) {
-        const puppyCount = Math.min(breeder.available_puppies, 5); // Max 5 puppies per breeder
-        
+  private generatePuppiesFromBreedersData(breedersList: any[]): PuppyWithKennel[] {
+    const puppiesList: PuppyWithKennel[] = [];
+    breedersList.forEach((breeder, _index) => {
+      if (breeder.availablePuppies > 0) {
+        const puppyCount = Math.min(breeder.availablePuppies, 5);
         for (let i = 0; i < puppyCount; i++) {
           const gender = Math.random() > 0.5 ? 'male' : 'female';
-          const ageWeeks = Math.floor(Math.random() * 12) + 8; // 8-20 weeks
+          const ageWeeks = Math.floor(Math.random() * 12) + 8;
           const birthDate = new Date();
           birthDate.setDate(birthDate.getDate() - (ageWeeks * 7));
-          
-          // Create a mock kennel from breeder data
+
           const mockKennel: Kennel = {
             id: `kennel-${breeder.id}`,
             ownerId: breeder.id.toString(),
-            name: breeder.business_name || breeder.name,
-            description: `Professional kennel specializing in ${breeder.breeds?.join(', ')}`,
-            address: {
-              street: breeder.address || '',
-              city: breeder.city || '',
-              state: breeder.state || '',
-              zipCode: breeder.zip_code || '',
-              country: breeder.country || '',
-            },
+            name: breeder.businessName || breeder.name,
+            description: `Professional kennel specializing in ${(breeder.breeds as string[])?.join(', ')}`,
+            address: { street: breeder.address || '', city: breeder.city || '', state: breeder.state || '', zipCode: breeder.zipCode || '', country: breeder.country || '' },
             phone: breeder.phone,
             email: breeder.email,
             website: breeder.website,
@@ -392,46 +212,39 @@ export class PuppiesApiClient {
             updatedAt: new Date().toISOString(),
           };
 
-          const puppy: PuppyWithKennel = {
+          puppiesList.push({
             id: `${breeder.id}-puppy-${i + 1}`,
             ownerId: breeder.id.toString(),
             kennelId: mockKennel.id,
-            name: this.generatePuppyName(gender),
-            breed: breeder.breeds?.[Math.floor(Math.random() * breeder.breeds.length)] || 'Mixed',
-            gender,
+            name: this.generatePuppyName(gender as 'male' | 'female'),
+            breed: (breeder.breeds as string[])?.[Math.floor(Math.random() * ((breeder.breeds as string[])?.length || 1))] || 'Mixed',
+            gender: gender as 'male' | 'female',
             birthDate: birthDate.toISOString(),
-            weight: Math.floor(Math.random() * 20) + 5, // 5-25 lbs
+            weight: Math.floor(Math.random() * 20) + 5,
             color: this.generatePuppyColor(),
-            description: `Beautiful ${breeder.breeds?.[0] || 'Mixed'} puppy from ${breeder.business_name || breeder.name}. Health tested and ready for a loving home.`,
+            description: `Beautiful ${(breeder.breeds as string[])?.[0] || 'Mixed'} puppy from ${breeder.businessName || breeder.name}. Health tested and ready for a loving home.`,
             breedingStatus: 'available' as const,
             healthStatus: 'excellent' as const,
             dogType: 'puppy' as const,
             healthTests: [],
-            photoUrl: this.generateDogImage(breeder.id, i),
+            photoUrl: this.generateDogImage(parseInt(breeder.id) || 0, i),
             createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
             updatedAt: new Date().toISOString(),
-            
-            // Additional fields for PuppyWithKennel
             kennel: mockKennel,
-            image: this.generateDogImage(breeder.id, i),
+            image: this.generateDogImage(parseInt(breeder.id) || 0, i),
             ageWeeks,
             location: `${breeder.city}, ${breeder.state}`,
             country: breeder.country,
-          };
-          
-          puppies.push(puppy);
+          } as any);
         }
       }
     });
-    
-    return puppies;
+    return puppiesList;
   }
 
-  // Helper methods for generating puppy data
   private generatePuppyName(gender: 'male' | 'female'): string {
     const maleNames = ['Max', 'Charlie', 'Cooper', 'Buddy', 'Rocky', 'Tucker', 'Jack', 'Bear', 'Duke', 'Zeus'];
     const femaleNames = ['Bella', 'Luna', 'Lucy', 'Daisy', 'Mia', 'Sophie', 'Ruby', 'Lola', 'Zoe', 'Molly'];
-    
     const names = gender === 'male' ? maleNames : femaleNames;
     return names[Math.floor(Math.random() * names.length)];
   }
@@ -442,11 +255,9 @@ export class PuppiesApiClient {
   }
 
   private generateDogImage(breederId: number, puppyIndex: number): string {
-    // Use placedog.net for reliable dog images
-    const imageId = (breederId * 10 + puppyIndex) % 1000; // Generate unique ID based on breeder and puppy
+    const imageId = (breederId * 10 + puppyIndex) % 1000;
     return `https://placedog.net/400/300?random=${imageId}`;
   }
 }
 
-// Create a singleton instance
 export const puppiesApiClient = new PuppiesApiClient();

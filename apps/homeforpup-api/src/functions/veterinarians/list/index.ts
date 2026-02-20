@@ -1,13 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, veterinarians, eq } from '../../../shared/dynamodb';
 import { Veterinarian } from '@homeforpup/shared-types';
 import { getUserIdFromEvent } from '../../../middleware/auth';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VETERINARIANS_TABLE || 'Veterinarians';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -37,32 +31,22 @@ export const handler = async (
     const limit = parseInt(queryParams.limit || '50');
     const isActive = queryParams.isActive;
 
-    // Query veterinarians for the authenticated user
-    const queryCommand = new QueryCommand({
-      TableName: TABLE_NAME,
-      IndexName: 'OwnerIdIndex', // Assuming we have a GSI on ownerId
-      KeyConditionExpression: 'ownerId = :ownerId',
-      ExpressionAttributeValues: {
-        ':ownerId': userId
-      },
-      ScanIndexForward: false, // Sort by creation date descending
-      Limit: limit
-    });
+    const db = getDb();
 
-    const result = await docClient.send(queryCommand);
-    let veterinarians = (result.Items as Veterinarian[]) || [];
+    // Query veterinarians for the authenticated user
+    let allVeterinarians = await db.select().from(veterinarians).where(eq(veterinarians.ownerId, userId));
 
     // Apply additional filters
     if (isActive !== undefined) {
       const activeFilter = isActive === 'true';
-      veterinarians = veterinarians.filter(vet => vet.isActive === activeFilter);
+      allVeterinarians = allVeterinarians.filter((vet: any) => vet.isActive === activeFilter);
     }
 
     // Sort by name
-    veterinarians.sort((a, b) => a.name.localeCompare(b.name));
+    allVeterinarians.sort((a: any, b: any) => a.name.localeCompare(b.name));
 
     // Calculate pagination
-    const total = veterinarians.length;
+    const total = allVeterinarians.length;
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
@@ -70,7 +54,7 @@ export const handler = async (
     // Apply pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedVeterinarians = veterinarians.slice(startIndex, endIndex);
+    const paginatedVeterinarians = allVeterinarians.slice(startIndex, endIndex);
 
     console.log(`Found ${total} veterinarians, returning ${paginatedVeterinarians.length}`);
 
@@ -95,7 +79,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error listing veterinarians:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

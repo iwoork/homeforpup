@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dogsApiClient } from '@homeforpup/shared-dogs';
+import { db, dogs, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
 // Debug endpoint to help troubleshoot dogs API issues
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
-    
+
     const debugInfo = {
       timestamp: new Date().toISOString(),
       authenticated: !!userId,
@@ -23,25 +23,31 @@ export async function GET(request: NextRequest) {
 
     // Test the dogs API with minimal options
     console.log('Debug: Testing dogs API for user:', userId);
-    
-    const dogsResult = await dogsApiClient.getDogs({
-      limit: 100 // Get more dogs to see if any exist
-    }, userId);
+
+    const allDogs = await db
+      .select()
+      .from(dogs)
+      .where(eq(dogs.ownerId, userId));
+
+    // Sort by updatedAt descending (mimics old default) and limit to 100
+    allDogs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    const limitedDogs = allDogs.slice(0, 100);
+    const total = allDogs.length;
 
     console.log('Debug: Dogs API result:', {
-      totalDogs: dogsResult.total,
-      returnedDogs: dogsResult.dogs.length,
-      firstDogId: dogsResult.dogs[0]?.id,
-      firstDogOwner: dogsResult.dogs[0]?.ownerId
+      totalDogs: total,
+      returnedDogs: limitedDogs.length,
+      firstDogId: limitedDogs[0]?.id,
+      firstDogOwner: limitedDogs[0]?.ownerId
     });
 
     return NextResponse.json({
       ...debugInfo,
       dogsApiResult: {
-        total: dogsResult.total,
-        count: dogsResult.count,
-        dogsReturned: dogsResult.dogs.length,
-        dogs: dogsResult.dogs.map(dog => ({
+        total,
+        count: limitedDogs.length,
+        dogsReturned: limitedDogs.length,
+        dogs: limitedDogs.map(dog => ({
           id: dog.id,
           name: dog.name,
           ownerId: dog.ownerId,

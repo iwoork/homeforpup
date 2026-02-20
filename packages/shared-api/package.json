@@ -11,8 +11,7 @@
   },
   "dependencies": {
     "@homeforpup/shared-types": "*",
-    "@aws-sdk/client-dynamodb": "^3.891.0",
-    "@aws-sdk/lib-dynamodb": "^3.891.0",
+    "@homeforpup/database": "*",
     "@aws-sdk/client-s3": "^3.891.0",
     "next": "15.5.9",
     "uuid": "^9.0.0"

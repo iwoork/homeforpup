@@ -1,10 +1,8 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand, PutCommand } from '../../../shared/dynamodb';
+import { getDb, litters, eq } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const LITTERS_TABLE = process.env.LITTERS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -22,20 +20,17 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
   }
 
   try {
+    const db = getDb();
+
     // Get existing litter
-    const getCommand = new GetCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id },
-    });
+    const [existing] = await db.select().from(litters).where(eq(litters.id, id)).limit(1);
 
-    const existingResult = await dynamodb.send(getCommand);
-
-    if (!existingResult.Item) {
+    if (!existing) {
       throw new ApiError('Litter not found', 404);
     }
 
     // Verify ownership
-    if (existingResult.Item.breederId !== userId) {
+    if (existing.breederId !== userId) {
       throw new ApiError('Not authorized to update this litter', 403);
     }
 
@@ -43,21 +38,16 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
     // Update litter object
     const updatedLitter = {
-      ...existingResult.Item,
+      ...existing,
       ...updateData,
       id, // Ensure ID doesn't change
-      breederId: existingResult.Item.breederId, // Ensure breederId doesn't change
-      createdAt: existingResult.Item.createdAt, // Preserve creation date
+      breederId: existing.breederId, // Ensure breederId doesn't change
+      createdAt: existing.createdAt, // Preserve creation date
       updatedAt: new Date().toISOString(),
     };
 
-    // Save to DynamoDB
-    const putCommand = new PutCommand({
-      TableName: LITTERS_TABLE,
-      Item: updatedLitter,
-    });
-
-    await dynamodb.send(putCommand);
+    // Save to database
+    await db.update(litters).set(updatedLitter).where(eq(litters.id, id));
 
     return successResponse({ litter: updatedLitter });
   } catch (error) {
@@ -74,4 +64,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

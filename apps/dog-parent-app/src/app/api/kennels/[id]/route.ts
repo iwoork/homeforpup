@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, kennels, dogs, litters, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(client);
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
-const LITTERS_TABLE = process.env.LITTERS_TABLE_NAME || 'homeforpup-litters';
 
 export async function GET(
   request: NextRequest,
@@ -23,19 +10,14 @@ export async function GET(
   try {
     const { id: kennelId } = await params;
 
-    // Get kennel by id (string UUID)
-    const kennelResult = await docClient.send(
-      new GetCommand({
-        TableName: KENNELS_TABLE,
-        Key: { id: kennelId },
-      })
-    );
+    // Get kennel by id
+    const [kennel] = await db.select().from(kennels)
+      .where(eq(kennels.id, kennelId))
+      .limit(1);
 
-    if (!kennelResult.Item) {
+    if (!kennel) {
       return NextResponse.json({ error: 'Kennel not found' }, { status: 404 });
     }
-
-    const kennel = kennelResult.Item as any;
 
     // Only show active kennels
     if (kennel.status !== 'active') {
@@ -43,75 +25,46 @@ export async function GET(
     }
 
     // Get dogs for this kennel
-    const dogsResult = await docClient.send(
-      new ScanCommand({
-        TableName: DOGS_TABLE,
-        FilterExpression: 'kennelId = :kennelId',
-        ExpressionAttributeValues: {
-          ':kennelId': kennelId,
-        },
-      })
-    );
-
-    const allDogs = (dogsResult.Items || []) as any[];
+    const allDogs = await db.select().from(dogs)
+      .where(eq(dogs.kennelId, kennelId));
 
     // Filter to parent dogs only (puppies are embedded in litters)
     const parentDogs = allDogs.filter(
-      (dog) => dog.type === 'parent' || dog.dogType === 'parent'
+      (dog: any) => dog.dogType === 'parent'
     );
 
     // Get litters for this kennel
-    const littersResult = await docClient.send(
-      new ScanCommand({
-        TableName: LITTERS_TABLE,
-        FilterExpression: 'kennelId = :kennelId',
-        ExpressionAttributeValues: {
-          ':kennelId': kennelId,
-        },
-      })
-    );
-
-    const litters = (littersResult.Items || []) as any[];
+    const littersList = await db.select().from(litters)
+      .where(eq(litters.kennelId, kennelId));
 
     // Calculate stats
     const stats = {
       totalDogs: parentDogs.length,
-      totalLitters: litters.length,
-      totalPuppies: litters.reduce(
-        (sum, litter) => sum + (litter.actualPuppyCount || litter.puppies?.length || 0),
+      totalLitters: littersList.length,
+      totalPuppies: littersList.reduce(
+        (sum: number, litter: any) => sum + (litter.actualPuppyCount || litter.puppies?.length || 0),
         0
       ),
       activeBreedingDogs: parentDogs.filter(
-        (dog) =>
+        (dog: any) =>
           dog.breeding?.isBreedingDog && dog.breeding?.breedingStatus === 'available'
       ).length,
     };
 
     // Strip sensitive fields from kennel
-    const { owners, managers, createdBy, ...safeKennel } = kennel;
+    const { owners, managers, createdBy, ...safeKennel } = kennel as any;
 
     // Strip sensitive fields from dogs
-    const safeDogs = parentDogs.map(({ ownerId, createdBy: _cb, ...rest }) => rest);
+    const safeDogs = parentDogs.map(({ ownerId, ...rest }: any) => rest);
 
     return NextResponse.json({
       kennel: safeKennel,
       dogs: safeDogs,
-      litters,
+      litters: littersList,
       stats,
     });
   } catch (error: any) {
     console.error('Error fetching kennel:', error);
-
-    if (
-      error.name === 'ResourceNotFoundException' ||
-      error.message?.includes('ResourceNotFoundException') ||
-      error.__type === 'com.amazonaws.dynamodb.v20120810#ResourceNotFoundException'
-    ) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 503 }
-      );
-    }
 
     return NextResponse.json(
       {

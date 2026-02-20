@@ -1,77 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
 import { auth } from '@clerk/nextjs/server';
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-  QueryCommand,
-} from '@aws-sdk/lib-dynamodb';
-
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
-const MILESTONES_TABLE = process.env.MILESTONES_TABLE_NAME || 'homeforpup-milestones';
+import { db, milestones, eq, asc } from '@homeforpup/database';
 
 const VALID_MILESTONE_TYPES = ['weight', 'health', 'training', 'social', 'first'] as const;
 type MilestoneType = typeof VALID_MILESTONE_TYPES[number];
-
-interface MilestoneItem {
-  id: string;
-  litterId: string;
-  breederId: string;
-  title: string;
-  description: string;
-  milestoneType: MilestoneType;
-  date: string;
-  photos: string[];
-  createdAt: string;
-}
-
-let tableVerified = false;
-
-async function ensureTableExists(): Promise<void> {
-  if (tableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: MILESTONES_TABLE }));
-    tableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: MILESTONES_TABLE,
-          KeySchema: [
-            { AttributeName: 'litterId', KeyType: 'HASH' },
-            { AttributeName: 'id', KeyType: 'RANGE' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'litterId', AttributeType: 'S' },
-            { AttributeName: 'id', AttributeType: 'S' },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${MILESTONES_TABLE} created successfully`);
-      tableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
 
 // GET /api/milestones?litterId=[id] - Get milestones for a litter sorted by date
 export async function GET(request: NextRequest) {
@@ -87,38 +19,18 @@ export async function GET(request: NextRequest) {
     }
 
     const limit = parseInt(searchParams.get('limit') || '50');
-    const lastKey = searchParams.get('lastKey');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    await ensureTableExists();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const params: any = {
-      TableName: MILESTONES_TABLE,
-      KeyConditionExpression: 'litterId = :litterId',
-      ExpressionAttributeValues: {
-        ':litterId': litterId,
-      },
-      Limit: limit,
-      ScanIndexForward: true,
-    };
-
-    if (lastKey) {
-      params.ExclusiveStartKey = JSON.parse(decodeURIComponent(lastKey));
-    }
-
-    const result = await dynamodb.send(new QueryCommand(params));
-
-    // Sort by date ascending for timeline display
-    const milestones = (result.Items || []).sort(
-      (a, b) => new Date(a.date as string).getTime() - new Date(b.date as string).getTime()
-    );
+    const result = await db.select().from(milestones)
+      .where(eq(milestones.litterId, litterId))
+      .orderBy(asc(milestones.date))
+      .limit(limit)
+      .offset(offset);
 
     return NextResponse.json({
-      milestones,
-      lastKey: result.LastEvaluatedKey
-        ? encodeURIComponent(JSON.stringify(result.LastEvaluatedKey))
-        : null,
-      count: milestones.length,
+      milestones: result,
+      lastKey: null,
+      count: result.length,
     });
   } catch (error) {
     console.error('Error fetching milestones:', error);
@@ -169,27 +81,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await ensureTableExists();
-
     const now = new Date().toISOString();
-    const milestoneItem: MilestoneItem = {
+    const milestoneItem = {
       id: `milestone-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       litterId: litterId.trim(),
-      breederId: String(breederId || ''),
+      type: (milestoneType || 'first') as MilestoneType,
       title: title.trim(),
       description: (description || '').trim(),
-      milestoneType: (milestoneType || 'first') as MilestoneType,
       date,
       photos: Array.isArray(photos) ? photos : [],
       createdAt: now,
     };
 
-    await dynamodb.send(
-      new PutCommand({
-        TableName: MILESTONES_TABLE,
-        Item: milestoneItem,
-      })
-    );
+    await db.insert(milestones).values(milestoneItem);
 
     return NextResponse.json({
       message: 'Milestone created successfully',

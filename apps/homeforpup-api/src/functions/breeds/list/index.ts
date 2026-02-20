@@ -1,9 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, ScanCommand } from '../../../shared/dynamodb';
+import { getDb, breedsSimple } from '../../../shared/dynamodb';
 import { successResponse } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
-
-const BREEDS_TABLE = process.env.BREEDS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const queryParams = event.queryStringParameters || {};
@@ -18,13 +16,10 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   } = queryParams;
 
   try {
-    // Scan all breeds (in production, use better indexing)
-    const command = new ScanCommand({
-      TableName: BREEDS_TABLE,
-    });
+    const db = getDb();
 
-    const result = await dynamodb.send(command);
-    let items = result.Items || [];
+    // Fetch all breeds
+    let items: any[] = await db.select().from(breedsSimple);
 
     // Apply filters
     if (search) {
@@ -35,11 +30,11 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     }
 
     if (category && category !== 'All') {
-      items = items.filter((item: any) => item.category === category);
+      items = items.filter((item: any) => item.breedGroup === category);
     }
 
     if (size && size !== 'All') {
-      items = items.filter((item: any) => item.size === size);
+      items = items.filter((item: any) => item.sizeCategory === size);
     }
 
     if (breedType && breedType !== 'All') {
@@ -77,4 +72,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

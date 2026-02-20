@@ -1,10 +1,8 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, ScanCommand, QueryCommand } from '../../../shared/dynamodb';
+import { getDb, litters, eq, and } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const LITTERS_TABLE = process.env.LITTERS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -15,59 +13,45 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     const params = event.queryStringParameters || {};
     const page = parseInt(params.page || '1');
     const limit = parseInt(params.limit || '20');
-    
+
     // Query parameters
     const breederId = params.breederId || userId; // Default to current user
     const breed = params.breed;
     const status = params.status;
     const search = params.search;
 
-    let command;
-    
-    // If querying by breederId, use Query for better performance
+    const db = getDb();
+
+    // Fetch litters (filter by breederId at query level when possible)
+    let allLitters: any[];
     if (breederId) {
-      const filterExpressions: string[] = [];
-      const expressionAttributeNames: Record<string, string> = {};
-      const expressionAttributeValues: Record<string, any> = {
-        ':breederId': breederId,
-      };
-
-      if (breed) {
-        filterExpressions.push('#breed = :breed');
-        expressionAttributeNames['#breed'] = 'breed';
-        expressionAttributeValues[':breed'] = breed;
-      }
-
-      if (status) {
-        filterExpressions.push('#status = :status');
-        expressionAttributeNames['#status'] = 'status';
-        expressionAttributeValues[':status'] = status;
-      }
-
-      if (search) {
-        filterExpressions.push('contains(#breed, :search) OR contains(description, :search)');
-        expressionAttributeNames['#breed'] = 'breed';
-        expressionAttributeValues[':search'] = search;
-      }
-
-      command = new ScanCommand({
-        TableName: LITTERS_TABLE,
-        FilterExpression: `breederId = :breederId${filterExpressions.length > 0 ? ' AND (' + filterExpressions.join(' OR ') + ')' : ''}`,
-        ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-        ExpressionAttributeValues: expressionAttributeValues,
-      });
+      allLitters = await db.select().from(litters).where(eq(litters.breederId, breederId));
     } else {
       // Scan all litters (admin use case)
-      command = new ScanCommand({
-        TableName: LITTERS_TABLE,
-      });
+      allLitters = await db.select().from(litters);
     }
 
-    const result = await dynamodb.send(command);
-    const litters = result.Items || [];
+    // Apply additional filters in-memory (matching original behavior)
+    let filteredLitters = allLitters;
+
+    if (breed) {
+      filteredLitters = filteredLitters.filter((l: any) => l.breed === breed);
+    }
+
+    if (status) {
+      filteredLitters = filteredLitters.filter((l: any) => l.status === status);
+    }
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredLitters = filteredLitters.filter((l: any) =>
+        l.breed?.toLowerCase().includes(searchLower) ||
+        l.description?.toLowerCase().includes(searchLower)
+      );
+    }
 
     // Sort by createdAt descending (newest first)
-    litters.sort((a: any, b: any) => {
+    filteredLitters.sort((a: any, b: any) => {
       const dateA = new Date(a.createdAt || 0).getTime();
       const dateB = new Date(b.createdAt || 0).getTime();
       return dateB - dateA;
@@ -76,8 +60,8 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     // Pagination
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedLitters = litters.slice(startIndex, endIndex);
-    const total = litters.length;
+    const paginatedLitters = filteredLitters.slice(startIndex, endIndex);
+    const total = filteredLitters.length;
 
     return successResponse({
       litters: paginatedLitters,
@@ -101,4 +85,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

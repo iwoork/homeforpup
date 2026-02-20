@@ -1,20 +1,8 @@
 // src/app/api/users/available/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq, ne, and, ilike, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,47 +20,8 @@ export async function GET(request: NextRequest) {
     const userType = searchParams.get('userType'); // 'breeder', 'dog-parent', 'both'
     const search = searchParams.get('search');
     const location = searchParams.get('location');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const startKeyParam = searchParams.get('startKey');
-
-    // Build scan parameters
-    const scanParams: any = {
-      TableName: USERS_TABLE,
-      FilterExpression: 'accountStatus = :activeStatus AND userId <> :currentUserId',
-      ExpressionAttributeValues: {
-        ':activeStatus': 'active',
-        ':currentUserId': currentUserId
-      },
-      Limit: Math.min(limit, 100) // Cap at 100 for performance
-    };
-
-    // Only add ExpressionAttributeNames if we actually need it
-    const attributeNames: Record<string, string> = {};
-
-    // Add user type filter if specified
-    if (userType && ['breeder', 'dog-parent', 'both'].includes(userType)) {
-      scanParams.FilterExpression += ' AND userType = :userType';
-      scanParams.ExpressionAttributeValues[':userType'] = userType;
-    }
-
-    // Add search filter if specified (search in name, displayName, email)
-    if (search && search.trim()) {
-      scanParams.FilterExpression += ' AND (contains(#name, :search) OR contains(displayName, :search) OR contains(email, :search))';
-      attributeNames['#name'] = 'name';
-      scanParams.ExpressionAttributeValues[':search'] = search.trim();
-    }
-
-    // Add location filter if specified
-    if (location && location.trim()) {
-      scanParams.FilterExpression += ' AND contains(#location, :location)';
-      attributeNames['#location'] = 'location';
-      scanParams.ExpressionAttributeValues[':location'] = location.trim();
-    }
-
-    // Only add ExpressionAttributeNames if we have attributes to map
-    if (Object.keys(attributeNames).length > 0) {
-      scanParams.ExpressionAttributeNames = attributeNames;
-    }
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100); // Cap at 100 for performance
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     console.log('Scanning users with params:', {
       userType,
@@ -81,21 +30,35 @@ export async function GET(request: NextRequest) {
       limit
     });
 
-    // Execute scan
-    if (startKeyParam) {
-      try {
-        const decoded = Buffer.from(startKeyParam, 'base64').toString('utf-8');
-        const exclusiveStartKey = JSON.parse(decoded);
-        if (exclusiveStartKey && typeof exclusiveStartKey === 'object') {
-          (scanParams as any).ExclusiveStartKey = exclusiveStartKey;
-        }
-      } catch {
-        console.warn('Invalid startKey provided, ignoring.');
-      }
+    // Build where conditions
+    const conditions: any[] = [
+      eq(profiles.accountStatus, 'active'),
+      ne(profiles.userId, currentUserId)
+    ];
+
+    // Add user type filter if specified
+    if (userType && ['breeder', 'dog-parent', 'both'].includes(userType)) {
+      conditions.push(eq(profiles.userType, userType));
     }
 
-    const result = await dynamodb.send(new ScanCommand(scanParams));
-    const users = result.Items || [];
+    // Add search filter if specified (search in name, displayName, email)
+    if (search && search.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      conditions.push(
+        sql`(${profiles.name} ILIKE ${searchTerm} OR ${profiles.displayName} ILIKE ${searchTerm} OR ${profiles.email} ILIKE ${searchTerm})`
+      );
+    }
+
+    // Add location filter if specified
+    if (location && location.trim()) {
+      conditions.push(ilike(profiles.location, `%${location.trim()}%`));
+    }
+
+    // Execute query
+    const users = await db.select().from(profiles)
+      .where(and(...conditions))
+      .limit(limit)
+      .offset(offset);
 
     console.log(`Found ${users.length} available users`);
 
@@ -104,41 +67,40 @@ export async function GET(request: NextRequest) {
       userId: user.userId,
       name: user.displayName || user.name || 'Unknown User',
       displayName: user.displayName,
-      email: user.preferences?.privacy?.showEmail ? user.email : undefined,
+      email: (user.preferences as any)?.privacy?.showEmail ? user.email : undefined,
       userType: user.userType,
-      location: user.preferences?.privacy?.showLocation ? user.location : undefined,
+      location: (user.preferences as any)?.privacy?.showLocation ? user.location : undefined,
       profileImage: user.profileImage,
       verified: user.verified,
       // Include additional info that might be useful for messaging
       bio: user.bio,
       breederInfo: user.userType === 'breeder' || user.userType === 'both' ? {
-        kennelName: user.breederInfo?.kennelName,
-        specialties: user.breederInfo?.specialties,
-        experience: user.breederInfo?.experience
+        kennelName: (user.breederInfo as any)?.kennelName,
+        specialties: (user.breederInfo as any)?.specialties,
+        experience: (user.breederInfo as any)?.experience
       } : undefined
     })).sort((a, b) => {
       // Sort by name alphabetically
       return a.name.localeCompare(b.name);
     });
 
-    const nextKey = result.LastEvaluatedKey 
-      ? Buffer.from(JSON.stringify(result.LastEvaluatedKey), 'utf-8').toString('base64')
-      : null;
+    // Check if there are more results
+    const hasMore = users.length === limit;
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       users: availableUsers,
       total: availableUsers.length,
-      hasMore: Boolean(result.LastEvaluatedKey),
-      nextKey
+      hasMore,
+      nextKey: null
     });
 
   } catch (error) {
     console.error('Error fetching available users:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch available users',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

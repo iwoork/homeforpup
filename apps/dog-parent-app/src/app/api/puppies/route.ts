@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, breeders, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-// Initialize DynamoDB client
-const client = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-
-const BREEDERS_TABLE = process.env.BREEDERS_TABLE_NAME || 'homeforpup-breeders';
 
 // Interface for puppy with breeder info
 interface PuppyWithBreeder {
@@ -29,7 +16,7 @@ interface PuppyWithBreeder {
   state: string;
   city: string;
   breeder: {
-    id: number;
+    id: string;
     name: string;
     businessName: string;
     rating: number;
@@ -56,33 +43,33 @@ interface PuppyWithBreeder {
 const transformBreederForPuppy = (breeder: any) => ({
   id: breeder.id,
   name: breeder.name,
-  businessName: breeder.business_name,
+  businessName: breeder.businessName,
   rating: breeder.rating,
-  reviewCount: breeder.review_count,
+  reviewCount: breeder.reviewCount,
   verified: breeder.verified === 'True',
   phone: breeder.phone,
   email: breeder.email,
   website: breeder.website,
   shipping: breeder.shipping,
-  pickupAvailable: breeder.pickup_available,
-  responseRate: breeder.response_rate,
-  avgResponseTime: breeder.avg_response_time,
+  pickupAvailable: breeder.pickupAvailable,
+  responseRate: breeder.responseRate,
+  avgResponseTime: breeder.avgResponseTime,
 });
 
 // Generate sample puppies based on breeders
-const generatePuppiesFromBreeders = (breeders: any[]): PuppyWithBreeder[] => {
+const generatePuppiesFromBreeders = (breedersList: any[]): PuppyWithBreeder[] => {
   const puppies: PuppyWithBreeder[] = [];
-  
-  breeders.forEach((breeder, index) => {
-    if (breeder.available_puppies > 0) {
-      const puppyCount = Math.min(breeder.available_puppies, 5); // Max 5 puppies per breeder
-      
+
+  breedersList.forEach((breeder) => {
+    if (breeder.availablePuppies > 0) {
+      const puppyCount = Math.min(breeder.availablePuppies, 5);
+      const breederBreeds = (breeder.breeds as string[]) || [];
+
       for (let i = 0; i < puppyCount; i++) {
-        const gender = Math.random() > 0.5 ? 'male' : 'female';
-        const ageWeeks = Math.floor(Math.random() * 12) + 8; // 8-20 weeks
-        
-        // Parse pricing range (e.g., "$1123-$3621" or "$2000")
-        let basePrice = 2000; // Default price
+        const gender: 'male' | 'female' = Math.random() > 0.5 ? 'male' : 'female';
+        const ageWeeks = Math.floor(Math.random() * 12) + 8;
+
+        let basePrice = 2000;
         if (breeder.pricing) {
           const priceMatch = breeder.pricing.match(/\$?(\d+)(?:-\$?(\d+))?/);
           if (priceMatch) {
@@ -91,61 +78,56 @@ const generatePuppiesFromBreeders = (breeders: any[]): PuppyWithBreeder[] => {
             basePrice = Math.floor(Math.random() * (maxPrice - minPrice + 1)) + minPrice;
           }
         }
-        
-        const price = basePrice;
-        
+
+        const breederId = parseInt(breeder.id) || 0;
+
         const puppy: PuppyWithBreeder = {
           id: `${breeder.id}-puppy-${i + 1}`,
           name: generatePuppyName(gender),
-          breed: breeder.breeds[Math.floor(Math.random() * breeder.breeds.length)],
+          breed: breederBreeds[Math.floor(Math.random() * breederBreeds.length)] || 'Mixed',
           gender,
           ageWeeks,
-          price,
+          price: basePrice,
           location: `${breeder.city}, ${breeder.state}`,
           country: breeder.country,
           state: breeder.state,
           city: breeder.city,
           breeder: transformBreederForPuppy(breeder),
-          image: generateDogImage(breeder.id, i),
+          image: generateDogImage(breederId, i),
           available: true,
-          description: `Beautiful ${breeder.breeds[0]} puppy from ${breeder.business_name}. Health tested and ready for a loving home.`,
+          description: `Beautiful ${breederBreeds[0] || 'breed'} puppy from ${breeder.businessName}. Health tested and ready for a loving home.`,
           healthStatus: 'excellent',
           registrationNumber: `REG-${breeder.id}-${i + 1}`,
           microchipNumber: `CHIP-${breeder.id}-${i + 1}`,
-          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 30 days
+          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
         };
-        
+
         puppies.push(puppy);
       }
     }
   });
-  
+
   return puppies;
 };
 
-// Generate random puppy names
 const generatePuppyName = (gender: 'male' | 'female'): string => {
   const maleNames = ['Max', 'Charlie', 'Cooper', 'Buddy', 'Rocky', 'Tucker', 'Jack', 'Bear', 'Duke', 'Zeus'];
   const femaleNames = ['Bella', 'Luna', 'Lucy', 'Daisy', 'Mia', 'Sophie', 'Ruby', 'Lola', 'Zoe', 'Molly'];
-  
   const names = gender === 'male' ? maleNames : femaleNames;
   return names[Math.floor(Math.random() * names.length)];
 };
 
-// Generate dog image URL
 const generateDogImage = (breederId: number, puppyIndex: number): string => {
-  // Use placedog.net for reliable dog images
-  const imageId = (breederId * 10 + puppyIndex) % 1000; // Generate unique ID based on breeder and puppy
+  const imageId = (breederId * 10 + puppyIndex) % 1000;
   return `https://placedog.net/400/300?random=${imageId}`;
 };
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // Filter parameters
+
     const breederId = searchParams.get('breederId');
-    const country = breederId ? searchParams.get('country') : (searchParams.get('country') || 'Canada'); // Skip country default when filtering by breeder
+    const country = breederId ? searchParams.get('country') : (searchParams.get('country') || 'Canada');
     const state = searchParams.get('state');
     const breed = searchParams.get('breed');
     const gender = searchParams.get('gender');
@@ -154,7 +136,6 @@ export async function GET(request: NextRequest) {
     const shipping = searchParams.get('shipping') === 'true';
     const verified = searchParams.get('verified') === 'true';
 
-    // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
 
@@ -162,74 +143,43 @@ export async function GET(request: NextRequest) {
       breederId, country, state, breed, gender, minPrice, maxPrice, shipping, verified, page, limit
     });
 
-    // Build DynamoDB query parameters for breeders
-    const params: any = {
-      TableName: BREEDERS_TABLE,
-      FilterExpression: '#active = :active AND available_puppies > :zero',
-      ExpressionAttributeNames: {
-        '#active': 'active'
-      },
-      ExpressionAttributeValues: {
-        ':active': 'True',
-        ':zero': 0
-      }
-    };
+    // Build where conditions
+    const conditions: string[] = [`${breeders.verified.name} = 'True'`, `${breeders.availablePuppies.name} > 0`];
 
-    // Add breederId filter
+    // Query breeders with filters
+    let query = db.select().from(breeders)
+      .where(sql`${breeders.verified} = 'True' AND ${breeders.availablePuppies} > 0`);
+
+    let breedersList = await query;
+
+    // Apply filters in memory (matching original behavior)
     if (breederId) {
-      params.FilterExpression += ' AND #id = :breederId';
-      params.ExpressionAttributeNames['#id'] = 'id';
-      params.ExpressionAttributeValues[':breederId'] = parseInt(breederId);
+      breedersList = breedersList.filter(b => String(b.id) === breederId);
     }
-
-    // Add country filter
     if (country) {
-      params.FilterExpression += ' AND #country = :country';
-      params.ExpressionAttributeNames['#country'] = 'country';
-      params.ExpressionAttributeValues[':country'] = country;
+      breedersList = breedersList.filter(b => b.country === country);
     }
-
-    // Add state filter
     if (state) {
-      params.FilterExpression += ' AND #state = :state';
-      params.ExpressionAttributeNames['#state'] = 'state';
-      params.ExpressionAttributeValues[':state'] = state;
+      breedersList = breedersList.filter(b => b.state === state);
     }
-
-    // Add breed filter
     if (breed) {
-      params.FilterExpression += ' AND contains(#breeds, :breed)';
-      params.ExpressionAttributeNames['#breeds'] = 'breeds';
-      params.ExpressionAttributeValues[':breed'] = breed;
+      breedersList = breedersList.filter(b => ((b.breeds as string[]) || []).some(br => br.toLowerCase().includes(breed.toLowerCase())));
     }
-
-    // Add verified filter
     if (verified) {
-      params.FilterExpression += ' AND #verified = :verified';
-      params.ExpressionAttributeNames['#verified'] = 'verified';
-      params.ExpressionAttributeValues[':verified'] = 'True';
+      breedersList = breedersList.filter(b => b.verified === 'True');
     }
-
-    // Add shipping filter
     if (shipping) {
-      params.FilterExpression += ' AND #shipping = :shipping';
-      params.ExpressionAttributeNames['#shipping'] = 'shipping';
-      params.ExpressionAttributeValues[':shipping'] = true;
+      breedersList = breedersList.filter(b => b.shipping === true);
     }
-
-    // Scan breeders
-    const result = await dynamodb.send(new ScanCommand(params));
-    const breeders = result.Items || [];
 
     // Generate puppies from breeders
-    let puppies = generatePuppiesFromBreeders(breeders);
+    let puppies = generatePuppiesFromBreeders(breedersList);
 
     // Apply additional filters
     if (gender) {
       puppies = puppies.filter(p => p.gender === gender);
     }
 
-    // Apply price filter
     puppies = puppies.filter(p => p.price >= minPrice && p.price <= maxPrice);
 
     // Sort by creation date (newest first)
@@ -243,9 +193,9 @@ export async function GET(request: NextRequest) {
     const paginatedPuppies = puppies.slice(startIndex, endIndex);
 
     // Extract filter options
-    const availableStates = [...new Set(breeders.map(b => b.state))].sort();
-    const availableBreeds = [...new Set(breeders.flatMap(b => b.breeds))].sort();
-    const availableCountries = [...new Set(breeders.map(b => b.country))].sort();
+    const availableStates = [...new Set(breedersList.map(b => b.state).filter(Boolean))].sort() as string[];
+    const availableBreeds = [...new Set(breedersList.flatMap(b => (b.breeds as string[]) || []))].sort();
+    const availableCountries = [...new Set(breedersList.map(b => b.country).filter(Boolean))].sort() as string[];
 
     return NextResponse.json({
       puppies: paginatedPuppies,
@@ -263,32 +213,20 @@ export async function GET(request: NextRequest) {
         availableBreeds,
         availableCountries,
         averagePrice: Math.round(puppies.reduce((sum, p) => sum + p.price, 0) / puppies.length) || 0,
-        verifiedCount: breeders.filter(b => b.verified === 'True').length
+        verifiedCount: breedersList.filter(b => b.verified === 'True').length
       },
       stats: {
         totalPuppies: totalCount,
         averageAge: Math.round(puppies.reduce((sum, p) => sum + p.ageWeeks, 0) / puppies.length) || 0,
-        shippingAvailable: breeders.filter(b => b.shipping).length,
-        verifiedBreeders: breeders.filter(b => b.verified === 'True').length
+        shippingAvailable: breedersList.filter(b => b.shipping).length,
+        verifiedBreeders: breedersList.filter(b => b.verified === 'True').length
       }
     });
 
   } catch (error: any) {
     console.error('Error fetching puppies:', error);
-    
-    // Check if the table doesn't exist
-    if (error.name === 'ResourceNotFoundException' || 
-        error.message?.includes('ResourceNotFoundException') ||
-        error.__type === 'com.amazonaws.dynamodb.v20120810#ResourceNotFoundException') {
-      console.error(`DynamoDB table "${BREEDERS_TABLE}" not found. Please create it first.`);
-      return NextResponse.json({ 
-        error: 'Breeders table not found',
-        message: `The DynamoDB table "${BREEDERS_TABLE}" does not exist. Please run the setup script to create it: node scripts/setup-dynamodb-tables.js`,
-        tableName: BREEDERS_TABLE
-      }, { status: 503 }); // 503 Service Unavailable
-    }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       error: 'Failed to fetch puppies',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
     }, { status: 500 });

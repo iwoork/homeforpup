@@ -1,63 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
-import {
-  DynamoDBDocumentClient,
-  QueryCommand,
-  PutCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { db, contracts, eq, and, desc } from '@homeforpup/database';
 import { v4 as uuidv4 } from 'uuid';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
-const CONTRACTS_TABLE = process.env.CONTRACTS_TABLE_NAME || 'homeforpup-contracts';
-
-let tableVerified = false;
-
-async function ensureTableExists(): Promise<void> {
-  if (tableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: CONTRACTS_TABLE }));
-    tableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: CONTRACTS_TABLE,
-          KeySchema: [
-            { AttributeName: 'breederId', KeyType: 'HASH' },
-            { AttributeName: 'id', KeyType: 'RANGE' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'breederId', AttributeType: 'S' },
-            { AttributeName: 'id', AttributeType: 'S' },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${CONTRACTS_TABLE} created successfully`);
-      tableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
 
 // GET /api/contracts?breederId=[id] - Get contracts for a breeder
 export async function GET(request: NextRequest) {
@@ -72,23 +17,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await ensureTableExists();
+    const result = await db.select().from(contracts)
+      .where(eq(contracts.breederId, breederId))
+      .orderBy(desc(contracts.createdAt));
 
-    const result = await dynamodb.send(
-      new QueryCommand({
-        TableName: CONTRACTS_TABLE,
-        KeyConditionExpression: 'breederId = :breederId',
-        ExpressionAttributeValues: {
-          ':breederId': breederId,
-        },
-      })
-    );
-
-    const contracts = (result.Items || []).sort(
-      (a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()
-    );
-
-    return NextResponse.json({ contracts });
+    return NextResponse.json({ contracts: result });
   } catch (error) {
     console.error('Error fetching contracts:', error);
     return NextResponse.json(
@@ -115,8 +48,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await ensureTableExists();
-
     const now = new Date().toISOString();
 
     const contract = {
@@ -124,24 +55,17 @@ export async function POST(request: NextRequest) {
       breederId: userId,
       buyerName: body.buyerName,
       buyerEmail: body.buyerEmail,
-      litterId: body.litterId,
-      puppyId: body.puppyId,
+      puppyId: body.puppyId || null,
       status: body.status || 'draft',
-      contractType: body.contractType || 'puppy_sale',
-      totalAmount: body.totalAmount,
-      depositAmount: body.depositAmount,
+      amount: body.totalAmount || null,
+      depositAmount: body.depositAmount || null,
       depositPaid: body.depositPaid || false,
-      terms: body.terms,
+      terms: body.terms || null,
       createdAt: now,
       updatedAt: now,
     };
 
-    await dynamodb.send(
-      new PutCommand({
-        TableName: CONTRACTS_TABLE,
-        Item: contract,
-      })
-    );
+    await db.insert(contracts).values(contract);
 
     return NextResponse.json({ contract }, { status: 201 });
   } catch (error) {

@@ -1,37 +1,14 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq, sql } from '@homeforpup/database';
 import { SubscriptionTier } from '@homeforpup/shared-types';
 
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: { removeUndefinedValues: true },
-});
-
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
-
 export async function getProfileByUserId(userId: string) {
-  const result = await dynamodb.send(new GetCommand({
-    TableName: USERS_TABLE,
-    Key: { userId },
-  }));
-  return result.Item || null;
+  const [result] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
+  return result || null;
 }
 
 export async function getProfileByStripeCustomerId(stripeCustomerId: string) {
-  const result = await dynamodb.send(new ScanCommand({
-    TableName: USERS_TABLE,
-    FilterExpression: 'stripeCustomerId = :cid',
-    ExpressionAttributeValues: { ':cid': stripeCustomerId },
-    Limit: 1,
-  }));
-  return result.Items?.[0] || null;
+  const [result] = await db.select().from(profiles).where(eq(profiles.stripeCustomerId, stripeCustomerId)).limit(1);
+  return result || null;
 }
 
 export async function updateSubscription(
@@ -51,16 +28,19 @@ export async function updateSubscription(
     throw new Error(`Profile not found for userId: ${userId}`);
   }
 
-  const updatedProfile = {
-    ...existing,
-    ...updates,
+  const updateData: Record<string, any> = {
     updatedAt: new Date().toISOString(),
   };
 
-  await dynamodb.send(new PutCommand({
-    TableName: USERS_TABLE,
-    Item: updatedProfile,
-  }));
+  if (updates.subscriptionPlan !== undefined) updateData.subscriptionPlan = updates.subscriptionPlan;
+  if (updates.subscriptionStatus !== undefined) updateData.subscriptionStatus = updates.subscriptionStatus;
+  if (updates.stripeCustomerId !== undefined) updateData.stripeCustomerId = updates.stripeCustomerId;
+  if (updates.stripeSubscriptionId !== undefined) updateData.stripeSubscriptionId = updates.stripeSubscriptionId;
+  if (updates.isPremium !== undefined) updateData.isPremium = updates.isPremium;
+  if (updates.subscriptionStartDate !== undefined) updateData.subscriptionStartDate = updates.subscriptionStartDate;
+  if (updates.subscriptionEndDate !== undefined) updateData.subscriptionEndDate = updates.subscriptionEndDate;
+
+  const [updatedProfile] = await db.update(profiles).set(updateData).where(eq(profiles.userId, userId)).returning();
 
   return updatedProfile;
 }

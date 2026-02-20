@@ -1,10 +1,8 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand, DeleteCommand } from '../../../shared/dynamodb';
+import { getDb, litters, eq } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const LITTERS_TABLE = process.env.LITTERS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -18,30 +16,22 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
   }
 
   try {
+    const db = getDb();
+
     // Get existing litter to verify ownership
-    const getCommand = new GetCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id },
-    });
+    const [existing] = await db.select().from(litters).where(eq(litters.id, id)).limit(1);
 
-    const result = await dynamodb.send(getCommand);
-
-    if (!result.Item) {
+    if (!existing) {
       throw new ApiError('Litter not found', 404);
     }
 
     // Verify ownership
-    if (result.Item.breederId !== userId) {
+    if (existing.breederId !== userId) {
       throw new ApiError('Not authorized to delete this litter', 403);
     }
 
     // Delete the litter
-    const deleteCommand = new DeleteCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id },
-    });
-
-    await dynamodb.send(deleteCommand);
+    await db.delete(litters).where(eq(litters.id, id));
 
     return successResponse({ message: 'Litter deleted successfully' });
   } catch (error) {
@@ -55,4 +45,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

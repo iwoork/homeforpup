@@ -1,63 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
 import { auth } from '@clerk/nextjs/server';
-import {
-  DynamoDBDocumentClient,
-  UpdateCommand,
-  DeleteCommand,
-  GetCommand,
-} from '@aws-sdk/lib-dynamodb';
-
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
-const WAITLIST_TABLE = process.env.WAITLIST_TABLE_NAME || 'homeforpup-waitlist';
-
-let tableVerified = false;
-
-async function ensureTableExists(): Promise<void> {
-  if (tableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: WAITLIST_TABLE }));
-    tableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: WAITLIST_TABLE,
-          KeySchema: [
-            { AttributeName: 'litterId', KeyType: 'HASH' },
-            { AttributeName: 'id', KeyType: 'RANGE' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'litterId', AttributeType: 'S' },
-            { AttributeName: 'id', AttributeType: 'S' },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${WAITLIST_TABLE} created successfully`);
-      tableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
+import { db, waitlist, eq } from '@homeforpup/database';
 
 // PUT /api/litters/[litterId]/waitlist/[entryId] - Update a waitlist entry
 export async function PUT(
@@ -73,43 +16,33 @@ export async function PUT(
     const { litterId, entryId } = await context.params;
     const body = await request.json();
 
-    await ensureTableExists();
-
-    // Build update expression dynamically
-    let updateExpression = 'SET updatedAt = :updatedAt';
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, unknown> = {
-      ':updatedAt': new Date().toISOString(),
+    // Build update object dynamically
+    const updates: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
     };
 
     const fields = [
-      'buyerName', 'buyerEmail', 'buyerPhone', 'position',
-      'status', 'depositAmount', 'depositPaid', 'genderPreference',
-      'colorPreference', 'notes',
+      'userName', 'userEmail', 'position',
+      'status', 'notes',
     ];
+
+    // Map legacy field names to schema fields
+    if (body.buyerName !== undefined) updates.userName = body.buyerName;
+    if (body.buyerEmail !== undefined) updates.userEmail = body.buyerEmail;
+    if (body.buyerPhone !== undefined) updates.notes = body.buyerPhone; // Store in notes if no dedicated field
 
     fields.forEach(field => {
       if (body[field] !== undefined) {
-        updateExpression += `, #${field} = :${field}`;
-        expressionAttributeNames[`#${field}`] = field;
-        expressionAttributeValues[`:${field}`] = body[field];
+        updates[field] = body[field];
       }
     });
 
-    const result = await dynamodb.send(
-      new UpdateCommand({
-        TableName: WAITLIST_TABLE,
-        Key: { litterId, id: entryId },
-        UpdateExpression: updateExpression,
-        ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0
-          ? expressionAttributeNames
-          : undefined,
-        ExpressionAttributeValues: expressionAttributeValues,
-        ReturnValues: 'ALL_NEW',
-      })
-    );
+    const [updated] = await db.update(waitlist)
+      .set(updates)
+      .where(eq(waitlist.id, entryId))
+      .returning();
 
-    return NextResponse.json({ entry: result.Attributes });
+    return NextResponse.json({ entry: updated });
   } catch (error) {
     console.error('Error updating waitlist entry:', error);
     return NextResponse.json(
@@ -132,29 +65,19 @@ export async function DELETE(
 
     const { litterId, entryId } = await context.params;
 
-    await ensureTableExists();
-
     // Verify the entry exists
-    const existing = await dynamodb.send(
-      new GetCommand({
-        TableName: WAITLIST_TABLE,
-        Key: { litterId, id: entryId },
-      })
-    );
+    const [existing] = await db.select().from(waitlist)
+      .where(eq(waitlist.id, entryId))
+      .limit(1);
 
-    if (!existing.Item) {
+    if (!existing) {
       return NextResponse.json(
         { error: 'Waitlist entry not found' },
         { status: 404 }
       );
     }
 
-    await dynamodb.send(
-      new DeleteCommand({
-        TableName: WAITLIST_TABLE,
-        Key: { litterId, id: entryId },
-      })
-    );
+    await db.delete(waitlist).where(eq(waitlist.id, entryId));
 
     return NextResponse.json({ message: 'Waitlist entry deleted successfully' });
   } catch (error) {

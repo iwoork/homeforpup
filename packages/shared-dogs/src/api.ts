@@ -1,35 +1,8 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { db, dogs, profiles, eq, and, like, ilike, sql } from '@homeforpup/database';
 import { Dog, DogsResponse, UseDogsOptions, CreateDogRequest, UpdateDogRequest, MatchedDogsResponse } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
-// Configure AWS SDK v3
-const createDynamoClient = () => {
-  const client = new DynamoDBClient({
-    region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
-
-  return DynamoDBDocumentClient.from(client, {
-    marshallOptions: {
-      removeUndefinedValues: true,
-    },
-  });
-};
-
-const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
-
 export class DogsApiClient {
-  private dynamodb: DynamoDBDocumentClient;
-
-  constructor() {
-    this.dynamodb = createDynamoClient();
-  }
-
   async getDogs(options: UseDogsOptions = {}, userId?: string): Promise<DogsResponse> {
     const {
       search = '',
@@ -46,88 +19,54 @@ export class DogsApiClient {
       ownerId
     } = options;
 
-    console.log('API Request params:', { search, kennelId, type, gender, breed, status, breedingStatus, page, limit, offset, sortBy, userId, ownerId });
+    // Build conditions
+    const conditions: any[] = [];
 
-    // Build DynamoDB query parameters
-    const params: any = {
-      TableName: DOGS_TABLE,
-    };
-
-    const filterExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
-
-    // Filter by user's dogs (for breeder app) or specific owner
     if (userId) {
-      filterExpressions.push('ownerId = :userId');
-      expressionAttributeValues[':userId'] = userId;
+      conditions.push(eq(dogs.ownerId, userId));
     } else if (ownerId) {
-      filterExpressions.push('ownerId = :ownerId');
-      expressionAttributeValues[':ownerId'] = ownerId;
+      conditions.push(eq(dogs.ownerId, ownerId));
     }
 
-    // Search filter
     if (search) {
-      filterExpressions.push('(contains(#name, :search) OR contains(callName, :search) OR contains(breed, :search))');
-      expressionAttributeNames['#name'] = 'name';
-      expressionAttributeValues[':search'] = search;
+      conditions.push(
+        sql`(${dogs.name} ILIKE ${'%' + search + '%'} OR ${dogs.callName} ILIKE ${'%' + search + '%'} OR ${dogs.breed} ILIKE ${'%' + search + '%'})`
+      );
     }
 
-    // Kennel filter
     if (kennelId) {
-      filterExpressions.push('kennelId = :kennelId');
-      expressionAttributeValues[':kennelId'] = kennelId;
+      conditions.push(eq(dogs.kennelId, kennelId));
     }
 
-    // Type filter
     if (type) {
-      filterExpressions.push('#dogType = :dogType');
-      expressionAttributeNames['#dogType'] = 'dogType';
-      expressionAttributeValues[':dogType'] = type;
+      conditions.push(eq(dogs.dogType, type));
     }
 
-    // Gender filter
     if (gender) {
-      filterExpressions.push('gender = :gender');
-      expressionAttributeValues[':gender'] = gender;
+      conditions.push(eq(dogs.gender, gender));
     }
 
-    // Breed filter
     if (breed) {
-      filterExpressions.push('breed = :breed');
-      expressionAttributeValues[':breed'] = breed;
+      conditions.push(eq(dogs.breed, breed));
     }
 
-    // Status filter
     if (status) {
-      filterExpressions.push('#status = :status');
-      expressionAttributeNames['#status'] = 'status';
-      expressionAttributeValues[':status'] = status;
+      conditions.push(eq(dogs.status, status));
     }
 
-    // Breeding status filter
     if (breedingStatus) {
-      filterExpressions.push('breedingStatus = :breedingStatus');
-      expressionAttributeValues[':breedingStatus'] = breedingStatus;
+      conditions.push(eq(dogs.breedingStatus, breedingStatus));
     }
 
-    // Apply filters
-    if (filterExpressions.length > 0) {
-      params.FilterExpression = filterExpressions.join(' AND ');
-      params.ExpressionAttributeNames = Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined;
-      params.ExpressionAttributeValues = Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined;
-    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    console.log('DynamoDB params:', JSON.stringify(params, null, 2));
+    const allDogs = await db
+      .select()
+      .from(dogs)
+      .where(whereClause) as Dog[];
 
-    // Execute scan
-    const result = await this.dynamodb.send(new ScanCommand(params));
-    const dogs = (result.Items as Dog[]) || [];
-
-    console.log(`Found ${dogs.length} dogs in DynamoDB`);
-
-    // Apply sorting
-    const sortedDogs = [...dogs];
+    // Apply sorting in JS (keeps behaviour identical to DynamoDB scan)
+    const sortedDogs = [...allDogs];
     switch (sortBy) {
       case 'name':
         sortedDogs.sort((a, b) => a.name.localeCompare(b.name));
@@ -154,8 +93,6 @@ export class DogsApiClient {
     const hasPrevPage = page > 1;
     const hasMore = totalCount > endIndex;
 
-    console.log(`Returning ${paginatedDogs.length} dogs for page ${page} of ${totalPages}`);
-
     return {
       dogs: paginatedDogs,
       total: totalCount,
@@ -172,18 +109,17 @@ export class DogsApiClient {
   }
 
   async getDogById(id: string): Promise<Dog | null> {
-    const params = {
-      TableName: DOGS_TABLE,
-      Key: { id }
-    };
-
-    const result = await this.dynamodb.send(new GetCommand(params));
-    return (result.Item as Dog) || null;
+    const [dog] = await db
+      .select()
+      .from(dogs)
+      .where(eq(dogs.id, id))
+      .limit(1);
+    return (dog as Dog) || null;
   }
 
   async createDog(dogData: CreateDogRequest, userId: string): Promise<Dog> {
     const now = new Date().toISOString();
-    const dog: Dog = {
+    const dog = {
       id: uuidv4(),
       ownerId: userId,
       ...dogData,
@@ -197,122 +133,62 @@ export class DogsApiClient {
       updatedAt: now
     };
 
-    const params = {
-      TableName: DOGS_TABLE,
-      Item: dog
-    };
-
-    await this.dynamodb.send(new PutCommand(params));
-    return dog;
+    await db.insert(dogs).values(dog);
+    return dog as unknown as Dog;
   }
 
   async updateDog(dogData: UpdateDogRequest): Promise<Dog> {
     const now = new Date().toISOString();
-    
-    // First get the existing dog
+
     const existing = await this.getDogById(dogData.id);
     if (!existing) {
       throw new Error('Dog not found');
     }
 
-    // Build update expression
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    const { id, ...updateFields } = dogData;
+    const [updated] = await db
+      .update(dogs)
+      .set({ ...updateFields, updatedAt: now })
+      .where(eq(dogs.id, id))
+      .returning();
 
-    // Add fields to update
-    const fieldsToUpdate = [
-      'name', 'callName', 'breed', 'gender', 'birthDate', 'weight', 'color', 
-      'kennelId', 'description', 'dogType', 'breedingStatus', 
-      'healthStatus', 'sireId', 'damId', 'photoUrl', 
-      'registrationNumber', 'microchipNumber', 'notes'
-    ];
-
-    fieldsToUpdate.forEach(field => {
-      if (dogData[field as keyof UpdateDogRequest] !== undefined) {
-        updateExpressions.push(`#${field} = :${field}`);
-        expressionAttributeNames[`#${field}`] = field;
-        expressionAttributeValues[`:${field}`] = dogData[field as keyof UpdateDogRequest];
-        
-      }
-    });
-
-    // Always update the updatedAt field
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = now;
-
-    const params = {
-      TableName: DOGS_TABLE,
-      Key: { id: dogData.id },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW' as const
-    };
-
-    const result = await this.dynamodb.send(new UpdateCommand(params));
-    return result.Attributes as Dog;
+    return updated as unknown as Dog;
   }
 
   async deleteDog(id: string): Promise<void> {
-    const params = {
-      TableName: DOGS_TABLE,
-      Key: { id }
-    };
-
-    await this.dynamodb.send(new DeleteCommand(params));
+    await db.delete(dogs).where(eq(dogs.id, id));
   }
 
   async getMatchedDogs(userId: string): Promise<MatchedDogsResponse> {
-    // First get user's preferences
-    const userParams = {
-      TableName: USERS_TABLE,
-      Key: { userId }
-    };
+    const [user] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
 
-    const userResult = await this.dynamodb.send(new GetCommand(userParams));
-    
-    if (!userResult.Item) {
+    if (!user) {
       return { matchedPuppies: [] };
     }
 
-    const user = userResult.Item;
-    const userCriteria = user.puppyParentInfo || user.dogParentInfo || {};
+    const userCriteria = (user.puppyParentInfo as any) || {};
 
-    // If user hasn't set any criteria, return empty array
     if (!userCriteria.preferredBreeds || userCriteria.preferredBreeds.length === 0) {
       return { matchedPuppies: [] };
     }
 
-    // Get all available dogs
-    const dogsParams = {
-      TableName: DOGS_TABLE,
-      FilterExpression: 'breedingStatus = :status',
-      ExpressionAttributeValues: {
-        ':status': 'available'
-      }
-    };
+    const availableDogs = await db
+      .select()
+      .from(dogs)
+      .where(eq(dogs.breedingStatus, 'available'));
 
-    const dogsResult = await this.dynamodb.send(new ScanCommand(dogsParams));
-
-    if (!dogsResult.Items) {
-      return { matchedPuppies: [] };
-    }
-
-    // Filter dogs based on user criteria
-    const matchedPuppies = dogsResult.Items.filter((dog: any) => {
-      // Check if breed matches user preferences
+    const matchedPuppies = availableDogs.filter((dog: any) => {
       if (userCriteria.preferredBreeds && !userCriteria.preferredBreeds.includes(dog.breed)) {
         return false;
       }
-
-      // Add more matching criteria as needed
       return true;
     }) as Dog[];
 
-    // Sort by most recent first
-    matchedPuppies.sort((a, b) => 
+    matchedPuppies.sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
@@ -320,5 +196,4 @@ export class DogsApiClient {
   }
 }
 
-// Create a singleton instance
 export const dogsApiClient = new DogsApiClient();

@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: { removeUndefinedValues: true },
-});
-
-const USERS_TABLE = process.env.USERS_TABLE_NAME || process.env.PROFILES_TABLE_NAME || 'homeforpup-profiles';
+import { db, profiles, eq } from '@homeforpup/database';
 
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
@@ -63,41 +48,43 @@ export async function POST(request: NextRequest) {
       const timestamp = new Date().toISOString();
 
       // Check if user already exists
-      const existingResult = await dynamodb.send(new GetCommand({
-        TableName: USERS_TABLE,
-        Key: { userId: id },
-      }));
+      const [existingUser] = await db.select().from(profiles)
+        .where(eq(profiles.userId, id))
+        .limit(1);
 
-      const existingUser = existingResult.Item;
       const isNewUser = !existingUser;
 
-      const userData = {
+      const userData: Record<string, any> = {
         userId: id,
         email,
         name,
-        firstName: first_name || undefined,
-        lastName: last_name || undefined,
+        firstName: first_name || null,
+        lastName: last_name || null,
         displayName: existingUser?.displayName || name,
         userType: existingUser?.userType || userType,
-        profileImage: image_url || existingUser?.profileImage || undefined,
+        profileImage: image_url || existingUser?.profileImage || null,
         verified: primaryEmail?.verification?.status === 'verified',
         accountStatus: existingUser?.accountStatus || 'active',
         createdAt: existingUser?.createdAt || timestamp,
         updatedAt: timestamp,
         lastActiveAt: timestamp,
-        // Preserve existing fields
-        ...(existingUser?.phone && { phone: existingUser.phone }),
-        ...(existingUser?.location && { location: existingUser.location }),
-        ...(existingUser?.bio && { bio: existingUser.bio }),
-        ...(existingUser?.preferences && { preferences: existingUser.preferences }),
-        ...(existingUser?.breederInfo && { breederInfo: existingUser.breederInfo }),
-        ...(existingUser?.adopterInfo && { adopterInfo: existingUser.adopterInfo }),
       };
 
-      await dynamodb.send(new PutCommand({
-        TableName: USERS_TABLE,
-        Item: userData,
-      }));
+      // Preserve existing fields
+      if (existingUser?.phone) userData.phone = existingUser.phone;
+      if (existingUser?.location) userData.location = existingUser.location;
+      if (existingUser?.bio) userData.bio = existingUser.bio;
+      if (existingUser?.preferences) userData.preferences = existingUser.preferences;
+      if (existingUser?.breederInfo) userData.breederInfo = existingUser.breederInfo;
+      if (existingUser?.puppyParentInfo) userData.puppyParentInfo = existingUser.puppyParentInfo;
+
+      if (isNewUser) {
+        await db.insert(profiles).values(userData as typeof profiles.$inferInsert);
+      } else {
+        await db.update(profiles)
+          .set(userData)
+          .where(eq(profiles.userId, id));
+      }
 
       console.log(`User ${isNewUser ? 'created' : 'updated'} via webhook:`, {
         userId: id.substring(0, 10) + '...',

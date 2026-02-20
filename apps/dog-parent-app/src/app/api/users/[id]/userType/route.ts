@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(client);
-const USERS_TABLE = 'homeforpup-users';
 
 // PUT /api/users/[id]/userType - Update user type
 export async function PUT(
@@ -46,43 +35,32 @@ export async function PUT(
     }
 
     // First, get the existing user to verify they exist
-    const getParams = {
-      TableName: USERS_TABLE,
-      Key: {
-        userId: userId,
-      },
-    };
+    const [existingUser] = await db.select().from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
 
-    const existingUser = await docClient.send(new GetCommand(getParams));
-    console.log('Existing user:', existingUser.Item);
-    if (!existingUser.Item) {
+    console.log('Existing user:', existingUser);
+    if (!existingUser) {
       console.log('User not found in database');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Update the userType
-    const updateParams = {
-      TableName: USERS_TABLE,
-      Key: {
-        userId: userId,
-      },
-      UpdateExpression: 'SET userType = :userType, updatedAt = :updatedAt',
-      ExpressionAttributeValues: {
-        ':userType': userType,
-        ':updatedAt': new Date().toISOString(),
-      },
-      ReturnValues: 'ALL_NEW' as const,
-    };
+    const [result] = await db.update(profiles)
+      .set({
+        userType,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(profiles.userId, userId))
+      .returning();
 
-    console.log('Update params:', updateParams);
-    const result = await docClient.send(new UpdateCommand(updateParams));
-    console.log('Update result:', result.Attributes);
-    
+    console.log('Update result:', result);
+
     console.log(`User ${userId} userType updated to: ${userType}`);
-    
+
     return NextResponse.json({
       success: true,
-      user: result.Attributes,
+      user: result,
       message: `User type updated to ${userType}`
     });
   } catch (error) {

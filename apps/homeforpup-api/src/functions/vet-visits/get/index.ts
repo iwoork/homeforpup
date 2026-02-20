@@ -1,12 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, vetVisits, eq } from '../../../shared/dynamodb';
 import { VetVisit } from '@homeforpup/shared-types';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VET_VISITS_TABLE || 'VetVisits';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -31,17 +25,12 @@ export const handler = async (
       };
     }
 
-    // Get vet visit from DynamoDB
-    const getCommand = new GetCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        id: vetVisitId
-      }
-    });
+    const db = getDb();
 
-    const result = await docClient.send(getCommand);
+    // Get vet visit from database
+    const [vetVisit] = await db.select().from(vetVisits).where(eq(vetVisits.id, vetVisitId)).limit(1);
 
-    if (!result.Item) {
+    if (!vetVisit) {
       return {
         statusCode: 404,
         headers: {
@@ -56,7 +45,6 @@ export const handler = async (
       };
     }
 
-    const vetVisit = result.Item as VetVisit;
     console.log('Vet visit found:', vetVisit.id);
 
     return {
@@ -74,7 +62,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error getting vet visit:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

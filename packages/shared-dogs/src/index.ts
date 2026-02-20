@@ -1,14 +1,16 @@
-// API and Types
-export * from './api';
-export * from './api-puppies';
+// Types
 export * from './types';
 
 // Matching
 export * from './matching';
 
-// Breeds functionality
-export * from './breeds-api';
+// Breeds types (client-safe)
 export * from './breeds-types';
+
+// Server-only API clients (DogsApiClient, BreedsApiClient, PuppiesApiClient)
+// are in ./api, ./api-puppies, ./breeds-api but NOT re-exported here
+// to avoid pulling postgres/drizzle into client bundles.
+// Import directly from '@homeforpup/database' in server-side code instead.
 
 // Hooks
 export { default as useDogColors } from './hooks/useDogColors';
@@ -28,6 +30,9 @@ export { default as BreedSelector } from './components/forms/BreedSelector';
 export type { BreedSelectorProps, Breed } from './components/forms/BreedSelector';
 export { default as ColorSelector } from './components/forms/ColorSelector';
 export type { ColorSelectorProps } from './components/forms/ColorSelector';
+
+// Puppy types (server-safe – types only, no runtime import)
+export type { PuppyFilters, PuppiesResponse } from './api-puppies';
 
 // Re-export commonly used types from shared-types
 export type { Dog, DogColor, DogColorCategory } from '@homeforpup/shared-types';

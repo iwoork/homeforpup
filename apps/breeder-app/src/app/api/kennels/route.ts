@@ -1,25 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, kennels, eq, and, or, sql } from '@homeforpup/database';
 import { CreateKennelRequest, KennelsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 import { checkKennelCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 import { auth } from '@clerk/nextjs/server';
-
-const dynamoClient = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 
 // GET /api/kennels - List kennels with filtering
 export async function GET(request: NextRequest) {
@@ -46,65 +30,56 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get('city') || '';
     const state = searchParams.get('state') || '';
 
-    // Build filter expression
-    let filterExpression = '';
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    // Build where conditions
+    const conditions: any[] = [];
 
-    // Filter by user's kennels (owners or managers)
-    filterExpression = 'contains(owners, :userId) OR contains(managers, :userId)';
-    expressionAttributeValues[':userId'] = userId;
+    // Filter by user's kennels (owners or managers) using jsonb @> operator
+    conditions.push(
+      or(
+        sql`${kennels.owners}::jsonb @> ${JSON.stringify([userId])}::jsonb`,
+        sql`${kennels.managers}::jsonb @> ${JSON.stringify([userId])}::jsonb`
+      )
+    );
 
     if (search) {
-      filterExpression += ' AND (contains(#name, :search) OR contains(description, :search) OR contains(businessName, :search))';
-      expressionAttributeNames['#name'] = 'name';
-      expressionAttributeValues[':search'] = search;
+      conditions.push(
+        or(
+          sql`${kennels.name} ILIKE ${'%' + search + '%'}`,
+          sql`${kennels.description} ILIKE ${'%' + search + '%'}`,
+          sql`${kennels.businessName} ILIKE ${'%' + search + '%'}`
+        )
+      );
     }
 
     if (status) {
-      filterExpression += ' AND #status = :status';
-      expressionAttributeNames['#status'] = 'status';
-      expressionAttributeValues[':status'] = status;
+      conditions.push(eq(kennels.status, status));
     }
 
-    if (verified !== null) {
-      filterExpression += ' AND verified = :verified';
-      expressionAttributeValues[':verified'] = verified === 'true';
+    if (verified !== null && verified !== undefined) {
+      conditions.push(eq(kennels.verified, verified === 'true'));
     }
 
     if (specialty) {
-      filterExpression += ' AND contains(specialties, :specialty)';
-      expressionAttributeValues[':specialty'] = specialty;
+      conditions.push(sql`${kennels.specialties}::jsonb @> ${JSON.stringify([specialty])}::jsonb`);
     }
 
     if (city) {
-      filterExpression += ' AND address.city = :city';
-      expressionAttributeValues[':city'] = city;
+      conditions.push(sql`${kennels.address}->>'city' = ${city}`);
     }
 
     if (state) {
-      filterExpression += ' AND address.state = :state';
-      expressionAttributeValues[':state'] = state;
+      conditions.push(sql`${kennels.address}->>'state' = ${state}`);
     }
 
-    const scanCommand = new ScanCommand({
-      TableName: KENNELS_TABLE,
-      FilterExpression: filterExpression,
-      ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
-      ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
-      Limit: limit,
-    });
-
-    const result = await docClient.send(scanCommand);
-    const kennels = (result.Items as any[]) || [];
+    const allKennels = await db.select().from(kennels).where(and(...conditions));
 
     // Sort by updatedAt descending
-    kennels.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    allKennels.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     const response: KennelsResponse = {
-      kennels: kennels.slice(offset, offset + limit),
-      total: kennels.length,
-      hasMore: kennels.length > offset + limit,
+      kennels: allKennels.slice(offset, offset + limit) as any[],
+      total: allKennels.length,
+      hasMore: allKennels.length > offset + limit,
     };
 
     return NextResponse.json(response);
@@ -185,10 +160,7 @@ export async function POST(request: NextRequest) {
       socialMedia: body.socialMedia,
     };
 
-    await docClient.send(new PutCommand({
-      TableName: KENNELS_TABLE,
-      Item: kennel,
-    }));
+    await db.insert(kennels).values(kennel);
 
     return NextResponse.json({ kennel }, { status: 201 });
   } catch (error) {

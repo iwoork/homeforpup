@@ -1,27 +1,16 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+// DynamoDB has been replaced by Supabase PostgreSQL via @homeforpup/database
+// This file is kept as a stub. Import from '@homeforpup/database' instead.
+//
+// import { db, eq, profiles, dogs, kennels, ... } from '@homeforpup/database';
 
-// DynamoDB client configuration
 export const createDynamoClient = () => {
-  return new DynamoDBClient({
-    region: process.env.NEXT_PUBLIC_AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
+  throw new Error('DynamoDB has been removed. Use @homeforpup/database instead.');
 };
 
 export const createDocClient = () => {
-  return DynamoDBDocumentClient.from(createDynamoClient(), {
-    marshallOptions: {
-      removeUndefinedValues: true,
-    },
-  });
+  throw new Error('DynamoDB has been removed. Use @homeforpup/database instead.');
 };
 
-// Table names
-export const getTableNames = () => ({
-  DOGS_TABLE: process.env.DOGS_TABLE_NAME || 'homeforpup-dogs',
-  KENNELS_TABLE: process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels',
-});
+export const getTableNames = () => {
+  throw new Error('DynamoDB has been removed. Use @homeforpup/database instead.');
+};

@@ -1,63 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
-import {
-  DynamoDBDocumentClient,
-  QueryCommand,
-  PutCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { db, waitlist, eq } from '@homeforpup/database';
 import { v4 as uuidv4 } from 'uuid';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
-const WAITLIST_TABLE = process.env.WAITLIST_TABLE_NAME || 'homeforpup-waitlist';
-
-let tableVerified = false;
-
-async function ensureTableExists(): Promise<void> {
-  if (tableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: WAITLIST_TABLE }));
-    tableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: WAITLIST_TABLE,
-          KeySchema: [
-            { AttributeName: 'litterId', KeyType: 'HASH' },
-            { AttributeName: 'id', KeyType: 'RANGE' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'litterId', AttributeType: 'S' },
-            { AttributeName: 'id', AttributeType: 'S' },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${WAITLIST_TABLE} created successfully`);
-      tableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
 
 // GET /api/litters/[litterId]/waitlist - Get waitlist entries for a litter
 export async function GET(
@@ -67,20 +12,11 @@ export async function GET(
   try {
     const { litterId } = await context.params;
 
-    await ensureTableExists();
+    const result = await db.select().from(waitlist)
+      .where(eq(waitlist.litterId, litterId));
 
-    const result = await dynamodb.send(
-      new QueryCommand({
-        TableName: WAITLIST_TABLE,
-        KeyConditionExpression: 'litterId = :litterId',
-        ExpressionAttributeValues: {
-          ':litterId': litterId,
-        },
-      })
-    );
-
-    const entries = (result.Items || []).sort(
-      (a, b) => (a.position as number) - (b.position as number)
+    const entries = result.sort(
+      (a: any, b: any) => (a.position as number) - (b.position as number)
     );
 
     return NextResponse.json({ entries });
@@ -114,47 +50,34 @@ export async function POST(
       );
     }
 
-    await ensureTableExists();
-
     // Get current entries to determine next position
-    const existing = await dynamodb.send(
-      new QueryCommand({
-        TableName: WAITLIST_TABLE,
-        KeyConditionExpression: 'litterId = :litterId',
-        ExpressionAttributeValues: {
-          ':litterId': litterId,
-        },
-      })
-    );
+    const existing = await db.select().from(waitlist)
+      .where(eq(waitlist.litterId, litterId));
 
-    const maxPosition = (existing.Items || []).reduce(
-      (max, item) => Math.max(max, (item.position as number) || 0),
+    const maxPosition = existing.reduce(
+      (max: number, item: any) => Math.max(max, (item.position as number) || 0),
       0
     );
 
     const entry = {
       id: uuidv4(),
       litterId,
-      breederId: userId,
-      buyerName: body.buyerName,
-      buyerEmail: body.buyerEmail,
-      buyerPhone: body.buyerPhone,
+      userId: userId,
+      userName: body.buyerName,
+      userEmail: body.buyerEmail,
       position: maxPosition + 1,
       status: body.status || 'active',
-      depositAmount: body.depositAmount,
-      depositPaid: body.depositPaid || false,
-      genderPreference: body.genderPreference,
-      colorPreference: body.colorPreference,
-      notes: body.notes,
+      notes: body.notes || null,
+      preferences: body.genderPreference || body.colorPreference ? {
+        genderPreference: body.genderPreference,
+        colorPreference: body.colorPreference,
+        depositAmount: body.depositAmount,
+        depositPaid: body.depositPaid || false,
+      } : null,
       createdAt: new Date().toISOString(),
     };
 
-    await dynamodb.send(
-      new PutCommand({
-        TableName: WAITLIST_TABLE,
-        Item: entry,
-      })
-    );
+    await db.insert(waitlist).values(entry);
 
     return NextResponse.json({ entry }, { status: 201 });
   } catch (error) {

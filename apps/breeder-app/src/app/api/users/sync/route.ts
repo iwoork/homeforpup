@@ -1,35 +1,19 @@
 // src/app/api/users/sync/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq } from '@homeforpup/database';
 
 import { auth, currentUser } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true // Remove undefined values automatically
-  }
-});
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 // Helper function to remove undefined values from objects
 function removeUndefinedValues(obj: any): any {
   if (obj === null || obj === undefined) {
     return undefined;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(removeUndefinedValues).filter(item => item !== undefined);
   }
-  
+
   if (typeof obj === 'object') {
     const cleaned: any = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -40,7 +24,7 @@ function removeUndefinedValues(obj: any): any {
     }
     return Object.keys(cleaned).length > 0 ? cleaned : undefined;
   }
-  
+
   return obj;
 }
 
@@ -58,11 +42,11 @@ export async function POST(request: NextRequest) {
       name: clerkUser?.fullName || clerkUser?.firstName || 'User',
       email: clerkUser?.primaryEmailAddress?.emailAddress || ''
     };
-    
+
     console.log('Session verification successful for user sync:', decodedToken.userId.substring(0, 10) + '...');
 
     const body = await request.json();
-    const { 
+    const {
       userType = 'breeder',
       phone,
       location,
@@ -72,76 +56,72 @@ export async function POST(request: NextRequest) {
       galleryPhotos,
       preferences,
       breederInfo,
-      adopterInfo 
+      adopterInfo
     } = body;
 
     const { name, email } = decodedToken;
     const timestamp = new Date().toISOString();
 
     // Check if user already exists
-    const existingUserResult = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: userId }
-    }));
+    const [existingUser] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
 
-    const existingUser = existingUserResult.Item;
     const isNewUser = !existingUser;
 
     // Prepare user data with comprehensive fields
-    const rawUserData = {
+    const rawUserData: Record<string, any> = {
       userId: userId,
       email: email,
       name: name,
       userType: userType,
       verified: (clerkUser?.publicMetadata?.isVerified as boolean) || false,
-      accountStatus: 'active' as const,
+      accountStatus: 'active',
       phone: phone || existingUser?.phone || undefined,
       location: location || existingUser?.location || undefined,
       bio: bio || existingUser?.bio || undefined,
       profileImage: profileImage || existingUser?.profileImage || clerkUser?.imageUrl || undefined,
       coverPhoto: coverPhoto || existingUser?.coverPhoto || undefined,
-      galleryPhotos: galleryPhotos || existingUser?.galleryPhotos || [],
-      socialLinks: existingUser?.socialLinks || {},
-      
+      galleryPhotos: galleryPhotos || (existingUser as any)?.galleryPhotos || [],
+      socialLinks: (existingUser as any)?.socialLinks || {},
+
       // Preferences
       preferences: removeUndefinedValues({
         notifications: {
           email: preferences?.notifications?.email ?? true,
           push: preferences?.notifications?.push ?? true,
           sms: preferences?.notifications?.sms ?? false,
-          ...existingUser?.preferences?.notifications,
+          ...(existingUser?.preferences as any)?.notifications,
           ...preferences?.notifications
         },
         privacy: {
           profileVisibility: preferences?.privacy?.profileVisibility || 'public',
           showContactInfo: preferences?.privacy?.showContactInfo ?? true,
           showLocation: preferences?.privacy?.showLocation ?? true,
-          ...existingUser?.preferences?.privacy,
+          ...(existingUser?.preferences as any)?.privacy,
           ...preferences?.privacy
         }
       }),
 
       // Handle breeder-specific info
       breederInfo: userType === 'breeder' || userType === 'both' ? removeUndefinedValues({
-        kennelName: breederInfo?.kennelName || existingUser?.breederInfo?.kennelName || undefined,
-        license: breederInfo?.license || existingUser?.breederInfo?.license || undefined,
-        specialties: breederInfo?.specialties || existingUser?.breederInfo?.specialties || [],
-        experience: breederInfo?.experience || existingUser?.breederInfo?.experience || 0,
-        website: breederInfo?.website || existingUser?.breederInfo?.website || undefined,
-        ...existingUser?.breederInfo,
+        kennelName: breederInfo?.kennelName || (existingUser?.breederInfo as any)?.kennelName || undefined,
+        license: breederInfo?.license || (existingUser?.breederInfo as any)?.license || undefined,
+        specialties: breederInfo?.specialties || (existingUser?.breederInfo as any)?.specialties || [],
+        experience: breederInfo?.experience || (existingUser?.breederInfo as any)?.experience || 0,
+        website: breederInfo?.website || (existingUser?.breederInfo as any)?.website || undefined,
+        ...(existingUser?.breederInfo as any),
         ...breederInfo
-      }) : existingUser?.breederInfo,
+      }) : (existingUser?.breederInfo as any),
 
-      // Handle adopter-specific info  
-      adopterInfo: userType === 'dog-parent' || userType === 'both' ? removeUndefinedValues({
-        housingType: adopterInfo?.housingType || existingUser?.adopterInfo?.housingType || undefined,
-        yardSize: adopterInfo?.yardSize || existingUser?.adopterInfo?.yardSize || undefined,
-        hasOtherPets: adopterInfo?.hasOtherPets || existingUser?.adopterInfo?.hasOtherPets || false,
-        experienceLevel: adopterInfo?.experienceLevel || existingUser?.adopterInfo?.experienceLevel || 'first-time',
-        preferredBreeds: adopterInfo?.preferredBreeds || existingUser?.adopterInfo?.preferredBreeds || [],
-        ...existingUser?.adopterInfo,
+      // Handle adopter-specific info
+      puppyParentInfo: userType === 'dog-parent' || userType === 'both' ? removeUndefinedValues({
+        housingType: adopterInfo?.housingType || (existingUser?.puppyParentInfo as any)?.housingType || undefined,
+        yardSize: adopterInfo?.yardSize || (existingUser?.puppyParentInfo as any)?.yardSize || undefined,
+        hasOtherPets: adopterInfo?.hasOtherPets || (existingUser?.puppyParentInfo as any)?.hasOtherPets || false,
+        experienceLevel: adopterInfo?.experienceLevel || (existingUser?.puppyParentInfo as any)?.experienceLevel || 'first-time',
+        preferredBreeds: adopterInfo?.preferredBreeds || (existingUser?.puppyParentInfo as any)?.preferredBreeds || [],
+        ...(existingUser?.puppyParentInfo as any),
         ...adopterInfo
-      }) : existingUser?.adopterInfo,
+      }) : (existingUser?.puppyParentInfo as any),
 
       // Timestamps
       createdAt: existingUser?.createdAt || timestamp,
@@ -152,11 +132,13 @@ export async function POST(request: NextRequest) {
     // Clean all undefined values from the user data
     const userData = removeUndefinedValues(rawUserData);
 
-    // Create or update user record
-    await dynamodb.send(new PutCommand({
-      TableName: USERS_TABLE,
-      Item: userData
-    }));
+    if (isNewUser) {
+      // Create new profile
+      await db.insert(profiles).values(userData);
+    } else {
+      // Update existing profile
+      await db.update(profiles).set(userData).where(eq(profiles.userId, userId));
+    }
 
     console.log(`User ${isNewUser ? 'created' : 'updated'} successfully:`, {
       userId: userId.substring(0, 10) + '...',
@@ -166,7 +148,7 @@ export async function POST(request: NextRequest) {
       isNewUser
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       user: userData,
       isNewUser,
       message: `User ${isNewUser ? 'created' : 'updated'} successfully`
@@ -175,10 +157,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error syncing user:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to sync user data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -195,24 +177,21 @@ export async function GET(request: NextRequest) {
     const clerkUser = await currentUser();
 
     // Get user from database
-    const result = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: userId }
-    }));
+    const [result] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
 
-    if (!result.Item) {
+    if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user: result.Item });
+    return NextResponse.json({ user: result });
 
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch user data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

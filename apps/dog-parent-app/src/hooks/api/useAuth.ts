@@ -52,7 +52,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [authContext]);
 
-  // Method to sync user data with DynamoDB
+  // Method to sync user data with the database
   const syncUser = useCallback(async (_userData?: any, _providedToken?: string): Promise<any> => {
     return authContext.user;
   }, [authContext]);

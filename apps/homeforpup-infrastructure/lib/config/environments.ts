@@ -1,8 +1,11 @@
 export interface EnvironmentConfig {
   environment: 'development' | 'staging' | 'production';
   region: string;
-  
-  // DynamoDB Tables
+
+  // Supabase PostgreSQL (replaces DynamoDB)
+  databaseUrl: string;
+
+  // DynamoDB Tables (kept temporarily for data migration reference)
   tables: {
     profiles: string;
     dogs: string;
@@ -17,11 +20,11 @@ export interface EnvironmentConfig {
     breeds: string;
     breedsSimple: string;
   };
-  
+
   // S3 Buckets
   imageBucket: string;
   uploadBucket: string;
-  
+
   // Clerk
   clerkSecretKey?: string;
 }
@@ -29,10 +32,12 @@ export interface EnvironmentConfig {
 export function getEnvironmentConfig(environment: string): EnvironmentConfig {
   const region = process.env.AWS_REGION || 'us-east-1';
   const env = environment as 'development' | 'staging' | 'production';
-  
+  const databaseUrl = process.env.DATABASE_URL || '';
+
   const baseConfig = {
     region,
     environment: env,
+    databaseUrl,
   };
 
   switch (env) {
@@ -104,5 +109,3 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
       };
   }
 }
-
-

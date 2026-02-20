@@ -1,11 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand, DeleteCommand } from '../../../shared/dynamodb';
+import { getDb, dogs, kennels, eq } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const DOGS_TABLE = process.env.DOGS_TABLE!;
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -18,57 +15,43 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
   }
 
   try {
+    const db = getDb();
+
     // First, check if the dog exists
-    const getDogCommand = new GetCommand({
-      TableName: DOGS_TABLE,
-      Key: { id: dogId },
-    });
+    const [existing] = await db.select().from(dogs).where(eq(dogs.id, dogId)).limit(1);
 
-    const existing = await dynamodb.send(getDogCommand);
-
-    if (!existing.Item) {
+    if (!existing) {
       throw new ApiError('Dog not found', 404);
     }
 
     // Check permission through kennel ownership/management
     let hasPermission = false;
-    
+
     // Check direct ownership
-    if (existing.Item.ownerId === userId) {
+    if (existing.ownerId === userId) {
       hasPermission = true;
     }
-    
+
     // Check kennel ownership/management if not direct owner
-    if (!hasPermission && existing.Item.kennelId) {
-      const getKennelCommand = new GetCommand({
-        TableName: KENNELS_TABLE,
-        Key: { id: existing.Item.kennelId },
-      });
-      
-      const kennelResult = await dynamodb.send(getKennelCommand);
-      
-      if (kennelResult.Item) {
-        const kennel = kennelResult.Item;
+    if (!hasPermission && existing.kennelId) {
+      const [kennel] = await db.select().from(kennels).where(eq(kennels.id, existing.kennelId)).limit(1);
+
+      if (kennel) {
         // Check if user is owner or manager of the kennel
-        hasPermission = 
-          (kennel.owners && kennel.owners.includes(userId)) ||
-          (kennel.managers && kennel.managers.includes(userId)) ||
+        hasPermission =
+          (kennel.owners && (kennel.owners as string[]).includes(userId)) ||
+          (kennel.managers && (kennel.managers as string[]).includes(userId)) ||
           kennel.ownerId === userId || // backward compatibility
           kennel.createdBy === userId; // backward compatibility
       }
     }
-    
+
     if (!hasPermission) {
       throw new ApiError('Forbidden: You do not have permission to delete this dog', 403);
     }
 
     // Delete the dog
-    const deleteCommand = new DeleteCommand({
-      TableName: DOGS_TABLE,
-      Key: { id: dogId },
-    });
-
-    await dynamodb.send(deleteCommand);
+    await db.delete(dogs).where(eq(dogs.id, dogId));
 
     return successResponse({
       message: 'Dog deleted successfully',
@@ -85,4 +68,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

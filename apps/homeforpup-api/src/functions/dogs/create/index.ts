@@ -1,12 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand, PutCommand } from '../../../shared/dynamodb';
+import { getDb, dogs, kennels, eq } from '../../../shared/dynamodb';
 import { successResponse, errorResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
-
-const DOGS_TABLE = process.env.DOGS_TABLE!;
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -25,25 +22,21 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
       throw new ApiError('Missing required fields: name, breed, kennelId', 400);
     }
 
+    const db = getDb();
+
     // Verify user has access to the kennel
-    const getKennelCommand = new GetCommand({
-      TableName: KENNELS_TABLE,
-      Key: { id: dogData.kennelId },
-    });
-    
-    const kennelResult = await dynamodb.send(getKennelCommand);
-    
-    if (!kennelResult.Item) {
+    const [kennel] = await db.select().from(kennels).where(eq(kennels.id, dogData.kennelId)).limit(1);
+
+    if (!kennel) {
       throw new ApiError('Kennel not found', 404);
     }
-    
-    const kennel = kennelResult.Item;
-    const hasAccess = 
-      (kennel.owners && kennel.owners.includes(userId)) ||
-      (kennel.managers && kennel.managers.includes(userId)) ||
+
+    const hasAccess =
+      (kennel.owners && (kennel.owners as string[]).includes(userId)) ||
+      (kennel.managers && (kennel.managers as string[]).includes(userId)) ||
       kennel.ownerId === userId || // backward compatibility
       kennel.createdBy === userId; // backward compatibility
-    
+
     if (!hasAccess) {
       throw new ApiError('Forbidden: You do not have access to this kennel', 403);
     }
@@ -57,16 +50,11 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
       updatedAt: new Date().toISOString(),
     };
 
-    // Save to DynamoDB
-    const command = new PutCommand({
-      TableName: DOGS_TABLE,
-      Item: dog,
-    });
-
-    await dynamodb.send(command);
+    // Save to database
+    await db.insert(dogs).values(dog);
 
     // Return dog with kennel information
-    return successResponse({ 
+    return successResponse({
       dog,
       kennel // Kennel was already fetched during validation
     }, 201);
@@ -84,4 +72,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

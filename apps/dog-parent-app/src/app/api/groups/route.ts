@@ -1,148 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import {
-  DynamoDBDocumentClient,
-  PutCommand,
-  QueryCommand,
-  BatchGetCommand,
-} from '@aws-sdk/lib-dynamodb';
-
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true,
-  },
-});
-
-const GROUPS_TABLE = process.env.GROUPS_TABLE_NAME || 'homeforpup-groups';
-const GROUP_MEMBERS_TABLE = process.env.GROUP_MEMBERS_TABLE_NAME || 'homeforpup-group-members';
-
-const VALID_GROUP_TYPES = ['litter', 'custom'] as const;
-type GroupType = typeof VALID_GROUP_TYPES[number];
-
-interface GroupItem {
-  id: string;
-  name: string;
-  description: string;
-  groupType: GroupType;
-  litterId?: string;
-  breederId: string;
-  coverPhoto: string;
-  createdAt: string;
-  createdBy: string;
-}
-
-interface GroupMemberItem {
-  groupId: string;
-  userId: string;
-  userName: string;
-  role: 'admin' | 'member';
-  joinedAt: string;
-}
-
-let groupsTableVerified = false;
-let membersTableVerified = false;
-
-async function ensureGroupsTableExists(): Promise<void> {
-  if (groupsTableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: GROUPS_TABLE }));
-    groupsTableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: GROUPS_TABLE,
-          KeySchema: [
-            { AttributeName: 'id', KeyType: 'HASH' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'id', AttributeType: 'S' },
-            { AttributeName: 'breederId', AttributeType: 'S' },
-            { AttributeName: 'createdAt', AttributeType: 'S' },
-          ],
-          GlobalSecondaryIndexes: [
-            {
-              IndexName: 'breederId-createdAt-index',
-              KeySchema: [
-                { AttributeName: 'breederId', KeyType: 'HASH' },
-                { AttributeName: 'createdAt', KeyType: 'RANGE' },
-              ],
-              Projection: { ProjectionType: 'ALL' },
-              ProvisionedThroughput: {
-                ReadCapacityUnits: 5,
-                WriteCapacityUnits: 5,
-              },
-            },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${GROUPS_TABLE} created successfully`);
-      groupsTableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
-
-async function ensureMembersTableExists(): Promise<void> {
-  if (membersTableVerified) return;
-
-  try {
-    await client.send(new DescribeTableCommand({ TableName: GROUP_MEMBERS_TABLE }));
-    membersTableVerified = true;
-  } catch (error: unknown) {
-    if (error instanceof Error && error.name === 'ResourceNotFoundException') {
-      await client.send(
-        new CreateTableCommand({
-          TableName: GROUP_MEMBERS_TABLE,
-          KeySchema: [
-            { AttributeName: 'groupId', KeyType: 'HASH' },
-            { AttributeName: 'userId', KeyType: 'RANGE' },
-          ],
-          AttributeDefinitions: [
-            { AttributeName: 'groupId', AttributeType: 'S' },
-            { AttributeName: 'userId', AttributeType: 'S' },
-          ],
-          GlobalSecondaryIndexes: [
-            {
-              IndexName: 'userId-index',
-              KeySchema: [
-                { AttributeName: 'userId', KeyType: 'HASH' },
-              ],
-              Projection: { ProjectionType: 'ALL' },
-              ProvisionedThroughput: {
-                ReadCapacityUnits: 5,
-                WriteCapacityUnits: 5,
-              },
-            },
-          ],
-          ProvisionedThroughput: {
-            ReadCapacityUnits: 5,
-            WriteCapacityUnits: 5,
-          },
-        })
-      );
-      console.log(`Table ${GROUP_MEMBERS_TABLE} created successfully`);
-      membersTableVerified = true;
-    } else {
-      throw error;
-    }
-  }
-}
+import { db, groups, groupMembers, eq, inArray, desc } from '@homeforpup/database';
 
 // GET /api/groups?userId=[id] - Get groups the user belongs to
 export async function GET(request: NextRequest) {
@@ -157,66 +15,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await ensureGroupsTableExists();
-    await ensureMembersTableExists();
-
     // Query group-members by userId to find which groups they belong to
-    const membershipsResult = await dynamodb.send(
-      new QueryCommand({
-        TableName: GROUP_MEMBERS_TABLE,
-        IndexName: 'userId-index',
-        KeyConditionExpression: 'userId = :userId',
-        ExpressionAttributeValues: {
-          ':userId': userId,
-        },
-      })
-    );
-
-    const memberships = membershipsResult.Items || [];
+    const memberships = await db.select().from(groupMembers)
+      .where(eq(groupMembers.userId, userId));
 
     if (memberships.length === 0) {
       return NextResponse.json({ groups: [], count: 0 });
     }
 
     // Batch get the group details
-    const keys = memberships.map((m) => ({ id: m.groupId }));
-    const batchResult = await dynamodb.send(
-      new BatchGetCommand({
-        RequestItems: {
-          [GROUPS_TABLE]: {
-            Keys: keys,
-          },
-        },
-      })
-    );
-
-    const groups = batchResult.Responses?.[GROUPS_TABLE] || [];
+    const groupIds = memberships.map((m) => m.groupId);
+    const groupResults = await db.select().from(groups)
+      .where(inArray(groups.id, groupIds));
 
     // Enrich with member's role and member count
     const groupsWithDetails = await Promise.all(
-      groups.map(async (g) => {
+      groupResults.map(async (g) => {
         const membership = memberships.find((m) => m.groupId === g.id);
         // Get member count for this group
-        const countResult = await dynamodb.send(
-          new QueryCommand({
-            TableName: GROUP_MEMBERS_TABLE,
-            KeyConditionExpression: 'groupId = :groupId',
-            ExpressionAttributeValues: {
-              ':groupId': g.id as string,
-            },
-            Select: 'COUNT',
-          })
-        );
+        const memberCountResult = await db.select().from(groupMembers)
+          .where(eq(groupMembers.groupId, g.id));
         return {
           ...g,
           memberRole: membership?.role || 'member',
-          memberCount: countResult.Count || 0,
+          memberCount: memberCountResult.length,
         };
       })
     );
 
     // Sort by createdAt descending
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     groupsWithDetails.sort((a: any, b: any) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
     return NextResponse.json({
@@ -252,6 +79,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const VALID_GROUP_TYPES = ['litter', 'custom'] as const;
     if (!groupType || !VALID_GROUP_TYPES.includes(groupType)) {
       return NextResponse.json(
         { error: `groupType is required and must be one of: ${VALID_GROUP_TYPES.join(', ')}` },
@@ -259,46 +87,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await ensureGroupsTableExists();
-    await ensureMembersTableExists();
-
     const now = new Date().toISOString();
-    const groupItem: GroupItem = {
-      id: `group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    const groupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    const groupItem = {
+      id: groupId,
       name: name.trim(),
       description: (description || '').trim(),
-      groupType: groupType as GroupType,
-      litterId: litterId || undefined,
-      breederId: String(breederId || userId),
-      coverPhoto: coverPhoto || '',
-      createdAt: now,
+      type: groupType,
       createdBy: userId,
+      coverImage: coverPhoto || '',
+      createdAt: now,
+      updatedAt: now,
     };
 
     // Create the group
-    await dynamodb.send(
-      new PutCommand({
-        TableName: GROUPS_TABLE,
-        Item: groupItem,
-      })
-    );
+    await db.insert(groups).values(groupItem);
 
     // Add the creator as admin member
-    const memberItem: GroupMemberItem = {
-      groupId: groupItem.id,
+    const memberId = `member-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const memberItem = {
+      id: memberId,
+      groupId: groupId,
       userId: userId,
-      userName:
-        clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
       role: 'admin',
       joinedAt: now,
     };
 
-    await dynamodb.send(
-      new PutCommand({
-        TableName: GROUP_MEMBERS_TABLE,
-        Item: memberItem,
-      })
-    );
+    await db.insert(groupMembers).values(memberItem);
 
     return NextResponse.json({
       message: 'Group created successfully',

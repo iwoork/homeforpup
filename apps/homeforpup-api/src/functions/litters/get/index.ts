@@ -1,9 +1,7 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, GetCommand } from '../../../shared/dynamodb';
+import { getDb, litters, eq } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
-
-const LITTERS_TABLE = process.env.LITTERS_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   const id = event.pathParameters?.id;
@@ -13,18 +11,15 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
   }
 
   try {
-    const command = new GetCommand({
-      TableName: LITTERS_TABLE,
-      Key: { id },
-    });
+    const db = getDb();
 
-    const result = await dynamodb.send(command);
+    const [litter] = await db.select().from(litters).where(eq(litters.id, id)).limit(1);
 
-    if (!result.Item) {
+    if (!litter) {
       throw new ApiError('Litter not found', 404);
     }
 
-    return successResponse({ litter: result.Item });
+    return successResponse({ litter });
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -36,4 +31,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

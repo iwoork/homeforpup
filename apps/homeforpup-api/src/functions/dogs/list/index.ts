@@ -1,11 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, QueryCommand, ScanCommand, BatchGetCommand } from '../../../shared/dynamodb';
+import { getDb, dogs, kennels, eq, inArray } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const DOGS_TABLE = process.env.DOGS_TABLE!;
-const KENNELS_TABLE = process.env.KENNELS_TABLE!;
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   // Parse query parameters
@@ -33,39 +30,19 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   }
 
   try {
-    let items = [];
-    
+    const db = getDb();
+
+    let items: any[];
+
     if (breederId) {
-      // Query by breeder ID using GSI (if data has breederId field)
-      const command = new QueryCommand({
-        TableName: DOGS_TABLE,
-        IndexName: 'BreederIndex',
-        KeyConditionExpression: 'breederId = :breederId',
-        ExpressionAttributeValues: {
-          ':breederId': breederId,
-        },
-      });
-      const result = await dynamodb.send(command);
-      items = result.Items || [];
+      // Query by breeder ID (breederId maps to ownerId in the dogs table)
+      items = await db.select().from(dogs).where(eq(dogs.ownerId, breederId));
     } else if (kennelId) {
       // Query by kennel ID
-      const command = new QueryCommand({
-        TableName: DOGS_TABLE,
-        IndexName: 'KennelIdIndex',
-        KeyConditionExpression: 'kennelId = :kennelId',
-        ExpressionAttributeValues: {
-          ':kennelId': kennelId,
-        },
-      });
-      const result = await dynamodb.send(command);
-      items = result.Items || [];
+      items = await db.select().from(dogs).where(eq(dogs.kennelId, kennelId));
     } else {
       // Full scan to get all dogs
-      const command = new ScanCommand({
-        TableName: DOGS_TABLE,
-      });
-      const result = await dynamodb.send(command);
-      items = result.Items || [];
+      items = await db.select().from(dogs);
     }
 
     // Apply filters
@@ -116,32 +93,19 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
       paginatedItems
         .map((dog: any) => dog.kennelId)
         .filter((id: string | undefined) => id)
-    )];
+    )] as string[];
 
     let kennelsMap: Record<string, any> = {};
-    
+
     if (kennelIds.length > 0) {
       try {
-        // Batch fetch kennels (DynamoDB BatchGet supports up to 100 items)
-        const batchSize = 100;
-        for (let i = 0; i < kennelIds.length; i += batchSize) {
-          const batch = kennelIds.slice(i, i + batchSize);
-          const batchCommand = new BatchGetCommand({
-            RequestItems: {
-              [KENNELS_TABLE]: {
-                Keys: batch.map(id => ({ id })),
-              },
-            },
-          });
-          
-          const batchResult = await dynamodb.send(batchCommand);
-          const kennels = batchResult.Responses?.[KENNELS_TABLE] || [];
-          
-          // Build kennels map
-          kennels.forEach((kennel: any) => {
-            kennelsMap[kennel.id] = kennel;
-          });
-        }
+        // Batch fetch kennels using inArray
+        const kennelResults = await db.select().from(kennels).where(inArray(kennels.id, kennelIds));
+
+        // Build kennels map
+        kennelResults.forEach((kennel: any) => {
+          kennelsMap[kennel.id] = kennel;
+        });
       } catch (kennelError) {
         console.warn('Failed to batch fetch kennels:', kennelError);
         // Continue without kennel data - don't fail the entire request
@@ -171,4 +135,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

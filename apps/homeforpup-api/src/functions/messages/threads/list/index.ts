@@ -1,15 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, QueryCommand } from '../../../../shared/dynamodb';
+import { getDb, messageThreads, sql, desc } from '../../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../../types/lambda';
 import { wrapHandler } from '../../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../../middleware/auth';
 
-const THREADS_TABLE = process.env.THREADS_TABLE || 'homeforpup-message-threads';
-
 interface ThreadItem {
-  PK: string; // threadId or threadId#participantId
-  threadId: string;
-  subject: string;
+  id: string;
+  subject: string | null;
   participants: string[];
   participantNames?: Record<string, string>;
   lastMessage?: {
@@ -28,13 +25,11 @@ interface ThreadItem {
   unreadCount: Record<string, number>;
   createdAt: string;
   updatedAt: string;
-  GSI1PK: string; // userId for querying
-  GSI1SK: string; // timestamp
 }
 
 const transformThread = (item: ThreadItem, userId: string) => {
   const otherParticipant = item.participants?.find(p => p !== userId);
-  
+
   // Ensure lastMessage has all required fields
   const lastMessage = item.lastMessage ? {
     id: item.lastMessage.id || '',
@@ -48,9 +43,9 @@ const transformThread = (item: ThreadItem, userId: string) => {
     read: item.lastMessage.read ?? false,
     messageType: item.lastMessage.messageType || 'general',
   } : undefined;
-  
+
   return {
-    id: item.threadId,
+    id: item.id,
     subject: item.subject,
     participants: item.participants,
     participantNames: item.participantNames,
@@ -60,8 +55,8 @@ const transformThread = (item: ThreadItem, userId: string) => {
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     otherParticipant,
-    otherParticipantName: otherParticipant && item.participantNames 
-      ? item.participantNames[otherParticipant] 
+    otherParticipantName: otherParticipant && item.participantNames
+      ? item.participantNames[otherParticipant]
       : 'Unknown'
   };
 };
@@ -74,43 +69,27 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   console.log('Fetching threads for user:', userId?.substring(0, 10) + '...');
 
   try {
-    // Query threads where user is a participant using GSI1
-    const params = {
-      TableName: THREADS_TABLE,
-      IndexName: 'GSI1',
-      KeyConditionExpression: 'GSI1PK = :userId',
-      ExpressionAttributeValues: {
-        ':userId': userId
-      },
-      ScanIndexForward: false // Most recent first
-    };
+    const db = getDb();
 
-    console.log('DynamoDB Query params:', {
-      ...params,
-      ExpressionAttributeValues: { ':userId': userId?.substring(0, 10) + '...' }
-    });
+    // Query threads where user is a participant using jsonb contains
+    // This replaces the DynamoDB GSI1 query pattern
+    const items = await db.select().from(messageThreads)
+      .where(sql`${messageThreads.participants}::jsonb @> ${JSON.stringify([userId])}::jsonb`)
+      .orderBy(desc(messageThreads.updatedAt));
 
-    const command = new QueryCommand(params);
-    const result = await dynamodb.send(command);
-    const items = (result.Items as ThreadItem[]) || [];
+    console.log('Database threads results:', items.length);
 
-    console.log('Raw DynamoDB threads results:', items.length);
-
-    // Filter to only get participant records (not main thread records)
-    // Participant records have PK format: threadId#participantId
-    // AND ensure the current user is in the participants array for security
-    const participantRecords = items.filter(item => 
-      item.PK.includes('#') && 
-      item.PK.includes(userId) &&
-      item.participants && 
-      item.participants.includes(userId)
+    // Filter to ensure current user is in participants for security
+    const participantRecords = items.filter((item: any) =>
+      item.participants &&
+      (item.participants as string[]).includes(userId)
     );
 
     console.log('Filtered participant records:', participantRecords.length);
 
-    // Transform threads for frontend - with additional security check
+    // Transform threads for frontend
     const threads = participantRecords
-      .map(item => transformThread(item, userId))
+      .map((item: any) => transformThread(item as ThreadItem, userId))
       .filter(thread => thread.participants.includes(userId));
 
     console.log('Final transformed threads:', threads.length);
@@ -127,4 +106,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

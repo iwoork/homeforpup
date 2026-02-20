@@ -1,10 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, UpdateCommand } from '../../../shared/dynamodb';
+import { getDb, profiles, eq } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const PROFILES_TABLE = process.env.PROFILES_TABLE!;
 
 async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult> {
   // Require authentication
@@ -56,40 +54,32 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     ];
     disallowedFields.forEach(field => delete updates[field]);
 
-    // Build update expression
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
-
-    Object.keys(updates).forEach((key, index) => {
-      updateExpressions.push(`#field${index} = :value${index}`);
-      expressionAttributeNames[`#field${index}`] = key;
-      expressionAttributeValues[`:value${index}`] = updates[key];
-    });
-
     // Add updatedAt
-    updateExpressions.push(`#updatedAt = :updatedAt`);
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
-    
-    // Add createdAt if profile doesn't exist (upsert behavior)
-    updateExpressions.push(`#createdAt = if_not_exists(#createdAt, :createdAt)`);
-    expressionAttributeNames['#createdAt'] = 'createdAt';
-    expressionAttributeValues[':createdAt'] = new Date().toISOString();
+    updates.updatedAt = new Date().toISOString();
 
-    const updateCommand = new UpdateCommand({
-      TableName: PROFILES_TABLE,
-      Key: { userId: targetUserId },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW',
-    });
+    const db = getDb();
 
-    const result = await dynamodb.send(updateCommand);
+    // Try to update existing profile, or insert if it doesn't exist (upsert behavior)
+    const [existing] = await db.select().from(profiles).where(eq(profiles.userId, targetUserId)).limit(1);
+
+    let profile: any;
+
+    if (existing) {
+      // Update existing profile
+      const [updated] = await db.update(profiles).set(updates).where(eq(profiles.userId, targetUserId)).returning();
+      profile = { ...updated };
+    } else {
+      // Insert new profile (upsert behavior like the original if_not_exists for createdAt)
+      const newProfile = {
+        userId: targetUserId,
+        ...updates,
+        createdAt: new Date().toISOString(),
+      };
+      const [inserted] = await db.insert(profiles).values(newProfile).returning();
+      profile = { ...inserted };
+    }
 
     // Remove sensitive fields
-    const profile = { ...result.Attributes };
     delete profile.passwordHash;
     delete profile.refreshToken;
 
@@ -110,4 +100,3 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

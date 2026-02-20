@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, activities, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const dynamoClient = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const ACTIVITIES_TABLE = process.env.ACTIVITIES_TABLE_NAME || 'homeforpup-activities';
 
 // POST /api/activities/[id]/read - Mark activity as read
 export async function POST(
@@ -28,40 +17,26 @@ export async function POST(
     const { id: activityId } = await params;
 
     // First, get the activity to verify ownership
-    const getCommand = new GetCommand({
-      TableName: ACTIVITIES_TABLE,
-      Key: { id: activityId },
-    });
+    const [activity] = await db.select().from(activities).where(eq(activities.id, activityId)).limit(1);
 
-    const getResult = await docClient.send(getCommand);
-    if (!getResult.Item) {
+    if (!activity) {
       return NextResponse.json({ error: 'Activity not found' }, { status: 404 });
     }
 
     // Verify the activity belongs to the authenticated user
-    if (getResult.Item.userId !== userId) {
+    if (activity.userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Update the activity to mark as read
-    const updateCommand = new UpdateCommand({
-      TableName: ACTIVITIES_TABLE,
-      Key: { id: activityId },
-      UpdateExpression: 'SET #read = :read',
-      ExpressionAttributeNames: {
-        '#read': 'read',
-      },
-      ExpressionAttributeValues: {
-        ':read': true,
-      },
-      ReturnValues: 'ALL_NEW',
-    });
+    const [updated] = await db.update(activities)
+      .set({ read: true })
+      .where(eq(activities.id, activityId))
+      .returning();
 
-    const result = await docClient.send(updateCommand);
-
-    return NextResponse.json({ 
-      success: true, 
-      activity: result.Attributes 
+    return NextResponse.json({
+      success: true,
+      activity: updated
     });
   } catch (error) {
     console.error('Error marking activity as read:', error);

@@ -7,6 +7,7 @@ config({ path: path.resolve(__dirname, '../../.env') });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['postgres', '@homeforpup/database', 'drizzle-orm'],
   images: {
     remotePatterns: [
       {

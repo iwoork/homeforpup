@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq, sql } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client);
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 // POST - Increment profile views
 export async function POST(
@@ -44,14 +33,11 @@ export async function POST(
     console.log('Incrementing profile views for user:', profileUserId.substring(0, 10) + '...');
 
     // First, get the user to check if they exist
-    const getCommand = new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: profileUserId }
-    });
+    const [userItem] = await db.select().from(profiles)
+      .where(eq(profiles.userId, profileUserId))
+      .limit(1);
 
-    const getResult = await dynamodb.send(getCommand);
-    
-    if (!getResult.Item) {
+    if (!userItem) {
       return NextResponse.json(
         { message: 'User not found' },
         { status: 404 }
@@ -59,7 +45,7 @@ export async function POST(
     }
 
     // Check if user is active
-    if (getResult.Item.accountStatus !== 'active') {
+    if (userItem.accountStatus !== 'active') {
       return NextResponse.json(
         { message: 'User profile is not available' },
         { status: 404 }
@@ -67,21 +53,15 @@ export async function POST(
     }
 
     // Increment profile views using atomic counter
-    const updateCommand = new UpdateCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: profileUserId },
-      UpdateExpression: 'SET profileViews = if_not_exists(profileViews, :zero) + :inc, updatedAt = :updatedAt',
-      ExpressionAttributeValues: {
-        ':zero': 0,
-        ':inc': 1,
-        ':updatedAt': new Date().toISOString()
-      },
-      ReturnValues: 'UPDATED_NEW'
-    });
+    const [result] = await db.update(profiles)
+      .set({
+        profileViews: sql`COALESCE(${profiles.profileViews}, 0) + 1`,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(profiles.userId, profileUserId))
+      .returning({ profileViews: profiles.profileViews });
 
-    const result = await dynamodb.send(updateCommand);
-    
-    const newViewCount = result.Attributes?.profileViews || 0;
+    const newViewCount = result?.profileViews || 0;
 
     console.log('Successfully incremented profile views. New count:', newViewCount);
 
@@ -94,7 +74,7 @@ export async function POST(
   } catch (error) {
     console.error('Error incrementing profile views:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error recording profile view',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },
@@ -111,7 +91,7 @@ export async function GET(
   try {
     const params = await context.params;
     const userId = params.id;
-    
+
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json(
         { message: 'Invalid user ID' },
@@ -119,15 +99,12 @@ export async function GET(
       );
     }
 
-    const getCommand = new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId },
-      ProjectionExpression: 'profileViews'
-    });
+    const [result] = await db.select({ profileViews: profiles.profileViews })
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
 
-    const result = await dynamodb.send(getCommand);
-    
-    if (!result.Item) {
+    if (!result) {
       return NextResponse.json(
         { message: 'User not found' },
         { status: 404 }
@@ -135,14 +112,14 @@ export async function GET(
     }
 
     return NextResponse.json({
-      profileViews: result.Item.profileViews || 0,
+      profileViews: result.profileViews || 0,
       success: true
     });
 
   } catch (error) {
     console.error('Error getting profile views:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error getting profile views',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },

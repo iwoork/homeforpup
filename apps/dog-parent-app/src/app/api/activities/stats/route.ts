@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { db, activities, eq, and, gte, desc } from '@homeforpup/database';
 import { ActivityStats, Activity } from '@homeforpup/shared-types';
 
 import { auth } from '@clerk/nextjs/server';
-const dynamoClient = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const ACTIVITIES_TABLE = process.env.ACTIVITIES_TABLE_NAME || 'homeforpup-activities';
 
 // GET /api/activities/stats - Get activity statistics
 export async function GET(request: NextRequest) {
@@ -48,42 +37,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Query activities for the user within the date range
-    const scanCommand = new ScanCommand({
-      TableName: ACTIVITIES_TABLE,
-      FilterExpression: 'userId = :userId AND #timestamp >= :startDate',
-      ExpressionAttributeNames: {
-        '#timestamp': 'timestamp',
-      },
-      ExpressionAttributeValues: {
-        ':userId': userId,
-        ':startDate': startDate.toISOString(),
-      },
-    });
+    const result = await db.select().from(activities)
+      .where(and(
+        eq(activities.userId, userId),
+        gte(activities.timestamp, startDate.toISOString())
+      ))
+      .orderBy(desc(activities.timestamp));
 
-    const result = await docClient.send(scanCommand);
-    const activities = (result.Items || []) as Activity[];
+    const typedActivities = result as unknown as Activity[];
 
     // Calculate statistics
     const stats: ActivityStats = {
-      total: activities.length,
-      unread: activities.filter(a => !a.read).length,
+      total: typedActivities.length,
+      unread: typedActivities.filter(a => !a.read).length,
       byType: {} as Record<string, number>,
       byCategory: {} as Record<string, number>,
       byPriority: { low: 0, medium: 0, high: 0 },
-      recent: activities
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 5),
+      recent: typedActivities.slice(0, 5),
     };
 
     // Count by type and category
-    activities.forEach(activity => {
-      // Count by type
+    typedActivities.forEach(activity => {
       stats.byType[activity.type] = (stats.byType[activity.type] || 0) + 1;
-      
-      // Count by category
       stats.byCategory[activity.category] = (stats.byCategory[activity.category] || 0) + 1;
-      
-      // Count by priority
       stats.byPriority[activity.priority]++;
     });
 

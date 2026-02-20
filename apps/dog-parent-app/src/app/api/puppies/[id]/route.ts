@@ -1,26 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dogsApiClient } from '@homeforpup/shared-dogs';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { db, dogs, kennels, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-const createDynamoClient = () => {
-  const client = new DynamoDBClient({
-    region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
-
-  return DynamoDBDocumentClient.from(client, {
-    marshallOptions: {
-      removeUndefinedValues: true,
-    },
-  });
-};
-
-const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 
 // GET /api/puppies/[id] - Get puppy details with kennel data (public)
 export async function GET(
@@ -29,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const dog = await dogsApiClient.getDogById(id);
+    const [dog] = await db.select().from(dogs).where(eq(dogs.id, id)).limit(1);
 
     if (!dog) {
       return NextResponse.json({ error: 'Puppy not found' }, { status: 404 });
@@ -39,14 +20,10 @@ export async function GET(
     let kennel = null;
     if (dog.kennelId) {
       try {
-        const dynamodb = createDynamoClient();
-        const kennelResult = await dynamodb.send(
-          new GetCommand({
-            TableName: KENNELS_TABLE,
-            Key: { id: dog.kennelId },
-          })
-        );
-        kennel = kennelResult.Item || null;
+        const [kennelResult] = await db.select().from(kennels)
+          .where(eq(kennels.id, dog.kennelId))
+          .limit(1);
+        kennel = kennelResult || null;
       } catch (error) {
         console.error('Error fetching kennel:', error);
       }
@@ -61,7 +38,7 @@ export async function GET(
 
     // Extract photo URL
     const profilePhoto = dog.photoGallery?.find(
-      (photo) => photo.isProfilePhoto
+      (photo: any) => photo.isProfilePhoto
     )?.url;
     const firstPhoto = dog.photoGallery?.[0]?.url;
     const photoUrl = dog.photoUrl || profilePhoto || firstPhoto;
@@ -72,7 +49,7 @@ export async function GET(
       ageWeeks,
       photoUrl: photoUrl || null,
       location: kennel?.address
-        ? `${kennel.address.city}, ${kennel.address.state}`
+        ? `${(kennel.address as any).city}, ${(kennel.address as any).state}`
         : null,
     });
   } catch (error) {

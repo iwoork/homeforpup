@@ -1,24 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq } from '@homeforpup/database';
 import { auth, currentUser } from '@clerk/nextjs/server';
-
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true
-  }
-});
-
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 interface ProfileUpdateRequest {
   name?: string;
@@ -68,12 +50,9 @@ export async function GET(request: NextRequest) {
     const clerkUser = await currentUser();
 
     // Get user from database
-    const result = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: userId }
-    }));
+    const [result] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
 
-    if (!result.Item) {
+    if (!result) {
       // If user doesn't exist in database, return Clerk user data
       const userProfile = {
         userId: userId,
@@ -98,7 +77,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ user: userProfile });
     }
 
-    return NextResponse.json({ user: result.Item });
+    return NextResponse.json({ user: result });
 
   } catch (error) {
     console.error('Error fetching profile:', error);
@@ -127,31 +106,36 @@ export async function PUT(request: NextRequest) {
     console.log('Update data:', body);
 
     // Get existing user data
-    const existingUserResult = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: userId }
-    }));
+    const [existingUser] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
 
-    if (!existingUserResult.Item) {
+    if (!existingUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const existingUser = existingUserResult.Item;
-
-    // Update user data
-    const updatedUser = {
-      ...existingUser,
-      ...body,
-      userId: userId, // Ensure userId is not changed
+    // Build update data
+    const updateData: Record<string, any> = {
       updatedAt: timestamp,
-      lastActiveAt: timestamp
+      lastActiveAt: timestamp,
     };
 
-    // Save updated user to database
-    await dynamodb.send(new PutCommand({
-      TableName: USERS_TABLE,
-      Item: updatedUser
-    }));
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.firstName !== undefined) updateData.firstName = body.firstName;
+    if (body.lastName !== undefined) updateData.lastName = body.lastName;
+    if (body.displayName !== undefined) updateData.displayName = body.displayName;
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.location !== undefined) updateData.location = body.location;
+    if (body.bio !== undefined) updateData.bio = body.bio;
+    if (body.profileImage !== undefined) updateData.profileImage = body.profileImage;
+    if (body.coverPhoto !== undefined) updateData.coverPhoto = body.coverPhoto;
+    if (body.socialLinks !== undefined) updateData.socialLinks = body.socialLinks;
+    if (body.preferences !== undefined) updateData.preferences = body.preferences;
+    if (body.breederInfo !== undefined) updateData.breederInfo = body.breederInfo;
+
+    // Update user
+    const [updatedUser] = await db.update(profiles)
+      .set(updateData)
+      .where(eq(profiles.userId, userId))
+      .returning();
 
     console.log('=== PROFILE UPDATE COMPLETE ===');
 

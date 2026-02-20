@@ -1,12 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { getDb, vetVisits, eq } from '../../../shared/dynamodb';
 import { VetVisit } from '@homeforpup/shared-types';
-
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-
-const TABLE_NAME = process.env.VET_VISITS_TABLE || 'VetVisits';
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -34,17 +28,12 @@ export const handler = async (
     // Parse request body
     const updateData = JSON.parse(event.body || '{}') as Partial<VetVisit>;
 
+    const db = getDb();
+
     // First, get the existing vet visit
-    const getCommand = new GetCommand({
-      TableName: TABLE_NAME,
-      Key: {
-        id: vetVisitId
-      }
-    });
+    const [existingVetVisit] = await db.select().from(vetVisits).where(eq(vetVisits.id, vetVisitId)).limit(1);
 
-    const existingResult = await docClient.send(getCommand);
-
-    if (!existingResult.Item) {
+    if (!existingVetVisit) {
       return {
         statusCode: 404,
         headers: {
@@ -59,11 +48,9 @@ export const handler = async (
       };
     }
 
-    const existingVetVisit = existingResult.Item as VetVisit;
-
     // Merge existing data with update data
     const updatedVetVisit: VetVisit = {
-      ...existingVetVisit,
+      ...(existingVetVisit as any),
       ...updateData,
       id: vetVisitId, // Ensure ID doesn't change
       createdAt: existingVetVisit.createdAt, // Preserve creation date
@@ -71,8 +58,8 @@ export const handler = async (
     };
 
     // Validate required fields are still present
-    if (!updatedVetVisit.dogId || !updatedVetVisit.visitDate || 
-        !updatedVetVisit.vetName || !updatedVetVisit.vetClinic || 
+    if (!updatedVetVisit.dogId || !updatedVetVisit.visitDate ||
+        !updatedVetVisit.vetName || !updatedVetVisit.vetClinic ||
         !updatedVetVisit.reason) {
       return {
         statusCode: 400,
@@ -88,11 +75,8 @@ export const handler = async (
       };
     }
 
-    // Save updated vet visit to DynamoDB
-    await docClient.send(new PutCommand({
-      TableName: TABLE_NAME,
-      Item: updatedVetVisit
-    }));
+    // Save updated vet visit to database
+    await db.update(vetVisits).set(updatedVetVisit as any).where(eq(vetVisits.id, vetVisitId));
 
     console.log('Vet visit updated successfully:', vetVisitId);
 
@@ -111,7 +95,7 @@ export const handler = async (
 
   } catch (error) {
     console.error('Error updating vet visit:', error);
-    
+
     return {
       statusCode: 500,
       headers: {

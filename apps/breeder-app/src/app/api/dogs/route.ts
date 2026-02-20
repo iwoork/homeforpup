@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dogsApiClient } from '@homeforpup/shared-dogs';
+import { db, dogs } from '@homeforpup/database';
 import { getUserAccessibleDogs } from '@/lib/auth/kennelAccess';
 import { checkDogCreationAllowed } from '@/lib/stripe/subscriptionGuard';
+import { v4 as uuidv4 } from 'uuid';
 
 import { auth } from '@clerk/nextjs/server';
 // GET /api/dogs - List dogs with filtering
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     const typeParam = searchParams.get('type') || '';
     const genderParam = searchParams.get('gender') || '';
     const breedingStatusParam = searchParams.get('breedingStatus') || '';
-    
+
     const options = {
       search: searchParams.get('search') || '',
       kennelId: searchParams.get('kennelId') || '',
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching dogs:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error fetching dogs',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },
@@ -67,13 +68,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const dog = await dogsApiClient.createDog(body, userId);
-    
-    return NextResponse.json(dog, { status: 201 });
+    const now = new Date().toISOString();
+    const dogData = {
+      id: uuidv4(),
+      ownerId: userId,
+      ...body,
+      weight: body.weight || 0,
+      description: body.description || '',
+      dogType: body.dogType || 'puppy',
+      healthTests: [],
+      breedingStatus: body.breedingStatus || 'not_ready',
+      healthStatus: body.healthStatus || 'good',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.insert(dogs).values(dogData);
+
+    return NextResponse.json(dogData, { status: 201 });
   } catch (error) {
     console.error('Error creating dog:', error);
     return NextResponse.json(
-      { 
+      {
         message: 'Error creating dog',
         error: process.env.NODE_ENV === 'development' ? String(error) : 'Internal server error'
       },

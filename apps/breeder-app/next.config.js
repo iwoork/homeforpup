@@ -4,14 +4,17 @@ const fs = require('fs');
 const rootEnvPath = path.resolve(__dirname, '../../.env');
 if (fs.existsSync(rootEnvPath)) {
   const rootEnv = require('dotenv').parse(fs.readFileSync(rootEnvPath));
-  const stripeKeys = Object.entries(rootEnv).filter(([k]) => k.includes('STRIPE'));
-  for (const [key, value] of stripeKeys) {
+  const keysToLoad = Object.entries(rootEnv).filter(([k]) =>
+    k.includes('STRIPE') || k === 'DATABASE_URL'
+  );
+  for (const [key, value] of keysToLoad) {
     if (!process.env[key]) process.env[key] = value;
   }
 }
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ['postgres', '@homeforpup/database', 'drizzle-orm'],
   images: {
     remotePatterns: [
       {

@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { db, profiles, eq } from '@homeforpup/database';
 
 import { auth } from '@clerk/nextjs/server';
-// Configure AWS SDK v3
-const client = new DynamoDBClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
-
-const dynamodb = DynamoDBDocumentClient.from(client, {
-  marshallOptions: {
-    removeUndefinedValues: true
-  }
-});
-const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 export async function GET(
   request: NextRequest,
@@ -33,24 +17,21 @@ export async function GET(
     }
 
     // Get user from database
-    const result = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: requestedUserId }
-    }));
+    const [result] = await db.select().from(profiles).where(eq(profiles.userId, requestedUserId)).limit(1);
 
-    if (!result.Item) {
+    if (!result) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user: result.Item });
+    return NextResponse.json({ user: result });
 
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch user data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -78,33 +59,38 @@ export async function PUT(
     const timestamp = new Date().toISOString();
 
     // Get existing user data
-    const existingUserResult = await dynamodb.send(new GetCommand({
-      TableName: USERS_TABLE,
-      Key: { userId: requestedUserId }
-    }));
+    const [existingUser] = await db.select().from(profiles).where(eq(profiles.userId, requestedUserId)).limit(1);
 
-    if (!existingUserResult.Item) {
+    if (!existingUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const existingUser = existingUserResult.Item;
-
-    // Update user data
-    const updatedUser = {
-      ...existingUser,
-      ...body,
-      userId: requestedUserId, // Ensure userId is not changed
+    // Build update data from body, preserving existing fields
+    const updateData: Record<string, any> = {
       updatedAt: timestamp,
-      lastActiveAt: timestamp
+      lastActiveAt: timestamp,
     };
 
-    // Save updated user
-    await dynamodb.send(new PutCommand({
-      TableName: USERS_TABLE,
-      Item: updatedUser
-    }));
+    // Merge in any provided fields
+    const allowedFields = [
+      'name', 'displayName', 'firstName', 'lastName', 'phone', 'location',
+      'bio', 'profileImage', 'coverPhoto', 'socialLinks', 'preferences',
+      'breederInfo', 'userType', 'galleryPhotos'
+    ];
 
-    return NextResponse.json({ 
+    allowedFields.forEach(field => {
+      if (body[field] !== undefined) {
+        updateData[field] = body[field];
+      }
+    });
+
+    // Update user
+    const [updatedUser] = await db.update(profiles)
+      .set(updateData)
+      .where(eq(profiles.userId, requestedUserId))
+      .returning();
+
+    return NextResponse.json({
       user: updatedUser,
       message: 'User updated successfully'
     });
@@ -112,10 +98,10 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to update user data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

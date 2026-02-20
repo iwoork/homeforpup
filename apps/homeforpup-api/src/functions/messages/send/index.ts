@@ -1,12 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { dynamodb, TransactWriteCommand, GetCommand } from '../../../shared/dynamodb';
+import { getDb, messages, messageThreads, profiles, eq } from '../../../shared/dynamodb';
 import { successResponse, errorResponse } from '../../../types/lambda';
 import { wrapHandler } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const MESSAGES_TABLE = process.env.MESSAGES_TABLE || 'homeforpup-messages';
-const THREADS_TABLE = process.env.THREADS_TABLE || 'homeforpup-message-threads';
-const PROFILES_TABLE = process.env.PROFILES_TABLE || 'homeforpup-profiles';
 
 // Helper to remove undefined values
 const cleanUndefinedValues = (obj: any): any => {
@@ -21,21 +17,6 @@ const cleanUndefinedValues = (obj: any): any => {
     }, {} as any);
   }
   return obj;
-};
-
-// Helper to get user info
-const getUserInfo = async (userId: string) => {
-  try {
-    const command = new GetCommand({
-      TableName: PROFILES_TABLE,
-      Key: { userId }
-    });
-    const result = await dynamodb.send(command);
-    return result.Item;
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return null;
-  }
 };
 
 async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
@@ -60,6 +41,19 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     if (authenticatedUserId === recipientId) {
       return errorResponse('Cannot send message to yourself', 400);
     }
+
+    const db = getDb();
+
+    // Helper to get user info
+    const getUserInfo = async (userId: string) => {
+      try {
+        const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId)).limit(1);
+        return profile;
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        return null;
+      }
+    };
 
     // Get sender info
     const senderInfo = await getUserInfo(authenticatedUserId);
@@ -113,70 +107,12 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
     });
 
     // Transaction to create both thread and message atomically
-    const transactItems = [
+    await db.transaction(async (tx) => {
+      // Create thread
+      await tx.insert(messageThreads).values(thread);
       // Create message
-      {
-        Put: {
-          TableName: MESSAGES_TABLE,
-          Item: cleanUndefinedValues({
-            PK: threadId,
-            SK: messageId,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp,
-            GSI2PK: recipientId,
-            GSI2SK: timestamp,
-            ...message
-          })
-        }
-      },
-      // Create main thread record
-      {
-        Put: {
-          TableName: THREADS_TABLE,
-          Item: cleanUndefinedValues({
-            PK: threadId,
-            threadId,
-            ...thread,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp
-          })
-        }
-      },
-      // Create participant record for sender
-      {
-        Put: {
-          TableName: THREADS_TABLE,
-          Item: cleanUndefinedValues({
-            PK: `${threadId}#${authenticatedUserId}`,
-            threadId,
-            participantId: authenticatedUserId,
-            ...thread,
-            GSI1PK: authenticatedUserId,
-            GSI1SK: timestamp
-          })
-        }
-      },
-      // Create participant record for recipient
-      {
-        Put: {
-          TableName: THREADS_TABLE,
-          Item: cleanUndefinedValues({
-            PK: `${threadId}#${recipientId}`,
-            threadId,
-            participantId: recipientId,
-            ...thread,
-            GSI1PK: recipientId,
-            GSI1SK: timestamp
-          })
-        }
-      }
-    ];
-
-    const command = new TransactWriteCommand({
-      TransactItems: transactItems
+      await tx.insert(messages).values(message);
     });
-
-    await dynamodb.send(command);
 
     console.log('Thread and message created successfully:', {
       threadId,
@@ -197,4 +133,3 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
 
 export { handler };
 export const wrappedHandler = wrapHandler(handler);
-

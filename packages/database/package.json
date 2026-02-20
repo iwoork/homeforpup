@@ -1,0 +1,23 @@
+{
+  "name": "@homeforpup/database",
+  "version": "1.0.0",
+  "description": "Drizzle ORM database layer for HomeForPup (Supabase PostgreSQL)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.39.0",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0",
+    "typescript": "^5.0.0"
+  }
+}
