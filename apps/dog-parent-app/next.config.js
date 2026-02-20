@@ -61,6 +61,15 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  webpack: (config) => {
+    // Prioritize this app's node_modules for module resolution
+    // to avoid duplicate @clerk/* instances from shared-auth's own node_modules
+    config.resolve.modules = [
+      path.resolve(__dirname, 'node_modules'),
+      ...config.resolve.modules || ['node_modules'],
+    ];
+    return config;
+  },
 }
 
 module.exports = nextConfig
