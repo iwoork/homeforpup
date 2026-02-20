@@ -1,25 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { CreateKennelRequest, KennelsResponse } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 import { checkKennelCreationAllowed } from '@/lib/stripe/subscriptionGuard';
-// Create the verifier outside the handler function for better performance
-let verifier: any = null;
-
-async function getCognitoVerifier() {
-  if (!verifier) {
-    const { CognitoJwtVerifier } = await import('aws-jwt-verify');
-    verifier = CognitoJwtVerifier.create({
-      userPoolId: process.env.NEXT_PUBLIC_AWS_USER_POOL_ID!,
-      tokenUse: 'id',
-      clientId: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID!,
-    });
-  }
-  return verifier;
-}
+import { auth } from '@clerk/nextjs/server';
 
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
@@ -36,39 +21,14 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient, {
 });
 const KENNELS_TABLE = process.env.KENNELS_TABLE_NAME || 'homeforpup-kennels';
 
-// Helper function to get user ID from either session or Bearer token
-async function getUserId(request: NextRequest): Promise<string | null> {
-  // Try NextAuth session first
-  const session = await getServerSession(authOptions);
-  if (session?.user?.id) {
-    return session.user.id;
-  }
-
-  // Try Bearer token authentication
-  const authHeader = request.headers.get('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    try {
-      const token = authHeader.substring(7);
-      const cognitoVerifier = await getCognitoVerifier();
-      const payload = await cognitoVerifier.verify(token);
-      return payload.sub; // Cognito user ID
-    } catch (error) {
-      console.error('Bearer token verification failed:', error);
-    }
-  }
-
-  return null;
-}
-
 // GET /api/kennels - List kennels with filtering
 export async function GET(request: NextRequest) {
   try {
-    // Get user ID from either session or Bearer token
-    const userId = await getUserId(request);
-    
+    const { userId } = await auth();
+
     if (!userId) {
       console.error('Kennels API - Unauthorized: No valid authentication');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Unauthorized',
         message: 'Please ensure you are logged in. If this issue persists, try logging out and logging back in.',
       }, { status: 401 });
@@ -157,9 +117,8 @@ export async function GET(request: NextRequest) {
 // POST /api/kennels - Create new kennel
 export async function POST(request: NextRequest) {
   try {
-    // Get user ID from either session or Bearer token
-    const userId = await getUserId(request);
-    
+    const { userId } = await auth();
+
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

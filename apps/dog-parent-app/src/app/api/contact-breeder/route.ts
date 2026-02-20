@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendContactEmail } from '@/lib/email';
 
+import { auth } from '@clerk/nextjs/server';
 interface ContactBreederRequest {
   puppyName: string;
   breederName: string;

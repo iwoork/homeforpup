@@ -19,7 +19,7 @@ import {
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useUser, useClerk } from '@clerk/nextjs';
 import type { MenuProps } from 'antd';
 
 interface NavigationProps {
@@ -28,24 +28,13 @@ interface NavigationProps {
 
 export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const { data: session } = useSession();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const pathname = usePathname();
 
-  const user = session?.user;
-
   const handleLogout = async () => {
-    await signOut({ redirect: false });
-
-    const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-    const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
-
-    if (cognitoDomain && clientId) {
-      const logoutUri = encodeURIComponent(window.location.origin);
-      window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
-    } else {
-      window.location.href = '/';
-    }
+    await signOut({ redirectUrl: '/' });
   };
 
   const handleMenuClick = (path: string) => {
@@ -134,7 +123,7 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
             style={{ backgroundColor: '#52c41a', marginBottom: '8px' }}
           />
           <div style={{ fontWeight: 600, fontSize: '16px', marginBottom: '4px' }}>
-            {user.name || user.email}
+            {user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress}
           </div>
           <div style={{ color: '#666', fontSize: '14px' }}>
             Breeder Account
@@ -148,7 +137,7 @@ export const Navigation: React.FC<NavigationProps> = ({ isMobile = false }) => {
       <div style={{ flex: 1, padding: '8px 0' }}>
         <Menu
           mode="inline"
-          selectedKeys={[pathname]}
+          selectedKeys={pathname ? [pathname] : []}
           items={menuItems}
           style={{ border: 'none' }}
         />

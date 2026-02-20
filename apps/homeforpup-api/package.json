@@ -25,17 +25,15 @@
     "@homeforpup/shared-lib": "*",
     "@homeforpup/shared-messaging": "*",
     "@homeforpup/shared-types": "*",
+    "@clerk/backend": "^1.21.0",
     "aws-lambda": "^1.0.7",
     "dotenv": "^17.2.3",
-    "jsonwebtoken": "^9.0.2",
-    "jwks-rsa": "^3.1.0",
     "source-map-support": "^0.5.21",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.145",
     "@types/jest": "^29.5.12",
-    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.18.8",
     "@types/source-map-support": "^0.5.10",
     "@types/uuid": "^9.0.8",

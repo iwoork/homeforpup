@@ -3,6 +3,7 @@ import { dogsApiClient } from '@homeforpup/shared-dogs';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 
+import { auth } from '@clerk/nextjs/server';
 const createDynamoClient = () => {
   const client = new DynamoDBClient({
     region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',

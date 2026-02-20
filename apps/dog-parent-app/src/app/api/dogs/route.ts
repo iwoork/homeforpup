@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 
+import { auth } from '@clerk/nextjs/server';
 // GET /api/dogs - Get all dogs for the authenticated user
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
     const breedingStatusParam = searchParams.get('breedingStatus') || '';
     
     const options = {
-      ownerId: session.user.id, // Filter by owner for dog parent app
+      ownerId: userId, // Filter by owner for dog parent app
       search: searchParams.get('search') || '',
       kennelId: searchParams.get('kennelId') || '',
       type: (typeParam === 'parent' || typeParam === 'puppy') ? typeParam : undefined,
@@ -50,13 +49,13 @@ export async function GET(request: NextRequest) {
 // POST /api/dogs - Create a new dog
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const dog = await dogsApiClient.createDog(body, session.user.id);
+    const dog = await dogsApiClient.createDog(body, userId);
     
     return NextResponse.json(dog, { status: 201 });
   } catch (error) {

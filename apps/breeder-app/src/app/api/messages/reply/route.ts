@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
+import { auth, currentUser } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -27,10 +26,11 @@ const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-mess
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const body = await request.json();
     const { threadId, content, receiverId, receiverName, subject } = body;
@@ -44,7 +44,6 @@ export async function POST(request: NextRequest) {
 
     const messageId = uuidv4();
     const timestamp = new Date().toISOString();
-    const userId = session.user.id;
 
     // Create the new message with the correct DynamoDB structure
     const newMessage = {
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
       SK: messageId, // Sort key is messageId
       threadId,
       senderId: userId,
-      senderName: session.user.name || 'Unknown User',
+      senderName: clerkUser?.fullName || clerkUser?.firstName || '' || 'Unknown User',
       receiverId,
       receiverName: receiverName || 'Unknown User',
       content,
@@ -89,7 +88,7 @@ export async function POST(request: NextRequest) {
             id: messageId,
             content,
             senderId: userId,
-            senderName: session.user.name || 'Unknown User',
+            senderName: clerkUser?.fullName || clerkUser?.firstName || '' || 'Unknown User',
             messageType: 'general',
             timestamp
           },

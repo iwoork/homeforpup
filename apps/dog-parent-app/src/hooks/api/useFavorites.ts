@@ -31,7 +31,7 @@ interface BulkFavoriteStatusResponse {
 
 const fetcher = async (url: string) => {
   const response = await fetch(url, {
-    credentials: 'include', // Include cookies for NextAuth session
+    credentials: 'include', // Include cookies for session
     headers: {
       'Content-Type': 'application/json',
     },
@@ -60,7 +60,7 @@ export const useFavorites = (limit: number = 50) => {
     try {
       const response = await fetch('/api/favorites', {
         method: 'POST',
-        credentials: 'include', // Include cookies for NextAuth session
+        credentials: 'include', // Include cookies for session
         headers: {
           'Content-Type': 'application/json',
         },
@@ -85,7 +85,7 @@ export const useFavorites = (limit: number = 50) => {
     try {
       const response = await fetch(`/api/favorites?puppyId=${encodeURIComponent(puppyId)}`, {
         method: 'DELETE',
-        credentials: 'include', // Include cookies for NextAuth session
+        credentials: 'include', // Include cookies for session
       });
 
       if (!response.ok) {
@@ -154,7 +154,7 @@ export const useBulkFavoriteStatus = (puppyIds: string[]) => {
     (url) => {
       return fetch(url, {
         method: 'POST',
-        credentials: 'include', // Include cookies for NextAuth session
+        credentials: 'include', // Include cookies for session
         headers: {
           'Content-Type': 'application/json',
         },

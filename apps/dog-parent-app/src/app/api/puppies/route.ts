@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
+import { auth } from '@clerk/nextjs/server';
 // Initialize DynamoDB client
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-east-1',

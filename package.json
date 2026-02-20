@@ -32,6 +32,12 @@
   "dependencies": {
     "@aws-sdk/client-acm": "^3.901.0",
     "@aws-sdk/client-cloudfront": "^3.901.0",
-    "@aws-sdk/client-s3": "^3.901.0"
+    "@aws-sdk/client-s3": "^3.901.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "overrides": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   }
 }

@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 
+import { auth } from '@clerk/nextjs/server';
 // Debug endpoint to help troubleshoot dogs API issues
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
     const debugInfo = {
       timestamp: new Date().toISOString(),
-      sessionExists: !!session,
-      userId: session?.user?.id || null,
-      userEmail: session?.user?.email || null,
+      authenticated: !!userId,
+      userId: userId || null,
     };
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({
         ...debugInfo,
         error: 'No session or user ID found',
@@ -24,11 +22,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Test the dogs API with minimal options
-    console.log('Debug: Testing dogs API for user:', session.user.id);
+    console.log('Debug: Testing dogs API for user:', userId);
     
     const dogsResult = await dogsApiClient.getDogs({
       limit: 100 // Get more dogs to see if any exist
-    }, session.user.id);
+    }, userId);
 
     console.log('Debug: Dogs API result:', {
       totalDogs: dogsResult.total,
@@ -52,7 +50,7 @@ export async function GET(request: NextRequest) {
         }))
       },
       rawApiParams: {
-        userId: session.user.id,
+        userId: userId,
         limit: 100
       }
     });

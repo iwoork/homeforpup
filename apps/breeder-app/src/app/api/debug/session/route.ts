@@ -1,31 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
+    const user = await currentUser();
     const cookies = request.cookies.getAll();
     const headers = Object.fromEntries(request.headers.entries());
-    
+
     return NextResponse.json({
-      session: session || null,
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
+      hasSession: !!userId,
+      hasUser: !!user,
+      userId: userId,
+      userEmail: user?.primaryEmailAddress?.emailAddress || '',
+      userName: user?.fullName || '',
       cookies: cookies.map(c => ({
         name: c.name,
         valueLength: c.value?.length || 0,
         hasValue: !!c.value,
       })),
       environment: {
-        hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
-        nextAuthSecretLength: process.env.NEXTAUTH_SECRET?.length || 0,
-        hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
-        nextAuthUrl: process.env.NEXTAUTH_URL,
+        hasClerkKey: !!process.env.CLERK_SECRET_KEY,
         nodeEnv: process.env.NODE_ENV,
-        hasTrustHost: !!process.env.NEXTAUTH_TRUST_HOST,
       },
       headers: {
         host: headers['host'],
@@ -45,4 +41,3 @@ export async function GET(request: NextRequest) {
     }, { status: 500 });
   }
 }
-

@@ -2,9 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -19,13 +18,13 @@ const USERS_TABLE = process.env.USERS_TABLE_NAME || 'homeforpup-users';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get and verify JWT token
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    // Get authenticated user
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const currentUserId = (session.user as any).id;
+    const currentUserId = userId;
     console.log('Fetching available users for:', currentUserId.substring(0, 10) + '...');
 
     // Get query parameters for filtering

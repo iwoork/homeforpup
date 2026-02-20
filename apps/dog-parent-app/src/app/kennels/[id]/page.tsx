@@ -53,7 +53,7 @@ const puppyStatusColor: Record<string, string> = {
 
 const KennelDetailPage: React.FC = () => {
   const params = useParams();
-  const kennelId = params.id as string;
+  const kennelId = params?.id as string;
 
   const { data, error, isLoading } = useSWR<KennelDetailResponse>(
     kennelId ? `/api/kennels/${kennelId}` : null,

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   QueryCommand,
   ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -85,12 +84,11 @@ async function ensureTableExists(): Promise<void> {
 // GET /api/admin/verifications - List all verification requests with pagination and status filter
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as Record<string, unknown>).id as string;
     if (!isAdmin(userId)) {
       return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }

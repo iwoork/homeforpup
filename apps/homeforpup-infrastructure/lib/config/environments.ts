@@ -22,12 +22,8 @@ export interface EnvironmentConfig {
   imageBucket: string;
   uploadBucket: string;
   
-  // Cognito (optional - will be created if not provided)
-  cognito?: {
-    userPoolId?: string;
-    userPoolArn?: string;
-    clientId?: string;
-  };
+  // Clerk
+  clerkSecretKey?: string;
 }
 
 export function getEnvironmentConfig(environment: string): EnvironmentConfig {
@@ -59,11 +55,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
         },
         imageBucket: process.env.S3_IMAGE_BUCKET || 'homeforpup-images-prod',
         uploadBucket: process.env.S3_UPLOAD_BUCKET || 'homeforpup-uploads-prod',
-        cognito: {
-          userPoolId: process.env.COGNITO_USER_POOL_ID,
-          userPoolArn: process.env.COGNITO_USER_POOL_ARN,
-          clientId: process.env.COGNITO_CLIENT_ID,
-        },
+        clerkSecretKey: process.env.CLERK_SECRET_KEY,
       };
 
     case 'staging':
@@ -85,11 +77,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
         },
         imageBucket: process.env.S3_IMAGE_BUCKET || 'homeforpup-images-staging',
         uploadBucket: process.env.S3_UPLOAD_BUCKET || 'homeforpup-uploads-staging',
-        cognito: {
-          userPoolId: process.env.COGNITO_USER_POOL_ID,
-          userPoolArn: process.env.COGNITO_USER_POOL_ARN,
-          clientId: process.env.COGNITO_CLIENT_ID,
-        },
+        clerkSecretKey: process.env.CLERK_SECRET_KEY,
       };
 
     case 'development':
@@ -112,11 +100,7 @@ export function getEnvironmentConfig(environment: string): EnvironmentConfig {
         },
         imageBucket: process.env.S3_IMAGE_BUCKET || 'homeforpup-images',
         uploadBucket: process.env.S3_UPLOAD_BUCKET || 'homeforpup-uploads',
-        cognito: {
-          userPoolId: process.env.COGNITO_USER_POOL_ID,
-          userPoolArn: process.env.COGNITO_USER_POOL_ARN,
-          clientId: process.env.COGNITO_CLIENT_ID,
-        },
+        clerkSecretKey: process.env.CLERK_SECRET_KEY,
       };
   }
 }

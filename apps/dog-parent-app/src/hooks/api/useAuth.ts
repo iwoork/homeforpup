@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth as useAuthContext } from '@homeforpup/shared-auth';
-import { useSession, signIn } from 'next-auth/react';
+import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import { useCallback } from 'react';
 
 interface UseAuthReturn {
@@ -27,13 +27,19 @@ interface UseAuthReturn {
 }
 
 export const useAuth = (): UseAuthReturn => {
-  const { data: session } = useSession();
+  const { user: clerkUser } = useUser();
+  const { getToken } = useClerkAuth();
+  const clerk = useClerk();
   const authContext = useAuthContext();
 
   // Method to get the current JWT token
-  const getToken = useCallback(async (): Promise<string | null> => {
-    return (session as any)?.accessToken || null;
-  }, [session]);
+  const getTokenValue = useCallback(async (): Promise<string | null> => {
+    try {
+      return await getToken();
+    } catch {
+      return null;
+    }
+  }, [getToken]);
 
   // Method to refresh the token if needed
   const refreshToken = useCallback(async (): Promise<boolean> => {
@@ -47,8 +53,7 @@ export const useAuth = (): UseAuthReturn => {
   }, [authContext]);
 
   // Method to sync user data with DynamoDB
-  const syncUser = useCallback(async (userData?: any, providedToken?: string): Promise<any> => {
-    // The AuthContext handles user syncing automatically
+  const syncUser = useCallback(async (_userData?: any, _providedToken?: string): Promise<any> => {
     return authContext.user;
   }, [authContext]);
 
@@ -75,7 +80,6 @@ export const useAuth = (): UseAuthReturn => {
       }
 
       const updatedUser = await response.json();
-      // The AuthContext will handle updating the user state
       await authContext.checkAuthStatus();
       return updatedUser;
 
@@ -86,43 +90,29 @@ export const useAuth = (): UseAuthReturn => {
   }, [authContext]);
 
   const handleSignIn = useCallback(async (action: 'login' | 'signup' = 'login', userType?: 'breeder' | 'dog-parent') => {
-    try {
-      // Store user type for after signup completion
-      if (action === 'signup' && userType) {
-        localStorage.setItem('pendingUserType', userType);
-      }
-      
-      // Use NextAuth signIn directly with proper redirect handling
-      const result = await signIn('cognito', { 
-        callbackUrl: '/dashboard',
-        redirect: true 
-      });
-      
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
+    if (action === 'signup' && userType) {
+      localStorage.setItem('pendingUserType', userType);
     }
+    window.location.href = action === 'signup' ? '/sign-up' : '/sign-in';
   }, []);
 
   const handleSignOut = useCallback(async () => {
     try {
-      await authContext.logout();
+      localStorage.removeItem('activeProfileType');
+      await clerk.signOut();
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
     }
-  }, [authContext]);
+  }, [clerk]);
 
-  // Derive userType from authContext user data or session
-  const effectiveUserType = (authContext.user?.userType || (session as any)?.user?.userType || 'dog-parent') as 'breeder' | 'dog-parent' | null;
+  // Derive userType from authContext user data or Clerk metadata
+  const effectiveUserType = (authContext.user?.userType || (clerkUser?.publicMetadata?.userType as string) || 'dog-parent') as 'breeder' | 'dog-parent' | null;
   const canSwitchProfiles = false;
   const activeProfileType = effectiveUserType;
-  const isSwitchingProfile = false; // Not implemented in current version
+  const isSwitchingProfile = false;
   const clearAllAuthData = () => {
-    // This is handled by the context
+    clerk.signOut();
   };
   const refreshUserData = async () => {
     await authContext.checkAuthStatus();
@@ -135,7 +125,7 @@ export const useAuth = (): UseAuthReturn => {
     signOut: handleSignOut,
     error: authContext.error,
     isAuthenticated: authContext.isAuthenticated,
-    getToken,
+    getToken: getTokenValue,
     refreshToken,
     syncUser,
     updateUser,

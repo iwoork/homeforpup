@@ -12,17 +12,17 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../utils/theme';
 import { messageService, MessageThread } from '../../services/messageService';
-import authService from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MessagesScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const currentUserId = user?.userId || '';
 
   useEffect(() => {
-    loadCurrentUser();
     fetchMessageThreads();
 
     // Poll for new messages every 10 seconds
@@ -34,17 +34,6 @@ const MessagesScreen: React.FC = () => {
 
     return () => clearInterval(pollInterval);
   }, [loading, refreshing]);
-
-  const loadCurrentUser = async () => {
-    try {
-      const user = await authService.getCurrentUser();
-      if (user) {
-        setCurrentUserId(user.userId);
-      }
-    } catch (error) {
-      console.error('Error loading current user:', error);
-    }
-  };
 
   const fetchMessageThreads = async () => {
     try {

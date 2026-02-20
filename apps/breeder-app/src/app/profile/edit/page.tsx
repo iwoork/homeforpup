@@ -34,7 +34,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CountrySelector from '@/components/CountrySelector';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 
@@ -91,15 +91,15 @@ const EditProfilePage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<{code: string, name: string, dialCode: string, flag: string} | null>(null);
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
 
   // Fetch current profile data
   useEffect(() => {
     const fetchProfile = async () => {
-      if (status === 'loading') return;
-      
-      if (status === 'unauthenticated') {
-        router.push('/auth/login');
+      if (!isLoaded) return;
+
+      if (!isSignedIn) {
+        router.push('/sign-in');
         return;
       }
 
@@ -109,16 +109,16 @@ const EditProfilePage: React.FC = () => {
           const data = await response.json();
           setProfile(data.user);
           
-          // Merge database data with Cognito session data
-          // Prefer database data if it exists, otherwise fall back to Cognito data
+          // Merge database data with Clerk user data
+          // Prefer database data if it exists, otherwise fall back to Clerk data
           const mergedData = {
-            name: data.user.name || session?.user?.name || '',
+            name: data.user.name || clerkUser?.fullName || '',
             displayName: data.user.displayName || '',
-            firstName: data.user.firstName || session?.user?.firstName || '',
-            lastName: data.user.lastName || session?.user?.lastName || '',
-            phone: data.user.phone || session?.user?.phone || '',
-            location: data.user.location || session?.user?.location || '',
-            bio: data.user.bio || session?.user?.bio || '',
+            firstName: data.user.firstName || clerkUser?.firstName || '',
+            lastName: data.user.lastName || clerkUser?.lastName || '',
+            phone: data.user.phone || clerkUser?.primaryPhoneNumber?.phoneNumber || '',
+            location: data.user.location || '',
+            bio: data.user.bio || '',
             kennelName: data.user.breederInfo?.kennelName || '',
             license: data.user.breederInfo?.license || '',
             experience: data.user.breederInfo?.experience || 0,
@@ -148,7 +148,7 @@ const EditProfilePage: React.FC = () => {
     };
 
     fetchProfile();
-  }, [status, router, form]);
+  }, [isLoaded, isSignedIn, router, form, clerkUser]);
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -344,7 +344,7 @@ const EditProfilePage: React.FC = () => {
     }
   };
 
-  if (status === 'loading' || fetchingProfile) {
+  if (!isLoaded || fetchingProfile) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -360,7 +360,7 @@ const EditProfilePage: React.FC = () => {
     );
   }
 
-  if (!session?.user) {
+  if (!isSignedIn || !clerkUser) {
     return (
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
         <Alert
@@ -369,7 +369,7 @@ const EditProfilePage: React.FC = () => {
           type="warning"
           showIcon
           action={
-            <Button type="primary" href="/auth/login">
+            <Button type="primary" href="/sign-in">
               Sign In
             </Button>
           }

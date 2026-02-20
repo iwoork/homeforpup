@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DOG_COLORS, DogColor, DogColorCategory } from '@homeforpup/shared-types';
 
+import { auth } from '@clerk/nextjs/server';
 export const dynamic = 'force-dynamic';
 
 interface DogColorsResponse {

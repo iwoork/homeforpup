@@ -5,10 +5,9 @@ import {
   QueryCommand,
   PutCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
+import { auth } from '@clerk/nextjs/server';
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
@@ -102,8 +101,8 @@ export async function GET(request: NextRequest) {
 // POST /api/contracts - Create a new contract
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -122,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     const contract = {
       id: uuidv4(),
-      breederId: session.user.id,
+      breederId: userId,
       buyerName: body.buyerName,
       buyerEmail: body.buyerEmail,
       litterId: body.litterId,

@@ -4,13 +4,10 @@ import { Construct } from 'constructs';
 import { EnvironmentConfig } from '../config/environments';
 import { DynamoDBStack } from './dynamodb-stack';
 import { S3Stack } from './s3-stack';
-import { CognitoStack } from './cognito-stack';
-
 export interface IAMStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
   dynamodbStack?: DynamoDBStack;
   s3Stack?: S3Stack;
-  cognitoStack?: CognitoStack;
 }
 
 export class IAMStack extends cdk.Stack {
@@ -19,7 +16,7 @@ export class IAMStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: IAMStackProps) {
     super(scope, id, props);
 
-    const { config, dynamodbStack, s3Stack, cognitoStack } = props;
+    const { config, dynamodbStack, s3Stack } = props;
     const env = config.environment;
 
     // Create IAM Role for Application (Lambda, EC2, etc.)
@@ -118,23 +115,6 @@ export class IAMStack extends cdk.Stack {
             s3Stack.uploadBucket.bucketArn,
             `${s3Stack.uploadBucket.bucketArn}/*`,
           ],
-        })
-      );
-    }
-
-    // Cognito Permissions
-    if (cognitoStack) {
-      this.applicationRole.addToPolicy(
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: [
-            'cognito-idp:DescribeUserPool',
-            'cognito-idp:DescribeUserPoolClient',
-            'cognito-idp:ListUsers',
-            'cognito-idp:AdminGetUser',
-            'cognito-idp:AdminUpdateUserAttributes',
-          ],
-          resources: [cognitoStack.userPool.userPoolArn],
         })
       );
     }

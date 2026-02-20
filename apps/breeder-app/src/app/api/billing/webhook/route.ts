@@ -5,6 +5,7 @@ import { getProfileByStripeCustomerId, updateSubscription } from '@/lib/stripe/s
 import { SubscriptionTier } from '@homeforpup/shared-types';
 import Stripe from 'stripe';
 
+import { auth } from '@clerk/nextjs/server';
 function getSubscriptionPeriod(subscription: Stripe.Subscription) {
   const item = subscription.items.data[0];
   return {

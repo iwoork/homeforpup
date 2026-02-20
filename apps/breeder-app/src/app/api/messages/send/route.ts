@@ -2,10 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, TransactWriteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
+import { auth } from '@clerk/nextjs/server';
 // Configure AWS SDK v3 with removeUndefinedValues option
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -88,10 +87,10 @@ function cleanUndefinedValues(obj: any): any {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the session using NextAuth (consistent with threads API)
-    const session = await getServerSession(authOptions);
+    // Get authenticated user
+    const { userId } = await auth();
     
-    if (!session?.user || !(session.user as any).id) {
+    if (!userId) {
       console.log('No valid session found for send message request');
       return NextResponse.json({ 
         error: 'Your session has expired. Please refresh the page to continue.',
@@ -99,10 +98,9 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
-    const authenticatedUserId = (session.user as any).id;
-    const authenticatedUserNameFromSession = (session.user as any).name || 'User';
-    console.log('Session verification successful for send message, user:', authenticatedUserId.substring(0, 10) + '...', 'name from session:', authenticatedUserNameFromSession);
-    
+    const authenticatedUserId = userId;
+    const authenticatedUserNameFromSession = 'User';
+        
     const body = await request.json();
     const { recipientId, recipientName, subject, content, messageType } = body;
 

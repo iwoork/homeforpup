@@ -19,7 +19,7 @@ async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResu
   }
 
   // Check if user is a breeder
-  const userType = (event as any).requestContext.authorizer?.claims?.['custom:userType'];
+  const userType = (event as any).requestContext.authorizer?.userType;
   if (userType !== 'breeder') {
     return errorResponse('Forbidden: Only breeders can update kennels', 403);
   }

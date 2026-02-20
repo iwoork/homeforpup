@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
@@ -24,13 +23,11 @@ const THREADS_TABLE = process.env.THREADS_TABLE_NAME || 'puppy-platform-dev-mess
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
 
-    if (!session?.user || !(session.user as any).id) {
+    if (!userId) {
       return NextResponse.json({ unreadCount: 0 }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
 
     // Query threads where user is a participant using GSI1
     const command = new QueryCommand({

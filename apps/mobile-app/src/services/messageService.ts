@@ -1,5 +1,5 @@
 import { config } from '../config/config';
-import authService from './authService';
+import apiService from './apiService';
 
 const API_BASE_URL = config.api.baseUrl;
 
@@ -60,7 +60,7 @@ export interface SendReplyRequest {
 
 class MessageService {
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    const token = await authService.getAuthToken();
+    const token = apiService.getAuthToken();
     
     console.log('Making request to:', `${API_BASE_URL}${endpoint}`);
     console.log('Token exists:', !!token);

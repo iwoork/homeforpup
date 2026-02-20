@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
@@ -22,33 +21,32 @@ export async function POST(
 ) {
   try {
     const params = await context.params;
-    const userId = params.id;
-    
-    if (!userId || typeof userId !== 'string') {
+    const profileUserId = params.id;
+
+    if (!profileUserId || typeof profileUserId !== 'string') {
       return NextResponse.json(
         { message: 'Invalid user ID' },
         { status: 400 }
       );
     }
 
-    // Get current user from session
-    const session = await getServerSession(authOptions);
-    const currentUserId = (session?.user as any)?.id;
+    // Get current user
+    const { userId: currentUserId } = await auth();
 
     // Don't count views from the profile owner
-    if (currentUserId === userId) {
+    if (currentUserId === profileUserId) {
       return NextResponse.json({
         message: 'Profile view not counted for own profile',
         success: true
       });
     }
 
-    console.log('Incrementing profile views for user:', userId.substring(0, 10) + '...');
+    console.log('Incrementing profile views for user:', profileUserId.substring(0, 10) + '...');
 
-    // First, get the current user to check if they exist
+    // First, get the user to check if they exist
     const getCommand = new GetCommand({
       TableName: USERS_TABLE,
-      Key: { userId }
+      Key: { userId: profileUserId }
     });
 
     const getResult = await dynamodb.send(getCommand);
@@ -71,7 +69,7 @@ export async function POST(
     // Increment profile views using atomic counter
     const updateCommand = new UpdateCommand({
       TableName: USERS_TABLE,
-      Key: { userId },
+      Key: { userId: profileUserId },
       UpdateExpression: 'SET profileViews = if_not_exists(profileViews, :zero) + :inc, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
         ':zero': 0,

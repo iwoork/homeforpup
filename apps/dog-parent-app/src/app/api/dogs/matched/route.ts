@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 
+import { auth } from '@clerk/nextjs/server';
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await dogsApiClient.getMatchedDogs(session.user.id);
+    const data = await dogsApiClient.getMatchedDogs(userId);
     
     // Return the matched puppies array for backward compatibility
     return NextResponse.json(data.matchedPuppies);

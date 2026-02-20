@@ -1,12 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { dynamodb, UpdateCommand } from '../../../shared/dynamodb';
 import { successResponse, AuthenticatedEvent } from '../../../types/lambda';
 import { wrapHandler, ApiError } from '../../../middleware/error-handler';
 import { getUserIdFromEvent, requireAuth } from '../../../middleware/auth';
-
-const cognito = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION || 'us-east-1' });
-const USER_POOL_ID = process.env.USER_POOL_ID!;
 
 const PROFILES_TABLE = process.env.PROFILES_TABLE!;
 
@@ -21,10 +17,9 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
     targetUserId,
     userIdsMatch: currentUserId === targetUserId,
     hasAuthorizer: !!event.requestContext.authorizer,
-    claims: event.requestContext.authorizer?.claims ? {
-      sub: event.requestContext.authorizer.claims.sub,
-      email: event.requestContext.authorizer.claims.email,
-      'cognito:username': event.requestContext.authorizer.claims['cognito:username'],
+    authContext: event.requestContext.authorizer ? {
+      sub: event.requestContext.authorizer.sub,
+      email: event.requestContext.authorizer.email,
     } : null,
   });
 
@@ -48,69 +43,15 @@ async function handler(event: AuthenticatedEvent): Promise<APIGatewayProxyResult
 
   try {
     const updates = JSON.parse(event.body);
-    
-    // Extract Cognito-only fields before removing them
-    const cognitoFields: Record<string, string> = {};
-    
-    // Map of form field names to Cognito attribute names
-    const cognitoFieldMapping: Record<string, string> = {
-      firstName: 'given_name',
-      lastName: 'family_name',
-      phone: 'phone_number',
-      location: 'address',
-      profileImage: 'picture',
-      bio: 'profile',  // Cognito's "profile" attribute
-    };
-    
-    // Extract Cognito fields from updates
-    Object.keys(cognitoFieldMapping).forEach(field => {
-      if (updates[field] !== undefined) {
-        cognitoFields[cognitoFieldMapping[field]] = updates[field];
-      }
-    });
-    
-    // Update Cognito user attributes if there are any Cognito-specific fields
-    if (Object.keys(cognitoFields).length > 0) {
-      console.log('Updating Cognito attributes:', Object.keys(cognitoFields));
-      
-      const userAttributes = Object.entries(cognitoFields).map(([name, value]) => ({
-        Name: name,
-        Value: String(value || ''),
-      }));
-      
-      try {
-        const cognitoCommand = new AdminUpdateUserAttributesCommand({
-          UserPoolId: USER_POOL_ID,
-          Username: targetUserId, // Cognito uses the userId (sub) as username
-          UserAttributes: userAttributes,
-        });
-        
-        await cognito.send(cognitoCommand);
-        console.log('✅ Cognito attributes updated successfully');
-      } catch (cognitoError) {
-        console.error('Failed to update Cognito attributes:', cognitoError);
-        // Don't throw - continue with profile update even if Cognito update fails
-        // This allows partial success
-      }
-    }
-    
-    // Don't allow updating certain fields in the profiles table
-    // These fields are either system-managed or stored in Cognito only
+
+    // Don't allow updating certain system-managed fields
     const disallowedFields = [
       'userId',
       'email',
       'createdAt',
       'passwordHash',
       'refreshToken',
-      // Cognito-only fields (managed above)
-      'firstName',
-      'lastName',
       'username',
-      'phone',
-      'location',
-      'profileImage',
-      'picture',
-      'bio',
       'userType',
     ];
     disallowedFields.forEach(field => delete updates[field]);

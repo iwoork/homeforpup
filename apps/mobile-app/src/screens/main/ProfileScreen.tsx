@@ -45,12 +45,10 @@ const ProfileScreen: React.FC = () => {
           profileImageUrl: response.data.user.profileImage
         });
         
-        // Check if user is a verified breeder (check Cognito userType, not database)
-        // userType is stored in Cognito only
-        const cognitoUserType = user?.userType;
-        const isBreederInCognito = cognitoUserType === 'breeder';
-        setIsVerifiedBreeder(isBreederInCognito);
-        console.log('✅ Verified breeder status from Cognito:', isBreederInCognito);
+        // Check if user is a verified breeder
+        const currentUserType = user?.userType;
+        const isBreeder = currentUserType === 'breeder';
+        setIsVerifiedBreeder(isBreeder);
         
         // Update user in context with fresh data from API
         // BUT preserve the current userType (don't let API override it)
@@ -257,39 +255,31 @@ const ProfileScreen: React.FC = () => {
 
         console.log('✅ Photo uploaded to S3 successfully!');
 
-        // Update Cognito user attributes with new photo URL
+        // Update user profile in the API with new photo URL
         console.log('=== PHOTO UPDATE START ===');
         console.log('User ID:', user.userId);
-        console.log('Photo URL to save in Cognito:', photoUrl);
+        console.log('Photo URL to save:', photoUrl);
 
-        // Import AuthService to update Cognito attributes
-        const { default: authService } = await import('../../services/authService');
-        
-        const cognitoUpdateSuccess = await authService.updateUserAttributes({
-          picture: photoUrl,
+        const updateResponse = await apiService.updateUser(user.userId, {
+          profileImage: photoUrl,
         });
 
-        if (!cognitoUpdateSuccess) {
-          console.error('Failed to update Cognito user attributes');
-          throw new Error('Failed to update profile photo in Cognito');
+        if (!updateResponse.success) {
+          console.error('Failed to update profile photo:', updateResponse.error);
+          throw new Error(updateResponse.error || 'Failed to update profile photo');
         }
 
-        console.log('✅ Cognito user attributes updated successfully');
+        console.log('Profile photo saved to database successfully');
 
-        // Refresh user data from Cognito to get the updated profile image
-        console.log('Refreshing user data from Cognito...');
-        const refreshSuccess = await refreshUserFromCognito();
-        
-        if (!refreshSuccess) {
-          console.warn('Failed to refresh user from Cognito, updating local state manually');
-          // Fallback: update local state manually
-          if (updateUser) {
-            const updatedUser = {
-              ...user,
-              profileImage: photoUrl
-            };
-            updateUser(updatedUser);
-          }
+        // Update local user state
+        if (updateUser) {
+          const updatedUserData = {
+            ...user,
+            ...(updateResponse.data?.user || {}),
+            profileImage: photoUrl,
+            userType: user.userType, // Preserve current userType preference
+          };
+          updateUser(updatedUserData);
         }
         
         console.log('=== PHOTO UPDATE COMPLETE ===');

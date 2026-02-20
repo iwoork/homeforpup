@@ -39,7 +39,7 @@ interface UseMessagesReturn {
   refreshThreads: () => void;
 }
 
-// API fetcher function with NextAuth session cookies
+// API fetcher function with session cookies
 const createFetcher = () => {
   return async (url: string) => {
     const response = await fetch(url, {
@@ -58,7 +58,7 @@ const createFetcher = () => {
   };
 };
 
-// API request function with NextAuth session cookies
+// API request function with session cookies
 const createApiRequest = () => {
   return async (url: string, options: RequestInit = {}) => {
     const response = await fetch(url, {

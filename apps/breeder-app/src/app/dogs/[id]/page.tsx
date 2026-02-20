@@ -64,7 +64,7 @@ const DogDetailsPage: React.FC = () => {
   const { message } = App.useApp();
   const params = useParams();
   const router = useRouter();
-  const dogId = params.id as string;
+  const dogId = params?.id as string;
 
   // Configure S3 operations for shared photo upload
   React.useEffect(() => {

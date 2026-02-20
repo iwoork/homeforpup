@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { getProfileByUserId } from '@/lib/stripe/subscriptionDb';
 import { getTierLimits, SUBSCRIPTION_TIERS, SubscriptionTier } from '@homeforpup/shared-types';
 
+import { auth } from '@clerk/nextjs/server';
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const profile = await getProfileByUserId(session.user.id);
+    const profile = await getProfileByUserId(userId);
     const tier = (profile?.subscriptionPlan as SubscriptionTier) || 'free';
     const limits = getTierLimits(tier);
     const tierDef = SUBSCRIPTION_TIERS[tier];

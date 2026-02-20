@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -129,10 +128,11 @@ export async function POST(
   context: { params: Promise<{ postId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const params = await context.params;
     const postId = params.postId;
@@ -160,11 +160,9 @@ export async function POST(
     const commentItem: CommentItem = {
       id: `comment-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       postId,
-      authorId: session.user.id,
+      authorId: userId,
       authorName:
-        (session.user as Record<string, unknown>).displayName as string ||
-        session.user.name ||
-        'Anonymous',
+        clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
       content: content.trim(),
       createdAt: now,
     };

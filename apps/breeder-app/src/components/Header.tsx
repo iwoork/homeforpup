@@ -15,7 +15,7 @@ import {
   MessageOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { useSession, signOut, signIn } from 'next-auth/react';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 import type { MenuProps } from 'antd';
 import Navigation from './Navigation';
@@ -23,14 +23,14 @@ import Navigation from './Navigation';
 const { Header: AntHeader } = Layout;
 
 export const Header: React.FC = () => {
-  const { data: session, status } = useSession();
+  const { user, isLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
 
-  const user = session?.user;
-  const isAuthenticated = status === 'authenticated';
-  const loading = status === 'loading';
+  const isAuthenticated = !!isSignedIn;
+  const loading = !isLoaded;
 
   // Mobile detection
   useEffect(() => {
@@ -43,22 +43,12 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const handleLogin = async () => {
-    await signIn('cognito', { callbackUrl: '/dashboard' });
+  const handleLogin = () => {
+    router.push('/sign-in');
   };
 
   const handleLogout = async () => {
-    await signOut({ redirect: false });
-
-    const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-    const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
-
-    if (cognitoDomain && clientId) {
-      const logoutUri = encodeURIComponent(window.location.origin);
-      window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
-    } else {
-      window.location.href = '/';
-    }
+    await signOut({ redirectUrl: '/' });
   };
 
   const userMenuItems: MenuProps['items'] = [
@@ -189,7 +179,7 @@ export const Header: React.FC = () => {
             {!isMobile && (
               <>
                 <span className="user-name" style={{ color: '#595959' }}>
-                  {user.name || user.email}
+                  {user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress}
                 </span>
                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
                   <Button icon={<UserOutlined />} type="text" style={{ padding: '4px 8px' }}>
@@ -206,7 +196,7 @@ export const Header: React.FC = () => {
           </Space>
         ) : (
           <Space>
-            <Link href="/auth/login">
+            <Link href="/sign-in">
               <Button type="primary" icon={<LoginOutlined />}>
                 Sign In
               </Button>

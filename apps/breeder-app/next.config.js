@@ -1,4 +1,4 @@
-// Load only Stripe env vars from root .env (breeder-app has its own Cognito config in .env.local)
+// Load only Stripe env vars from root .env (breeder-app has its own config in .env.local)
 const path = require('path');
 const fs = require('fs');
 const rootEnvPath = path.resolve(__dirname, '../../.env');
@@ -54,15 +54,12 @@ const nextConfig = {
   env: {
     // Only expose intentionally public variables to the client
     NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
-    NEXT_PUBLIC_AWS_USER_POOL_ID: process.env.NEXT_PUBLIC_AWS_USER_POOL_ID,
-    NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID: process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID,
     NEXT_PUBLIC_AWS_S3_BUCKET: process.env.NEXT_PUBLIC_AWS_S3_BUCKET,
     NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN: process.env.NEXT_PUBLIC_AWS_S3_CUSTOM_DOMAIN,
-    NEXT_PUBLIC_COGNITO_DOMAIN: process.env.NEXT_PUBLIC_COGNITO_DOMAIN,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     // SECURITY: AWS credentials and Stripe secret key are NOT exposed to client
-    // AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, STRIPE_SECRET_KEY are only available on the server
   },
+  transpilePackages: ['antd', '@ant-design/icons', '@ant-design/cssinjs'],
   typescript: {
     ignoreBuildErrors: false,
   },

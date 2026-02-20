@@ -1,6 +1,6 @@
 import React from 'react';
 import useSWR from 'swr';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { KennelAnnouncement } from '@/types';
 
 const fetcher = async (url: string, token: string): Promise<KennelAnnouncement[]> => {
@@ -18,15 +18,20 @@ const fetcher = async (url: string, token: string): Promise<KennelAnnouncement[]
 };
 
 export const useKennelAnnouncements = (kennelId: string) => {
-  const { data: session, status } = useSession();
+  const { getToken, isSignedIn } = useAuth();
   const [token, setToken] = React.useState<string | null>(null);
-  const isAuthenticated = !!session;
 
   React.useEffect(() => {
-    if (isAuthenticated && (session as any)?.accessToken) {
-      setToken((session as any).accessToken);
-    }
-  }, [isAuthenticated, session]);
+    const fetchToken = async () => {
+      if (isSignedIn) {
+        const t = await getToken();
+        setToken(t);
+      } else {
+        setToken(null);
+      }
+    };
+    fetchToken();
+  }, [isSignedIn, getToken]);
 
   const { data: announcements, error, isLoading, mutate } = useSWR<KennelAnnouncement[]>(
     token && kennelId ? [`/api/kennels/${kennelId}/announcements`, token] : null,
@@ -34,12 +39,13 @@ export const useKennelAnnouncements = (kennelId: string) => {
   );
 
   const createAnnouncement = async (announcementData: Omit<KennelAnnouncement, 'id' | 'kennelId' | 'authorId' | 'createdAt' | 'updatedAt'>) => {
-    if (!token) throw new Error('No token available');
+    const currentToken = await getToken();
+    if (!currentToken) throw new Error('No token available');
 
     const response = await fetch(`/api/kennels/${kennelId}/announcements`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${currentToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(announcementData),
@@ -55,12 +61,13 @@ export const useKennelAnnouncements = (kennelId: string) => {
   };
 
   const updateAnnouncement = async (announcementId: string, updates: Partial<KennelAnnouncement>) => {
-    if (!token) throw new Error('No token available');
+    const currentToken = await getToken();
+    if (!currentToken) throw new Error('No token available');
 
     const response = await fetch(`/api/announcements/${announcementId}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${currentToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(updates),
@@ -78,12 +85,13 @@ export const useKennelAnnouncements = (kennelId: string) => {
   };
 
   const deleteAnnouncement = async (announcementId: string) => {
-    if (!token) throw new Error('No token available');
+    const currentToken = await getToken();
+    if (!currentToken) throw new Error('No token available');
 
     const response = await fetch(`/api/announcements/${announcementId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${currentToken}`,
       },
     });
 

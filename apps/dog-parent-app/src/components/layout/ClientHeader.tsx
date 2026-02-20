@@ -7,7 +7,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import useSWR from 'swr';
 import { useAuth } from '@/hooks';
-import { useSession } from 'next-auth/react';
 
 const unreadFetcher = (url: string) =>
   fetch(url, { credentials: 'include' }).then(res => res.ok ? res.json() : { unreadCount: 0 });
@@ -20,7 +19,6 @@ const ClientHeader: React.FC = () => {
     isAuthenticated,
     loading
   } = useAuth();
-  const { data: session } = useSession();
   const [isMobile, setIsMobile] = React.useState(false);
   const [forceLoading, setForceLoading] = React.useState(true);
   const [drawerVisible, setDrawerVisible] = React.useState(false);
@@ -33,12 +31,11 @@ const ClientHeader: React.FC = () => {
   );
   const unreadCount = unreadData?.unreadCount || 0;
 
-  // Get display name from user data or fallback to session
-  const displayName = user?.name || session?.user?.name || 'User';
+  // Get display name from user data
+  const displayName = user?.name || 'User';
 
   console.log('Header render - Auth state:', {
     user: user ? { userId: user.userId?.substring(0, 10) + '...', name: user.name, userType: user.userType } : null,
-    session: session ? { name: session.user?.name, email: session.user?.email } : null,
     displayName,
     isAuthenticated,
     loading

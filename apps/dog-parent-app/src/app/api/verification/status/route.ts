@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -77,14 +76,14 @@ async function ensureTableExists(): Promise<void> {
 // GET /api/verification/status - Get current user's verification status
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await ensureTableExists();
 
-    const breederId = (session.user as Record<string, unknown>).id as string;
+    const breederId = userId;
 
     // Query all verification requests for this breeder, sorted by most recent
     const result = await dynamodb.send(

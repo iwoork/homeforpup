@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   GetCommand,

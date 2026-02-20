@@ -2,9 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, UpdateCommand, QueryCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -32,20 +31,17 @@ export async function PATCH(
     const routeParams = await params;
     const { threadId } = routeParams;
     
-    // Get the session using NextAuth (consistent with threads API)
-    const session = await getServerSession(authOptions);
+    // Get authenticated user
+    const { userId } = await auth();
     
-    if (!session?.user || !(session.user as any).id) {
+    if (!userId) {
       console.log('No valid session found for mark as read request');
       return NextResponse.json({ 
         error: 'Your session has expired. Please refresh the page to continue.',
         code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
-    console.log('Session verification successful for mark as read, user:', userId.substring(0, 10) + '...');
-
+    
     console.log('Marking thread as read:', threadId, 'for user:', userId.substring(0, 10) + '...');
 
     // First, verify user has access to this thread

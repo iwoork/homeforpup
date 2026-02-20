@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   QueryCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -99,8 +98,8 @@ export async function GET(
     }
 
     // Fallback: check session user as breederId
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -109,7 +108,7 @@ export async function GET(
         TableName: CONTRACTS_TABLE,
         KeyConditionExpression: 'breederId = :breederId AND id = :id',
         ExpressionAttributeValues: {
-          ':breederId': session.user.id,
+          ':breederId': userId,
           ':id': id,
         },
       })
@@ -138,8 +137,8 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -172,7 +171,7 @@ export async function PUT(
     const result = await dynamodb.send(
       new UpdateCommand({
         TableName: CONTRACTS_TABLE,
-        Key: { breederId: session.user.id, id },
+        Key: { breederId: userId, id },
         UpdateExpression: updateExpression,
         ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0
           ? expressionAttributeNames

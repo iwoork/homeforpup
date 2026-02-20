@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ConfigProvider, App, Spin } from 'antd';
-import { NextAuthProvider } from '@/components/providers/NextAuthProvider';
+import { ConfigProvider, App } from 'antd';
+import { ClerkProvider } from '@clerk/nextjs';
+import { AuthProvider } from '@homeforpup/shared-auth';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -25,13 +26,19 @@ export function Providers({ children }: ProvidersProps) {
         minHeight: '100vh',
         background: '#f5f5f5'
       }}>
-        <Spin size="large" />
+        <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <NextAuthProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: '#52c41a',
+        },
+      }}
+    >
       <ConfigProvider
         theme={{
           token: {
@@ -40,9 +47,11 @@ export function Providers({ children }: ProvidersProps) {
         }}
       >
         <App>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </App>
       </ConfigProvider>
-    </NextAuthProvider>
+    </ClerkProvider>
   );
 }

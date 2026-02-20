@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { UpdateLitterRequest } from '@homeforpup/shared-types';
 
+import { auth } from '@clerk/nextjs/server';
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
   credentials: {
@@ -22,8 +21,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -42,7 +41,7 @@ export async function GET(
     const litter = result.Item as any; // Using any to handle kennelOwners property
 
     // Check if user has access to this litter's kennel
-    if (!litter.kennelOwners?.includes(session.user.id)) {
+    if (!litter.kennelOwners?.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -59,8 +58,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -81,7 +80,7 @@ export async function PUT(
     const existingLitter = getResult.Item as any; // Using any to handle kennelOwners property
 
     // Check if user has permission to update
-    if (!existingLitter.kennelOwners?.includes(session.user.id)) {
+    if (!existingLitter.kennelOwners?.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -131,8 +130,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -152,7 +151,7 @@ export async function DELETE(
     const existingLitter = getResult.Item as any; // Using any to handle kennelOwners property
 
     // Check if user has permission to delete
-    if (!existingLitter.kennelOwners?.includes(session.user.id)) {
+    if (!existingLitter.kennelOwners?.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

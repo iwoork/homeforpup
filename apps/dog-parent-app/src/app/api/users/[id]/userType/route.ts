@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
@@ -22,21 +21,18 @@ export async function PUT(
 ) {
   try {
     const params = await context.params;
-    const userId = params.id;
-    console.log('UserType update API called for userId:', userId);
+    const targetUserId = params.id;
+    console.log('UserType update API called for userId:', targetUserId);
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       console.log('No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const sessionUserId = session.user.id;
-    console.log('Session userId:', sessionUserId);
-    
     // Only allow users to update their own userType
-    if (userId !== sessionUserId) {
-      console.log('Unauthorized: userId mismatch', { userId, sessionUserId });
+    if (targetUserId !== userId) {
+      console.log('Unauthorized: userId mismatch', { targetUserId, userId });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

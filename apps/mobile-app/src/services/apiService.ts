@@ -233,6 +233,10 @@ class ApiService {
     this.authToken = token;
   }
 
+  getAuthToken(): string | null {
+    return this.authToken;
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {},
@@ -294,7 +298,6 @@ class ApiService {
                 aud: decodedPayload.aud,
                 exp: decodedPayload.exp,
                 token_use: decodedPayload.token_use,
-                'cognito:username': decodedPayload['cognito:username'],
               };
             }
           } catch (e) {
@@ -322,10 +325,6 @@ class ApiService {
               token_use: tokenClaims.token_use,
               exp: tokenClaims.exp,
               expired: tokenClaims.exp ? Date.now() / 1000 > tokenClaims.exp : null,
-              userPoolFromIss: tokenClaims.iss ? tokenClaims.iss.split('/').pop() : null,
-              expectedUserPool: 'us-east-1_VEufvIU7M',
-              userPoolMatch: tokenClaims.iss ? tokenClaims.iss.includes('us-east-1_VEufvIU7M') : false,
-              'cognito:username': tokenClaims['cognito:username'],
             } : 'Could not decode',
             warning: tokenClaims && userIdFromPath && tokenClaims.sub !== userIdFromPath 
               ? '⚠️ Token sub does not match path userId - this will cause 403 in Lambda' 
@@ -400,38 +399,12 @@ class ApiService {
             tokenLength: this.authToken?.length,
             tokenPreview: this.authToken?.substring(0, 30),
             tokenIssuer: tokenIssuer,
-            expectedUserPool: 'us-east-1_VEufvIU7M',
-            note: response.status === 403 ? '403 Forbidden usually means API Gateway authorizer rejected the token. Check if API is deployed with correct user pool.' : '',
+            note: response.status === 403 ? '403 Forbidden - token may be expired or invalid.' : '',
           });
-          
-          try {
-            const authService = require('./authService').default;
-            
-            // For 403, refresh session and get new ID token
-            // API Gateway Cognito User Pool Authorizer expects ID tokens (not access tokens)
-            console.log('🔄 Refreshing session to get new ID token...');
-            const isValid = await authService.refreshSession();
-            if (isValid) {
-              const idToken = await authService.getAuthToken();
-              if (idToken) {
-                this.authToken = idToken;
-                console.log('✅ Using refreshed ID token, retrying request...');
-                console.log('🔄 Retry with refreshed ID token:', {
-                  tokenLength: idToken.length,
-                  tokenPreview: idToken.substring(0, 50),
-                  isJWT: idToken.split('.').length === 3,
-                });
-                return this.makeRequest<T>(endpoint, { ...options, headers: {} }, false);
-              }
-            }
-            
-            // Both tokens failed - clear token and let AuthContext handle logout
-            console.error('❌ Both ID and access token failed - user needs to login again');
-            this.authToken = null;
-          } catch (refreshError) {
-            console.error('❌ Token refresh exception:', refreshError);
-            this.authToken = null;
-          }
+
+          // Token rejected - clear it and let AuthContext handle re-authentication
+          console.error('Token rejected by API - user needs to re-authenticate');
+          this.authToken = null;
         }
 
         return {

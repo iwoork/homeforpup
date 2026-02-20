@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { checkDogAccess } from '@/lib/auth/kennelAccess';
 import { LifeEvent } from '@homeforpup/shared-types/kennel';
 import { v4 as uuidv4 } from 'uuid';
 
+import { auth } from '@clerk/nextjs/server';
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
   credentials: {
@@ -28,8 +27,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -50,7 +49,7 @@ export async function POST(
     const existingDog = getResult.Item as any;
 
     // Check if user has permission
-    const access = await checkDogAccess(session.user.id, existingDog);
+    const access = await checkDogAccess(userId, existingDog);
     if (!access.hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
@@ -101,8 +100,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -121,7 +120,7 @@ export async function GET(
     const dog = result.Item as any;
 
     // Check if user has access
-    const access = await checkDogAccess(session.user.id, dog);
+    const access = await checkDogAccess(userId, dog);
     if (!access.hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }

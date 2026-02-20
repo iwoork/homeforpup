@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
   ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -184,10 +183,11 @@ export async function GET(request: NextRequest) {
 // POST /api/posts - Create a new post
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const body = await request.json();
     const { breederId, kennelId, groupId, title, content, postType, photos, tags } = body;
@@ -212,11 +212,9 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString();
     const postItem: PostItem = {
       id: `post-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      authorId: session.user.id,
+      authorId: userId,
       authorName:
-        (session.user as Record<string, unknown>).displayName as string ||
-        session.user.name ||
-        'Anonymous',
+        clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
       breederId: String(breederId || ''),
       kennelId: String(kennelId || ''),
       groupId: groupId ? String(groupId) : undefined,

@@ -53,7 +53,7 @@ const { Option } = Select;
 
 const KennelDetailPage: React.FC = () => {
   const params = useParams();
-  const kennelId = params.id as string;
+  const kennelId = params?.id as string;
   const [activeTab, setActiveTab] = useState('overview');
 
   // Configure S3 operations for shared photo upload

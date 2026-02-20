@@ -10,7 +10,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { SUBSCRIPTION_TIERS, SubscriptionTier, TierLimits } from '@homeforpup/shared-types';
@@ -51,14 +51,14 @@ const fetcher = async (url: string) => {
 };
 
 export default function BillingPage() {
-  const { data: session, status: authStatus } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
   const searchParams = useSearchParams();
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const { data: subscription, isLoading, mutate } = useSWR<SubscriptionData>(
-    session ? '/api/billing/subscription' : null,
+    isSignedIn ? '/api/billing/subscription' : null,
     fetcher
   );
 
@@ -69,7 +69,7 @@ export default function BillingPage() {
       const data = await res.json();
       if (data.synced) {
         mutate();
-        if (searchParams.get('success') === 'true') {
+        if (searchParams?.get('success') === 'true') {
           message.success('Subscription activated successfully!');
         }
       } else if (data.error) {
@@ -84,14 +84,14 @@ export default function BillingPage() {
 
   // Sync subscription with Stripe on page load
   useEffect(() => {
-    if (session) {
+    if (isSignedIn) {
       syncSubscription();
     }
-  }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data: kennelsData } = useSWR(session ? '/api/kennels' : null, fetcher);
-  const { data: dogsData } = useSWR(session ? '/api/dogs' : null, fetcher);
-  const { data: littersData } = useSWR(session ? '/api/litters' : null, fetcher);
+  const { data: kennelsData } = useSWR(isSignedIn ? '/api/kennels' : null, fetcher);
+  const { data: dogsData } = useSWR(isSignedIn ? '/api/dogs' : null, fetcher);
+  const { data: littersData } = useSWR(isSignedIn ? '/api/litters' : null, fetcher);
 
   const handleManagePayment = async () => {
     setPortalLoading(true);
@@ -108,7 +108,7 @@ export default function BillingPage() {
     }
   };
 
-  if (authStatus === 'loading' || isLoading || syncing) {
+  if (!isLoaded || isLoading || syncing) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
         <Spin size="large" />
@@ -116,7 +116,7 @@ export default function BillingPage() {
     );
   }
 
-  if (!session) {
+  if (!isSignedIn) {
     return (
       <div style={{ padding: '24px', textAlign: 'center' }}>
         <Title level={3}>Please sign in to manage billing</Title>

@@ -1,8 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
@@ -16,7 +16,7 @@ export interface ApiStackProps extends cdk.StackProps {
 
 export class ApiStack extends cdk.Stack {
   public readonly api: apigateway.RestApi;
-  public readonly authorizer: apigateway.CognitoUserPoolsAuthorizer;
+  public readonly authorizer: apigateway.TokenAuthorizer;
   private readonly configValue: EnvironmentConfig;
 
   constructor(scope: Construct, id: string, props: ApiStackProps) {
@@ -24,13 +24,6 @@ export class ApiStack extends cdk.Stack {
 
     const { config } = props;
     this.configValue = config;
-
-    // Import existing Cognito User Pool
-    const userPool = cognito.UserPool.fromUserPoolArn(
-      this,
-      'UserPool',
-      config.cognitoUserPoolArn
-    );
 
     // Create API Gateway
     this.api = new apigateway.RestApi(this, 'Api', {
@@ -64,33 +57,28 @@ export class ApiStack extends cdk.Stack {
       },
     });
 
-    // Validate Cognito User Pool exists and is accessible
-    // This will throw an error during deployment if the ARN is invalid
-    console.log(`🔍 Validating Cognito User Pool: ${config.cognitoUserPoolArn}`);
+    // Create Clerk authorizer Lambda
+    const clerkAuthorizerFn = new lambda.Function(this, 'ClerkAuthorizerFunction', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../dist/functions/auth/clerk-authorizer')),
+      environment: {
+        CLERK_SECRET_KEY: config.clerkSecretKey,
+      },
+      timeout: cdk.Duration.seconds(10),
+    });
 
-    // Create Cognito Authorizer
-    // Note: When attached to a method, this REQUIRES a valid JWT token
-    // Token must be in format: Authorization: Bearer <jwt-token>
-    this.authorizer = new apigateway.CognitoUserPoolsAuthorizer(
-      this,
-      'CognitoAuthorizer',
-      {
-        cognitoUserPools: [userPool],
-        authorizerName: `homeforpup-authorizer-${config.environment}`,
-        identitySource: 'method.request.header.Authorization',
-        resultsCacheTtl: cdk.Duration.seconds(300), // Cache authorizer results for 5 minutes
-      }
-    );
+    // Create Lambda Token Authorizer
+    this.authorizer = new apigateway.TokenAuthorizer(this, 'ClerkAuthorizer', {
+      handler: clerkAuthorizerFn,
+      identitySource: 'method.request.header.Authorization',
+      resultsCacheTtl: cdk.Duration.minutes(5),
+    });
 
     // Output authorizer info for debugging
     new cdk.CfnOutput(this, 'AuthorizerId', {
       value: this.authorizer.authorizerId,
-      description: 'Cognito Authorizer ID (for debugging)',
-    });
-
-    new cdk.CfnOutput(this, 'CognitoUserPoolId', {
-      value: config.cognitoUserPoolId,
-      description: 'Cognito User Pool ID',
+      description: 'Clerk Authorizer ID (for debugging)',
     });
 
     // Create API resources and routes
@@ -191,7 +179,7 @@ export class ApiStack extends cdk.Stack {
 
     dogsResource.addMethod('POST', createDogFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PUT /dogs/{id} - Update dog
@@ -212,7 +200,7 @@ export class ApiStack extends cdk.Stack {
 
     dogIdResource.addMethod('PUT', updateDogFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // DELETE /dogs/{id} - Delete dog
@@ -233,7 +221,7 @@ export class ApiStack extends cdk.Stack {
 
     dogIdResource.addMethod('DELETE', deleteDogFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -260,7 +248,7 @@ export class ApiStack extends cdk.Stack {
     // Note: The Lambda function doesn't validate ownership, but API Gateway ensures valid token
     profileIdResource.addMethod('GET', getProfileFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PUT /profiles/{id} - Update user profile
@@ -271,27 +259,15 @@ export class ApiStack extends cdk.Stack {
       config,
       environment: {
         PROFILES_TABLE: config.tables.profiles,
-        USER_POOL_ID: config.cognitoUserPoolId,
       },
     });
     updateProfileFunction.grantDynamoDBAccess([
       config.tables.profiles,
     ]);
-    
-    // Grant permission to update Cognito user attributes
-    updateProfileFunction.function.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: [
-          'cognito-idp:AdminUpdateUserAttributes',
-        ],
-        resources: [config.cognitoUserPoolArn],
-      })
-    );
 
     profileIdResource.addMethod('PUT', updateProfileFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -315,7 +291,7 @@ export class ApiStack extends cdk.Stack {
     // GET /kennels requires authentication
     kennelsResource.addMethod('GET', listKennelsFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // GET /kennels/{id} - Get kennel by ID
@@ -346,7 +322,7 @@ export class ApiStack extends cdk.Stack {
 
     kennelsResource.addMethod('POST', createKennelFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PUT /kennels/{id} - Update kennel
@@ -363,7 +339,7 @@ export class ApiStack extends cdk.Stack {
 
     kennelIdResource.addMethod('PUT', updateKennelFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // DELETE /kennels/{id} - Delete kennel
@@ -380,7 +356,7 @@ export class ApiStack extends cdk.Stack {
 
     kennelIdResource.addMethod('DELETE', deleteKennelFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -403,7 +379,7 @@ export class ApiStack extends cdk.Stack {
 
     littersResource.addMethod('GET', listLittersFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // GET /litters/{id} - Get litter by ID
@@ -420,7 +396,7 @@ export class ApiStack extends cdk.Stack {
 
     litterIdResource.addMethod('GET', getLitterFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // POST /litters - Create litter
@@ -437,7 +413,7 @@ export class ApiStack extends cdk.Stack {
 
     littersResource.addMethod('POST', createLitterFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PUT /litters/{id} - Update litter
@@ -454,7 +430,7 @@ export class ApiStack extends cdk.Stack {
 
     litterIdResource.addMethod('PUT', updateLitterFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // DELETE /litters/{id} - Delete litter
@@ -471,7 +447,7 @@ export class ApiStack extends cdk.Stack {
 
     litterIdResource.addMethod('DELETE', deleteLitterFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -494,7 +470,7 @@ export class ApiStack extends cdk.Stack {
 
     vetVisitsResource.addMethod('GET', listVetVisitsFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // POST /vet-visits - Create vet visit
@@ -511,7 +487,7 @@ export class ApiStack extends cdk.Stack {
 
     vetVisitsResource.addMethod('POST', createVetVisitFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // GET /vet-visits/{id} - Get vet visit by ID
@@ -528,7 +504,7 @@ export class ApiStack extends cdk.Stack {
 
     vetVisitIdResource.addMethod('GET', getVetVisitFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PUT /vet-visits/{id} - Update vet visit
@@ -545,7 +521,7 @@ export class ApiStack extends cdk.Stack {
 
     vetVisitIdResource.addMethod('PUT', updateVetVisitFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // DELETE /vet-visits/{id} - Delete vet visit
@@ -562,7 +538,7 @@ export class ApiStack extends cdk.Stack {
 
     vetVisitIdResource.addMethod('DELETE', deleteVetVisitFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -585,7 +561,7 @@ export class ApiStack extends cdk.Stack {
 
     veterinariansResource.addMethod('GET', listVeterinariansFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // POST /veterinarians - Create veterinarian
@@ -602,7 +578,7 @@ export class ApiStack extends cdk.Stack {
 
     veterinariansResource.addMethod('POST', createVeterinarianFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // GET /veterinarians/{id} - Get veterinarian by ID
@@ -619,7 +595,7 @@ export class ApiStack extends cdk.Stack {
 
     veterinarianIdResource.addMethod('GET', getVeterinarianFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PUT /veterinarians/{id} - Update veterinarian
@@ -636,7 +612,7 @@ export class ApiStack extends cdk.Stack {
 
     veterinarianIdResource.addMethod('PUT', updateVeterinarianFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // DELETE /veterinarians/{id} - Delete veterinarian
@@ -653,7 +629,7 @@ export class ApiStack extends cdk.Stack {
 
     veterinarianIdResource.addMethod('DELETE', deleteVeterinarianFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -682,7 +658,7 @@ export class ApiStack extends cdk.Stack {
     const sendResource = messagesResource.addResource('send');
     sendResource.addMethod('POST', sendMessageFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // POST /messages/reply - Reply to existing thread
@@ -704,7 +680,7 @@ export class ApiStack extends cdk.Stack {
     const replyResource = messagesResource.addResource('reply');
     replyResource.addMethod('POST', replyMessageFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // GET /messages/threads - List user's threads
@@ -723,7 +699,7 @@ export class ApiStack extends cdk.Stack {
 
     threadsResource.addMethod('GET', listThreadsFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // GET /messages/threads/{threadId}/messages - Get messages in thread
@@ -747,7 +723,7 @@ export class ApiStack extends cdk.Stack {
 
     threadMessagesResource.addMethod('GET', getThreadMessagesFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
 
     // PATCH /messages/threads/{threadId}/read - Mark thread as read
@@ -770,7 +746,7 @@ export class ApiStack extends cdk.Stack {
 
     readResource.addMethod('PATCH', markThreadReadFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 
@@ -832,7 +808,7 @@ export class ApiStack extends cdk.Stack {
     // POST /photos/upload-url requires authentication
     uploadUrlResource.addMethod('POST', getUploadUrlFunction.createIntegration(), {
       authorizer: this.authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.CUSTOM,
     });
   }
 

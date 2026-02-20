@@ -16,7 +16,7 @@ import {
   HeartOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import useSWR from 'swr';
 import { SUBSCRIPTION_TIERS, SubscriptionTier } from '@homeforpup/shared-types';
 
@@ -62,15 +62,15 @@ const safeFetcher = async (url: string) => {
 };
 
 const BreederDashboard: React.FC = () => {
-  const { status } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
   const [upcomingVetVisits, setUpcomingVetVisits] = useState<VetVisitInfo[]>([]);
   const [vetVisitsLoading, setVetVisitsLoading] = useState(false);
   const [vetVisitModalVisible, setVetVisitModalVisible] = useState(false);
   const [submittingVetVisit, setSubmittingVetVisit] = useState(false);
   const [vetForm] = Form.useForm();
 
-  const isAuthenticated = status === 'authenticated';
-  const loading = status === 'loading';
+  const isAuthenticated = !!isSignedIn;
+  const loading = !isLoaded;
 
   // Data fetching
   const { data: kennelsData } = useSWR('/api/kennels', safeFetcher);
@@ -186,7 +186,7 @@ const BreederDashboard: React.FC = () => {
         <Card>
           <Title level={3}>Authentication Required</Title>
           <Paragraph>Please sign in to access the dashboard.</Paragraph>
-          <Link href="/auth/login">
+          <Link href="/sign-in">
             <Button type="primary" icon={<LoginOutlined />}>Sign In</Button>
           </Link>
         </Card>

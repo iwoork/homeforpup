@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand, DeleteCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { Kennel, UpdateKennelRequest, KennelResponse } from '@homeforpup/shared-types';
 
+import { auth } from '@clerk/nextjs/server';
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
   credentials: {
@@ -24,8 +23,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -45,7 +44,7 @@ export async function GET(
     const kennel = kennelResult.Item as any; // Using any to handle kennel properties
 
     // Check if user has access to this kennel
-    if (!kennel.owners.includes(session.user.id) && !kennel.managers.includes(session.user.id)) {
+    if (!kennel.owners.includes(userId) && !kennel.managers.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -105,8 +104,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -134,7 +133,7 @@ export async function PUT(
     const existingKennel = getResult.Item as any; // Using any to handle kennel properties
 
     // Check if user has permission to update
-    if (!existingKennel.owners.includes(session.user.id) && !existingKennel.managers.includes(session.user.id)) {
+    if (!existingKennel.owners.includes(userId) && !existingKennel.managers.includes(userId)) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -193,8 +192,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -214,7 +213,7 @@ export async function DELETE(
     const existingKennel = getResult.Item as any; // Using any to handle kennel properties
 
     // Check if user is the owner (only owners can delete)
-    if (!existingKennel.owners.includes(session.user.id)) {
+    if (!existingKennel.owners.includes(userId)) {
       return NextResponse.json({ error: 'Only kennel owners can delete kennels' }, { status: 403 });
     }
 

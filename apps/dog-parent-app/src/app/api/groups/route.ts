@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
   BatchGetCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -236,10 +235,11 @@ export async function GET(request: NextRequest) {
 // POST /api/groups - Create a new group
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const body = await request.json();
     const { name, description, groupType, litterId, breederId, coverPhoto } = body;
@@ -269,10 +269,10 @@ export async function POST(request: NextRequest) {
       description: (description || '').trim(),
       groupType: groupType as GroupType,
       litterId: litterId || undefined,
-      breederId: String(breederId || session.user.id),
+      breederId: String(breederId || userId),
       coverPhoto: coverPhoto || '',
       createdAt: now,
-      createdBy: session.user.id,
+      createdBy: userId,
     };
 
     // Create the group
@@ -286,11 +286,9 @@ export async function POST(request: NextRequest) {
     // Add the creator as admin member
     const memberItem: GroupMemberItem = {
       groupId: groupItem.id,
-      userId: session.user.id,
+      userId: userId,
       userName:
-        (session.user as Record<string, unknown>).displayName as string ||
-        session.user.name ||
-        'Anonymous',
+        clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
       role: 'admin',
       joinedAt: now,
     };

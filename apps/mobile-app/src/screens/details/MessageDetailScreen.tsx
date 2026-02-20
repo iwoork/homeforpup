@@ -15,21 +15,22 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../utils/theme';
 import { messageService, Message, MessageThread } from '../../services/messageService';
-import authService from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MessageDetailScreen: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
-  
+  const { user } = useAuth();
+
   const { thread } = (route.params as { thread: MessageThread }) || {};
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const currentUserId = user?.userId || '';
 
   useEffect(() => {
     if (!thread) {
@@ -38,7 +39,6 @@ const MessageDetailScreen: React.FC = () => {
       return;
     }
 
-    loadCurrentUser();
     loadMessages();
     markAsRead();
 
@@ -51,17 +51,6 @@ const MessageDetailScreen: React.FC = () => {
 
     return () => clearInterval(pollInterval);
   }, [thread, loading, sending]);
-
-  const loadCurrentUser = async () => {
-    try {
-      const user = await authService.getCurrentUser();
-      if (user) {
-        setCurrentUserId(user.userId);
-      }
-    } catch (error) {
-      console.error('Error loading current user:', error);
-    }
-  };
 
   const loadMessages = async () => {
     if (!thread) return;

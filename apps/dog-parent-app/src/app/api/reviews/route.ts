@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   PutCommand,
   QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -148,10 +147,11 @@ export async function GET(request: NextRequest) {
 // POST /api/reviews - Create a new review
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const body = await request.json();
     const { breederId, rating, title, content } = body;
@@ -195,11 +195,9 @@ export async function POST(request: NextRequest) {
     const reviewItem: ReviewItem = {
       id: `review-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       breederId: String(breederId),
-      reviewerId: session.user.id,
+      reviewerId: userId,
       reviewerName:
-        (session.user as Record<string, unknown>).displayName as string ||
-        session.user.name ||
-        'Anonymous',
+        clerkUser?.fullName || clerkUser?.firstName || 'Anonymous',
       rating: Math.round(rating),
       title: title.trim(),
       content: content.trim(),

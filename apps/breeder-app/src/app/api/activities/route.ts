@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { Activity, ActivityFilter, ActivityResponse, ActivityStats, CreateActivityRequest } from '@homeforpup/shared-types';
 
+import { auth } from '@clerk/nextjs/server';
 const dynamoClient = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
@@ -19,14 +18,14 @@ const ACTIVITIES_TABLE = process.env.ACTIVITIES_TABLE_NAME || 'homeforpup-activi
 // GET /api/activities - Fetch user activities
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const filters: ActivityFilter = {
-      userId: session.user.id,
+      userId: userId,
       limit: parseInt(searchParams.get('limit') || '20'),
       offset: parseInt(searchParams.get('offset') || '0'),
     };
@@ -154,8 +153,8 @@ export async function GET(request: NextRequest) {
 // POST /api/activities - Create new activity
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -170,7 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure the activity belongs to the authenticated user
-    if (body.userId !== session.user.id) {
+    if (body.userId !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized to create activity for this user' },
         { status: 403 }

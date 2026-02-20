@@ -20,7 +20,6 @@ import { theme } from '../../utils/theme';
 import { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/apiService';
-import authService from '../../services/authService';
 import { LocationInput, CountrySelector } from '../../components';
 
 const EditProfileScreen: React.FC = () => {
@@ -43,39 +42,6 @@ const EditProfileScreen: React.FC = () => {
       return locationData.description;
     }
     return String(locationData);
-  };
-
-  // Helper function to format phone number for Cognito (E.164 format)
-  const formatPhoneForCognito = (phone: string, country?: {code: string, name: string, dialCode: string, flag: string} | null): string | null => {
-    if (!phone) return null;
-    
-    // Remove all non-digit characters
-    const digitsOnly = phone.replace(/\D/g, '');
-    
-    // If we have a selected country, use its dial code
-    if (country?.dialCode) {
-      return country.dialCode + digitsOnly;
-    }
-    
-    // Fallback logic for backward compatibility
-    // If it's already in E.164 format (starts with country code), return as is
-    if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
-      return '+' + digitsOnly;
-    }
-    
-    // If it's a US number without country code, add +1
-    if (digitsOnly.length === 10) {
-      return '+1' + digitsOnly;
-    }
-    
-    // If it's a US number with leading 1, add +
-    if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-      return '+' + digitsOnly;
-    }
-    
-    // If we can't format it properly, return null to skip Cognito update
-    console.warn('⚠️ Cannot format phone number for Cognito:', phone);
-    return null;
   };
 
   const [selectedCountry, setSelectedCountry] = useState<{code: string, name: string, dialCode: string, flag: string} | null>(null);
@@ -315,32 +281,6 @@ const EditProfileScreen: React.FC = () => {
         throw new Error(response.error || 'Failed to update profile');
       }
 
-      // Sync profile changes to Cognito user attributes
-      console.log('=== SYNCING TO COGNITO ===');
-      const cognitoAttributes: any = {};
-      
-      if (updateData.name) cognitoAttributes.name = updateData.name;
-      if (updateData.firstName) cognitoAttributes.given_name = updateData.firstName;
-      if (updateData.lastName) cognitoAttributes.family_name = updateData.lastName;
-      if (updateData.location) cognitoAttributes.address = updateData.location;
-      if (updateData.bio) cognitoAttributes.profile = updateData.bio;
-      
-      // Format phone number for Cognito (E.164 format required)
-      if (updateData.phone) {
-        const formattedPhone = formatPhoneForCognito(updateData.phone, selectedCountry);
-        if (formattedPhone) {
-          cognitoAttributes.phone_number = formattedPhone;
-          console.log('📞 Formatted phone for Cognito:', formattedPhone);
-        } else {
-          console.warn('⚠️ Skipping phone number sync to Cognito due to invalid format');
-        }
-      }
-      
-      const cognitoUpdateSuccess = await authService.updateUserAttributes(cognitoAttributes);
-      if (!cognitoUpdateSuccess) {
-        console.warn('⚠️ Failed to sync some attributes to Cognito, but profile was saved to database');
-      }
-
       // Update local user state with the response from the API
       // API returns { user: {...} }
       // IMPORTANT: Preserve the current userType preference (don't let API override it)
@@ -469,15 +409,6 @@ const EditProfileScreen: React.FC = () => {
         if (!updateResponse.success) {
           console.error('Photo Update API Error:', updateResponse.error);
           throw new Error(updateResponse.error || 'Failed to save profile photo');
-        }
-
-        // Sync profile photo to Cognito
-        console.log('=== SYNCING PHOTO TO COGNITO ===');
-        const cognitoPhotoUpdateSuccess = await authService.updateUserAttributes({
-          picture: photoUrl,
-        });
-        if (!cognitoPhotoUpdateSuccess) {
-          console.warn('⚠️ Failed to sync photo to Cognito, but photo was saved to database');
         }
 
         // Update local user state with the response from the API

@@ -4,6 +4,7 @@ import { calculateBreedScore, MatchPreferences } from '@homeforpup/shared-dogs';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
+import { auth } from '@clerk/nextjs/server';
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {

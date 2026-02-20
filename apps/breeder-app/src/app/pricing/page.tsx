@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Typography, Button, Space, Tag, Segmented, Collapse, message } from 'antd';
 import { CheckOutlined, CrownOutlined, RocketOutlined, StarOutlined, ThunderboltOutlined } from '@ant-design/icons';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { SUBSCRIPTION_TIERS, SubscriptionTier, BillingInterval } from '@homeforpup/shared-types';
 
@@ -69,22 +69,22 @@ const featureComparisonRows = [
 
 export default function PricingPage() {
   const [interval, setInterval] = useState<BillingInterval>('monthly');
-  const { data: session } = useSession();
+  const { isSignedIn } = useAuth();
   const router = useRouter();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   const handleSubscribe = async (tier: SubscriptionTier) => {
     if (tier === 'free') {
-      if (session) {
+      if (isSignedIn) {
         router.push('/dashboard');
       } else {
-        router.push('/auth/signup');
+        router.push('/sign-up');
       }
       return;
     }
 
-    if (!session) {
-      router.push('/auth/signup');
+    if (!isSignedIn) {
+      router.push('/sign-up');
       return;
     }
 
@@ -231,7 +231,7 @@ export default function PricingPage() {
                       }),
                     }}
                   >
-                    {tierId === 'free' ? (session ? 'Current Plan' : 'Get Started Free') : 'Subscribe'}
+                    {tierId === 'free' ? (isSignedIn ? 'Current Plan' : 'Get Started Free') : 'Subscribe'}
                   </Button>
                 </Card>
               </Col>

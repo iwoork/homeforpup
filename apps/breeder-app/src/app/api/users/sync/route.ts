@@ -2,9 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth, currentUser } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -48,15 +47,16 @@ function removeUndefinedValues(obj: any): any {
 export async function POST(request: NextRequest) {
   try {
     // Get user session
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const decodedToken = {
-      userId: (session.user as any).id,
-      name: session.user.name || 'User',
-      email: session.user.email || ''
+      userId: userId,
+      name: clerkUser?.fullName || clerkUser?.firstName || 'User',
+      email: clerkUser?.primaryEmailAddress?.emailAddress || ''
     };
     
     console.log('Session verification successful for user sync:', decodedToken.userId.substring(0, 10) + '...');
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       adopterInfo 
     } = body;
 
-    const { userId, name, email } = decodedToken;
+    const { name, email } = decodedToken;
     const timestamp = new Date().toISOString();
 
     // Check if user already exists
@@ -93,12 +93,12 @@ export async function POST(request: NextRequest) {
       email: email,
       name: name,
       userType: userType,
-      verified: (session.user as any).isVerified || false,
+      verified: (clerkUser?.publicMetadata?.isVerified as boolean) || false,
       accountStatus: 'active' as const,
       phone: phone || existingUser?.phone || undefined,
       location: location || existingUser?.location || undefined,
       bio: bio || existingUser?.bio || undefined,
-      profileImage: profileImage || existingUser?.profileImage || (session.user as any).image || undefined,
+      profileImage: profileImage || existingUser?.profileImage || clerkUser?.imageUrl || undefined,
       coverPhoto: coverPhoto || existingUser?.coverPhoto || undefined,
       galleryPhotos: galleryPhotos || existingUser?.galleryPhotos || [],
       socialLinks: existingUser?.socialLinks || {},
@@ -188,12 +188,11 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Get user session
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
+    const clerkUser = await currentUser();
 
     // Get user from database
     const result = await dynamodb.send(new GetCommand({

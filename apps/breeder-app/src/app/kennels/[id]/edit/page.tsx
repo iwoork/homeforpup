@@ -50,7 +50,7 @@ const EditKennelPage: React.FC = () => {
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const params = useParams();
-  const kennelId = params.id as string;
+  const kennelId = params?.id as string;
 
   // Fetch existing kennel data
   const { data: kennelData, error, isLoading } = useSWR(

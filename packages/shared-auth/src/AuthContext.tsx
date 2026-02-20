@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/nextjs';
 import { User } from '@homeforpup/shared-types';
 
 interface AuthContextType {
@@ -27,19 +27,21 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { data: session, status, update } = useSession();
+  const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
+  const { isSignedIn, getToken } = useClerkAuth();
+  const clerk = useClerk();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Check if user is authenticated
-  const isAuthenticated = !!user && !!session;
+  const isAuthenticated = !!user && !!isSignedIn;
 
   // Fetch user data from API using sync route
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       console.log('AuthContext: Fetching user data for userId:', userId.substring(0, 10) + '...');
-      
+
       // First try to get existing user data
       let response = await fetch(`/api/users/${userId}`, {
         credentials: 'include',
@@ -59,9 +61,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
           body: JSON.stringify({
             userId,
-            name: session?.user?.name || 'User',
-            email: session?.user?.email || '',
-            userType: (session?.user as any)?.userType || (typeof window !== 'undefined' ? localStorage.getItem('pendingUserType') : null) || 'dog-parent'
+            name: clerkUser?.fullName || clerkUser?.firstName || 'User',
+            email: clerkUser?.primaryEmailAddress?.emailAddress || '',
+            userType: (clerkUser?.publicMetadata?.userType as string) || (typeof window !== 'undefined' ? localStorage.getItem('pendingUserType') : null) || 'dog-parent'
           }),
         });
 
@@ -73,21 +75,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } catch {
             errorDetails = { error: errorText };
           }
-          
+
           console.error('AuthContext: Sync failed:', errorText);
-          
-          // If it's a ResourceNotFoundException, provide helpful message
-          if (errorDetails.details?.includes('ResourceNotFoundException') || 
+
+          if (errorDetails.details?.includes('ResourceNotFoundException') ||
               errorDetails.details?.includes('not found')) {
-            console.error('❌ DynamoDB table not found. This is a configuration issue.');
-            console.error('   Table name:', errorDetails.tableName || 'unknown');
-            console.error('   Troubleshooting:', errorDetails.troubleshooting || []);
             setError('Database table not configured. Please contact support.');
           } else {
             setError('Failed to sync user data. Please try again.');
           }
-          
-          // Don't throw - allow user to continue with session data
+
           return;
         }
 
@@ -103,13 +100,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const responseData = await response.json();
-      const userData = responseData.user || responseData; // Handle both formats
-      console.log('AuthContext: Raw response data:', responseData);
+      const userData = responseData.user || responseData;
       console.log('AuthContext: User data fetched successfully:', {
         userId: userData?.userId?.substring(0, 10) + '...',
         name: userData?.name,
         userType: userData?.userType,
-        fullUserData: userData
       });
       setUser(userData);
       setError(null);
@@ -118,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError('Failed to load user data');
       setUser(null);
     }
-  }, [session]);
+  }, [clerkUser]);
 
   // Check authentication status
   const checkAuthStatus = useCallback(async () => {
@@ -126,41 +121,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      console.log('AuthContext: Checking auth status, session:', {
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        userId: (session?.user as any)?.id,
-        userEmail: session?.user?.email,
-        userName: session?.user?.name,
-        fullSession: session
-      });
+      const userId = clerkUser?.id;
 
-      // Try to get user ID from session
-      const userId = (session?.user as any)?.id || (session?.user as any)?.sub;
-      
       if (userId) {
         console.log('AuthContext: Found user ID, fetching user data:', userId);
         await fetchUserData(userId);
       } else {
-        console.log('AuthContext: No user ID in session, setting user to null');
+        console.log('AuthContext: No user ID, setting user to null');
         setUser(null);
       }
     } catch (err) {
       console.error('Auth check failed:', err);
       setError('Authentication check failed');
-      
-      // Fallback: create basic user from session if database fetch fails
-      if (session?.user) {
-        console.log('AuthContext: Creating fallback user from session');
-        const userId = (session.user as any).id || (session.user as any).sub;
+
+      // Fallback: create basic user from Clerk data if database fetch fails
+      if (clerkUser) {
         const fallbackUser: User = {
-          userId: userId,
-          name: session.user.name || 'User',
-          email: session.user.email || '',
-          // Note: userType is stored in Cognito session, not in User database object
+          userId: clerkUser.id,
+          name: clerkUser.fullName || clerkUser.firstName || 'User',
+          email: clerkUser.primaryEmailAddress?.emailAddress || '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          verified: (session.user as any).isVerified || false,
+          verified: clerkUser.primaryEmailAddress?.verification?.status === 'verified',
           accountStatus: 'active' as const,
           lastActiveAt: new Date().toISOString(),
         };
@@ -172,81 +154,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [session, fetchUserData]);
+  }, [clerkUser, fetchUserData]);
 
-  // Refresh token by updating session
+  // Refresh token — Clerk handles this automatically, so this is mostly a no-op
   const refreshToken = useCallback(async () => {
     try {
-      if (session) {
-        await update();
-      // Re-fetch user data after token refresh
-      if ((session?.user as any)?.id) {
-        await fetchUserData((session.user as any).id);
-      }
+      // Clerk handles token refresh automatically
+      // Re-fetch user data to keep state fresh
+      if (clerkUser?.id) {
+        await fetchUserData(clerkUser.id);
       }
     } catch (err) {
       console.error('Token refresh failed:', err);
       setError('Session refresh failed');
     }
-  }, [session, update, fetchUserData]);
+  }, [clerkUser, fetchUserData]);
 
-  // Login function
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Use Cognito provider for login
-      const result = await signIn('cognito', {
-        redirect: false,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      // Session will be updated automatically by NextAuth
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError(err instanceof Error ? err.message : 'Login failed');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+  // Login function — with Clerk, login is handled by Clerk components
+  const login = useCallback(async (_email: string, _password: string) => {
+    // Clerk handles login via its built-in components (<SignIn />)
+    // This method is kept for interface compatibility
+    window.location.href = '/sign-in';
   }, []);
 
-  // Logout function - clears NextAuth session then redirects to Cognito logout
+  // Logout function
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
       setUser(null);
       setError(null);
-
-      // Clear the NextAuth local session first
-      await signOut({ redirect: false });
-
-      // Redirect to Cognito's logout endpoint to clear the Cognito session
-      const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-      const clientId = process.env.NEXT_PUBLIC_AWS_USER_POOL_CLIENT_ID;
-
-      if (cognitoDomain && clientId) {
-        const logoutUri = encodeURIComponent(window.location.origin);
-        window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${logoutUri}`;
-      } else {
-        // Fallback: redirect to home if Cognito config is missing
-        window.location.href = '/';
-      }
+      await clerk.signOut();
     } catch (err) {
       console.error('Logout failed:', err);
       setError('Logout failed');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [clerk]);
 
   // Simplified signIn for compatibility
   const signInSimple = useCallback(() => {
-    signIn('cognito');
+    window.location.href = '/sign-in';
   }, []);
 
   // Simplified signOut for compatibility
@@ -255,60 +203,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [logout]);
 
   // Get token for API calls
-  const getToken = useCallback(async (): Promise<string | null> => {
-    if ((session as any)?.accessToken) {
-      return (session as any).accessToken as string;
+  const getTokenValue = useCallback(async (): Promise<string | null> => {
+    try {
+      return await getToken();
+    } catch {
+      return null;
     }
-    return null;
-  }, [session]);
+  }, [getToken]);
 
-  // Effect to handle session changes
+  // Effect to handle Clerk auth state changes
   useEffect(() => {
-    console.log('AuthContext: Session status changed', { 
-      status, 
-      hasSession: !!session,
-      userId: (session?.user as any)?.id?.substring(0, 10) + '...',
-      userName: session?.user?.name,
-      userEmail: session?.user?.email,
-      userType: (session?.user as any)?.userType,
-      fullSession: session
-    });
-
-    if (status === 'loading') {
+    if (!isUserLoaded) {
       setIsLoading(true);
       return;
     }
 
-    if (status === 'unauthenticated') {
+    if (!isSignedIn) {
       setUser(null);
       setIsLoading(false);
       setError(null);
       return;
     }
 
-    if (status === 'authenticated' && (session?.user as any)?.id) {
-      console.log('AuthContext: Authenticated, checking auth status...');
+    if (isSignedIn && clerkUser?.id) {
       checkAuthStatus();
     }
-  }, [status, session, checkAuthStatus]);
-
-  // Auto-refresh token before expiration
-  useEffect(() => {
-    if (!session?.expires) return;
-
-    const now = new Date().getTime();
-    const expiresAt = new Date(session.expires).getTime();
-    const timeUntilExpiry = expiresAt - now;
-    
-    // Refresh token 5 minutes before expiration
-    const refreshTime = Math.max(timeUntilExpiry - 5 * 60 * 1000, 0);
-
-    const refreshTimer = setTimeout(() => {
-      refreshToken();
-    }, refreshTime);
-
-    return () => clearTimeout(refreshTimer);
-  }, [session?.expires, refreshToken]);
+  }, [isUserLoaded, isSignedIn, clerkUser?.id, checkAuthStatus]);
 
   const contextValue: AuthContextType = {
     user,
@@ -323,7 +243,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn: signInSimple,
     signOut: signOutSimple,
     loading: isLoading,
-    getToken,
+    getToken: getTokenValue,
   };
 
   return (

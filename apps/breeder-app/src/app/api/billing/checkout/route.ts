@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { getStripePriceId } from '@/lib/stripe/priceMapping';
 import { getProfileByUserId, updateSubscription } from '@/lib/stripe/subscriptionDb';
 import { SubscriptionTier, BillingInterval } from '@homeforpup/shared-types';
 
+import { auth, currentUser } from '@clerk/nextjs/server';
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const clerkUser = await currentUser();
 
     const { tier, interval } = (await request.json()) as {
       tier: SubscriptionTier;
@@ -27,20 +27,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Price not configured for this tier/interval' }, { status: 400 });
     }
 
-    const profile = await getProfileByUserId(session.user.id);
+    const profile = await getProfileByUserId(userId);
 
     // Get or create Stripe customer
     let customerId = profile?.stripeCustomerId;
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: session.user.email || undefined,
-        name: session.user.name || undefined,
-        metadata: { userId: session.user.id },
+        email: clerkUser?.primaryEmailAddress?.emailAddress || '' || undefined,
+        name: clerkUser?.fullName || clerkUser?.firstName || '' || undefined,
+        metadata: { userId: userId },
       });
       customerId = customer.id;
 
       // Store customer ID on profile
-      await updateSubscription(session.user.id, { stripeCustomerId: customerId });
+      await updateSubscription(userId, { stripeCustomerId: customerId });
     }
 
     // Determine if first-time subscriber (for trial)
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       success_url: `${request.nextUrl.origin}/dashboard/billing?success=true`,
       cancel_url: `${request.nextUrl.origin}/pricing?cancelled=true`,
       metadata: {
-        userId: session.user.id,
+        userId: userId,
         tier,
         interval,
       },

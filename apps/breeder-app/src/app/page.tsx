@@ -14,7 +14,7 @@ import {
   DollarOutlined
 } from '@ant-design/icons';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
 // Force dynamic rendering
@@ -23,12 +23,11 @@ export const dynamic = 'force-dynamic';
 const { Title, Paragraph } = Typography;
 
 const BreederLandingContent: React.FC = () => {
-  const { data: session, status } = useSession();
+  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
-  
-  const user = session?.user;
-  const isAuthenticated = status === 'authenticated';
-  const loading = status === 'loading';
+
+  const isAuthenticated = !!isSignedIn;
+  const loading = !isLoaded;
 
   // Redirect to dashboard if authenticated
   useEffect(() => {
@@ -146,7 +145,7 @@ const BreederLandingContent: React.FC = () => {
           {/* CTA Buttons */}
           <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto', padding: '0 20px' }}>
             <Space size="middle" direction="vertical" style={{ width: '100%' }}>
-              <Link href="/auth/login" style={{ width: '100%', display: 'block' }}>
+              <Link href="/sign-in" style={{ width: '100%', display: 'block' }}>
                 <Button 
                   type="primary" 
                   size="large" 
@@ -165,7 +164,7 @@ const BreederLandingContent: React.FC = () => {
                   Sign In
                 </Button>
               </Link>
-              <Link href="/auth/signup" style={{ width: '100%', display: 'block' }}>
+              <Link href="/sign-up" style={{ width: '100%', display: 'block' }}>
                 <Button 
                   size="large"
                   icon={<UserAddOutlined />}
@@ -277,7 +276,7 @@ const BreederLandingContent: React.FC = () => {
           </Paragraph>
           
           <Space size="middle" wrap style={{ width: '100%', justifyContent: 'center' }}>
-            <Link href="/auth/signup">
+            <Link href="/sign-up">
               <Button
                 type="primary"
                 size="large"

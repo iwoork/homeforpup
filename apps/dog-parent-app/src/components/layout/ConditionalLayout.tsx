@@ -11,7 +11,7 @@ interface ConditionalLayoutProps {
 
 const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const pathname = usePathname();
-  const isAuthPage = pathname.startsWith('/auth/');
+  const isAuthPage = pathname?.startsWith('/auth/');
 
   if (isAuthPage) {
     return <>{children}</>;

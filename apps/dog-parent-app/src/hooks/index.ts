@@ -2,7 +2,7 @@
 
 // API hooks
 export { useAuth } from './api/useAuth';
-export { useNextAuth } from './useNextAuth';
+
 export { useAvailableUsers } from './api/useAvailableUsers';
 export { useDogs } from './api/useDogs';
 export { useAvailablePuppies } from './api/useAvailablePuppies';

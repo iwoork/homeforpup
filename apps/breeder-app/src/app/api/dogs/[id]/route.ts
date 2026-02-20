@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 import { checkDogAccess } from '@/lib/auth/kennelAccess';
 
+import { auth } from '@clerk/nextjs/server';
 // GET /api/dogs/[id] - Get dog details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -26,10 +25,10 @@ export async function GET(
     console.log('GET /api/dogs/[id] - Access check:');
     console.log('- Dog ID:', dogId);
     console.log('- Dog ownerId:', dog.ownerId);
-    console.log('- Session user ID:', session.user.id);
+    console.log('- Session user ID:', userId);
     console.log('- Dog kennelId:', dog.kennelId);
     
-    const accessResult = await checkDogAccess(session.user.id, dog);
+    const accessResult = await checkDogAccess(userId, dog);
     console.log('- Access result:', accessResult);
     
     if (!accessResult.hasAccess) {
@@ -58,8 +57,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -71,7 +70,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    const accessResult = await checkDogAccess(session.user.id, existingDog);
+    const accessResult = await checkDogAccess(userId, existingDog);
     if (!accessResult.hasAccess) {
       console.log('PUT - Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -101,8 +100,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -114,7 +113,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    const accessResult = await checkDogAccess(session.user.id, existingDog);
+    const accessResult = await checkDogAccess(userId, existingDog);
     if (!accessResult.hasAccess) {
       console.log('DELETE - Access denied: No direct ownership or kennel access');
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });

@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { stripe } from '@/lib/stripe';
 import { getProfileByUserId, updateSubscription } from '@/lib/stripe/subscriptionDb';
 import { getStripePriceMapping } from '@/lib/stripe/priceMapping';
 import { SubscriptionTier } from '@homeforpup/shared-types';
 
+import { auth } from '@clerk/nextjs/server';
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const profile = await getProfileByUserId(session.user.id);
+    const profile = await getProfileByUserId(userId);
     if (!profile?.stripeCustomerId) {
       return NextResponse.json({ synced: false, reason: 'No Stripe customer' });
     }
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
         ? new Date(item.current_period_end * 1000).toISOString()
         : undefined;
 
-      await updateSubscription(session.user.id, {
+      await updateSubscription(userId, {
         subscriptionPlan: tier,
         subscriptionStatus: activeSub.status === 'trialing' ? 'trial' : 'active',
         isPremium: true,
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // No active subscription — ensure profile reflects free tier
     if (profile.subscriptionPlan !== 'free') {
-      await updateSubscription(session.user.id, {
+      await updateSubscription(userId, {
         subscriptionPlan: 'free',
         subscriptionStatus: 'active',
         isPremium: false,

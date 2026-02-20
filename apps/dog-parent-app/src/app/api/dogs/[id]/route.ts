@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 
+import { auth } from '@clerk/nextjs/server';
 // GET /api/dogs/[id] - Get dog details
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -23,7 +22,7 @@ export async function GET(
 
     // For adopter app, allow viewing any dog (public access)
     // Or check if user owns this dog
-    if (dog.ownerId !== session.user.id) {
+    if (dog.ownerId !== userId) {
       // Allow public access for adopters to view available dogs
       // You might want to filter sensitive information here
     }
@@ -47,8 +46,8 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -60,7 +59,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Dog not found' }, { status: 404 });
     }
 
-    if (existingDog.ownerId !== session.user.id) {
+    if (existingDog.ownerId !== userId) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { auth } from '@clerk/nextjs/server';
 import { 
   DynamoDBDocumentClient, 
   PutCommand, 
   DeleteCommand, 
   QueryCommand
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../lib/auth';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -32,12 +31,10 @@ interface FavoriteItem {
 // GET /api/favorites - Get user's favorites
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = session.user.id;
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -76,12 +73,10 @@ export async function GET(request: NextRequest) {
 // POST /api/favorites - Add a puppy to favorites
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = session.user.id;
 
     const { puppyId, puppyData } = await request.json();
 
@@ -121,12 +116,10 @@ export async function POST(request: NextRequest) {
 // DELETE /api/favorites - Remove a puppy from favorites
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = session.user.id;
 
     const { searchParams } = new URL(request.url);
     const puppyId = searchParams.get('puppyId');

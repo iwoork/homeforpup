@@ -1,42 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { updateCognitoUserAttributes, CognitoUserAttributes } from '@/lib/cognito';
-
-// Helper function to format phone number for Cognito (E.164 format)
-function formatPhoneForCognito(phone: string, country?: {code: string, name: string, dialCode: string, flag: string} | null): string | null {
-  if (!phone) return null;
-  
-  // Remove all non-digit characters
-  const digitsOnly = phone.replace(/\D/g, '');
-  
-  // If we have a selected country, use its dial code
-  if (country?.dialCode) {
-    return country.dialCode + digitsOnly;
-  }
-  
-  // Fallback logic for backward compatibility
-  // If it's already in E.164 format (starts with country code), return as is
-  if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
-    return '+' + digitsOnly;
-  }
-  
-  // If it's a US number without country code, add +1
-  if (digitsOnly.length === 10) {
-    return '+1' + digitsOnly;
-  }
-  
-  // If it's a US number with leading 1, add +
-  if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-    return '+' + digitsOnly;
-  }
-  
-  // If we can't format it properly, return null to skip Cognito update
-  console.warn('⚠️ Cannot format phone number for Cognito:', phone);
-  return null;
-}
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -96,12 +61,11 @@ interface ProfileUpdateRequest {
 // GET current user profile
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
+    const clerkUser = await currentUser();
 
     // Get user from database
     const result = await dynamodb.send(new GetCommand({
@@ -110,19 +74,19 @@ export async function GET(request: NextRequest) {
     }));
 
     if (!result.Item) {
-      // If user doesn't exist in database, return Cognito session data
-      const cognitoUser = {
+      // If user doesn't exist in database, return Clerk user data
+      const userProfile = {
         userId: userId,
-        email: session.user.email,
-        name: session.user.name,
-        firstName: session.user.firstName,
-        lastName: session.user.lastName,
-        phone: session.user.phone,
-        location: session.user.location,
-        bio: session.user.bio,
-        profileImage: session.user.image,
-        userType: session.user.userType || 'breeder',
-        verified: session.user.isVerified || false,
+        email: clerkUser?.primaryEmailAddress?.emailAddress || '',
+        name: clerkUser?.fullName || clerkUser?.firstName || '',
+        firstName: clerkUser?.firstName || '',
+        lastName: clerkUser?.lastName || '',
+        phone: '',
+        location: '',
+        bio: '',
+        profileImage: clerkUser?.imageUrl || '',
+        userType: (clerkUser?.publicMetadata?.userType as string) || 'breeder',
+        verified: false,
         subscriptionPlan: 'free',
         subscriptionStatus: 'active',
         isPremium: false,
@@ -130,8 +94,8 @@ export async function GET(request: NextRequest) {
         updatedAt: new Date().toISOString(),
         lastActiveAt: new Date().toISOString(),
       };
-      
-      return NextResponse.json({ user: cognitoUser });
+
+      return NextResponse.json({ user: userProfile });
     }
 
     return NextResponse.json({ user: result.Item });
@@ -139,10 +103,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching profile:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch profile data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -151,12 +115,10 @@ export async function GET(request: NextRequest) {
 // PUT update user profile
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
     const body: ProfileUpdateRequest = await request.json();
     const timestamp = new Date().toISOString();
 
@@ -191,59 +153,20 @@ export async function PUT(request: NextRequest) {
       Item: updatedUser
     }));
 
-    console.log('✅ Profile saved to database successfully');
-
-    // Sync profile changes to Cognito user attributes
-    const cognitoAttributes: CognitoUserAttributes = {};
-    
-    if (body.name) cognitoAttributes.name = body.name;
-    if (body.firstName) cognitoAttributes.given_name = body.firstName;
-    if (body.lastName) cognitoAttributes.family_name = body.lastName;
-    if (body.location) cognitoAttributes.address = body.location;
-    if (body.bio) cognitoAttributes.profile = body.bio;
-    
-    // Format phone number for Cognito (E.164 format required)
-    if (body.phone) {
-      const formattedPhone = formatPhoneForCognito(body.phone, body.country);
-      if (formattedPhone) {
-        cognitoAttributes.phone_number = formattedPhone;
-        console.log('📞 Formatted phone for Cognito:', formattedPhone);
-      } else {
-        console.warn('⚠️ Skipping phone number sync to Cognito due to invalid format');
-      }
-    }
-    
-    if (body.profileImage) cognitoAttributes.picture = body.profileImage;
-
-    // Update Cognito attributes if any were provided
-    if (Object.keys(cognitoAttributes).length > 0) {
-      console.log('=== SYNCING TO COGNITO ===');
-      const cognitoResult = await updateCognitoUserAttributes(userId, cognitoAttributes);
-      
-      if (!cognitoResult.success) {
-        console.warn('⚠️ Failed to sync some attributes to Cognito:', cognitoResult.error);
-        // Don't fail the entire request if Cognito sync fails
-        // The database update was successful
-      } else {
-        console.log('✅ Profile synced to Cognito successfully');
-      }
-    }
-
     console.log('=== PROFILE UPDATE COMPLETE ===');
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       user: updatedUser,
-      message: 'Profile updated successfully',
-      cognitoSynced: Object.keys(cognitoAttributes).length > 0
+      message: 'Profile updated successfully'
     });
 
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to update profile data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

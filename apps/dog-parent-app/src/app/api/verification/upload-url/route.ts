@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 const s3Client = new S3Client({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
@@ -30,8 +29,8 @@ const ALLOWED_DOCUMENT_TYPES = ['license', 'certification', 'health_clearance', 
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -62,7 +61,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const breederId = session.user.id;
+    const breederId = userId;
     const timestamp = Date.now();
     const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
     const key = `verification/${breederId}/${documentType}/${timestamp}-${sanitizedFileName}`;

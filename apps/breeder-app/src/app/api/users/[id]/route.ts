@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -25,18 +24,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: userId } = await params;
-    
+    const { id: requestedUserId } = await params;
+
     // Get user session for authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user from database
     const result = await dynamodb.send(new GetCommand({
       TableName: USERS_TABLE,
-      Key: { userId: userId }
+      Key: { userId: requestedUserId }
     }));
 
     if (!result.Item) {
@@ -62,16 +61,16 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: userId } = await params;
-    
+    const { id: requestedUserId } = await params;
+
     // Get user session for authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user is updating their own profile
-    if ((session.user as any).id !== userId) {
+    if (userId !== requestedUserId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -81,7 +80,7 @@ export async function PUT(
     // Get existing user data
     const existingUserResult = await dynamodb.send(new GetCommand({
       TableName: USERS_TABLE,
-      Key: { userId: userId }
+      Key: { userId: requestedUserId }
     }));
 
     if (!existingUserResult.Item) {
@@ -94,7 +93,7 @@ export async function PUT(
     const updatedUser = {
       ...existingUser,
       ...body,
-      userId: userId, // Ensure userId is not changed
+      userId: requestedUserId, // Ensure userId is not changed
       updatedAt: timestamp,
       lastActiveAt: timestamp
     };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { puppiesApiClient, PuppyFilters } from '@homeforpup/shared-dogs';
 
+import { auth } from '@clerk/nextjs/server';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

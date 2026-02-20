@@ -2,13 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
-import {
-  CognitoIdentityProviderClient,
-  AdminAddUserToGroupCommand,
-  AdminGetUserCommand,
-} from '@aws-sdk/client-cognito-identity-provider';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
@@ -21,35 +15,23 @@ const client = new DynamoDBClient({
 
 const dynamodb = DynamoDBDocumentClient.from(client, {
   marshallOptions: {
-    removeUndefinedValues: true // Remove undefined values automatically
+    removeUndefinedValues: true
   }
-});
-
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
 });
 
 // Use profiles table if available, fallback to users table for backward compatibility
 const USERS_TABLE = process.env.USERS_TABLE_NAME || process.env.PROFILES_TABLE_NAME || 'homeforpup-profiles';
-
-// Log table name in development for debugging
-if (process.env.NODE_ENV === 'development') {
-  console.log('📊 Using DynamoDB table:', USERS_TABLE);
-  console.log('   USERS_TABLE_NAME:', process.env.USERS_TABLE_NAME || 'not set');
-  console.log('   PROFILES_TABLE_NAME:', process.env.PROFILES_TABLE_NAME || 'not set');
-  console.log('   ⚠️  If you see ResourceNotFoundException, verify the table exists in AWS DynamoDB');
-}
 
 // Helper function to remove undefined values from objects
 function removeUndefinedValues(obj: any): any {
   if (obj === null || obj === undefined) {
     return undefined;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(removeUndefinedValues).filter(item => item !== undefined);
   }
-  
+
   if (typeof obj === 'object') {
     const cleaned: any = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -60,25 +42,24 @@ function removeUndefinedValues(obj: any): any {
     }
     return Object.keys(cleaned).length > 0 ? cleaned : undefined;
   }
-  
+
   return obj;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user session
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const decodedToken = {
-      userId: (session.user as any).id,
-      name: session.user.name || 'User',
-      email: session.user.email || ''
-    };
-    
-    console.log('Session verification successful for user sync:', decodedToken.userId.substring(0, 10) + '...');
+    // Get user details from Clerk
+    const clerkUser = await currentUser();
+    const name = clerkUser?.fullName || clerkUser?.firstName || 'User';
+    const email = clerkUser?.primaryEmailAddress?.emailAddress || '';
+    const clerkUserType = (clerkUser?.publicMetadata?.userType as string) || undefined;
+
+    console.log('Session verification successful for user sync:', userId.substring(0, 10) + '...');
 
     const body = await request.json();
     const {
@@ -94,32 +75,9 @@ export async function POST(request: NextRequest) {
       adopterInfo
     } = body;
 
-    // Resolve userType: body > session > Cognito attribute > default
-    // The body/session may pass 'dog-parent' as a default even for breeders,
-    // so look up the actual Cognito custom:userType as the authoritative source
-    let userType = bodyUserType || (session.user as any)?.userType || 'dog-parent';
-    if (userType === 'dog-parent') {
-      const userPoolId = process.env.NEXT_PUBLIC_AWS_USER_POOL_ID;
-      if (userPoolId && decodedToken.email) {
-        try {
-          const cognitoUser = await cognitoClient.send(new AdminGetUserCommand({
-            UserPoolId: userPoolId,
-            Username: decodedToken.email,
-          }));
-          const cognitoUserType = cognitoUser.UserAttributes?.find(
-            attr => attr.Name === 'custom:userType'
-          )?.Value;
-          if (cognitoUserType) {
-            userType = cognitoUserType;
-            console.log('Resolved userType from Cognito attribute:', userType);
-          }
-        } catch (cognitoErr: any) {
-          console.warn('Could not look up Cognito userType:', cognitoErr.message);
-        }
-      }
-    }
+    // Resolve userType: body > Clerk publicMetadata > default
+    const userType = bodyUserType || clerkUserType || 'dog-parent';
 
-    const { userId, name, email } = decodedToken;
     const timestamp = new Date().toISOString();
 
     // Check if user already exists
@@ -146,10 +104,9 @@ export async function POST(request: NextRequest) {
       profileImage: profileImage || existingUser?.profileImage || undefined,
       coverPhoto: coverPhoto || existingUser?.coverPhoto || undefined,
       galleryPhotos: galleryPhotos || existingUser?.galleryPhotos || [],
-      verified: true, // User came from Cognito, so email is verified
+      verified: true,
       accountStatus: existingUser?.accountStatus || 'active',
-      
-      // Merge preferences
+
       preferences: removeUndefinedValues({
         notifications: {
           email: true,
@@ -167,7 +124,6 @@ export async function POST(request: NextRequest) {
         }
       }),
 
-      // Handle breeder-specific info
       breederInfo: userType === 'breeder' || userType === 'both' ? removeUndefinedValues({
         kennelName: breederInfo?.kennelName || existingUser?.breederInfo?.kennelName || undefined,
         license: breederInfo?.license || existingUser?.breederInfo?.license || undefined,
@@ -178,7 +134,6 @@ export async function POST(request: NextRequest) {
         ...breederInfo
       }) : existingUser?.breederInfo,
 
-      // Handle dog parent-specific info  
       adopterInfo: userType === 'dog-parent' || userType === 'both' ? removeUndefinedValues({
         housingType: adopterInfo?.housingType || existingUser?.adopterInfo?.housingType || undefined,
         yardSize: adopterInfo?.yardSize || existingUser?.adopterInfo?.yardSize || undefined,
@@ -189,16 +144,13 @@ export async function POST(request: NextRequest) {
         ...adopterInfo
       }) : existingUser?.adopterInfo,
 
-      // Timestamps
       createdAt: existingUser?.createdAt || timestamp,
       updatedAt: timestamp,
       lastActiveAt: timestamp
     };
 
-    // Clean all undefined values from the user data
     const userData = removeUndefinedValues(rawUserData);
 
-    // Create or update user record
     await dynamodb.send(new PutCommand({
       TableName: USERS_TABLE,
       Item: userData
@@ -212,24 +164,6 @@ export async function POST(request: NextRequest) {
       isNewUser
     });
 
-    // If user is a breeder, ensure they are in the Cognito breeders group
-    if (userData.userType === 'breeder') {
-      const userPoolId = process.env.NEXT_PUBLIC_AWS_USER_POOL_ID;
-      if (userPoolId && email) {
-        try {
-          await cognitoClient.send(new AdminAddUserToGroupCommand({
-            UserPoolId: userPoolId,
-            Username: email,
-            GroupName: 'breeders',
-          }));
-          console.log('Added user to breeders Cognito group');
-        } catch (groupError: any) {
-          // Non-fatal: user can still function without group assignment
-          console.warn('Failed to add user to breeders group:', groupError.message);
-        }
-      }
-    }
-
     return NextResponse.json({
       user: userData,
       isNewUser,
@@ -238,38 +172,23 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error syncing user:', error);
-    
-    // Check if it's a ResourceNotFoundException (table doesn't exist)
+
     if (error.name === 'ResourceNotFoundException' || error.message?.includes('ResourceNotFoundException')) {
-      console.error('❌ DynamoDB table not found:', USERS_TABLE);
-      console.error('   Please verify:');
-      console.error('   1. Table exists in AWS DynamoDB:', USERS_TABLE);
-      console.error('   2. AWS credentials have access to the table');
-      console.error('   3. AWS_REGION is set correctly:', process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1');
-      console.error('   4. Table name environment variable is set correctly');
-      
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to sync user data',
-          details: `DynamoDB table '${USERS_TABLE}' not found. Please verify the table exists and AWS credentials are configured correctly.`,
+          details: `DynamoDB table '${USERS_TABLE}' not found.`,
           tableName: USERS_TABLE,
-          troubleshooting: [
-            `1. Verify table '${USERS_TABLE}' exists in AWS DynamoDB Console`,
-            '2. Check AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)',
-            '3. Verify AWS_REGION matches the table region',
-            '4. Ensure IAM permissions allow DynamoDB access',
-            '5. If table was migrated, set PROFILES_TABLE_NAME environment variable'
-          ]
-        }, 
+        },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to sync user data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -278,15 +197,11 @@ export async function POST(request: NextRequest) {
 // GET endpoint to retrieve current user data
 export async function GET(request: NextRequest) {
   try {
-    // Get user session
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
-
-    // Get user from database
     const result = await dynamodb.send(new GetCommand({
       TableName: USERS_TABLE,
       Key: { userId: userId }
@@ -301,10 +216,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch user data',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-      }, 
+      },
       { status: 500 }
     );
   }

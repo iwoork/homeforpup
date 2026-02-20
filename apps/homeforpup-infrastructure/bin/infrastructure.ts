@@ -3,7 +3,6 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { DynamoDBStack } from '../lib/stacks/dynamodb-stack';
 import { S3Stack } from '../lib/stacks/s3-stack';
-import { CognitoStack } from '../lib/stacks/cognito-stack';
 import { IAMStack } from '../lib/stacks/iam-stack';
 import { getEnvironmentConfig } from '../lib/config/environments';
 import { config as dotenvConfig } from 'dotenv';
@@ -46,14 +45,6 @@ const s3Stack = new S3Stack(app, `S3Stack-${config.environment}`, {
   config,
 });
 
-// Cognito Stack
-const cognitoStack = new CognitoStack(app, `CognitoStack-${config.environment}`, {
-  ...stackProps,
-  stackName: `homeforpup-cognito-${config.environment}`,
-  description: `HomeForPup Cognito User Pool (${config.environment})`,
-  config,
-});
-
 // IAM Stack (depends on other stacks)
 const iamStack = new IAMStack(app, `IAMStack-${config.environment}`, {
   ...stackProps,
@@ -62,13 +53,11 @@ const iamStack = new IAMStack(app, `IAMStack-${config.environment}`, {
   config,
   dynamodbStack,
   s3Stack,
-  cognitoStack,
 });
 
 // Add dependencies
 iamStack.addDependency(dynamodbStack);
 iamStack.addDependency(s3Stack);
-iamStack.addDependency(cognitoStack);
 
 app.synth();
 

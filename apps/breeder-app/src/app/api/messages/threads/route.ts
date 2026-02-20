@@ -2,9 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -65,20 +64,17 @@ const transformThread = (item: ThreadItem, currentUserId: string) => {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the session using NextAuth
-    const session = await getServerSession(authOptions);
+    // Get authenticated user
+    const { userId } = await auth();
     
-    if (!session?.user || !(session.user as any).id) {
+    if (!userId) {
       console.log('No valid session found for threads request');
       return NextResponse.json({ 
         error: 'Your session has expired. Please refresh the page to continue.',
         code: 'SESSION_EXPIRED'
       }, { status: 401 });
     }
-
-    const userId = (session.user as any).id;
-    console.log('Session verification successful for user:', userId.substring(0, 10) + '...');
-
+    
     console.log('Fetching threads for user:', userId?.substring(0, 10) + '...');
 
     // Query threads where user is a participant using GSI1

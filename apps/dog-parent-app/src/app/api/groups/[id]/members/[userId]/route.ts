@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { auth } from '@clerk/nextjs/server';
 import {
   DynamoDBDocumentClient,
   DeleteCommand,
   GetCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../../../lib/auth';
 
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -78,12 +77,12 @@ export async function DELETE(
   context: { params: Promise<{ id: string; userId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id: groupId, userId } = await context.params;
+    const { id: groupId, userId: targetUserId } = await context.params;
 
     await ensureMembersTableExists();
 
@@ -91,7 +90,7 @@ export async function DELETE(
     const callerMembership = await dynamodb.send(
       new GetCommand({
         TableName: GROUP_MEMBERS_TABLE,
-        Key: { groupId, userId: session.user.id },
+        Key: { groupId, userId: userId },
       })
     );
 
@@ -106,7 +105,7 @@ export async function DELETE(
     await dynamodb.send(
       new DeleteCommand({
         TableName: GROUP_MEMBERS_TABLE,
-        Key: { groupId, userId },
+        Key: { groupId, userId: targetUserId },
       })
     );
 

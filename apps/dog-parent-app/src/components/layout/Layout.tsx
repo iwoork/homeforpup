@@ -11,7 +11,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const pathname = usePathname();
-  const isAuthPage = pathname.startsWith('/auth/');
+  const isAuthPage = pathname?.startsWith('/auth/');
 
   if (isAuthPage) {
     return <>{children}</>;

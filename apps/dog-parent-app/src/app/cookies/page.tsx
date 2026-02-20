@@ -125,16 +125,10 @@ const CookiesPage: React.FC = () => {
       moreInfo: "https://policies.google.com/privacy"
     },
     {
-      name: "NextAuth.js",
+      name: "Clerk",
       purpose: "Authentication and session management",
       duration: "Session",
-      moreInfo: "https://next-auth.js.org/"
-    },
-    {
-      name: "AWS Cognito",
-      purpose: "User authentication and account management",
-      duration: "Session",
-      moreInfo: "https://aws.amazon.com/privacy/"
+      moreInfo: "https://clerk.com/privacy"
     },
     {
       name: "Ant Design",

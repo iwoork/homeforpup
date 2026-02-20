@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { ConfigProvider, message, App } from 'antd';
-import { NextAuthProvider } from './providers/NextAuthProvider';
+import { ClerkProvider } from '@clerk/nextjs';
 import { AuthProvider } from '@homeforpup/shared-auth';
-import { Spin } from 'antd';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -40,7 +39,7 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
   useEffect(() => {
     // Ensure we're on the client side
     setMounted(true);
-    
+
     // Configure message globally
     message.config({
       top: 100,
@@ -51,29 +50,34 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
 
   if (!mounted) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
         flexDirection: 'column',
         gap: '16px'
       }}>
-        <Spin size="large" />
         <div>Loading...</div>
       </div>
     );
   }
 
   return (
-    <ConfigProvider theme={theme}>
-      <App>
-        <NextAuthProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: '#08979C',
+        },
+      }}
+    >
+      <ConfigProvider theme={theme}>
+        <App>
           <AuthProvider>
             {children}
           </AuthProvider>
-        </NextAuthProvider>
-      </App>
-    </ConfigProvider>
+        </App>
+      </ConfigProvider>
+    </ClerkProvider>
   );
 };

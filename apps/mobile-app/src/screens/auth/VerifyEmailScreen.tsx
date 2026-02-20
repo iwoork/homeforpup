@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { resendSignUpCode } from 'aws-amplify/auth';
+import { useSignUp } from '@clerk/clerk-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface VerifyEmailScreenProps {
@@ -23,6 +23,7 @@ const VerifyEmailScreen: React.FC<VerifyEmailScreenProps> = ({ navigation, route
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const { confirmSignup } = useAuth();
+  const { signUp } = useSignUp();
 
   const handleVerify = async () => {
     if (!verificationCode.trim()) {
@@ -71,14 +72,14 @@ const VerifyEmailScreen: React.FC<VerifyEmailScreenProps> = ({ navigation, route
 
     setResending(true);
     try {
-      await resendSignUpCode({ username: email });
+      await signUp?.prepareEmailAddressVerification({ strategy: 'email_code' });
       Alert.alert(
         'Success',
         'Verification code has been resent to your email.'
       );
     } catch (error: any) {
       console.error('Resend code error:', error);
-      Alert.alert('Error', error.message || 'Failed to resend code. Please try again.');
+      Alert.alert('Error', error?.errors?.[0]?.message || error.message || 'Failed to resend code. Please try again.');
     } finally {
       setResending(false);
     }

@@ -80,7 +80,7 @@ const LitterDetailPage: React.FC = () => {
   const { message } = App.useApp();
   const params = useParams();
   const router = useRouter();
-  const litterId = params.id as string;
+  const litterId = params?.id as string;
   const [editVisible, setEditVisible] = useState(false);
   const [editForm] = Form.useForm();
   const [saving, setSaving] = useState(false);

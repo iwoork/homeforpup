@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { dogsApiClient } from '@homeforpup/shared-dogs';
 import { getUserAccessibleDogs } from '@/lib/auth/kennelAccess';
 import { checkDogCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 
+import { auth } from '@clerk/nextjs/server';
 // GET /api/dogs - List dogs with filtering
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -33,7 +32,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Use kennel-based access instead of the shared API
-    const data = await getUserAccessibleDogs(session.user.id, options);
+    const data = await getUserAccessibleDogs(userId, options);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Error fetching dogs:', error);
@@ -50,8 +49,8 @@ export async function GET(request: NextRequest) {
 // POST /api/dogs - Create a new dog
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // Check subscription limits for parent dogs
     if (body.dogType === 'parent') {
-      const guard = await checkDogCreationAllowed(session.user.id);
+      const guard = await checkDogCreationAllowed(userId);
       if (!guard.allowed) {
         return NextResponse.json(
           { error: 'Subscription limit reached', message: guard.reason, tier: guard.tier, currentCount: guard.currentCount, limit: guard.limit },
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const dog = await dogsApiClient.createDog(body, session.user.id);
+    const dog = await dogsApiClient.createDog(body, userId);
     
     return NextResponse.json(dog, { status: 201 });
   } catch (error) {

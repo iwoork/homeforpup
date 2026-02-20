@@ -3,9 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../../lib/auth';
 
+import { auth } from '@clerk/nextjs/server';
 // Configure AWS SDK v3
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
@@ -159,12 +158,12 @@ export async function GET(
 
     console.log('Fetching user profile for ID:', userId.substring(0, 10) + '...');
 
-    // Get current user from session to check if viewing own profile
+    // Get current user from Clerk to check if viewing own profile
     let currentUserId: string | null = null;
-    
+
     try {
-      const session = await getServerSession(authOptions);
-      currentUserId = (session?.user as any)?.id || null;
+      const { userId: authUserId } = await auth();
+      currentUserId = authUserId || null;
     } catch (error) {
       console.error('Error getting session:', error);
       console.log('No session found, showing public profile only');
@@ -272,12 +271,10 @@ export async function PUT(
     }
 
     // Get user session for authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
+    const { userId: currentUserId } = await auth();
+    if (!currentUserId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-
-    const currentUserId = (session.user as any).id;
 
     // Check if user is updating their own profile
     if (currentUserId !== userId) {

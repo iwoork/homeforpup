@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { CreateLitterRequest, LittersResponse, LitterFilter } from '@homeforpup/shared-types';
 import { v4 as uuidv4 } from 'uuid';
 import { checkLitterCreationAllowed } from '@/lib/stripe/subscriptionGuard';
 
+import { auth } from '@clerk/nextjs/server';
 const dynamoClient = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION,
   credentials: {
@@ -27,8 +26,8 @@ const DOGS_TABLE = process.env.DOGS_TABLE_NAME || 'homeforpup-dogs';
 // GET /api/litters - List litters with filtering
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -49,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by user's kennels
     filterExpression = 'contains(kennelOwners, :userId)';
-    expressionAttributeValues[':userId'] = session.user.id;
+    expressionAttributeValues[':userId'] = userId;
 
     if (search) {
       filterExpression += ' AND (contains(#name, :search) OR contains(sireName, :search) OR contains(damName, :search))';
@@ -113,13 +112,13 @@ export async function GET(request: NextRequest) {
 // POST /api/litters - Create new litter
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check subscription limits
-    const guard = await checkLitterCreationAllowed(session.user.id);
+    const guard = await checkLitterCreationAllowed(userId);
     if (!guard.allowed) {
       return NextResponse.json(
         { error: 'Subscription limit reached', message: guard.reason, tier: guard.tier, currentCount: guard.currentCount, limit: guard.limit },
@@ -143,7 +142,7 @@ export async function POST(request: NextRequest) {
       FilterExpression: 'id = :kennelId AND (contains(owners, :userId) OR contains(managers, :userId))',
       ExpressionAttributeValues: {
         ':kennelId': body.kennelId,
-        ':userId': session.user.id,
+        ':userId': userId,
       },
     });
 

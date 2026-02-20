@@ -3,12 +3,10 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda
 export interface AuthenticatedEvent extends APIGatewayProxyEvent {
   requestContext: APIGatewayProxyEvent['requestContext'] & {
     authorizer?: {
-      claims: {
-        sub: string;
-        email: string;
-        'cognito:username': string;
-        [key: string]: string;
-      };
+      sub: string;
+      email: string;
+      userType: string;
+      [key: string]: string;
     };
   };
 }
@@ -66,4 +64,3 @@ export function errorResponse(
     details,
   });
 }
-

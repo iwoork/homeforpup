@@ -6,10 +6,9 @@ import {
   QueryCommand,
   DeleteCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
 
+import { auth } from '@clerk/nextjs/server';
 const client = new DynamoDBClient({
   region: process.env.NEXT_PUBLIC_AWS_REGION || 'us-east-1',
   credentials: {
@@ -65,8 +64,8 @@ async function ensureTableExists(): Promise<void> {
 // POST /api/notifications/register - Register a device token
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -81,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     const now = new Date().toISOString();
     const item = {
-      userId: session.user.id,
+      userId: userId,
       deviceToken,
       platform: platform || 'ios',
       deviceName: deviceName || 'Unknown Device',
@@ -112,8 +111,8 @@ export async function POST(request: NextRequest) {
 // DELETE /api/notifications/register - Unregister a device token
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -130,7 +129,7 @@ export async function DELETE(request: NextRequest) {
       new DeleteCommand({
         TableName: DEVICE_TOKENS_TABLE,
         Key: {
-          userId: session.user.id,
+          userId: userId,
           deviceToken,
         },
       }),
@@ -149,8 +148,8 @@ export async function DELETE(request: NextRequest) {
 // GET /api/notifications/register - Get registered device tokens for user
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -161,7 +160,7 @@ export async function GET(request: NextRequest) {
         TableName: DEVICE_TOKENS_TABLE,
         KeyConditionExpression: 'userId = :userId',
         ExpressionAttributeValues: {
-          ':userId': session.user.id,
+          ':userId': userId,
         },
       }),
     );
