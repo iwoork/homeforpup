@@ -8,7 +8,7 @@ export const ConditionalHeader: React.FC = () => {
   const pathname = usePathname();
   
   // Hide header on auth pages
-  const hideHeader = pathname?.startsWith('/auth/');
+  const hideHeader = pathname?.startsWith('/auth/') || pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up');
   
   if (hideHeader) {
     return null;
