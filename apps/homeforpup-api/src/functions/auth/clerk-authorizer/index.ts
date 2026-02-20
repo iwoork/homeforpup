@@ -1,9 +1,5 @@
 import { APIGatewayTokenAuthorizerEvent, APIGatewayAuthorizerResult, Context } from 'aws-lambda';
-import { createClerkClient } from '@clerk/backend';
-
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY!,
-});
+import { verifyToken } from '@clerk/backend';
 
 export const handler = async (
   event: APIGatewayTokenAuthorizerEvent,
@@ -17,18 +13,20 @@ export const handler = async (
   }
 
   try {
-    const { sub, email, metadata } = await clerkClient.verifyToken(token);
+    const payload = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY!,
+    });
 
-    if (!sub) {
+    if (!payload.sub) {
       console.error('Token verification failed: no sub claim');
       throw new Error('Unauthorized');
     }
 
-    const userType = (metadata as any)?.userType || 'dog-parent';
+    // Custom session claims configured in Clerk dashboard
+    const userType = (payload as Record<string, unknown>).userType as string || 'dog-parent';
 
-    return generatePolicy(sub, 'Allow', event.methodArn, {
-      sub,
-      email: email || '',
+    return generatePolicy(payload.sub, 'Allow', event.methodArn, {
+      sub: payload.sub,
       userType,
     });
   } catch (error) {
